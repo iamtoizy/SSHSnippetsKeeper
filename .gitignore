@@ -70,6 +70,12 @@ __recovery/
 # Boss dependency manager vendor folder https://github.com/HashLoad/boss
 modules/
 
-# toizy
-output/
-
+#
+# by Toizy
+#
+Binary/
+# SQLite временные файлы — НЕ коммитим
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal
+*.sqlite
