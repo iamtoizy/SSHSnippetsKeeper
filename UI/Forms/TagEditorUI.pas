@@ -5,7 +5,8 @@ interface
 uses
     Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
     Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ComCtrls, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Menus,
-    System.Generics.Collections;
+    System.Generics.Collections,
+    TagService; // <-- Подключаем слой бизнес-логики
 
 type
     TTagEditAction = (teaAdd, teaRename, teaDelete);
@@ -31,19 +32,22 @@ type
         procedure nAddClick(Sender: TObject);
         procedure nDeleteClick(Sender: TObject);
         procedure nRenameClick(Sender: TObject);
-        procedure lvTagsKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
         procedure lvTagsEdited(Sender: TObject; Item: TListItem; var S: string);
         procedure FormCreate(Sender: TObject);
         procedure FormDestroy(Sender: TObject);
     private
+        FTagService: TTagService; // <-- Сохраняем ссылку на сервис
         FChanges: TList<TTagChange>;
+
         procedure ApplyChangesToDB;
         procedure RecordChange(AAction: TTagEditAction; ATagID: NativeUInt; const ANewName: string = '');
         procedure DoAddTag;
         procedure DoDeleteTags;
         procedure DoRenameTag;
+        procedure RefreshTagList; // <-- Вынесли логику загрузки в отдельный метод
     public
-        { Public declarations }
+        // Внедрение зависимости (Dependency Injection) через конструктор
+        constructor CreateWithService(AOwner: TComponent; ATagService: TTagService);
     end;
 
 var
@@ -55,24 +59,44 @@ implementation
 
 uses
     Tag,
-    DataModule,
     UIHelpers,
-    TagRepository,
     System.UITypes,
-    Winapi.CommCtrl
-    ;
+    Winapi.CommCtrl;
+
+// === Инициализация и Уничтожение ===
+
+constructor TTagEditorForm.CreateWithService(AOwner: TComponent; ATagService: TTagService);
+begin
+    inherited Create(AOwner);
+    FTagService := ATagService;
+end;
 
 procedure TTagEditorForm.FormCreate(Sender: TObject);
 begin
     FChanges := TList<TTagChange>.Create;
-    // Загружаем теги при создании формы
-    TUIHelpers.BuildTagList(lvTags);
+    // Загружаем теги при создании формы, если сервис уже передан
+    RefreshTagList;
 end;
 
 procedure TTagEditorForm.FormDestroy(Sender: TObject);
 begin
     FChanges.Free;
 end;
+
+procedure TTagEditorForm.RefreshTagList;
+var
+    Tags: TArray<TTagDTO>;
+begin
+    if Assigned(FTagService) then
+    begin
+        // 1. Берем данные из сервиса
+        Tags := FTagService.GetAllTags;
+        // 2. Отдаем в "глупый" хелпер для визуализации
+        TUIHelpers.FillTagList(lvTags, Tags);
+    end;
+end;
+
+// === Буферизация изменений ===
 
 procedure TTagEditorForm.RecordChange(AAction: TTagEditAction; ATagID: NativeUInt; const ANewName: string);
 var
@@ -84,9 +108,8 @@ begin
     FChanges.Add(Change);
 end;
 
-//
-// Обработчики действий (общие для меню и клавиатуры)
-//
+// === Обработчики действий (общие для меню и клавиатуры) ===
+
 procedure TTagEditorForm.DoAddTag;
 var
     NewName: string;
@@ -99,7 +122,7 @@ begin
         // Визуальное добавление
         Item := lvTags.Items.Add;
         Item.Caption := NewName;
-        Item.Data := Pointer(0); // ID пока нет, будет присвоен при сохранении
+        Item.Data := Pointer(0); // ID пока нет, будет присвоен при сохранении в ApplyChangesToDB
         Item.Selected := True;
         Item.MakeVisible(False);
         Item.StateIndex := 0;
@@ -112,6 +135,8 @@ end;
 procedure TTagEditorForm.DoDeleteTags;
 var
     Dlg: TForm;
+    I: Integer;
+    TagID: NativeUInt;
 begin
     if lvTags.SelCount = 0 then Exit;
 
@@ -129,11 +154,11 @@ begin
     end;
 
     // Удаление с конца, чтобы индексы не съезжали
-    for var I := lvTags.Items.Count - 1 downto 0 do
+    for I := lvTags.Items.Count - 1 downto 0 do
     begin
         if lvTags.Items[I].Selected then
         begin
-            var TagID := NativeUInt(lvTags.Items[I].Data);
+            TagID := NativeUInt(lvTags.Items[I].Data);
             if TagID > 0 then
                 RecordChange(teaDelete, TagID);
             lvTags.Items.Delete(I);
@@ -152,13 +177,11 @@ begin
         Exit;
     end;
 
-    lvTags.Selected.EditCaption;
-
     if (lvTags.Selected <> nil) then
         lvTags.Selected.EditCaption;
 end;
 
-// --- Привязка кнопок и меню к общим методам ---
+// === Привязка кнопок и меню к общим методам ===
 
 procedure TTagEditorForm.nAddClick(Sender: TObject);
 begin
@@ -175,33 +198,8 @@ begin
     DoRenameTag;
 end;
 
-//
-// Горячие клавиши ListView ---
-//
-procedure TTagEditorForm.lvTagsKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-begin
-    case Key of
-        VK_INSERT:
-            begin
-                DoAddTag;
-                Key := 0;
-            end;
-        VK_DELETE:
-            begin
-                DoDeleteTags;
-                Key := 0;
-            end;
-        VK_F2:
-            begin
-                DoRenameTag;
-                Key := 0;
-            end;
-    end;
-end;
+// === Завершение редактирования имени (F2) ===
 
-//
-// Завершение редактирования имени (F2)
-//
 procedure TTagEditorForm.lvTagsEdited(Sender: TObject; Item: TListItem; var S: string);
 var
     TagID: NativeUInt;
@@ -224,9 +222,8 @@ begin
     // Визуально Caption обновится автоматически
 end;
 
-//
-//  Сохранение всех изменений по ОК
-//
+// === Сохранение всех изменений по ОК ===
+
 procedure TTagEditorForm.bOKClick(Sender: TObject);
 begin
     try
@@ -244,35 +241,28 @@ begin
     ModalResult := mrCancel;
 end;
 
+// === Применение бизнес-логики через Сервис ===
+
 procedure TTagEditorForm.ApplyChangesToDB;
 var
     Change: TTagChange;
-    TagDTO: TTagDTO;
 begin
+    if not Assigned(FTagService) then
+        raise Exception.Create('Сервис тегов не инициализирован!');
+
     for Change in FChanges do
     begin
         case Change.Action of
             teaAdd:
-                begin
-                    // Создаём DTO и передаём в Add
-                    TagDTO.ID := 0;
-                    TagDTO.Name := Change.NewName;
-                    DataModuleCommon.TagRepository.Add(TagDTO);
-                end;
+                // Сервис сам проверит уникальность и пустоту имени!
+                FTagService.CreateTag(Change.NewName, '');
 
             teaRename:
-                begin
-                    // Заполняем DTO и используем универсальный Update
-                    TagDTO.ID := Integer(Change.TagID);
-                    TagDTO.Name := Change.NewName;
-                    DataModuleCommon.TagRepository.Update(TagDTO);
-                end;
+                // Передаем ID (с приведением типов) и новое имя
+                FTagService.RenameTag(NativeInt(Change.TagID), Change.NewName);
 
             teaDelete:
-                begin
-                    // Приводим NativeUInt к Integer
-                    DataModuleCommon.TagRepository.Delete(Integer(Change.TagID));
-                end;
+                FTagService.DeleteTag(NativeInt(Change.TagID));
         end;
     end;
 

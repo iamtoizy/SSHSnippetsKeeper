@@ -1,5 +1,8 @@
 program SSHSnippetsKeeper;
 
+// TODO: [Feature] –едактор гор€чих клавиш
+// TODO: [Feature] √ор€ча€ клавиша дл€ повторного ввода сниппета
+
 {$R '000_schema_init.res' 'Database\Schema\000_schema_init.rc'}
 
 uses
@@ -43,8 +46,12 @@ uses
   SynThemeAdapter in 'UI\Controls\SynThemeAdapter.pas',
   CustomBashSyn in 'UI\Controls\CustomBashSyn.pas',
   BashCompletionEngine in 'Core\BashCompletionEngine.pas',
+  CommonConsts in 'Common\CommonConsts.pas',
   CommonHelpers in 'Common\CommonHelpers.pas',
-  CommonConsts in 'Common\CommonConsts.pas';
+  SnippetService in 'Core\Services\SnippetService.pas',
+  TagService in 'Core\Services\TagService.pas',
+  CategoryService in 'Core\Services\CategoryService.pas',
+  UserService in 'Core\Services\UserService.pas';
 
 {$R *.res}
 
@@ -96,8 +103,8 @@ begin
     Application.MainFormOnTaskbar := True;
     TStyleManager.TrySetStyle('Glow');
     Application.Title := 'SSH Snippets Keeper';
-    Application.CreateForm(TMainForm, MainForm);
-  Application.CreateForm(TDataModuleCommon, DataModuleCommon);
+    Application.CreateForm(TDataModuleCommon, DataModuleCommon);
+  Application.CreateForm(TMainForm, MainForm);
   Application.CreateForm(TInputForm, InputForm);
   Application.Run;
   // --- ќсвобождаем мьютекс при закрытии программы ---

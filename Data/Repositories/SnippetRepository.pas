@@ -15,7 +15,7 @@ type
         function InternalLoadSnippets(const SQL: string; const Params: array of Variant): TArray<TSnippetDTO>;
         function GetSnippetTagsBatch(const SnippetIDs: TArray<NativeInt>): TDictionary<NativeInt, TArray<TTagDTO>>;
     public
-        function Add(const Snippet: TSnippetDTO; const TagIDs: TArray<NativeInt>): NativeInt;
+        function Add(const Snippet: TSnippetDTO): NativeInt;
         procedure Update(const Snippet: TSnippetDTO);
         procedure Delete(ID: NativeInt);
         function GetById(ID: NativeInt): TSnippetDTO;
@@ -43,10 +43,18 @@ uses
     Winapi.Windows,
     Data.DB,
     System.Math,
-    VCL.Dialogs,
     DataModule;
 
 const
+    SQL_ADD_SNIPPET = 'INSERT INTO snippets (user_id, category_id, title, content, comment, created_at, updated_at) ' +
+            'VALUES (:user_id, :cat_id, :title, :content, :comment, :created_at, :updated_at)';
+    SQL_DELETE_SNIPPET = 'DELETE FROM snippets WHERE id = :id';
+    SQL_GET_ALL_SNIPPETS = 'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at FROM snippets ORDER BY title';
+    SQL_UPDATE_SNIPPET = 'UPDATE snippets SET title = :title, content = :content, ' +
+        'comment = :comment, category_id = :category_id, updated_at = :updated_at ' +
+        'WHERE id = :id';
+    SQL_UPDATE_TAGS_DELETE_QUERY = 'DELETE FROM snippet_tags WHERE snippet_id = :id';
+    SQL_UPDATE_TAGS_INSERT_QUERY = 'INSERT INTO snippet_tags (snippet_id, tag_id) VALUES (:snip_id, :tag_id)';
     SQL_SELECT_SNIPPETS_BY_ID = 'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at FROM snippets WHERE id = ?';
     SQL_SELECT_SNIPPETS_BY_CATEGORY =
         'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at FROM snippets WHERE category_id = ? ORDER BY title';
@@ -62,6 +70,57 @@ const
     SQL_SELECT_SNIPPET_TAGS = 'SELECT t.id, t.name FROM tags t JOIN snippet_tags st ON t.id = st.tag_id WHERE st.snippet_id = :SnippetID ORDER BY t.name';
     SQL_FULLTEXT_SEARCH = 'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at ' + 'FROM snippets ' +
         'WHERE title LIKE :m COLLATE NOCASE ' + '   OR content LIKE :m COLLATE NOCASE ' + 'ORDER BY updated_at DESC, title ASC';
+    SQL_SNIPPET_SEARCH = 'SELECT s.id, s.title, s.category_id, snippet_fts.rank ' + 'FROM snippet_fts ' + 'JOIN snippets s ON s.id = snippet_fts.rowid ' +
+        'WHERE snippet_fts MATCH :search ' + 'ORDER BY rank DESC';
+    SQL_SEARCH_BY_MASK_FTS = 'SELECT s.id, s.user_id, s.title, s.content, s.category_id, s.created_at, s.updated_at, snippet_fts.rank ' +
+        'FROM snippet_fts ' +
+        'JOIN snippets s ON s.rowid = snippet_fts.rowid ' + // В FTS5 rowid совпадает с ID сниппета
+        'WHERE snippet_fts MATCH :term ' + 'ORDER BY rank ASC'; // Чем меньше rank, тем точнее совпадение;
+    SQL_RECORD_RUN = 'INSERT INTO snippet_runs (snippet_id, run_at, executed_by_user_id) VALUES (?, strftime(''%s'', ''now''), ?)';
+    SQL_GET_SNIPPET_BY_CATEGORY_ID_WITH_USER_ID = 'SELECT category_id, COUNT(*) AS cnt FROM snippets WHERE user_id = ? GROUP BY category_id';
+    SQL_GET_SNIPPET_BY_CATEGORY_ID_NO_USER_ID = 'SELECT category_id, COUNT(*) AS cnt FROM snippets GROUP BY category_id';
+    SQL_GET_TOP_SNIPPETS =
+        'SELECT s.id, s.user_id, s.title, s.content, s.comment, s.category_id, s.created_at, s.updated_at ' +
+        'FROM snippets s ' +
+        'JOIN snippet_stats st ON st.snippet_id = s.id ' +
+        'WHERE s.user_id = ? ' +
+        'ORDER BY st.exec_count DESC, st.last_exec_at DESC ' +
+        'LIMIT ?';
+    SQL_GET_RECENT_SNIPPETS =
+        'SELECT s.id, s.user_id, s.title, s.content, s.comment, s.category_id, s.created_at, s.updated_at ' +
+        'FROM snippets s ' +
+        'JOIN snippet_stats st ON st.snippet_id = s.id ' +
+        'WHERE s.user_id = ? ' +
+        'ORDER BY st.last_exec_at DESC ' +
+        'LIMIT ?';
+
+function SanitizeFTS5(const Input: string): string;
+var
+    C: Char;
+    Sb: TStringBuilder;
+begin
+    if Input = '' then
+        Exit('');
+
+    Sb := TStringBuilder.Create;
+    try
+        for C in Input do
+        begin
+            // Удаляем или заменяем на пробел зарезервированные символы FTS5
+            // В FTS5 спецсимволы: * ^ " ' [ ] ( ) { } : + - ~
+            if CharInSet(C, ['*', '^', '"', '''', '[', ']', '(', ')', '{', '}', ':', '+', '-', '~']) then
+                Sb.Append(' ')
+            else
+                Sb.Append(C);
+        end;
+        // Убираем двойные пробелы и пробелы по краям
+        Result := Trim(Sb.ToString);
+        while Result.IndexOf('  ') >= 0 do
+            Result := Result.Replace('  ', ' ');
+    finally
+        Sb.Free;
+    end;
+end;
 
 procedure TSnippetRepository.Delete(ID: NativeInt);
 var
@@ -71,7 +130,7 @@ begin
     try
         // Каскадно удалятся: snippet_tags, snippet_runs, snippet_stats,
         // FTS записи (благодаря триггерам и ON DELETE CASCADE)
-        Q.SQL.Text := 'DELETE FROM snippets WHERE id = :id';
+        Q.SQL.Text := SQL_DELETE_SNIPPET;
         Q.ParamByName('id').AsInteger := ID;
         Q.ExecSQL;
     finally
@@ -81,7 +140,7 @@ end;
 
 function TSnippetRepository.GetAll: TArray<TSnippetDTO>;
 begin
-    Result := InternalLoadSnippets('SELECT id, user_id, title, content, comment, category_id, created_at, updated_at FROM snippets ORDER BY title', []);
+    Result := InternalLoadSnippets(SQL_GET_ALL_SNIPPETS, []);
 end;
 
 function TSnippetRepository.GetById(ID: NativeInt): TSnippetDTO;
@@ -129,7 +188,7 @@ end;
 
 function TSnippetRepository.GetSnippetTagsBatch(const SnippetIDs: TArray<NativeInt>): TDictionary<NativeInt, TArray<TTagDTO>>;
 const
-    MAX_PARAMS = 900; // ✅ Защита от лимита SQLite
+    MAX_PARAMS = 900; // Защита от лимита SQLite
 var
     Query: TFDQuery;
     Map: TDictionary<NativeInt, TList<TTagDTO>>;
@@ -284,18 +343,13 @@ var
 begin
     Q := CreateQuery;
     try
-        Q.SQL.Text :=
-            'UPDATE snippets SET title = :title, content = :content, ' +
-            'comment = :comment, category_id = :category_id, updated_at = :updated_at ' +
-            'WHERE id = :id';
-
+        Q.SQL.Text := SQL_UPDATE_SNIPPET;
         Q.ParamByName('title').AsString := Snippet.Title;
         Q.ParamByName('content').AsString := Snippet.Content;
         Q.ParamByName('comment').AsString := Snippet.Comment;
         Q.ParamByName('category_id').AsInteger := Snippet.CategoryID;
         Q.ParamByName('updated_at').AsLargeInt := Snippet.UpdatedAt;
         Q.ParamByName('id').AsInteger := Snippet.ID;
-
         Q.ExecSQL;
     finally
         Q.Free;
@@ -310,7 +364,7 @@ begin
     // Удаляем все старые связи
     Q := CreateQuery;
     try
-        Q.SQL.Text := 'DELETE FROM snippet_tags WHERE snippet_id = :id';
+        Q.SQL.Text := SQL_UPDATE_TAGS_DELETE_QUERY;
         Q.ParamByName('id').AsInteger := SnippetID;
         Q.ExecSQL;
     finally
@@ -322,7 +376,7 @@ begin
     begin
         QTags := CreateQuery;
         try
-            QTags.SQL.Text := 'INSERT INTO snippet_tags (snippet_id, tag_id) VALUES (:snip_id, :tag_id)';
+            QTags.SQL.Text := SQL_UPDATE_TAGS_INSERT_QUERY;
             for TagID in TagIDs do
             begin
                 QTags.ParamByName('snip_id').AsInteger := SnippetID;
@@ -335,39 +389,23 @@ begin
     end;
 end;
 
-function TSnippetRepository.Add(const Snippet: TSnippetDTO; const TagIDs: TArray<NativeInt>): NativeInt;
+function TSnippetRepository.Add(const Snippet: TSnippetDTO): NativeInt;
 var
-    Q, QTags: TFDQuery;
-    TagID: NativeInt;
-    CatUserID: NativeInt;
+    Q: TFDQuery;
     SnippetID: NativeInt;
 begin
-    if Snippet.UserID <= 0 then
-        raise Exception.Create('Некорректный UserID');
-    if Snippet.CategoryID <= 0 then
-        raise Exception.Create('Некорректный CategoryID');
-
-    // Проверка владельца категории
-    CatUserID := DataModuleCommon.CategoryRepository.GetUserID(Snippet.CategoryID);
-    if CatUserID = -1 then
-        raise Exception.Create('Категория не найдена');
-    if CatUserID <> Snippet.UserID then
-        raise Exception.Create('Категория принадлежит другому пространству');
-
     // Вставка сниппета
     Q := CreateQuery;
     try
-        Q.SQL.Text :=
-            'INSERT INTO snippets (user_id, category_id, title, content, comment, created_at, updated_at) ' +
-            'VALUES (:user_id, :cat_id, :title, :content, :comment, :created_at, :updated_at)';
+        Q.SQL.Text := SQL_ADD_SNIPPET;
         Q.ParamByName('user_id').AsInteger := Snippet.UserID;
         Q.ParamByName('cat_id').AsInteger := Snippet.CategoryID;
         Q.ParamByName('title').AsString := Snippet.Title;
         Q.ParamByName('content').AsString := Snippet.Content;
         Q.ParamByName('comment').AsString := Snippet.Comment;
         Q.ParamByName('created_at').AsLargeInt := Snippet.CreatedAt;
-
         Q.ParamByName('updated_at').DataType := ftLargeInt;
+
         if Snippet.UpdatedAt > 0 then
             Q.ParamByName('updated_at').AsLargeInt := Snippet.UpdatedAt
         else
@@ -383,22 +421,23 @@ begin
         Q.Free;
     end;
 
+    // БЛОК "Вставка связей с тегами" ПОЛНОСТЬЮ УДАЛЕН ОТСЮДА!
     // Вставка связей с тегами
-    if Length(TagIDs) > 0 then
-    begin
-        QTags := CreateQuery;
-        try
-            QTags.SQL.Text := 'INSERT INTO snippet_tags (snippet_id, tag_id) VALUES (:snip_id, :tag_id)';
-            for TagID in TagIDs do
-            begin
-                QTags.ParamByName('snip_id').AsInteger := SnippetID;
-                QTags.ParamByName('tag_id').AsInteger := TagID;
-                QTags.ExecSQL;
-            end;
-        finally
-            QTags.Free;
-        end;
-    end;
+//    if Length(TagIDs) > 0 then
+//    begin
+//        QTags := CreateQuery;
+//        try
+//            QTags.SQL.Text := 'INSERT INTO snippet_tags (snippet_id, tag_id) VALUES (:snip_id, :tag_id)';
+//            for TagID in TagIDs do
+//            begin
+//                QTags.ParamByName('snip_id').AsInteger := SnippetID;
+//                QTags.ParamByName('tag_id').AsInteger := TagID;
+//                QTags.ExecSQL;
+//            end;
+//        finally
+//            QTags.Free;
+//        end;
+//    end;
 end;
 
 function TSnippetRepository.Search(const Query: string): TArray<TSnippetDTO>;
@@ -409,8 +448,7 @@ begin
     List := TList<TSnippetDTO>.Create;
     Q := CreateQuery;
     try
-        Q.SQL.Text := 'SELECT s.id, s.title, s.category_id, snippet_fts.rank ' + 'FROM snippet_fts ' + 'JOIN snippets s ON s.id = snippet_fts.rowid ' +
-          'WHERE snippet_fts MATCH :search ' + 'ORDER BY rank DESC';
+        Q.SQL.Text := SQL_SNIPPET_SEARCH;
 
         Q.Params.ParamByName('search').AsString := Query;
         Q.Open;
@@ -437,24 +475,34 @@ var
     Query: TFDQuery;
     List: TList<TSnippetDTO>;
     Snip: TSnippetDTO;
-    SearchTerm: string;
+    SafeMask, SearchTerm: string;
 begin
+    Result := [];
+    // Очищаем ввод от спецсимволов
+    SafeMask := SanitizeFTS5(Mask);
+
+    if SafeMask = '' then
+        Exit;
+
     List := TList<TSnippetDTO>.Create;
     Query := CreateQuery;
     try
+        // Экранируем спецсимволы FTS, если нужно, но для простоты пока так:
+        SearchTerm := '*' + Mask + '*';
+
+        Query.SQL.Text := SQL_SEARCH_BY_MASK_FTS;
+
+        // Экранируем спецсимволы FTS, если нужно, но для простоты пока так:
+        SearchTerm := '*' + Mask + '*';
+
+        // Оборачиваем уже безопасную строку в *, чтобы искать подстроку
+        Query.ParamByName('term').AsString := '*' + SafeMask + '*';
         // FTS5 использует специальный синтаксис.
         // Мы оборачиваем запрос в *, чтобы искать вхождение подстроки (как LIKE %mask%)
         // Например, если пользователь ввел "sql", мы ищем "*sql*"
 
         if Mask = '' then
             Exit(Result);
-
-        // Экранируем спецсимволы FTS, если нужно, но для простоты пока так:
-        SearchTerm := '*' + Mask + '*';
-
-        Query.SQL.Text := 'SELECT s.id, s.user_id, s.title, s.content, s.category_id, s.created_at, s.updated_at, snippet_fts.rank ' + 'FROM snippet_fts ' +
-          'JOIN snippets s ON s.rowid = snippet_fts.rowid ' + // В FTS5 rowid совпадает с ID сниппета
-          'WHERE snippet_fts MATCH :term ' + 'ORDER BY rank ASC'; // Чем меньше rank, тем точнее совпадение
 
         Query.ParamByName('term').AsString := SearchTerm;
         Query.Open;
@@ -535,11 +583,7 @@ end;
 
 procedure TSnippetRepository.RecordRun(SnippetID: NativeInt; UserID: NativeInt);
 begin
-    FConnection.ExecSQL(
-        'INSERT INTO snippet_runs (snippet_id, run_at, executed_by_user_id) ' +
-        'VALUES (?, strftime(''%s'', ''now''), ?)',
-        [SnippetID, UserID]
-    );
+    FConnection.ExecSQL(SQL_RECORD_RUN, [SnippetID, UserID]);
 end;
 
 function TSnippetRepository.GetSnippetByCategory(const CategoryID, UserID: NativeInt): TArray<TSnippetDTO>;
@@ -559,21 +603,21 @@ begin
     try
         if AUserID > 0 then
         begin
-            Q.SQL.Text := 'SELECT category_id, COUNT(*) AS cnt FROM snippets ' +
-                          'WHERE user_id = ? GROUP BY category_id';
+            Q.SQL.Text := SQL_GET_SNIPPET_BY_CATEGORY_ID_WITH_USER_ID;
             Q.Params[0].AsInteger := AUserID;
         end
         else
         begin
-            Q.SQL.Text := 'SELECT category_id, COUNT(*) AS cnt FROM snippets ' +
-                          'GROUP BY category_id';
+            Q.SQL.Text := SQL_GET_SNIPPET_BY_CATEGORY_ID_NO_USER_ID;
         end;
         Q.Open;
 
         while not Q.Eof do
         begin
-            Result.AddOrSetValue(Q.FieldByName('category_id').AsInteger,
-                                 Q.FieldByName('cnt').AsInteger);
+            Result.AddOrSetValue(
+                Q.FieldByName('category_id').AsInteger,
+                Q.FieldByName('cnt').AsInteger
+            );
             Q.Next;
         end;
     finally
@@ -583,28 +627,12 @@ end;
 
 function TSnippetRepository.GetTopSnippets(AUserID: NativeInt; ALimit: Integer): TArray<TSnippetDTO>;
 begin
-    Result := InternalLoadSnippets(
-        'SELECT s.id, s.user_id, s.title, s.content, s.comment, s.category_id, s.created_at, s.updated_at ' +
-        'FROM snippets s ' +
-        'JOIN snippet_stats st ON st.snippet_id = s.id ' +
-        'WHERE s.user_id = ? ' +
-        'ORDER BY st.exec_count DESC, st.last_exec_at DESC ' +
-        'LIMIT ?',
-        [AUserID, ALimit]
-    );
+    Result := InternalLoadSnippets(SQL_GET_TOP_SNIPPETS, [AUserID, ALimit]);
 end;
 
 function TSnippetRepository.GetRecentSnippets(AUserID: NativeInt; ALimit: Integer): TArray<TSnippetDTO>;
 begin
-    Result := InternalLoadSnippets(
-        'SELECT s.id, s.user_id, s.title, s.content, s.comment, s.category_id, s.created_at, s.updated_at ' +
-        'FROM snippets s ' +
-        'JOIN snippet_stats st ON st.snippet_id = s.id ' +
-        'WHERE s.user_id = ? ' +
-        'ORDER BY st.last_exec_at DESC ' +
-        'LIMIT ?',
-        [AUserID, ALimit]
-    );
+    Result := InternalLoadSnippets(SQL_GET_RECENT_SNIPPETS, [AUserID, ALimit]);
 end;
 
 end.

@@ -68,11 +68,9 @@ object TagEditorForm: TTagEditorForm
       0000000003770071006500FFFF}
     MultiSelect = True
     SortType = stText
-    StateImages = DataModuleCommon.ilTags
     TabOrder = 1
     ViewStyle = vsSmallIcon
     OnEdited = lvTagsEdited
-    OnKeyDown = lvTagsKeyDown
   end
   object MainMenu: TMainMenu
     Left = 232

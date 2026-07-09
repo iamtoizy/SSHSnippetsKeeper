@@ -2,12 +2,17 @@ unit CommonHelpers;
 
 interface
 
+uses
+    Winapi.Windows
+    ;
+
 procedure ShowSimpleToast(const Title, Text: string);
 
 implementation
 
 uses
     Vcl.Forms,
+    CommonConsts,
     System.Notification
     ;
 
@@ -31,6 +36,8 @@ begin
         end;
     end;
 end;
+
+
 
 initialization
     NotificationCenter := TNotificationCenter.Create(nil);

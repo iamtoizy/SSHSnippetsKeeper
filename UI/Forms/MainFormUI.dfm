@@ -95,7 +95,6 @@ object MainForm: TMainForm
       ParentFont = False
       ScrollBars = ssBoth
       TabOrder = 0
-      OnKeyUp = mCommentKeyUp
     end
     object mSnippet: TMemo
       Left = 0
@@ -113,7 +112,6 @@ object MainForm: TMainForm
       ParentFont = False
       ScrollBars = ssBoth
       TabOrder = 1
-      OnKeyUp = mSnippetKeyUp
     end
   end
   object sbBottom: TStatusBar
@@ -145,7 +143,7 @@ object MainForm: TMainForm
     object ebSearch: TEdit
       Left = 1
       Top = 1
-      Width = 597
+      Width = 454
       Height = 23
       Align = alClient
       DoubleBuffered = True
@@ -176,6 +174,33 @@ object MainForm: TMainForm
       Caption = #9881
       TabOrder = 2
       OnClick = bManageWorkspacesClick
+    end
+    object pSearchType: TPanel
+      Left = 455
+      Top = 1
+      Width = 143
+      Height = 23
+      Align = alRight
+      BevelOuter = bvNone
+      TabOrder = 3
+      object rbText: TRadioButton
+        Left = 6
+        Top = 3
+        Width = 83
+        Height = 17
+        Caption = #1058#1077#1082#1089#1090#1086#1074#1099#1081
+        Checked = True
+        TabOrder = 0
+        TabStop = True
+      end
+      object rbFTS: TRadioButton
+        Left = 95
+        Top = 3
+        Width = 50
+        Height = 17
+        Caption = 'FTS'
+        TabOrder = 1
+      end
     end
   end
   object pCenter: TPanel
@@ -247,7 +272,6 @@ object MainForm: TMainForm
         ViewStyle = vsList
         OnDblClick = lvTagsDblClick
         OnEdited = lvTagsEdited
-        OnKeyDown = lvTagsKeyDown
       end
     end
   end

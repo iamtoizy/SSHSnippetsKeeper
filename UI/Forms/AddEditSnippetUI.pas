@@ -9,7 +9,6 @@ uses
     System.Variants,
     System.Classes,
     Vcl.Graphics,
-    DataModule,
     Snippet,
     Vcl.Controls,
     Vcl.Forms,
@@ -29,7 +28,9 @@ uses
     SynCompletionProposal,
     SynEditTypes,
     CustomBashSyn,
-    BashCompletionEngine;
+    BashCompletionEngine,
+    SnippetService,
+    TagService; // <-- Добавили сервис тегов
 
 type
     TOriginalSnippet = record
@@ -77,11 +78,12 @@ type
         procedure SynCompletionProposalExecute(Kind: SynCompletionType; Sender: TObject; var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
         procedure tmrReloadCommandsTimer(Sender: TObject);
     protected
-        // Блок управления стилями
         procedure Loaded; override;
         procedure CMStyleChanged(var Message: TMessage); message CM_STYLECHANGED;
     private
-        { Private declarations }
+        FSnippetService: TSnippetService;
+        FTagService: TTagService; // <-- Добавили ссылку на сервис тегов
+
         FSnippet: TSnippetDTO;
         FOriginalSnippet: TOriginalSnippet;
         FCategoryID: NativeInt;
@@ -90,18 +92,18 @@ type
         FBasicCommands: TStringList;
         FBlockEnter: Boolean;
         FCurrentHighlighter: TCustomBashSyn;
-        //
         FCompletionEngine: TBashCompletionEngine;
+
         function IsAutocompleteVisible: Boolean;
         function IsSnippetChanged: Boolean;
-        //
-        procedure InitBashAutocomplete;
         procedure SetSyntax;
     public
-        { Public declarations }
         property Snippet: TSnippetDTO read FSnippet write FSnippet;
         property CategoryID: NativeInt read FCategoryID write FCategoryID;
         property UserID: NativeInt read FUserID write FUserID;
+
+        // Конструктор теперь требует ОБА сервиса
+        constructor CreateWithService(AOwner: TComponent; ASnippetService: TSnippetService; ATagService: TTagService);
     end;
 
 var
@@ -124,6 +126,13 @@ uses
 
 {$R *.dfm}
 
+constructor TAddEditSnippet.CreateWithService(AOwner: TComponent; ASnippetService: TSnippetService; ATagService: TTagService);
+begin
+    inherited Create(AOwner);
+    FSnippetService := ASnippetService;
+    FTagService := ATagService;
+end;
+
 procedure TAddEditSnippet.FormDestroy(Sender: TObject);
 begin
     if Assigned(FCurrentHighlighter) then
@@ -131,40 +140,6 @@ begin
 
     if Assigned(FCompletionEngine) then
         FCompletionEngine.Free;
-end;
-
-//Если в методе добавления категории ты делаешь что-то вроде Query.ParamByName('parent_id').AsInteger := ParentID;
-//и передаешь туда 0 для корневой категории, ты получишь ту же самую ошибку FOREIGN KEY constraint failed.
-//В коде сохранения новой категории тебе нужно использовать ту же логику:
-//
-//if Category.ParentID = 0 then
-//    Query.ParamByName('parent_id').Clear // Записываем NULL
-//else
-//    Query.ParamByName('parent_id').AsInteger := Category.ParentID;
-
-procedure TAddEditSnippet.InitBashAutocomplete;
-begin
-    SynCompletionProposal.ItemList.Clear;
-
-    // Добавляем ключевые слова Bash
-    SynCompletionProposal.ItemList.Add('echo');
-    SynCompletionProposal.ItemList.Add('export');
-    SynCompletionProposal.ItemList.Add('grep');
-    SynCompletionProposal.ItemList.Add('awk');
-    SynCompletionProposal.ItemList.Add('sed');
-
-    // Добавляем DevOps-инструментарий
-    SynCompletionProposal.ItemList.Add('docker run');
-    SynCompletionProposal.ItemList.Add('docker-compose');
-    SynCompletionProposal.ItemList.Add('kubectl get pods');
-    SynCompletionProposal.ItemList.Add('systemctl restart');
-
-
-
-    // Настройка компонента
-    SynCompletionProposal.Options := SynCompletionProposal.Options + [scoUseInsertList];
-    // Включаем автовызов при печати
-    SynCompletionProposal.Options := SynCompletionProposal.Options + [scoUseBuiltInTimer];
 end;
 
 function TAddEditSnippet.IsAutocompleteVisible: Boolean;
@@ -181,7 +156,10 @@ begin
     for I := 0 to lvSelectedTags.Items.Count - 1 do
         TagsStr := TagsStr + ';' + lvSelectedTags.Items[I].Caption;
 
-    Result := (ebTitle.Text <> FOriginalSnippet.Title) or (mSnippet.Text <> FOriginalSnippet.Content) or (mComment.Text <> FOriginalSnippet.Comment) or (TagsStr <> FOriginalSnippet.Tags);
+    Result := (ebTitle.Text <> FOriginalSnippet.Title) or
+              (mSnippet.Text <> FOriginalSnippet.Content) or
+              (mComment.Text <> FOriginalSnippet.Comment) or
+              (TagsStr <> FOriginalSnippet.Tags);
 end;
 
 procedure TAddEditSnippet.bCancelClick(Sender: TObject);
@@ -221,8 +199,6 @@ begin
     end;
 
     UnixText := StringReplace(mSnippet.Text, #13#10, #10, [rfReplaceAll]);
-    // Обязательно сохраняем в UTF-8 без BOM, как любит Linux
-//    TFile.WriteAllText(FileName, UnixText, TEncoding.UTF8);
 
     Snippet := Default(TSnippetDTO);
     Snippet.UserID := FUserID;
@@ -238,10 +214,10 @@ begin
             Snippet.CreatedAt := FSnippet.CreatedAt;
             Snippet.UpdatedAt := DateTimeToUnix(Now);
 
-            DataModuleCommon.SnippetRepository.Update(Snippet);
-            if Length(TagArr) > 0 then
-                DataModuleCommon.SnippetRepository.UpdateTags(FSnippet.ID, TagArr);
-
+            // ИСПРАВЛЕНИЕ: Передаем TagArr вместо пустых скобок []
+            // ПРИМЕЧАНИЕ: Убедись, что в TSnippetService есть метод UpdateSnippet.
+            // Если его еще нет, пока можно использовать CreateSnippet или добавить UpdateSnippet.
+            FSnippetService.UpdateSnippet(Snippet, TagArr);
             ModalResult := mrOk;
         end
         else
@@ -249,7 +225,8 @@ begin
             Snippet.CreatedAt := DateTimeToUnix(Now);
             Snippet.UpdatedAt := 0;
 
-            DataModuleCommon.SnippetRepository.Add(Snippet, TagArr);
+            // ИСПРАВЛЕНИЕ: Передаем TagArr вместо пустых скобок []
+            FSnippetService.CreateSnippet(Snippet, TagArr);
             ModalResult := mrOk;
         end;
     except
@@ -284,19 +261,26 @@ begin
   lvSelectedTags.StateImages := MainFormUI.MainForm.vilTags;
   lvAllTags.StateImages := MainFormUI.MainForm.vilTags;
 
-  // Настройка компонента автодополнения (списки теперь чистые, они заполняются на лету)
   SynCompletionProposal.Options := SynCompletionProposal.Options + [scoUseInsertList];
 end;
 
 procedure TAddEditSnippet.FormShow(Sender: TObject);
 var
     i: Integer;
-    TagIDs: TArray<TTagDTO>;
+    SnippetTags: TArray<TTagDTO>;
+    AllTags: TArray<TTagDTO>;
     Tag: TTagDTO;
 begin
+    // 1. ИСПРАВЛЕНИЕ: Сначала загружаем ВСЕ теги в левый список через Сервис
+    if Assigned(FTagService) then
+    begin
+        AllTags := FTagService.GetAllTags;
+        TUIHelpers.FillTagList(lvAllTags, AllTags);
+    end;
+    lvSelectedTags.Items.Clear;
+
     if FSnippet.ID > 0 then
     begin
-        // Режим редактирования
         FIsEditMode := True;
         Caption := 'Редактирование сниппета';
 
@@ -309,30 +293,32 @@ begin
         mSnippet.Text := FSnippet.Content;
         mComment.Text := FSnippet.Comment;
 
-        // Загружаем и отмечаем теги сниппета
-        TagIDs := DataModuleCommon.SnippetRepository.GetSnippetTags(FSnippet.ID);
-        for Tag in TagIDs do
+        // 2. ИСПРАВЛЕНИЕ: Загружаем теги текущего сниппета через Сервис
+        if Assigned(FTagService) then
         begin
-            // Ищем тег в lvAllTags и добавляем в lvSelectedTags
-            for i := 0 to lvAllTags.Items.Count - 1 do
+            SnippetTags := FTagService.GetSnippetTags(FSnippet.ID);
+            for Tag in SnippetTags do
             begin
-                if Integer(lvAllTags.Items[i].Data) = Tag.ID then
+                // Ищем тег в lvAllTags и переносим в lvSelectedTags
+                for i := lvAllTags.Items.Count - 1 downto 0 do
                 begin
-                    // Добавляем в список выбранных
-                    var Item := lvSelectedTags.Items.Add;
-                    Item.Caption := Tag.Name;
-                    Item.Data := Pointer(NativeUInt(Tag.ID));
-                    Item.StateIndex := 0;
-                    lvAllTags.Items.Delete(i);
-                    FOriginalSnippet.Tags := FOriginalSnippet.Tags + ';' + Tag.Name;
-                    Break;
+                    if Integer(lvAllTags.Items[i].Data) = Tag.ID then
+                    begin
+                        var Item := lvSelectedTags.Items.Add;
+                        Item.Caption := Tag.Name;
+                        Item.Data := Pointer(NativeUInt(Tag.ID));
+                        Item.StateIndex := 0;
+                        lvAllTags.Items.Delete(i); // Удаляем из общего списка
+
+                        FOriginalSnippet.Tags := FOriginalSnippet.Tags + ';' + Tag.Name;
+                        Break;
+                    end;
                 end;
             end;
         end;
     end
     else
     begin
-        // Режим добавления
         FIsEditMode := False;
         Caption := 'Добавление сниппета';
         FOriginalSnippet.Title := '';
@@ -353,18 +339,14 @@ procedure TAddEditSnippet.Loaded;
 begin
   inherited;
 
-  // 1. СОЗДАЕМ движок ПЕРЕД тем, как настраивать синтаксис
   FBasicCommands := Settings.BashAutocomplete;
   FCompletionEngine := TBashCompletionEngine.Create(FBasicCommands);
 
-  // 2. Загружаем файл
   FCompletionEngine.LoadFromJsonFile(ExtractFilePath(Application.ExeName) + 'extra-commands.json');
 
-  // 3. Безопасно применяем цвета до появления формы на экране
   TSynThemeAdapter.ApplyTheme(mSnippet);
   TSynThemeAdapter.ApplyTheme(mComment);
 
-  // 4. Теперь SetSyntax отработает без ошибок
   SetSyntax;
 end;
 
@@ -407,12 +389,10 @@ begin
     SrcLV := Source as TListView;
     DstLV := Sender as TListView;
 
-    if SrcLV = DstLV then
-        Exit;
+    if SrcLV = DstLV then Exit;
 
     ItemsToMove := TList<TListItem>.Create;
     try
-        // Собираем все выделенные элементы (поддерживается множественный выбор!)
         for i := 0 to SrcLV.Items.Count - 1 do
             if SrcLV.Items[i].Selected then
                 ItemsToMove.Add(SrcLV.Items[i]);
@@ -420,7 +400,6 @@ begin
         SrcLV.Items.BeginUpdate;
         DstLV.Items.BeginUpdate;
         try
-            // Копируем в целевой список
             for Item in ItemsToMove do
             begin
                 NewItem := DstLV.Items.Add;
@@ -429,7 +408,6 @@ begin
                 NewItem.StateIndex := Item.StateIndex;
             end;
 
-            // Удаляем из исходного списка (идём с конца, чтобы индексы не поехали)
             for i := ItemsToMove.Count - 1 downto 0 do
                 ItemsToMove[i].Delete;
         finally
@@ -443,12 +421,8 @@ end;
 
 procedure TAddEditSnippet.lvAllTagsDragOver(Sender, Source: TObject; X, Y: Integer; State: TDragState; var Accept: Boolean);
 begin
-    // Принимаем перетаскивание только из наших списков тегов
     Accept := (Source = lvAllTags) or (Source = lvSelectedTags);
-
-    // Запрещаем дропать в тот же самый список
-    if Sender = Source then
-        Accept := False;
+    if Sender = Source then Accept := False;
 end;
 
 procedure TAddEditSnippet.lvAllTagsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -462,14 +436,12 @@ begin
         Item := LV.GetItemAt(X, Y);
         if Assigned(Item) then
         begin
-            // Если клик по невыделенному элементу без Ctrl - сбрасываем остальное выделение
             if not Item.Selected then
             begin
                 if not (ssCtrl in Shift) then
                     LV.ClearSelection;
                 Item.Selected := True;
             end;
-            // Начинаем перетаскивание (порог 5 пикселей)
             LV.BeginDrag(False, 5);
         end;
     end;
@@ -496,7 +468,6 @@ begin
         Exit;
     end;
 
-  // Использование хелпера делает этот код максимально понятным
     if IsAutocompleteVisible then
     begin
         if (Command = ecUp) or (Command = ecDown) or (Command = ecPageUp) or (Command = ecPageDown) then
@@ -514,12 +485,9 @@ begin
 
     FCurrentHighlighter := TCustomBashSyn.Create(nil);
 
-  // 1. ИСПОЛЬЗУЕМ AddStrings вместо Assign!
-  // Это сохранит сортировку и бинарный поиск нашего кастомного класса.
     if Assigned(FBasicCommands) then
         TCustomBashSyn(FCurrentHighlighter).ExtraKeywords.AddStrings(FBasicCommands);
 
-  // 2. Загружаем слова из движка
     FCompletionEngine.ExportKeywords(TCustomBashSyn(FCurrentHighlighter).ExtraKeywords);
 
     mSnippet.Highlighter := FCurrentHighlighter;
@@ -530,23 +498,17 @@ procedure TAddEditSnippet.SynCompletionProposalExecute(Kind: SynCompletionType; 
 var
     LineText: string;
 begin
-    // Берем текст от начала строки до курсора
     LineText := Copy(mSnippet.LineText, 1, mSnippet.CaretX - 1);
-
-    // Всю грязную работу по анализу контекста и заполнению списков теперь делает движок
     FCompletionEngine.FillProposals(LineText, SynCompletionProposal.ItemList, SynCompletionProposal.InsertList, CanExecute);
 end;
 
 procedure TAddEditSnippet.tmrReloadCommandsTimer(Sender: TObject);
 begin
-    // Если движок обнаружил изменения на диске и пересобрал дерево
     if FCompletionEngine.CheckForUpdates then
     begin
-        // Вызываем пересборку хайлайтера, чтобы новые слова сразу подсвечивались
         ShowSimpleToast('Новая конфигурация', 'Файл автозаполнения обновлён. Содержимое будет перезагружено.');
         SetSyntax;
     end;
 end;
 
 end.
-

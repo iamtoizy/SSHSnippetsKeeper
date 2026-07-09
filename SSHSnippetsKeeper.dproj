@@ -198,8 +198,12 @@
         <DCCReference Include="UI\Controls\SynThemeAdapter.pas"/>
         <DCCReference Include="UI\Controls\CustomBashSyn.pas"/>
         <DCCReference Include="Core\BashCompletionEngine.pas"/>
-        <DCCReference Include="Common\CommonHelpers.pas"/>
         <DCCReference Include="Common\CommonConsts.pas"/>
+        <DCCReference Include="Common\CommonHelpers.pas"/>
+        <DCCReference Include="Core\Services\SnippetService.pas"/>
+        <DCCReference Include="Core\Services\TagService.pas"/>
+        <DCCReference Include="Core\Services\CategoryService.pas"/>
+        <DCCReference Include="Core\Services\UserService.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

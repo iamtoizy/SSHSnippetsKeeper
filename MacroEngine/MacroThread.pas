@@ -15,10 +15,13 @@ type
     private
         FActions: TArray<IScriptAction>;
         FContext: TMacroContext;
+        // Добавляем поле для коллбэка
+        FOnRecordRun: TProc<NativeInt, NativeInt>;
     protected
         procedure Execute; override;
     public
-        constructor Create(const Actions: TArray<IScriptAction>; AContext: TMacroContext);
+        // Внедряем коллбэк через конструктор (по умолчанию nil, чтобы не ломать старый код, если где-то он вызывается без него)
+        constructor Create(const Actions: TArray<IScriptAction>; AContext: TMacroContext; AOnRecordRun: TProc<NativeInt, NativeInt> = nil);
         procedure Cancel;
     end;
 
@@ -26,14 +29,14 @@ implementation
 
 uses
     Winapi.Windows,
-    DataModule,
     System.StrUtils
     ;
 
-constructor TMacroThread.Create(const Actions: TArray<IScriptAction>; AContext: TMacroContext);
+constructor TMacroThread.Create(const Actions: TArray<IScriptAction>; AContext: TMacroContext; AOnRecordRun: TProc<NativeInt, NativeInt> = nil);
 begin
     FActions := Actions;
     FContext := AContext;
+    FOnRecordRun := AOnRecordRun; // Сохраняем коллбэк
 
     inherited Create(False);
 
@@ -69,24 +72,6 @@ begin
 
             A.Execute;
         end;
-{    finally
-        // Записываем статистику ТОЛЬКО если макрос завершился успешно
-        if CompletedSuccessfully and Assigned(FContext) and (FContext.SnippetID > 0) then
-        begin
-            try
-                DataModuleCommon.SnippetRepository.RecordRun(
-                    FContext.SnippetID,
-                    FContext.UserID
-                );
-            except
-                on E: Exception do
-                    OutputDebugString(PChar('[MacroThread] Failed to record run: ' + E.Message));
-            end;
-        end;
-
-        if Assigned(FContext) then
-            FreeAndNil(FContext);
-    end;     }
     finally
         if CompletedSuccessfully and Assigned(FContext) and (FContext.SnippetID > 0) then
         begin
@@ -97,7 +82,9 @@ begin
                 procedure
                 begin
                     try
-                        DataModuleCommon.SnippetRepository.RecordRun(LSnippetID, LUserID);
+                        // Вместо жесткой привязки к БД, мы просто вызываем переданный коллбэк!
+                        if Assigned(FOnRecordRun) then
+                            FOnRecordRun(LSnippetID, LUserID);
                     except
                         on E: Exception do
                             OutputDebugString(PChar('[MacroThread] Sync failed: ' + E.Message));

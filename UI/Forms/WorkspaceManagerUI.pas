@@ -4,7 +4,9 @@ interface
 
 uses
     Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-    Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ComCtrls, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Menus;
+    Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ComCtrls, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Menus,
+    User,
+    UserService; // <-- Подключаем сервис бизнес-логики
 
 type
     TWorkspaceManagerForm = class(TForm)
@@ -30,12 +32,16 @@ type
         procedure nDeleteClick(Sender: TObject);
         procedure nRenameClick(Sender: TObject);
     private
+        FUserService: TUserService; // <-- Храним ссылку на сервис
+
+        procedure RefreshWorkspaces; // <-- Вынесли логику загрузки сюда
         procedure DoAddWorkspace;
         procedure DoDeleteWorkspace;
         procedure DoRenameWorkspace;
         procedure AdjustColumnWidth;
     public
-        { Public declarations }
+        // Внедрение зависимости
+        constructor CreateWithService(AOwner: TComponent; AUserService: TUserService);
     end;
 
 var
@@ -45,20 +51,30 @@ implementation
 
 {$R *.dfm}
 
-uses
-    DataModule, User;
+constructor TWorkspaceManagerForm.CreateWithService(AOwner: TComponent; AUserService: TUserService);
+begin
+    inherited Create(AOwner);
+    FUserService := AUserService;
+
+    // Безопасно загружаем данные после того, как сервис инициализирован
+    RefreshWorkspaces;
+end;
 
 procedure TWorkspaceManagerForm.FormCreate(Sender: TObject);
+begin
+    lvWorkspaces.OwnerData := False;
+    lvWorkspaces.ReadOnly := False; // Разрешаем редактирование
+end;
+
+procedure TWorkspaceManagerForm.RefreshWorkspaces;
 var
     Users: TArray<TUserDTO>;
     User: TUserDTO;
     Item: TListItem;
 begin
-    lvWorkspaces.OwnerData := False;
-    lvWorkspaces.ReadOnly := False; // Разрешаем редактирование
+    if not Assigned(FUserService) then Exit;
 
-    // Загружаем пространства
-    Users := DataModuleCommon.UserRepository.GetAll;
+    Users := FUserService.GetAllUsers;
     lvWorkspaces.Items.BeginUpdate;
     try
         lvWorkspaces.Items.Clear;
@@ -78,6 +94,7 @@ var
     NewName: string;
     UserDTO: TUserDTO;
     Item: TListItem;
+    NewID: NativeInt;
 begin
     if not InputQuery('Новое пространство', 'Введите имя:', NewName) then
         Exit;
@@ -87,13 +104,15 @@ begin
         Exit;
 
     try
-        UserDTO.ID := 0;
+        UserDTO := Default(TUserDTO);
         UserDTO.Name := NewName;
-        DataModuleCommon.UserRepository.Add(UserDTO);
+
+        // Получаем ID новой записи из сервиса (а не пытаемся прочитать UserDTO.ID)
+        NewID := FUserService.AddUser(UserDTO);
 
         Item := lvWorkspaces.Items.Add;
         Item.Caption := NewName;
-        Item.Data := Pointer(NativeInt(UserDTO.ID));
+        Item.Data := Pointer(NewID);
         Item.Selected := True;
         Item.MakeVisible(False);
     except
@@ -114,13 +133,6 @@ begin
     UserID := NativeInt(Item.Data);
     UserName := Item.Caption;
 
-    // Защита: нельзя удалить пространство с ID=1 (Local User)
-    if UserID = 1 then
-    begin
-        ShowMessage('Это пространство нельзя удалить (системное).');
-        Exit;
-    end;
-
     if MessageBox(Application.Handle,
         PChar(Format('Удалить пространство "%s"?' + sLineBreak +
                      'Все вложенные сниппеты этого пространства будут удалены!', [UserName])),
@@ -128,7 +140,8 @@ begin
         Exit;
 
     try
-        DataModuleCommon.UserRepository.Delete(UserID);
+        // Бизнес-проверка "ID=1" теперь выполняется внутри сервиса!
+        FUserService.DeleteUser(UserID);
         Item.Delete;
     except
         on E: Exception do
@@ -185,9 +198,11 @@ begin
     UserID := NativeInt(Item.Data);
 
     try
+        UserDTO := Default(TUserDTO);
         UserDTO.ID := UserID;
         UserDTO.Name := S;
-        DataModuleCommon.UserRepository.Update(UserDTO);
+
+        FUserService.UpdateUser(UserDTO);
     except
         on E: Exception do
         begin
@@ -233,8 +248,8 @@ end;
 
 procedure TWorkspaceManagerForm.lvWorkspacesResize(Sender: TObject);
 begin
-	ShowScrollBar(lvWorkspaces.Handle, SB_HORZ, False);
-	lvWorkspaces.Columns[0].Width := lvWorkspaces.ClientWidth - 30
+    ShowScrollBar(lvWorkspaces.Handle, SB_HORZ, False);
+    lvWorkspaces.Columns[0].Width := lvWorkspaces.ClientWidth - 30
 end;
 
 procedure TWorkspaceManagerForm.nAddClick(Sender: TObject);

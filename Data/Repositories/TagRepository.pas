@@ -3,76 +3,61 @@ unit TagRepository;
 interface
 
 uses
-    System.SysUtils, System.Generics.Collections, FireDAC.Comp.Client, Tag,
-    System.Variants;
+    System.SysUtils, System.Generics.Collections, Tag, System.Variants,
+    RepositoryBase;
 
 type
-    TTagRepository = class
+    TTagRepository = class(TRepositoryBase)
     private
-        FConnection: TFDConnection;
-
         function InternalLoadTags(const SQL: string; const Params: array of Variant): TArray<TTagDTO>;
-
     public
-        constructor Create(Connection: TFDConnection);
-
-        function Add(const ATag: TTagDTO): Integer;
+        function Add(const ATag: TTagDTO): NativeInt;
         procedure Update(const ATag: TTagDTO);
-        procedure Delete(ID: Integer);
+        procedure Delete(ID: NativeInt);
 
-        function GetByID(ID: Integer): TArray<TTagDTO>;
+        function GetByID(ID: NativeInt): TTagDTO;
         function GetByName(const Name: string): TArray<TTagDTO>;
         function GetAll: TArray<TTagDTO>;
 
-        function GetSnippetTags(SnippetID: Integer): TArray<TTagDTO>;
-
-        procedure SetSnippetTags(SnippetID: Integer; const Tags: TArray<TTagDTO>);
+        function GetSnippetTags(SnippetID: NativeInt): TArray<TTagDTO>;
         procedure DeleteUnusedTags;
-        procedure AddTagToSnippet(SnippetID: Integer; const TagName: string);
+
+        function GetOrCreateTag(const TagName: string): NativeInt;
+        procedure LinkTagToSnippet(SnippetID, TagID: NativeInt);
+        procedure UnlinkTagFromSnippet(SnippetID, TagID: NativeInt);
+        procedure ClearTagsForSnippet(SnippetID: NativeInt);
+
+        // НОВЫЙ МЕТОД: Пакетная вставка тегов (Array DML)
+        procedure LinkTagsToSnippetBatch(SnippetID: NativeInt; const TagIDs: TArray<NativeInt>);
+        function ExistsByName(const AName: string): Boolean;
     end;
 
 implementation
 
 uses
-    FireDAC.Stan.Param,
-    System.Classes
-    ;
-
-constructor TTagRepository.Create(Connection: TFDConnection);
-begin
-    inherited Create;
-    FConnection := Connection;
-end;
+    FireDAC.Stan.Param, FireDAC.Comp.Client, System.Classes;
 
 function TTagRepository.InternalLoadTags(const SQL: string; const Params: array of Variant): TArray<TTagDTO>;
 var
     Query: TFDQuery;
     List: TList<TTagDTO>;
     Tag: TTagDTO;
-    i: Integer;
 begin
-    if not FConnection.Connected then
-        Exit(Result);
+    Result := [];
+    if not FConnection.Connected then Exit;
 
-    Query := TFDQuery.Create(nil);
     List := TList<TTagDTO>.Create;
-
+    Query := CreateQuery;
     try
-        Query.Connection := FConnection;
         Query.SQL.Text := SQL;
-
-        for i := 0 to High(Params) do
-            Query.Params[i].Value := Params[i];
-
+        SetQueryParams(Query, Params);
         Query.Open;
 
         while not Query.Eof do
         begin
             Tag.ID := Query.FieldByName('id').AsInteger;
             Tag.Name := Query.FieldByName('name').AsString;
-
             List.Add(Tag);
-
             Query.Next;
         end;
 
@@ -88,134 +73,121 @@ begin
     Result := InternalLoadTags('SELECT id, name FROM tags ORDER BY name', []);
 end;
 
-function TTagRepository.GetByID(ID: Integer): TArray<TTagDTO>;
+function TTagRepository.GetByID(ID: NativeInt): TTagDTO;
 var
     Arr: TArray<TTagDTO>;
 begin
+    Result := Default(TTagDTO);
     Arr := InternalLoadTags('SELECT id, name FROM tags WHERE id = ?', [ID]);
 
     if Length(Arr) > 0 then
-        Exit(Arr);
+        Result := Arr[0];
 end;
 
 function TTagRepository.GetByName(const Name: string): TArray<TTagDTO>;
 begin
-    Result := InternalLoadTags('SELECT id, name ' + 'FROM tags ' + 'WHERE name LIKE ? ' + 'ORDER BY name', ['%' + Name + '%']);
+    Result := InternalLoadTags('SELECT id, name FROM tags WHERE name LIKE ? ORDER BY name', ['%' + Name + '%']);
 end;
 
-function TTagRepository.Add(const ATag: TTagDTO): Integer;
-var
-    NewID: Variant;
+function TTagRepository.Add(const ATag: TTagDTO): NativeInt;
 begin
-    FConnection.ExecSQL('INSERT INTO tags(name) VALUES(?)', [ATag.Name]);
-
-    NewID := FConnection.ExecSQLScalar('SELECT last_insert_rowid()');
-
-    Result := Integer(NewID);
+    ExecuteSQL('INSERT INTO tags(name) VALUES(?)', [ATag.Name]);
+    Result := ExecuteSQLScalar('SELECT last_insert_rowid()', []);
 end;
 
 procedure TTagRepository.Update(const ATag: TTagDTO);
 begin
-    FConnection.ExecSQL('UPDATE tags SET name = ? WHERE id = ?', [ATag.Name, ATag.ID]);
+    ExecuteSQL('UPDATE tags SET name = ? WHERE id = ?', [ATag.Name, ATag.ID]);
 end;
 
-procedure TTagRepository.Delete(ID: Integer);
+procedure TTagRepository.Delete(ID: NativeInt);
 begin
-    FConnection.ExecSQL('DELETE FROM tags WHERE id = ?', [ID]);
+    ExecuteSQL('DELETE FROM tags WHERE id = ?', [ID]);
 end;
 
-function TTagRepository.GetSnippetTags(SnippetID: Integer): TArray<TTagDTO>;
+function TTagRepository.GetSnippetTags(SnippetID: NativeInt): TArray<TTagDTO>;
 begin
-    Result := InternalLoadTags('SELECT t.id, t.name ' + 'FROM tags t ' + 'JOIN snippet_tags st ' + 'ON st.tag_id = t.id ' + 'WHERE st.snippet_id = ? ' + 'ORDER BY t.name', [SnippetID]);
-end;
-
-procedure TTagRepository.SetSnippetTags(SnippetID: Integer; const Tags: TArray<TTagDTO>);
-var
-    Existing: TArray<TTagDTO>;
-    ExistingNames: TDictionary<string, Integer>;
-    NewNames: TDictionary<string, Byte>;
-    Tag: TTagDTO;
-begin
-    Existing := GetSnippetTags(SnippetID);
-
-    ExistingNames := TDictionary<string, Integer>.Create;
-
-    NewNames := TDictionary<string, Byte>.Create;
-
-    FConnection.StartTransaction;
-
-    try
-        try
-            for Tag in Existing do
-                ExistingNames.AddOrSetValue(LowerCase(Tag.Name), Tag.ID);
-
-            for Tag in Tags do
-                NewNames.AddOrSetValue(LowerCase(Tag.Name), 0);
-
-                //
-            // удалить только отсутствующие
-            //
-
-            for Tag in Existing do
-                if not NewNames.ContainsKey(LowerCase(Tag.Name)) then
-                begin
-                    FConnection.ExecSQL('DELETE FROM snippet_tags ' + 'WHERE snippet_id = ? ' + 'AND tag_id = ?', [SnippetID, Tag.ID]);
-                end;
-
-            //
-            // добавить только новые
-            //
-
-            for Tag in Tags do
-                if not ExistingNames.ContainsKey(LowerCase(Tag.Name)) then
-                    AddTagToSnippet(SnippetID, Tag.Name);
-
-            FConnection.Commit; // <-- Все FTS триггеры сработают разом и быстро
-        except
-            FConnection.Rollback; // <-- Откат при любой ошибке
-            raise;
-        end;
-    finally
-        ExistingNames.Free;
-        NewNames.Free;
-    end;
+    Result := InternalLoadTags(
+        'SELECT t.id, t.name FROM tags t ' +
+        'JOIN snippet_tags st ON st.tag_id = t.id ' +
+        'WHERE st.snippet_id = ? ORDER BY t.name', [SnippetID]);
 end;
 
 procedure TTagRepository.DeleteUnusedTags;
 begin
-    FConnection.ExecSQL('DELETE FROM tags WHERE NOT EXISTS (  SELECT 1 ' + 'FROM snippet_tags st WHERE st.tag_id = tags.id)');
+    ExecuteSQL('DELETE FROM tags WHERE NOT EXISTS (SELECT 1 FROM snippet_tags st WHERE st.tag_id = tags.id)', []);
 end;
 
-procedure TTagRepository.AddTagToSnippet(SnippetID: Integer; const TagName: string);
+function TTagRepository.GetOrCreateTag(const TagName: string): NativeInt;
 var
     TagID: Variant;
     CleanName: string;
 begin
-    // 1. Защита от пустых тегов и лишних пробелов
     CleanName := Trim(TagName);
-    if CleanName = '' then
-        Exit;
+    if CleanName = '' then Exit(0);
 
-    // 2. Ищем ID существующего тега.
-    // Благодаря COLLATE NOCASE в схеме БД, SQLite сам сравнит строки без учета регистра.
-    TagID := FConnection.ExecSQLScalar('SELECT id FROM tags WHERE name = ?', [CleanName]);
+    TagID := ExecuteSQLScalar('SELECT id FROM tags WHERE name = ?', [CleanName]);
 
-    // 3. Если тег не найден, создаем его (с защитой от гонок)
     if VarIsNull(TagID) or VarIsEmpty(TagID) then
     begin
-        // ON CONFLICT DO NOTHING защитит от ошибки UNIQUE, если тег был создан
-        // другим потоком ровно между нашим SELECT и INSERT.
-        FConnection.ExecSQL('INSERT INTO tags (name) VALUES (?) ON CONFLICT(name) DO NOTHING', [CleanName]);
-
-        // Запрашиваем ID снова (теперь он 100% существует в базе)
-        TagID := FConnection.ExecSQLScalar('SELECT id FROM tags WHERE name = ?', [CleanName]);
+        ExecuteSQL('INSERT INTO tags (name) VALUES (?) ON CONFLICT(name) DO NOTHING', [CleanName]);
+        TagID := ExecuteSQLScalar('SELECT id FROM tags WHERE name = ?', [CleanName]);
     end;
 
-    // 4. Связываем сниппет и тег.
-    // INSERT OR IGNORE предотвратит падение с ошибкой PRIMARY KEY,
-    // если этот тег уже привязан к данному сниппету.
-    FConnection.ExecSQL('INSERT OR IGNORE INTO snippet_tags (snippet_id, tag_id) VALUES (?, ?)', [SnippetID, Integer(TagID)]);
+    Result := TagID;
+end;
+
+procedure TTagRepository.LinkTagToSnippet(SnippetID, TagID: NativeInt);
+begin
+    ExecuteSQL('INSERT OR IGNORE INTO snippet_tags (snippet_id, tag_id) VALUES (?, ?)', [SnippetID, TagID]);
+end;
+
+procedure TTagRepository.UnlinkTagFromSnippet(SnippetID, TagID: NativeInt);
+begin
+    ExecuteSQL('DELETE FROM snippet_tags WHERE snippet_id = ? AND tag_id = ?', [SnippetID, TagID]);
+end;
+
+procedure TTagRepository.ClearTagsForSnippet(SnippetID: NativeInt);
+begin
+    ExecuteSQL('DELETE FROM snippet_tags WHERE snippet_id = ?', [SnippetID]);
+end;
+
+// РЕАЛИЗАЦИЯ ПАКЕТНОЙ ВСТАВКИ (Array DML)
+procedure TTagRepository.LinkTagsToSnippetBatch(SnippetID: NativeInt; const TagIDs: TArray<NativeInt>);
+var
+    Q: TFDQuery;
+    I: Integer;
+begin
+    if Length(TagIDs) = 0 then Exit;
+
+    Q := CreateQuery;
+    try
+        Q.SQL.Text := 'INSERT OR IGNORE INTO snippet_tags (snippet_id, tag_id) VALUES (:snip_id, :tag_id)';
+
+        // 1. Говорим FireDAC размер пакета
+        Q.Params.ArraySize := Length(TagIDs);
+
+        // 2. Заполняем массивы параметров
+        for I := 0 to High(TagIDs) do
+        begin
+            Q.ParamByName('snip_id').AsIntegers[I] := SnippetID;
+            Q.ParamByName('tag_id').AsIntegers[I] := TagIDs[I];
+        end;
+
+        // 3. Выполняем весь пакет одним разом!
+        Q.Execute(Q.Params.ArraySize);
+    finally
+        Q.Free;
+    end;
+end;
+
+function TTagRepository.ExistsByName(const AName: string): Boolean;
+var
+    Count: Variant;
+begin
+    // Используем COLLATE NOCASE, чтобы 'Delphi' и 'delphi' считались одним тегом (если БД это поддерживает)
+    Count := ExecuteSQLScalar('SELECT COUNT(*) FROM tags WHERE name = ? COLLATE NOCASE', [Trim(AName)]);
+    Result := Integer(Count) > 0;
 end;
 
 end.
-

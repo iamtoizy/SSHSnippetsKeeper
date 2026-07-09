@@ -3,6 +3,20 @@ object DataModuleCommon: TDataModuleCommon
   OnDestroy = DataModuleDestroy
   Height = 480
   Width = 640
+  object FDQuery: TFDQuery
+    Left = 264
+    Top = 8
+  end
+  object FDManager: TFDManager
+    WaitCursor = gcrNone
+    FormatOptions.AssignedValues = [fvMapRules, fvStrsTrim]
+    FormatOptions.OwnMapRules = True
+    FormatOptions.MapRules = <>
+    FormatOptions.StrsTrim = False
+    Active = True
+    Left = 336
+    Top = 8
+  end
   object FDConnection: TFDConnection
     Params.Strings = (
       
@@ -15,30 +29,15 @@ object DataModuleCommon: TDataModuleCommon
     Left = 32
     Top = 8
   end
-  object TFDPhysSQLiteDriverLink: TFDPhysSQLiteDriverLink
-    VendorLib = 'libsqlcipher-0.dll'
-    Left = 152
-    Top = 8
-  end
-  object FDQuery: TFDQuery
-    Connection = FDConnection
-    Left = 264
-    Top = 8
-  end
-  object FDManager: TFDManager
-    WaitCursor = gcrDefault
-    FormatOptions.AssignedValues = [fvMapRules, fvStrsTrim]
-    FormatOptions.OwnMapRules = True
-    FormatOptions.MapRules = <>
-    FormatOptions.StrsTrim = False
-    Active = True
-    Left = 336
-    Top = 8
-  end
   object FDGUIxWaitCursor: TFDGUIxWaitCursor
-    Provider = 'Console'
-    ScreenCursor = gcrDefault
-    Left = 432
+    Provider = 'Forms'
+    ScreenCursor = gcrNone
+    Left = 416
+    Top = 8
+  end
+  object FDPhysSQLiteDriverLink: TFDPhysSQLiteDriverLink
+    VendorLib = 'libsqlcipher-0.dll'
+    Left = 144
     Top = 8
   end
 end

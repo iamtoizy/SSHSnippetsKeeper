@@ -3,49 +3,34 @@
 interface
 
 uses
-    Vcl.ComCtrls,
-    System.Masks
-    ;
+    Vcl.ComCtrls, System.Masks, Tag, Category, User, System.Generics.Collections;
 
 type
-    // Статический контейнер вспомогательных методов для наполнения UI-контролов данными.
-    // Используется как namespace: TUIHelpers.MethodName(...)
+    // Статический контейнер вспомогательных методов для отрисовки UI-контролов.
+    // Теперь это "чистые" функции, которые ничего не знают про БД или Сервисы.
     TUIHelpers = record
-    private
-        // Единая реализация наполнения тегами (не видна вне юнита)
-        class procedure InternalFillListView(ListView: TListView; SnippetID: Integer); static;
     public
-        class procedure BuildTagList(ListView: TListView); overload; static;
-        class procedure BuildTagList(ListView: TListView; SnippetID: Integer); overload; static;
-        class procedure BuildCategoryTree(TreeView: TTreeView; FilterUserID: NativeInt; SelectID: Integer = -1); static;
-        class procedure BuildTagListWithSelection(ListView: TListView; SnippetID: Integer); static;
+        // Просто заполняем ListView переданным массивом тегов
+        class procedure FillTagList(ListView: TListView; const Tags: TArray<TTagDTO>); static;
+
+        // Заполняем ListView всеми тегами, помечая выбранные
+        class procedure FillTagListWithSelection(ListView: TListView; const AllTags, SnippetTags: TArray<TTagDTO>); static;
+
+        // Строим дерево категорий на основе готовых массивов категорий и пользователей
+        class procedure BuildCategoryTree(TreeView: TTreeView; const Categories: TArray<TCategoryDTO>;
+                                          const Users: TArray<TUserDTO>; FilterUserID: NativeInt;
+                                          SelectID: Integer = -1); static;
     end;
 
 implementation
 
-uses
-    DataModule,
-    Tag,
-    Category,
-    User,
-    System.Generics.Collections;
+{ TUIHelpers }
 
-const
-    DONT_SELECT_ANY_ITEM = -1;
-
-    { TUIHelpers }
-
-class procedure TUIHelpers.InternalFillListView(ListView: TListView; SnippetID: Integer);
+class procedure TUIHelpers.FillTagList(ListView: TListView; const Tags: TArray<TTagDTO>);
 var
-    Tags: TArray<TTagDTO>;
     Tag: TTagDTO;
     Item: TListItem;
 begin
-    if (SnippetID = DONT_SELECT_ANY_ITEM) then
-        Tags := DataModuleCommon.TagRepository.GetAll
-    else
-        Tags := DataModuleCommon.TagRepository.GetSnippetTags(SnippetID);
-
     ListView.Items.BeginUpdate;
     try
         ListView.Items.Clear;
@@ -54,12 +39,7 @@ begin
         begin
             Item := ListView.Items.Add;
             Item.Caption := Tag.Name;
-
-            // Сохраняем ID тега (не сниппета!) в Data.
-            // Это пригодится, если вы захотите реализовать удаление тега
-            // или поиск других сниппетов по клику на этот тег.
             Item.Data := Pointer(NativeUInt(Tag.ID));
-
             Item.StateIndex := 0;
         end;
     finally
@@ -67,35 +47,17 @@ begin
     end;
 end;
 
-class procedure TUIHelpers.BuildTagList(ListView: TListView);
-begin
-    InternalFillListView(ListView, DONT_SELECT_ANY_ITEM);
-end;
-
-class procedure TUIHelpers.BuildTagList(ListView: TListView; SnippetID: Integer);
-begin
-    InternalFillListView(ListView, SnippetID);
-end;
-
-class procedure TUIHelpers.BuildTagListWithSelection(ListView: TListView; SnippetID: Integer);
+class procedure TUIHelpers.FillTagListWithSelection(ListView: TListView; const AllTags, SnippetTags: TArray<TTagDTO>);
 var
-    AllTags: TArray<TTagDTO>;
-    SnippetTags: TArray<TTagDTO>;
     SnippetTagIDs: TDictionary<Integer, Boolean>;
     Tag: TTagDTO;
     Item: TListItem;
 begin
-    AllTags := DataModuleCommon.TagRepository.GetAll;
-
-    // Строим словарь ID тегов текущего сниппета
+    // Строим словарь ID тегов текущего сниппета для быстрого поиска (O(1))
     SnippetTagIDs := TDictionary<Integer, Boolean>.Create;
     try
-        if SnippetID > 0 then
-        begin
-            SnippetTags := DataModuleCommon.TagRepository.GetSnippetTags(SnippetID);
-            for Tag in SnippetTags do
-                SnippetTagIDs.AddOrSetValue(Tag.ID, True);
-        end;
+        for Tag in SnippetTags do
+            SnippetTagIDs.AddOrSetValue(Tag.ID, True);
 
         ListView.Items.BeginUpdate;
         try
@@ -132,10 +94,12 @@ begin
     end;
 end;
 
-class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; FilterUserID: NativeInt; SelectID: Integer = -1);
-    // Вспомогательная рекурсивная процедура для добавления узлов категорий
-    procedure AddNodesRecursive(ParentNode: TTreeNode; ParentCatID: NativeInt;
-        const CatMap: TDictionary<NativeInt, TList<TCategoryDTO>>);
+class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categories: TArray<TCategoryDTO>;
+                                             const Users: TArray<TUserDTO>; FilterUserID: NativeInt;
+                                             SelectID: Integer = -1);
+
+    // Вспомогательная рекурсивная процедура для добавления узлов
+    procedure AddNodesRecursive(ParentNode: TTreeNode; ParentCatID: NativeInt; const CatMap: TDictionary<NativeInt, TList<TCategoryDTO>>);
     var
         Children: TList<TCategoryDTO>;
         Cat: TCategoryDTO;
@@ -150,43 +114,42 @@ class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; FilterUserID: 
             Node.ImageIndex := 0;
             Node.SelectedIndex := 0;
 
-            // Выделение нужного узла
-            if (SelectID > DONT_SELECT_ANY_ITEM) and (SelectID = Cat.ID) then
+            if (SelectID > -1) and (SelectID = Cat.ID) then
                 Node.Selected := True;
 
-            // Рекурсия для детей
             AddNodesRecursive(Node, Cat.ID, CatMap);
         end;
     end;
 
-    // Процедура для отрисовки дерева одного конкретного пользователя
-    procedure RenderUserCategories(UserID: NativeInt; RootParentNode: TTreeNode);
+    // Внутренняя отрисовка переданного подмножества категорий
+    procedure RenderCategories(RootParentNode: TTreeNode; const LocalCats: TList<TCategoryDTO>);
     var
-        UserCats: TArray<TCategoryDTO>;
         LocalCatMap: TDictionary<NativeInt, TList<TCategoryDTO>>;
         LocalRoots: TList<TCategoryDTO>;
         Cat: TCategoryDTO;
         Node: TTreeNode;
+        List: TList<TCategoryDTO>;
     begin
-        UserCats := DataModuleCommon.CategoryRepository.GetAll(UserID);
-
         LocalCatMap := TDictionary<NativeInt, TList<TCategoryDTO>>.Create;
         LocalRoots := TList<TCategoryDTO>.Create;
         try
-            // Строим локальную карту категорий этого пользователя
-            for Cat in UserCats do
+            // Группируем категории
+            for Cat in LocalCats do
             begin
                 if Cat.ParentID = 0 then
                     LocalRoots.Add(Cat)
                 else
                 begin
-                    if not LocalCatMap.ContainsKey(Cat.ParentID) then
-                        LocalCatMap.Add(Cat.ParentID, TList<TCategoryDTO>.Create);
-                    LocalCatMap[Cat.ParentID].Add(Cat);
+                    if not LocalCatMap.TryGetValue(Cat.ParentID, List) then
+                    begin
+                        List := TList<TCategoryDTO>.Create;
+                        LocalCatMap.Add(Cat.ParentID, List);
+                    end;
+                    List.Add(Cat);
                 end;
             end;
 
-            // Добавляем корневые категории
+            // Добавляем корни и запускаем рекурсию
             for Cat in LocalRoots do
             begin
                 Node := TreeView.Items.AddChild(RootParentNode, Cat.Name);
@@ -194,28 +157,30 @@ class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; FilterUserID: 
                 Node.ImageIndex := 0;
                 Node.SelectedIndex := 0;
 
-                if (SelectID > DONT_SELECT_ANY_ITEM) and (SelectID = Cat.ID) then
+                if (SelectID > -1) and (SelectID = Cat.ID) then
                     Node.Selected := True;
 
                 AddNodesRecursive(Node, Cat.ID, LocalCatMap);
             end;
         finally
-            for var List in LocalCatMap.Values do List.Free;
+            for List in LocalCatMap.Values do List.Free;
             LocalCatMap.Free;
             LocalRoots.Free;
         end;
     end;
 
 var
-    Users: TArray<TUserDTO>;
-    User: TUserDTO;
     Node: TTreeNode;
+    User: TUserDTO;
+    UserCats: TList<TCategoryDTO>;
+    Cat: TCategoryDTO;
 begin
     TreeView.Items.BeginUpdate;
+    UserCats := TList<TCategoryDTO>.Create;
     try
         TreeView.Items.Clear;
 
-        // 1. Виртуальные узлы (всегда сверху)
+        // 1. Виртуальные узлы
         Node := TreeView.Items.AddObjectFirst(nil, 'Часто используемые', TObject(-1));
         Node.ImageIndex := 1;
         Node.SelectedIndex := 1;
@@ -226,34 +191,36 @@ begin
         Node.SelectedIndex := 2;
         if SelectID = -2 then Node.Selected := True;
 
-        // 2. Основная логика в зависимости от фильтра
+        // 2. Группировка
         if FilterUserID = 0 then
         begin
             // === РЕЖИМ "ВСЕ ПРОСТРАНСТВА" ===
-            // Группируем категории по пользователям
-            Users := DataModuleCommon.UserRepository.GetAll;
-
             for User in Users do
             begin
-                // Создаем узел-разделитель для пространства
                 Node := TreeView.Items.Add(nil, User.Name);
-                // Можно сделать жирным шрифтом или с другой иконкой, если нужно
-//                Node.FontStyle := [fsBold];
                 Node.ImageIndex := 3;
                 Node.SelectedIndex := 3;
 
-                // Рендерим категории этого пользователя внутрь узла
-                RenderUserCategories(User.ID, Node);
+                UserCats.Clear;
+                for Cat in Categories do
+                    if Cat.UserID = User.ID then
+                        UserCats.Add(Cat);
+
+                RenderCategories(Node, UserCats);
             end;
         end
         else
         begin
             // === РЕЖИМ КОНКРЕТНОГО ПРОСТРАНСТВА ===
-            // Плоский список категорий выбранного пользователя
-            RenderUserCategories(FilterUserID, nil);
-        end;
+            UserCats.Clear;
+            for Cat in Categories do
+                if Cat.UserID = FilterUserID then
+                    UserCats.Add(Cat);
 
+            RenderCategories(nil, UserCats);
+        end;
     finally
+        UserCats.Free;
         TreeView.Items.EndUpdate;
     end;
 end;
