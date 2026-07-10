@@ -5,8 +5,6 @@ interface
 uses
     System.Classes,
     System.JSON,
-    System.JSON.Serializers,
-    System.JSON.Types,
     System.Generics.Collections,
     ArrayHelper
     ;
@@ -82,7 +80,6 @@ end;
 initialization
 
 //SaveSettingsToJson;
-//messageBox(0, '', '', 0);
     BashAutocomplete := TStringList.Create;
 
 finalization

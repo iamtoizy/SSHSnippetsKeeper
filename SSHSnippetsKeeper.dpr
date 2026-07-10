@@ -2,6 +2,8 @@ program SSHSnippetsKeeper;
 
 // TODO: [Feature] Редактор горячих клавиш
 // TODO: [Feature] Горячая клавиша для повторного ввода сниппета
+// TODO: [Refactor] Добавить интерфейсы для юнит-тестирования
+// TODO: [Feature] Добавить юнит-тесты
 
 {$R '000_schema_init.res' 'Database\Schema\000_schema_init.rc'}
 
@@ -51,7 +53,8 @@ uses
   SnippetService in 'Core\Services\SnippetService.pas',
   TagService in 'Core\Services\TagService.pas',
   CategoryService in 'Core\Services\CategoryService.pas',
-  UserService in 'Core\Services\UserService.pas';
+  UserService in 'Core\Services\UserService.pas',
+  Core.Interfaces in 'Core\Core.Interfaces.pas';
 
 {$R *.res}
 

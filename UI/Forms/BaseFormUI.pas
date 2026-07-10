@@ -8,7 +8,7 @@ uses
     ;
 
 type
-    TBaseFormState = (bfsDBConnected, bfsDBDisconnected);
+    TBaseFormState = (bfsDBConnected, bfsDBDisconnected, bfsDBOpen);
 
     TBaseForm = class(TForm)
         procedure UpdateUI(const State: TBaseFormState); virtual;

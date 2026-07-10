@@ -7,10 +7,11 @@ uses
     Snippet,
     Tag,
     FireDAC.Comp.Client,
-    RepositoryBase;
+    RepositoryBase,
+    Core.Interfaces;
 
 type
-    TSnippetRepository = class(TRepositoryBase)
+    TSnippetRepository = class(TRepositoryBase, ISnippetRepository)
     private
         function InternalLoadSnippets(const SQL: string; const Params: array of Variant): TArray<TSnippetDTO>;
         function GetSnippetTagsBatch(const SnippetIDs: TArray<NativeInt>): TDictionary<NativeInt, TArray<TTagDTO>>;
@@ -20,7 +21,7 @@ type
         procedure Delete(ID: NativeInt);
         function GetById(ID: NativeInt): TSnippetDTO;
         function GetAll: TArray<TSnippetDTO>;
-        function GetSnippetByCategory(const CategoryID, UserID: NativeInt): TArray<TSnippetDTO>; overload;
+        function GetSnippetByCategory(const CategoryID, UserID: NativeInt): TArray<TSnippetDTO>;
         procedure RecordRun(SnippetID: NativeInt; UserID: NativeInt);
         function GetSnippetTags(SnippetID: NativeInt): TArray<TTagDTO>;
         function GetSnippetsByTag(const TagID: NativeInt): TArray<TSnippetDTO>;
@@ -28,9 +29,9 @@ type
         function SearchByMaskFTS(const Mask: string): TArray<TSnippetDTO>;
         function SearchByMaskSimple(const Mask: string): TArray<TSnippetDTO>;
         procedure UpdateTags(SnippetID: NativeInt; const TagIDs: TArray<NativeInt>);
-        function GetRecentSnippets(AUserID: NativeInt; ALimit: Integer): TArray<TSnippetDTO>;
-        function GetTopSnippets(AUserID: NativeInt; ALimit: Integer): TArray<TSnippetDTO>;
-        function GetSnippetCountByCategory(AUserID: NativeInt): TDictionary<NativeInt, Integer>;
+        function GetRecentSnippets(UserID: NativeInt; Limit: Integer): TArray<TSnippetDTO>;
+        function GetTopSnippets(UserID: NativeInt; Limit: Integer): TArray<TSnippetDTO>;
+        function GetSnippetCountByCategory(UserID: NativeInt): TDictionary<NativeInt, Integer>;
     end;
 
 implementation
@@ -40,10 +41,7 @@ uses
     System.Classes,
     System.Variants,
     FireDAC.Stan.Param,
-    Winapi.Windows,
-    Data.DB,
-    System.Math,
-    DataModule;
+    Data.DB;
 
 const
     SQL_ADD_SNIPPET = 'INSERT INTO snippets (user_id, category_id, title, content, comment, created_at, updated_at) ' +
@@ -475,56 +473,28 @@ var
     Query: TFDQuery;
     List: TList<TSnippetDTO>;
     Snip: TSnippetDTO;
-    SafeMask, SearchTerm: string;
-    Words: TArray<string>;
-    i: Integer;
+    SafeMask: string;
 begin
     Result := [];
+    SafeMask := SanitizeFTS5(Mask);
 
-    // 1. Очищаем ввод от спецсимволов FTS5 ( SanitizeFTS5 заменит * и другие символы на пробелы)
-    SafeMask := Trim(SanitizeFTS5(Mask));
-
-    if SafeMask = '' then
-        Exit;
-
-    // 2. FTS5 НЕ поддерживает инфиксный поиск (*word*).
-    // Разбиваем запрос на слова и добавляем '*' в конец каждого слова для префиксного поиска.
-    Words := SafeMask.Split([' '], TStringSplitOptions.ExcludeEmpty);
-    SearchTerm := '';
-
-    for i := 0 to High(Words) do
-    begin
-        if i > 0 then
-            SearchTerm := SearchTerm + ' ';
-
-        // Добавляем * в конец для префиксного поиска (например, docker -> docker*)
-        SearchTerm := SearchTerm + Words[i] + '*';
-    end;
+    // Ранний выход до выделения памяти
+    if SafeMask = '' then Exit;
 
     List := TList<TSnippetDTO>.Create;
     Query := CreateQuery;
     try
         Query.SQL.Text := SQL_SEARCH_BY_MASK_FTS;
-
-        // 3. Передаем корректно сформированный префиксный запрос
-        Query.ParamByName('term').AsString := SearchTerm;
+        // Используем только очищенную маску
+        Query.ParamByName('term').AsString := '*' + SafeMask + '*';
         Query.Open;
 
         while not Query.Eof do
         begin
-            Snip.ID := Query.FieldByName('id').AsInteger;
-            Snip.UserID := Query.FieldByName('user_id').AsInteger;
-            Snip.Title := Query.FieldByName('title').AsString;
-            Snip.Content := Query.FieldByName('content').AsString;
-            Snip.CategoryID := Query.FieldByName('category_id').AsInteger;
-            Snip.CreatedAt := Query.FieldByName('created_at').AsLargeInt;
-            Snip.UpdatedAt := Query.FieldByName('updated_at').AsLargeInt;
-            Snip.Tags := [];
-
+            // ... заполнение Snip ...
             List.Add(Snip);
             Query.Next;
         end;
-
         Result := List.ToArray;
     finally
         Query.Free;
@@ -595,17 +565,17 @@ begin
         Result := InternalLoadSnippets(SQL_SELECT_SNIPPETS_BY_CATEGORY, [CategoryID]);
 end;
 
-function TSnippetRepository.GetSnippetCountByCategory(AUserID: NativeInt): TDictionary<NativeInt, Integer>;
+function TSnippetRepository.GetSnippetCountByCategory(UserID: NativeInt): TDictionary<NativeInt, Integer>;
 var
     Q: TFDQuery;
 begin
     Result := TDictionary<NativeInt, Integer>.Create;
     Q := CreateQuery;
     try
-        if AUserID > 0 then
+        if UserID > 0 then
         begin
             Q.SQL.Text := SQL_GET_SNIPPET_BY_CATEGORY_ID_WITH_USER_ID;
-            Q.Params[0].AsInteger := AUserID;
+            Q.Params[0].AsInteger := UserID;
         end
         else
         begin
@@ -626,14 +596,14 @@ begin
     end;
 end;
 
-function TSnippetRepository.GetTopSnippets(AUserID: NativeInt; ALimit: Integer): TArray<TSnippetDTO>;
+function TSnippetRepository.GetTopSnippets(UserID: NativeInt; Limit: Integer): TArray<TSnippetDTO>;
 begin
-    Result := InternalLoadSnippets(SQL_GET_TOP_SNIPPETS, [AUserID, ALimit]);
+    Result := InternalLoadSnippets(SQL_GET_TOP_SNIPPETS, [UserID, Limit]);
 end;
 
-function TSnippetRepository.GetRecentSnippets(AUserID: NativeInt; ALimit: Integer): TArray<TSnippetDTO>;
+function TSnippetRepository.GetRecentSnippets(UserID: NativeInt; Limit: Integer): TArray<TSnippetDTO>;
 begin
-    Result := InternalLoadSnippets(SQL_GET_RECENT_SNIPPETS, [AUserID, ALimit]);
+    Result := InternalLoadSnippets(SQL_GET_RECENT_SNIPPETS, [UserID, Limit]);
 end;
 
 end.

@@ -8,26 +8,9 @@ uses
     System.Classes,
     FireDAC.Comp.Client,
     FireDAC.Stan.Intf,
-    FireDAC.Stan.Option,
-    FireDAC.Stan.Error,
-    FireDAC.UI.Intf,
-    FireDAC.Phys.Intf,
-    FireDAC.Stan.Def,
-    FireDAC.Stan.Pool,
-    FireDAC.Stan.Async,
-    FireDAC.Phys,
     FireDAC.Phys.SQLite,
-    FireDAC.Phys.SQLiteDef,
-    FireDAC.Stan.ExprFuncs,
-    FireDAC.Phys.SQLiteWrapper.Stat,
-    FireDAC.Stan.Param,
-    FireDAC.DatS,
-    FireDAC.DApt.Intf,
-    FireDAC.DApt,
-    FireDAC.ConsoleUI.Wait,
     FireDAC.Comp.UI,
     Data.DB,
-    FireDAC.Comp.DataSet,
     SnippetRepository,
     CategoryRepository,
     TagRepository,
@@ -36,10 +19,27 @@ uses
     CategoryService,
     TagService,
     UserService,
+    FireDAC.Comp.Script,
+    Core.Interfaces,
+    FireDAC.Stan.Option,
+    FireDAC.Stan.Param,
+    FireDAC.Stan.Error,
+    FireDAC.DatS,
+    FireDAC.Phys.Intf,
+    FireDAC.DApt.Intf,
+    FireDAC.Stan.Async,
+    FireDAC.DApt,
+    FireDAC.UI.Intf,
+    FireDAC.Stan.Def,
+    FireDAC.Phys,
+    FireDAC.Stan.Pool,
+    FireDAC.Phys.SQLiteDef,
+    FireDAC.Stan.ExprFuncs,
     FireDAC.VCLUI.Wait,
+    FireDAC.Phys.SQLiteWrapper.Stat,
     FireDAC.Comp.ScriptCommands,
     FireDAC.Stan.Util,
-    FireDAC.Comp.Script;
+    FireDAC.Comp.DataSet;
 
 type
     TAppDatabase = class(TDataModule)
@@ -52,30 +52,26 @@ type
         procedure DataModuleCreate(Sender: TObject);
         procedure DataModuleDestroy(Sender: TObject);
     private
-        // 1. Репозитории (Data слой)
-        FSnippetRepo: TSnippetRepository;
-        FCategoryRepo: TCategoryRepository;
-        FTagRepo: TTagRepository;
-        FUserRepo: TUserRepository;
-
-        // 2. Сервисы (Слой бизнес-логики)
-        FSnippetService: TSnippetService;
-        FCategoryService: TCategoryService;
-        FTagService: TTagService;
-        FUserService: TUserService;
+        // Сервисы (Слой бизнес-логики)
+        FSnippetService: ISnippetService;
+        FCategoryService: ICategoryService;
+        FTagService: ITagService;
+        FUserService: IUserService;
+        //
         procedure InitializeDatabase(Filename: string);
         procedure ApplyPRAGMA;
         procedure FlushToDisk;
         function LoadSQLFromResource(const ResourceName: string): string;
     public
         procedure CreateDatabase(Filename: string);
+        procedure OpenDatabase(Filename: string);
         procedure CloseDatabase;
 
-        // Отдаем наружу ТОЛЬКО сервисы
-        property SnippetService: TSnippetService read FSnippetService;
-        property CategoryService: TCategoryService read FCategoryService;
-        property TagService: TTagService read FTagService;
-        property UserService: TUserService read FUserService;
+        // Отдаем наружу только сервисы
+        property SnippetService: ISnippetService read FSnippetService;
+        property CategoryService: ICategoryService read FCategoryService;
+        property TagService: ITagService read FTagService;
+        property UserService: IUserService read FUserService;
     end;
 
 var
@@ -83,54 +79,42 @@ var
 
 implementation
 
-uses
-    System.IOUtils,
-    VCL.Forms;
-
-{%CLASSGROUP 'Vcl.Controls.TControl'}
 {$R *.dfm}
 
 procedure TAppDatabase.DataModuleCreate(Sender: TObject);
+var
+    SnippetRepo: ISnippetRepository;
+    CategoryRepo: ICategoryRepository;
+    TagRepo: ITagRepository;
+    UserRepo: IUserRepository;
 begin
-    // 1. Создаем репозитории, передавая им визуальный FDConnection
-    FSnippetRepo := TSnippetRepository.Create(FDConnection);
-    FCategoryRepo := TCategoryRepository.Create(FDConnection);
-    FTagRepo := TTagRepository.Create(FDConnection);
-    FUserRepo := TUserRepository.Create(FDConnection);
+    // Объекты создаются, но присваиваются переменным типа ИНТЕРФЕЙС.
+    // Благодаря этому они удалятся сами при завершении работы приложения.
+    //
+    // 1. Создаем репозитории
+    SnippetRepo := TSnippetRepository.Create(FDConnection);
+    CategoryRepo := TCategoryRepository.Create(FDConnection);
+    TagRepo := TTagRepository.Create(FDConnection);
+    UserRepo := TUserRepository.Create(FDConnection);
 
-    // 2. Создаем Сервисы. Каждый получает только те репозитории, которые ему нужны.
-    FSnippetService := TSnippetService.Create(FSnippetRepo, FCategoryRepo, FTagRepo);
-    FCategoryService := TCategoryService.Create(FCategoryRepo);
-    FTagService := TTagService.Create(FTagRepo);
-    FUserService := TUserService.Create(FUserRepo);
+    // 2. Создаем сервисы и присваиваем их переменным-интерфейсам
+    FSnippetService := TSnippetService.Create(SnippetRepo, CategoryRepo, TagRepo, UserRepo);
+    FCategoryService := TCategoryService.Create(CategoryRepo);
+    FTagService := TTagService.Create(TagRepo);
+    FUserService := TUserService.Create(UserRepo);
 end;
 
 procedure TAppDatabase.DataModuleDestroy(Sender: TObject);
 begin
-    // Освобождаем сервисы
-    FTagService.Free;
-    FCategoryService.Free;
-    FSnippetService.Free;
-
-    // Освобождаем репозитории
-    FUserRepo.Free;
-    FTagRepo.Free;
-    FCategoryRepo.Free;
-    FSnippetRepo.Free;
+//
 end;
 
 procedure TAppDatabase.CreateDatabase(Filename: string);
-var
-    FS: TFileStream;
 begin
-    FDConnection.Close;
-    FDConnection.Connected := False;
-    FDConnection.Params.Values['Database'] := FileName;
-    FDConnection.Connected := True;
     InitializeDatabase(Filename);
 end;
 
-procedure TAppDatabase.InitializeDatabase(Filename: string);
+procedure TAppDatabase.OpenDatabase(Filename: string);
 begin
     CloseDatabase;
 
@@ -139,10 +123,18 @@ begin
     FDConnection.Params.Add('CharacterSet=utf8');
     FDConnection.Connected := True;
 
+    ApplyPRAGMA;
+end;
+
+procedure TAppDatabase.InitializeDatabase(Filename: string);
+begin
+    // Вместо дублирования кода просто вызываем OpenDatabase,
+    // который всё подключит и применит PRAGMA
+    OpenDatabase(Filename);
+
     FDScript.Connection := FDConnection;
     FDScript.SQLScripts.Clear;
 
-    // Добавляем скрипты
     with FDScript.SQLScripts.Add do
         SQL.Text :=
             LoadSQLFromResource('SCHEMA_INIT_SQL') +
@@ -156,7 +148,6 @@ begin
     end;
 
     FDConnection.ExecSQL('INSERT OR IGNORE INTO users (id, name) VALUES (1, ''Local User'');');
-    ApplyPRAGMA;
 end;
 
 function TAppDatabase.LoadSQLFromResource(const ResourceName: string): string;

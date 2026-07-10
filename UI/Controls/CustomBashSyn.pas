@@ -13,7 +13,7 @@ type
     private
         FExtraKeywords: TStringList;
     public
-        constructor Create(AOwner: TComponent); override;
+        constructor Create(Owner: TComponent); override;
         destructor Destroy; override;
         // Этот метод SynEdit вызывает для КАЖДОГО слова, чтобы узнать его цвет
         function GetTokenAttribute: TSynHighlighterAttributes; override;
@@ -26,9 +26,9 @@ implementation
 
 { TCustomBashSyn }
 
-constructor TCustomBashSyn.Create(AOwner: TComponent);
+constructor TCustomBashSyn.Create(Owner: TComponent);
 begin
-    inherited Create(AOwner);
+    inherited Create(Owner);
     FExtraKeywords := TStringList.Create;
 
     // КРИТИЧНО для Linux: команды чувствительны к регистру (Docker != docker)

@@ -3,20 +3,22 @@ unit UITreeViewSearchHelper;
 interface
 
 uses
-    Vcl.ComCtrls, System.Generics.Collections, System.Masks;
+    Vcl.ComCtrls,
+    System.Generics.Collections,
+    System.Masks;
 
 type
     TTreeSearchHelper = class
     private
         FTreeView: TTreeView;
-        FAllNodes: TList<TTreeNode>; // все узлы в порядке обхода
-        FMatchedIndices: TList<Integer>; // индексы в FAllNodes подходящих узлов
+        FAllNodes: TList<TTreeNode>;
+        FMatchedIndices: TList<Integer>;
         FLastMask: string;
         procedure CollectAllNodes(ANode: TTreeNode);
         procedure BuildMatchList(const Mask: string);
         function GetCurrentHighlightIndex: Integer;
     public
-        constructor Create(ATreeView: TTreeView);
+        constructor Create(TreeView: TTreeView);
         destructor Destroy; override;
 
         // Ищет первое совпадение с маской (>=3 симв.). При новой маске сбрасывает и выделяет первый узел.
@@ -32,15 +34,14 @@ type
 implementation
 
 uses
-    System.SysUtils
-    ;
+    System.SysUtils;
 
 { TTreeSearchHelper }
 
-constructor TTreeSearchHelper.Create(ATreeView: TTreeView);
+constructor TTreeSearchHelper.Create(TreeView: TTreeView);
 begin
     inherited Create;
-    FTreeView := ATreeView;
+    FTreeView := TreeView;
     FAllNodes := TList<TTreeNode>.Create;
     FMatchedIndices := TList<Integer>.Create;
 end;
@@ -80,7 +81,7 @@ begin
 
     ProcessedMask := Mask;
 
-    // Если пользователь не использовал спецсимволы маски — ищем как подстроку
+    // Если пользователь не использовал спецсимволы маски - ищем как подстроку
     if (Pos('*', ProcessedMask) = 0) and (Pos('?', ProcessedMask) = 0) then
     begin
         if (ProcessedMask <> '') and (ProcessedMask[1] <> '*') then
@@ -160,7 +161,7 @@ begin
     end
     else
     begin
-        // Маска та же – ничего не делаем (ждём Enter)
+        // Маска та же - ничего не делаем (ждём Enter)
         Result := FMatchedIndices.Count > 0;
     end;
 end;
@@ -186,7 +187,7 @@ begin
         end;
     end;
 
-    // Если не нашли после текущего — зацикливаемся: берём самый первый
+    // Если не нашли после текущего - зацикливаемся: берём самый первый
     if NextIdx = -1 then
         NextIdx := FMatchedIndices[0];
 
@@ -211,3 +212,4 @@ begin
 end;
 
 end.
+

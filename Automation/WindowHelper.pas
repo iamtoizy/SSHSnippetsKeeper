@@ -4,10 +4,8 @@ interface
 
 uses
     Winapi.Windows,
-    Winapi.Messages,
     System.SysUtils,
     MacroEngine,
-    MacroActions,
     MacroThread,
     MacroInputTypes
     ;
@@ -43,7 +41,7 @@ type
         function GetWindowUnderCursor: Boolean;
         procedure TypeTextIntoWindow(const Text: string);
         procedure TypeTextIntoWindowWithContext(const Text: string; Context: TMacroContext);
-        procedure SetTargetWindow(AHandle: HWND);
+        procedure SetTargetWindow(Handle: HWND);
 
         // ITextExecutor
         procedure TypeRawText(const Text: string);
@@ -61,7 +59,6 @@ implementation
 
 uses
     Settings,
-    Vcl.Dialogs,
     System.Classes;
 
 { TWindowHelper }
@@ -85,7 +82,7 @@ begin
 
         if WaitResult = WAIT_OBJECT_0 then
         begin
-            // Поток завершился нормально — FreeOnTerminate уже уничтожил объект
+            // Поток завершился нормально - FreeOnTerminate уже уничтожил объект
             // Просто обнуляем указатель
             FMacroThread := nil;
         end
@@ -93,14 +90,16 @@ begin
         begin
             // Поток НЕ завершился за 2 секунды
             // Принудительно завершаем и уничтожаем
+            {$IFDEF DEBUG}
             OutputDebugString('[WindowHelper] WARNING: Macro thread did not terminate in 2s, forcing cleanup');
+            {$ENDIF}
 
-            // TerminateThread — опасная операция, но в деструкторе это единственный вариант
+            // TerminateThread - опасная операция, но в деструкторе это единственный вариант
             // Поток завис и не реагирует на Cancel
             TerminateThread(FMacroThread.Handle, 1);
 
             // После TerminateThread поток мёртв, но объект TMacroThread ещё жив
-            // (FreeOnTerminate не сработал, потому что поток не "завершился" нормально)
+            // (FreeOnTerminate не сработал, потому что поток не завершился нормально)
             // Уничтожаем объект вручную
             FMacroThread.Free;
             FMacroThread := nil;
@@ -249,11 +248,15 @@ procedure TWindowHelper.TypeTextIntoWindowWithContext(const Text: string; Contex
 var
     Actions: TArray<IScriptAction>;
 begin
+    {$IFDEF DEBUG}
     OutputDebugString(PChar(Format('[WinHelper] TypeTextIntoWindowWithContext: Text="%s"', [Text])));
+    {$ENDIF}
 
     if Text = '' then
     begin
+        {$IFDEF DEBUG}
         OutputDebugString('[WinHelper] ERROR: Text is EMPTY');
+        {$ENDIF}
         Context.Free;  // Освобождаем контекст
         Exit;
     end;
@@ -267,27 +270,35 @@ begin
     Context.Executor := Self;
     Actions := FMacroEngine.Parse(Text, Context);
 
+    {$IFDEF DEBUG}
     OutputDebugString(PChar(Format('[WinHelper] Parsed %d actions', [Length(Actions)])));
-
     // Собираем все InputQuery ДО запуска потока
     OutputDebugString('[WinHelper] Pre-collecting inputs...');
+    {$ENDIF}
+
     FMacroEngine.PreCollectInputs(Actions, Context);
 
-    // КЛЮЧЕВАЯ ПРОВЕРКА: если пользователь отменил ввод - прерываем
+    // Если пользователь отменил ввод - прерываем
     if Context.UserCancelled then
     begin
+        {$IFDEF DEBUG}
         OutputDebugString('[WinHelper] User cancelled input, macro will NOT start');
+        {$ENDIF}
         Context.Free;  // Освобождаем контекст
         Exit;
     end;
 
+    {$IFDEF DEBUG}
     OutputDebugString('[WinHelper] Pre-collection completed successfully');
+    {$ENDIF}
 
     // Создаём и запускаем поток только если ввод не был отменён
     FMacroThread := TMacroThread.Create(Actions, Context);
     FMacroThread.OnTerminate := OnMacroTerminate;
 
+    {$IFDEF DEBUG}
     OutputDebugString('[WinHelper] Thread started');
+    {$ENDIF}
 end;
 
 procedure TWindowHelper.TypeTextIntoWindow(const Text: string);
@@ -339,22 +350,22 @@ begin
     end;
 end;
 
-procedure TWindowHelper.SetTargetWindow(AHandle: HWND);
+procedure TWindowHelper.SetTargetWindow(Handle: HWND);
 var
     Buffer: array[0..255] of Char;
 begin
     Reset;
-    FWindow.Handle := AHandle;
+    FWindow.Handle := Handle;
 
-    if AHandle <> 0 then
+    if Handle <> 0 then
     begin
-        if GetClassName(AHandle, Buffer, Length(Buffer)) > 0 then
+        if GetClassName(Handle, Buffer, Length(Buffer)) > 0 then
             FWindow.ClassName := string(Buffer);
 
-        if GetWindowText(AHandle, Buffer, Length(Buffer)) > 0 then
+        if GetWindowText(Handle, Buffer, Length(Buffer)) > 0 then
             FWindow.WindowText := string(Buffer);
 
-        FWindow.Parent := GetAncestor(AHandle, GA_PARENT);
+        FWindow.Parent := GetAncestor(Handle, GA_PARENT);
 
         if (FWindow.Parent <> 0) and (GetClassName(FWindow.Parent, Buffer, Length(Buffer)) > 0) then
             FWindow.ParentClassName := string(Buffer);

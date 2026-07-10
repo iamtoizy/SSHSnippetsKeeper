@@ -3,23 +3,29 @@
 interface
 
 uses
-    Vcl.ComCtrls, System.Masks, Tag, Category, User, System.Generics.Collections;
+    Vcl.ComCtrls,
+    Tag,
+    Category,
+    User,
+    System.Generics.Collections;
 
 type
     // Статический контейнер вспомогательных методов для отрисовки UI-контролов.
-    // Теперь это "чистые" функции, которые ничего не знают про БД или Сервисы.
     TUIHelpers = record
     public
-        // Просто заполняем ListView переданным массивом тегов
+        // Заполняем ListView переданным массивом тегов
         class procedure FillTagList(ListView: TListView; const Tags: TArray<TTagDTO>); static;
 
         // Заполняем ListView всеми тегами, помечая выбранные
         class procedure FillTagListWithSelection(ListView: TListView; const AllTags, SnippetTags: TArray<TTagDTO>); static;
 
         // Строим дерево категорий на основе готовых массивов категорий и пользователей
-        class procedure BuildCategoryTree(TreeView: TTreeView; const Categories: TArray<TCategoryDTO>;
-                                          const Users: TArray<TUserDTO>; FilterUserID: NativeInt;
-                                          SelectID: Integer = -1); static;
+        class procedure BuildCategoryTree(
+            TreeView: TTreeView;
+            const Categories: TArray<TCategoryDTO>;
+            const Users: TArray<TUserDTO>;
+            FilterUserID: NativeInt;
+            SelectID: Integer = -1); static;
     end;
 
 implementation
@@ -94,9 +100,7 @@ begin
     end;
 end;
 
-class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categories: TArray<TCategoryDTO>;
-                                             const Users: TArray<TUserDTO>; FilterUserID: NativeInt;
-                                             SelectID: Integer = -1);
+class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categories: TArray<TCategoryDTO>; const Users: TArray<TUserDTO>; FilterUserID: NativeInt; SelectID: Integer = -1);
 
     // Вспомогательная рекурсивная процедура для добавления узлов
     procedure AddNodesRecursive(ParentNode: TTreeNode; ParentCatID: NativeInt; const CatMap: TDictionary<NativeInt, TList<TCategoryDTO>>);
@@ -105,7 +109,8 @@ class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categori
         Cat: TCategoryDTO;
         Node: TTreeNode;
     begin
-        if not CatMap.TryGetValue(ParentCatID, Children) then Exit;
+        if not CatMap.TryGetValue(ParentCatID, Children) then
+            Exit;
 
         for Cat in Children do
         begin
@@ -163,7 +168,8 @@ class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categori
                 AddNodesRecursive(Node, Cat.ID, LocalCatMap);
             end;
         finally
-            for List in LocalCatMap.Values do List.Free;
+            for List in LocalCatMap.Values do
+                List.Free;
             LocalCatMap.Free;
             LocalRoots.Free;
         end;
@@ -184,12 +190,14 @@ begin
         Node := TreeView.Items.AddObjectFirst(nil, 'Часто используемые', TObject(-1));
         Node.ImageIndex := 1;
         Node.SelectedIndex := 1;
-        if SelectID = -1 then Node.Selected := True;
+        if SelectID = -1 then
+            Node.Selected := True;
 
         Node := TreeView.Items.AddObjectFirst(nil, 'Недавние', TObject(-2));
         Node.ImageIndex := 2;
         Node.SelectedIndex := 2;
-        if SelectID = -2 then Node.Selected := True;
+        if SelectID = -2 then
+            Node.Selected := True;
 
         // 2. Группировка
         if FilterUserID = 0 then
@@ -226,3 +234,4 @@ begin
 end;
 
 end.
+

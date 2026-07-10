@@ -4,11 +4,8 @@ interface
 
 uses
     Winapi.Windows,
-    Winapi.Messages,
     System.SysUtils,
-    System.Variants,
     System.Classes,
-    Vcl.Graphics,
     Vcl.Controls,
     Vcl.Forms,
     Vcl.Dialogs,
@@ -127,7 +124,7 @@ type
         FFilterUserID: NativeInt;
         FIgnoreCategoryChange: Boolean;
 
-        procedure ApplyTagFilter(ATagID: NativeInt; const ATagName: string);
+        procedure ApplyTagFilter(TagID: NativeInt; const TagName: string);
         procedure ClearTagFilter;
         procedure FillSnippetListView(const Snippets: TArray<TSnippetDTO>);
         function ExtractSnippetByListItem(Item: TListItem): TSnippetDTO;
@@ -156,6 +153,7 @@ type
         procedure ReloadUI(PreserveCategoryID: NativeInt);
         procedure ClearRightPanel;
         function GetWorkspaceUserID(Node: TTreeNode): NativeInt;
+        procedure CloseDatabase;
     public
         { Public declarations }
         procedure UpdateUI(const State: TBaseFormState); override;
@@ -171,10 +169,6 @@ implementation
 uses
     System.UITypes,
     Winapi.CommCtrl,
-    System.Win.Notification,
-    System.Notification,
-    Vcl.Themes,
-    Vcl.GraphUtil,
     System.Types,
     ArrayHelper,
     Settings,
@@ -187,17 +181,16 @@ uses
     AppStateManager,
     UIHelpers,
     SnippetViewData,
-    MacroActions,
     WindowMonitor,
-    ProcessProfile,
     ChooseTerminalWindowUI,
     MacroInputTypes,
     InputFormUI,
     WorkspaceManagerUI,
     CommonHelpers,
-    CommonConsts, UserService;
+    CommonConsts;
 
-{ ======================== FORM LIFECYCLE ======================== }
+const
+    PRESERVE_CATEGORY_EMPTY_ID = -999;
 
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
@@ -223,17 +216,6 @@ begin
     lvTags.OwnerData := False;
     lvSnippets.OwnerData := False;
 
-    with ProfileManager.AddProfile('xshell.exe') do
-    begin
-        TitleIncludeRegex := '.*';
-        TitleExcludeRegex := '.*(Options|Settings|About|Настройки).*';
-    end;
-    with ProfileManager.AddProfile('putty.exe') do
-    begin
-        TitleIncludeRegex := '.*';
-        TitleExcludeRegex := '.*(Change Settings|Event Log).*';
-    end;
-
     for var Item in Settings.SettingsRecord.AllowedApplications do
         if Item.Enabled then
             WinMonitor.AddAllowedProcess(Item.ExeName.ToLower);
@@ -250,21 +232,29 @@ end;
 
 procedure TMainForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
-    // Заменяем удаленный CloseDatabase
-    if Assigned(AppDatabase) and Assigned(AppDatabase.FDConnection) then
-    begin
-        AppDatabase.CloseDatabase;
-        TStateMgr.Instance.CloseDatabase;
-    end;
+    CloseDatabase;
     CanClose := True;
 end;
-
-{ ======================== UI STATE & UPDATES ======================== }
 
 procedure TMainForm.UpdateUI(const State: TBaseFormState);
 begin
     case State of
         bfsDBConnected:
+            begin
+                nCloseDatabase.Enabled := True;
+                mSnippet.ReadOnly := False;
+                mComment.ReadOnly := False;
+                nAddTag.Enabled := True;
+                nDeleteTag.Enabled := True;
+                nRenameTag.Enabled := True;
+                cbUser.Enabled := True;
+                ebSearch.Enabled := True;
+                bManageWorkspaces.Enabled := True;
+                rbText.Enabled := True;
+                rbFTS.Enabled := True;
+                UpdateMenuState;
+            end;
+        bfsDBOpen:
             begin
                 nCloseDatabase.Enabled := True;
                 mSnippet.ReadOnly := False;
@@ -332,7 +322,6 @@ begin
     mComment.Text := '';
     FCurrentSnippetID := 0;
 
-    // Заменяем старый вызов BuildTagListWithSelection
     if Assigned(AppDatabase) and Assigned(AppDatabase.TagService) then
     begin
         AllTags := AppDatabase.TagService.GetAllTags;
@@ -350,10 +339,10 @@ begin
         if Assigned(AppDatabase) then
         begin
             // Получаем данные через сервисы
-            Cats := AppDatabase.CategoryService.GetAllCategories(0);
+            Cats := AppDatabase.CategoryService.GetAllCategories(FFilterUserID);
             Users := AppDatabase.UserService.GetAllUsers;
 
-            // Используем новый UIHelper
+            // Используем UIHelper
             TUIHelpers.BuildCategoryTree(tvCategories, Cats, Users, FFilterUserID, PreserveCategoryID);
             RefreshCurrentSnippetList;
         end;
@@ -450,8 +439,6 @@ begin
     Result := FUserID;
 end;
 
-{ ======================== TREEVIEW CATEGORIES ======================== }
-
 procedure TMainForm.tvCategoriesChange(Sender: TObject; Node: TTreeNode);
 begin
     if FIgnoreCategoryChange then Exit;
@@ -533,7 +520,7 @@ begin
     begin
         try
             AppDatabase.CategoryService.DeleteCategory(Cat.ID);
-            ReloadUI(-999);
+            ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
             ClearRightPanel;
             sbBottom.SimpleText := Format('Категория "%s" удалена.', [Cat.Name]);
         except
@@ -693,8 +680,6 @@ begin
     end;
 end;
 
-{ ======================== LISTVIEW SNIPPETS ======================== }
-
 procedure TMainForm.lvSnippetsClick(Sender: TObject);
 var
     Item: TListItem;
@@ -728,7 +713,11 @@ begin
 
     if TargetUserID <= 0 then
     begin
-        ShowMessage(Format('Не удалось определить пространство для сниппета (UserID=%d). Попробуйте выбрать конкретное пространство в фильтре.', [TargetUserID]));
+        ShowMessage(
+            Format(
+                'Не удалось определить пространство для сниппета (UserID=%d). Попробуй выбрать конкретное пространство в фильтре.',
+                [TargetUserID]
+            ));
         Exit;
     end;
 
@@ -773,7 +762,7 @@ begin
             if tvCategories.Selected <> nil then
                 ReloadUI(NativeInt(tvCategories.Selected.Data))
             else
-                ReloadUI(-999);
+                ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
         end;
     finally
         AddEditSnippet.Free;
@@ -799,7 +788,7 @@ begin
             if tvCategories.Selected <> nil then
                 SelectedCatID := NativeInt(tvCategories.Selected.Data)
             else
-                SelectedCatID := -999;
+                SelectedCatID := PRESERVE_CATEGORY_EMPTY_ID;
 
             ClearRightPanel;
             ReloadUI(SelectedCatID);
@@ -967,8 +956,6 @@ begin
     WinHelper.TypeTextIntoWindowWithContext(Snippet.Content, Context);
 end;
 
-{ ======================== TAGS & SEARCH ======================== }
-
 procedure TMainForm.DoAddTag;
 var
     NewName: string;
@@ -1015,7 +1002,11 @@ begin
         if FFilterByTagID = TagID then ClearTagFilter;
 
         if FCurrentSnippetID > 0 then
-            TUIHelpers.FillTagListWithSelection(lvTags, AppDatabase.TagService.GetAllTags, AppDatabase.TagService.GetSnippetTags(FCurrentSnippetID));
+            TUIHelpers.FillTagListWithSelection(
+                lvTags,
+                AppDatabase.TagService.GetAllTags,
+                AppDatabase.TagService.GetSnippetTags(FCurrentSnippetID)
+            );
 
         sbBottom.SimpleText := 'Тег удалён.';
     except
@@ -1069,11 +1060,11 @@ begin
         ApplyTagFilter(NativeInt(NativeUInt(Item.Data)), Item.Caption);
 end;
 
-procedure TMainForm.ApplyTagFilter(ATagID: NativeInt; const ATagName: string);
+procedure TMainForm.ApplyTagFilter(TagID: NativeInt; const TagName: string);
 begin
-    FFilterByTagID := ATagID;
-    FillSnippetListView(AppDatabase.SnippetService.GetSnippetsByTag(ATagID));
-    sbBottom.SimpleText := Format('Фильтр по тегу: "%s"', [ATagName]);
+    FFilterByTagID := TagID;
+    FillSnippetListView(AppDatabase.SnippetService.GetSnippetsByTag(TagID));
+    sbBottom.SimpleText := Format('Фильтр по тегу: "%s"', [TagName]);
 end;
 
 procedure TMainForm.ClearTagFilter;
@@ -1102,20 +1093,17 @@ begin
     FillSnippetListView(Snippets);
 end;
 
-{ ======================== DATABASE & WORKSPACES ======================== }
-
 procedure TMainForm.nOpenDatabaseClick(Sender: TObject);
 begin
     OpenDialog.FileName := System.IOUtils.TPath.GetDirectoryName(Application.ExeName) + '\snippets.sqlite';
     if OpenDialog.Execute(Handle) then
     begin
         try
-            // Подключаемся напрямую к компоненту, так как методы Open/Close были удалены
-            AppDatabase.FDConnection.Connected := False;
-            AppDatabase.FDConnection.Params.Values['Database'] := OpenDialog.FileName;
-            AppDatabase.FDConnection.Connected := True;
+            AppDatabase.OpenDatabase(OpenDialog.FileName);
 
-            ReloadUI(-999);
+            TStateMgr.Instance.OpenDatabase;
+
+            ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
             LoadUsersToComboBox;
             ShowSimpleToast('Менеджер сниппетов', 'База данных SQLite открыта.');
         except
@@ -1132,13 +1120,10 @@ begin
     begin
         Application.RestoreTopMosts;
         try
-            AppDatabase.FDConnection.Connected := False;
-            AppDatabase.FDConnection.Params.Values['Database'] := SaveDialog.FileName;
-            AppDatabase.FDConnection.Connected := True;
             AppDatabase.CreateDatabase(SaveDialog.FileName);
 
             TStateMgr.Instance.CreateDatabase;
-            ReloadUI(-999);
+            ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
             LoadUsersToComboBox;
 
             ShowSimpleToast('Менеджер сниппетов', 'База данных SQLite создана.');
@@ -1151,7 +1136,16 @@ end;
 
 procedure TMainForm.nCloseDatabaseClick(Sender: TObject);
 begin
-    AppDatabase.FDConnection.Connected := False;
+    CloseDatabase;
+end;
+
+procedure TMainForm.CloseDatabase;
+begin
+    if Assigned(AppDatabase) and Assigned(AppDatabase.FDConnection) then
+    begin
+        AppDatabase.CloseDatabase;
+        TStateMgr.Instance.CloseDatabase;
+    end;
 end;
 
 procedure TMainForm.cbUserChange(Sender: TObject);
@@ -1163,7 +1157,7 @@ end;
 procedure TMainForm.SetUserFilter(UserID: NativeInt);
 begin
     FFilterUserID := UserID;
-    ReloadUI(-999);
+    ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
 end;
 
 procedure TMainForm.LoadUsersToComboBox;
@@ -1195,8 +1189,6 @@ begin
     end;
 end;
 
-{ ======================== HELPERS ======================== }
-
 function TMainForm.ExtractSnippetByListItem(Item: TListItem): TSnippetDTO;
 begin
     if not Assigned(Item) then Exit(Default(TSnippetDTO));
@@ -1210,7 +1202,7 @@ var
 begin
     FCurrentSnippetID := Snippet.ID;
 
-    // Получаем пользователя (заменяем TryGetByID на обычный GetByID или аналогичный)
+    // Получаем пользователя
     User := AppDatabase.UserService.GetUserByID(Snippet.UserID);
     if User.ID > 0 then
         sbBottom.SimpleText := Format('[%d] %s (ID: %d) CID: %d', [Snippet.ID, User.Name, Snippet.UserID, Snippet.CategoryID]);
@@ -1218,7 +1210,7 @@ begin
     mSnippet.Text := Snippet.Content;
     mComment.Text := Snippet.Comment;
 
-    // Отрисовка тегов через новый TUIHelpers
+    // Отрисовка тегов через TUIHelpers
     AllTags := AppDatabase.TagService.GetAllTags;
     SnippetTags := AppDatabase.TagService.GetSnippetTags(Snippet.ID);
     TUIHelpers.FillTagListWithSelection(lvTags, AllTags, SnippetTags);
@@ -1233,8 +1225,6 @@ function TMainForm.IsWorkspaceNode(Node: TTreeNode): Boolean;
 begin
     Result := Assigned(Node) and (Node.Data = nil) and not IsVirtualCategory(Node);
 end;
-
-{ ======================== MENU HANDLERS ======================== }
 
 procedure TMainForm.nAddSnippetClick(Sender: TObject);
 begin

@@ -3,16 +3,17 @@ unit UserRepository;
 interface
 
 uses
-    System.Generics.Collections, User, FireDAC.Comp.Client;
+    System.Generics.Collections,
+    User,
+    FireDAC.Comp.Client,
+    RepositoryBase,
+    Core.Interfaces;
 
 type
-    TUserRepository = class
+    TUserRepository = class(TRepositoryBase, IUserRepository)
     private
-        FConnection: TFDConnection;
         function InternalLoadUsers(const SQL: string; const Params: array of Variant): TArray<TUserDTO>;
     public
-        constructor Create(Connection: TFDConnection);
-
         function Add(const User: TUserDTO): Integer;
         procedure Update(const User: TUserDTO);
         procedure Delete(Id: Integer);
@@ -29,14 +30,7 @@ uses
     System.SysUtils,
     System.Variants,
     FireDAC.Stan.Param,
-    System.Classes
-    ;
-
-constructor TUserRepository.Create(Connection: TFDConnection);
-begin
-    inherited Create;
-    FConnection := Connection;
-end;
+    System.Classes;
 
 function TUserRepository.InternalLoadUsers(const SQL: string; const Params: array of Variant): TArray<TUserDTO>;
 var

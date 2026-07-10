@@ -48,12 +48,10 @@ unit ArrayHelper;
 interface
 
 uses
-	System.Classes,
     System.SysUtils,
     System.RTLConsts,
 	System.Generics.Defaults,
-    System.Generics.Collections,
-    System.Math
+    System.Generics.Collections
     ;
 
 type

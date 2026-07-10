@@ -366,6 +366,7 @@ object MainForm: TMainForm
     Top = 104
   end
   object SaveDialog: TSaveDialog
+    DefaultExt = 'sqlite'
     Filter = #1041#1072#1079#1099' '#1076#1072#1085#1085#1099#1093' SQLite|*.sqlite|'#1042#1089#1077' '#1092#1072#1081#1083#1099'|*.*'
     Options = [ofOverwritePrompt, ofHideReadOnly, ofPathMustExist, ofCreatePrompt, ofEnableSizing]
     Left = 416

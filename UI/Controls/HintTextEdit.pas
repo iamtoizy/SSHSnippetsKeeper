@@ -3,19 +3,15 @@ unit HintTextEdit;
 interface
 
 uses
-    Winapi.Windows,
     Winapi.Messages,
     System.SysUtils,
     System.Classes,
     Vcl.Graphics,
     Vcl.Controls,
     Vcl.StdCtrls,
-    Vcl.ExtCtrls,
-    Vcl.ComCtrls,
     System.Types,
     System.UITypes,
-    System.Masks,
-    Vcl.Dialogs;
+    System.Masks;
 
 type
     TEdit = class(Vcl.StdCtrls.TEdit)
@@ -33,15 +29,12 @@ type
         constructor Create(AOwner: TComponent); override;
         destructor Destroy; override;
         function MaskMatchesWith(InputStr: string): Boolean;
-        property EnableHintText: Boolean read FEnableHintText
-          write FEnableHintText;
+        property EnableHintText: Boolean read FEnableHintText write FEnableHintText;
         property HintText: string read FHintText write FHintText;
         property MaskText: string read FMaskedStr;
     end;
 
 implementation
-
-{$REGION 'CUSTOM TEDIT'}
 
 constructor TEdit.Create(AOwner: TComponent);
 begin
@@ -137,7 +130,5 @@ begin
     InputStr := UpperCase(InputStr, loUserLocale);
     Result := MatchesMask(InputStr, FMaskedStr);
 end;
-
-{$ENDREGION}
 
 end.

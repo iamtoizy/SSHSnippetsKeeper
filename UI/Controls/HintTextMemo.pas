@@ -2,9 +2,16 @@ unit HintTextMemo;
 
 interface
 
-uses Winapi.Windows, Winapi.Messages, System.SysUtils, System.Classes,
-    Vcl.Graphics, Vcl.Controls, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.ComCtrls,
-    System.Types, System.UITypes, System.Masks, Vcl.Dialogs, System.StrUtils;
+uses
+    Winapi.Messages,
+    System.SysUtils,
+    System.Classes,
+    Vcl.Graphics,
+    Vcl.Controls,
+    Vcl.StdCtrls,
+    System.Types,
+    System.UITypes,
+    System.Masks;
 
 type
     TMemo = class(Vcl.StdCtrls.TMemo)
@@ -15,24 +22,23 @@ type
         FMaskedStr: string;
         procedure WMPaint(var Message: TWMPaint); message WM_PAINT;
         procedure PrepareMaskStr;
-        procedure DrawMultiLineHint(const ARect: TRect);
+        procedure DrawMultiLineHint(const Rect: TRect);
     protected
         procedure WndProc(var Message: TMessage); override;
     public
-        constructor Create(AOwner: TComponent); override;
+        constructor Create(Owner: TComponent); override;
         destructor Destroy; override;
         function MaskMatchesWith(InputStr: string): Boolean;
-        property EnableHintText: Boolean read FEnableHintText
-          write FEnableHintText;
+        property EnableHintText: Boolean read FEnableHintText write FEnableHintText;
         property HintText: string read FHintText write FHintText;
         property MaskText: string read FMaskedStr;
     end;
 
 implementation
 
-{$REGION 'CUSTOM TMEMO'} constructor TMemo.Create(AOwner: TComponent);
+constructor TMemo.Create(Owner: TComponent);
 begin
-    inherited Create(AOwner);
+    inherited Create(Owner);
     FEnableHintText := False;
     FHintText := 'Type here...' + #13#10 + '("*", "?" wildcards are supported)';
     FMaskedStr := '';
@@ -46,7 +52,7 @@ begin
     inherited Destroy;
 end;
 
-procedure TMemo.DrawMultiLineHint(const ARect: TRect);
+procedure TMemo.DrawMultiLineHint(const Rect: TRect);
 var
     Lines: TStringList;
     i: Integer;
@@ -63,14 +69,14 @@ begin
         // Получаем высоту строки
         LineHeight := FCanvas.TextHeight('A');
         // Начальная позиция Y с учетом отступов TMemo
-        YPos := ARect.Top + 3;
+        YPos := Rect.Top + 3;
         // Рисуем каждую строку
         for i := 0 to Lines.Count - 1 do
         begin
             // Проверяем, не вышли ли за пределы видимой области
-            if YPos + LineHeight > ARect.Bottom then
+            if YPos + LineHeight > Rect.Bottom then
                 Break;
-            FCanvas.TextOut(ARect.Left + 3, YPos, Lines[i]);
+            FCanvas.TextOut(Rect.Left + 3, YPos, Lines[i]);
             YPos := YPos + LineHeight;
         end;
     finally
@@ -122,7 +128,6 @@ begin
                             OnChange(Self);
                     end;
             end;
-        // case
     end;
 end;
 
@@ -151,7 +156,5 @@ begin
     InputStr := UpperCase(InputStr, loUserLocale);
     Result := MatchesMask(InputStr, FMaskedStr);
 end;
-
-{$ENDREGION}
 
 end.

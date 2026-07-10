@@ -4,7 +4,6 @@ interface
 
 uses
     System.SysUtils,
-    Winapi.Windows,
     MacroInputTypes
     ;
 
@@ -17,8 +16,8 @@ type
         FPreCollectedValue: string;
         FHasPreCollectedValue: Boolean;
     public
-        constructor Create(AContext: TMacroContext; const APrompt: string; AInputType: TMacroInputType; const ADefaultValue: string);
-        procedure SetPreCollectedValue(const AValue: string);
+        constructor Create(Context: TMacroContext; const Prompt: string; InputType: TMacroInputType; const DefaultValue: string);
+        procedure SetPreCollectedValue(const Value: string);
         function GetPrompt: string;
         function GetInputType: TMacroInputType;
         function GetDefaultValue: string;
@@ -33,18 +32,18 @@ uses
 
 { TInputAction }
 
-constructor TInputAction.Create(AContext: TMacroContext; const APrompt: string; AInputType: TMacroInputType; const ADefaultValue: string);
+constructor TInputAction.Create(Context: TMacroContext; const Prompt: string; InputType: TMacroInputType; const DefaultValue: string);
 begin
-    inherited Create(AContext);
-    FPrompt := APrompt;
-    FInputType := AInputType;
-    FDefaultValue := ADefaultValue;
+    inherited Create(Context);
+    FPrompt := Prompt;
+    FInputType := InputType;
+    FDefaultValue := DefaultValue;
     FHasPreCollectedValue := False;
 end;
 
-procedure TInputAction.SetPreCollectedValue(const AValue: string);
+procedure TInputAction.SetPreCollectedValue(const Value: string);
 begin
-    FPreCollectedValue := AValue;
+    FPreCollectedValue := Value;
     FHasPreCollectedValue := True;
 end;
 
@@ -85,7 +84,7 @@ begin
                     TInterlocked.Exchange(FContext.Cancelled, 1);
             end;
         end;
-        Exit; // ← НЕ печатаем ничего в терминал!
+        Exit; // НЕ печатаем ничего в терминал!
     end;
 
     // Стандартная обработка для остальных типов

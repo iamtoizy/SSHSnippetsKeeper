@@ -9,14 +9,14 @@ uses
     System.IOUtils;
 
 type
-  // Узел дерева команд
+    // Узел дерева команд
     TCommandNode = class
     private
         FName: string;
         FInsertText: string;
         FSubCommands: TObjectDictionary<string, TCommandNode>;
     public
-        constructor Create(const AName: string; const AInsertText: string = '');
+        constructor Create(const Name: string; const InsertText: string = '');
         destructor Destroy; override;
 
         function Add(const AName: string; AInsertText: string = ''): TCommandNode;
@@ -26,24 +26,24 @@ type
         property SubCommands: TObjectDictionary<string, TCommandNode> read FSubCommands;
     end;
 
-  // Главный движок автодополнения
+    // Главный движок автодополнения
     TBashCompletionEngine = class
     private
         FRoot: TCommandNode;
         FBasicCommands: TStringList;
         FFilePath: string;
         FLastModified: TDateTime;
-        procedure CollectKeywords(ANode: TCommandNode; AList: TStringList);
+        procedure CollectKeywords(Node: TCommandNode; List: TStringList);
     public
-        constructor Create(ABasicCommands: TStringList);
+        constructor Create(BasicCommands: TStringList);
         destructor Destroy; override;
 
-        procedure LoadFromJsonFile(const AFilePath: string);
-    // Метод для отслеживания изменений файла на диске
+        procedure LoadFromJsonFile(const FilePath: string);
+        // Метод для отслеживания изменений файла на диске
         function CheckForUpdates: Boolean;
 
-        procedure FillProposals(const ALineText: string; ItemList, InsertList: TStrings; var CanExecute: Boolean);
-        procedure ExportKeywords(ATargetList: TStringList);
+        procedure FillProposals(const LineText: string; ItemList, InsertList: TStrings; var CanExecute: Boolean);
+        procedure ExportKeywords(TargetList: TStringList);
     end;
 
 implementation
@@ -53,7 +53,7 @@ uses
     ;
 
 // Безопасная рекурсивная процедура чтения узлов (без inline var)
-procedure ParseJsonNode(AParentNode: TCommandNode; AJsonObject: TJSONObject);
+procedure ParseJsonNode(ParentNode: TCommandNode; JsonObject: TJSONObject);
 var
     I: Integer;
     Pair: TJSONPair;
@@ -62,24 +62,24 @@ var
     ChildNode: TCommandNode;
     InsertVal, ChildrenVal: TJSONValue;
 begin
-    for I := 0 to AJsonObject.Count - 1 do
+    for I := 0 to JsonObject.Count - 1 do
     begin
-        Pair := AJsonObject.Pairs[I];
+        Pair := JsonObject.Pairs[I];
         CmdName := Pair.JsonString.Value;
 
-    // Убеждаемся, что значение - это объект
+        // Убеждаемся, что значение - это объект
         if Pair.JsonValue is TJSONObject then
         begin
             CmdObj := TJSONObject(Pair.JsonValue);
 
-      // 1. Пытаемся получить текст вставки
+            // 1. Пытаемся получить текст вставки
             InsertVal := CmdObj.GetValue('insert');
             if Assigned(InsertVal) then
-                ChildNode := AParentNode.Add(CmdName, InsertVal.Value)
+                ChildNode := ParentNode.Add(CmdName, InsertVal.Value)
             else
-                ChildNode := AParentNode.Add(CmdName, CmdName + ' ');
+                ChildNode := ParentNode.Add(CmdName, CmdName + ' ');
 
-      // 2. Рекурсивно читаем вложенные команды
+            // 2. Рекурсивно читаем вложенные команды
             ChildrenVal := CmdObj.GetValue('children');
             if Assigned(ChildrenVal) and (ChildrenVal is TJSONObject) then
                 ParseJsonNode(ChildNode, TJSONObject(ChildrenVal));
@@ -89,13 +89,13 @@ end;
 
 { TCommandNode }
 
-constructor TCommandNode.Create(const AName, AInsertText: string);
+constructor TCommandNode.Create(const Name, InsertText: string);
 begin
-    FName := AName;
-    if AInsertText <> '' then
-        FInsertText := AInsertText
+    FName := Name;
+    if InsertText <> '' then
+        FInsertText := InsertText
     else
-        FInsertText := AName;
+        FInsertText := Name;
 
     FSubCommands := TObjectDictionary<string, TCommandNode>.Create([doOwnsValues]);
 end;
@@ -114,9 +114,9 @@ end;
 
 { TBashCompletionEngine }
 
-constructor TBashCompletionEngine.Create(ABasicCommands: TStringList);
+constructor TBashCompletionEngine.Create(BasicCommands: TStringList);
 begin
-    FBasicCommands := ABasicCommands;
+    FBasicCommands := BasicCommands;
     FRoot := TCommandNode.Create('root');
 end;
 
@@ -126,19 +126,19 @@ begin
     inherited;
 end;
 
-procedure TBashCompletionEngine.LoadFromJsonFile(const AFilePath: string);
+procedure TBashCompletionEngine.LoadFromJsonFile(const FilePath: string);
 var
     JsonText: string;
     JsonRoot: TJSONObject;
 begin
-    if not TFile.Exists(AFilePath) then
+    if not TFile.Exists(FilePath) then
         Exit;
 
-  // Запоминаем путь и время последнего изменения файла
-    FFilePath := AFilePath;
-    FLastModified := TFile.GetLastWriteTime(AFilePath);
+    // Запоминаем путь и время последнего изменения файла
+    FFilePath := FilePath;
+    FLastModified := TFile.GetLastWriteTime(FilePath);
 
-    JsonText := TFile.ReadAllText(AFilePath, TEncoding.UTF8);
+    JsonText := TFile.ReadAllText(FilePath, TEncoding.UTF8);
     JsonRoot := TJSONObject.ParseJSONValue(JsonText) as TJSONObject;
 
     if Assigned(JsonRoot) then
@@ -171,7 +171,7 @@ begin
     end;
 end;
 
-procedure TBashCompletionEngine.FillProposals(const ALineText: string; ItemList, InsertList: TStrings; var CanExecute: Boolean);
+procedure TBashCompletionEngine.FillProposals(const LineText: string; ItemList, InsertList: TStrings; var CanExecute: Boolean);
 var
     Tokens: TArray<string>;
     IsNewWord: Boolean;
@@ -184,8 +184,8 @@ begin
     ItemList.Clear;
     InsertList.Clear;
 
-    IsNewWord := (ALineText = '') or (ALineText[Length(ALineText)] = ' ');
-    Tokens := ALineText.Split([' '], TStringSplitOptions.ExcludeEmpty);
+    IsNewWord := (LineText = '') or (LineText[Length(LineText)] = ' ');
+    Tokens := LineText.Split([' '], TStringSplitOptions.ExcludeEmpty);
 
     ContextTokens := TList<string>.Create;
     try
@@ -230,23 +230,23 @@ begin
     end;
 end;
 
-procedure TBashCompletionEngine.CollectKeywords(ANode: TCommandNode; AList: TStringList);
+procedure TBashCompletionEngine.CollectKeywords(Node: TCommandNode; List: TStringList);
 var
     Child: TCommandNode;
 begin
-    if (ANode.Name <> 'root') and (Pos('-', ANode.Name) <> 1) then
+    if (Node.Name <> 'root') and (Pos('-', Node.Name) <> 1) then
     begin
-        if AList.IndexOf(ANode.Name) = -1 then
-            AList.Add(ANode.Name);
+        if List.IndexOf(Node.Name) = -1 then
+            List.Add(Node.Name);
     end;
 
-    for Child in ANode.SubCommands.Values do
-        CollectKeywords(Child, AList);
+    for Child in Node.SubCommands.Values do
+        CollectKeywords(Child, List);
 end;
 
-procedure TBashCompletionEngine.ExportKeywords(ATargetList: TStringList);
+procedure TBashCompletionEngine.ExportKeywords(TargetList: TStringList);
 begin
-    CollectKeywords(FRoot, ATargetList);
+    CollectKeywords(FRoot, TargetList);
 end;
 
 end.

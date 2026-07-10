@@ -24,8 +24,6 @@ object InputForm: TInputForm
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 0
-    ExplicitWidth = 450
-    ExplicitHeight = 180
     object lbPrompt: TLabel
       Left = 8
       Top = 8
@@ -60,9 +58,6 @@ object InputForm: TInputForm
       Panels = <>
       SimplePanel = True
       SizeGrip = False
-      ExplicitLeft = 128
-      ExplicitTop = 152
-      ExplicitWidth = 0
     end
     object ebEdit: TEdit
       Left = 8

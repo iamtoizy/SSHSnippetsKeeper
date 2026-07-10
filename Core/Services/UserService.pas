@@ -5,17 +5,17 @@ interface
 uses
     System.SysUtils,
     User,
-    UserRepository;
+    Core.Interfaces;
 
 type
-    TUserService = class
+    TUserService = class(TInterfacedObject, IUserService)
     private
-        FUserRepo: TUserRepository;
+        FUserRepo: IUserRepository;
     public
-        constructor Create(AUserRepo: TUserRepository);
+        constructor Create(UserRepo: IUserRepository);
 
         function GetAllUsers: TArray<TUserDTO>;
-        function GetUserByID(UserID: NativeInt): TUserDTO; // <-- днаюбкемн
+        function GetUserByID(UserID: NativeInt): TUserDTO;
         function AddUser(const User: TUserDTO): NativeInt;
         procedure UpdateUser(const User: TUserDTO);
         procedure DeleteUser(UserID: NativeInt);
@@ -23,9 +23,9 @@ type
 
 implementation
 
-constructor TUserService.Create(AUserRepo: TUserRepository);
+constructor TUserService.Create(UserRepo: IUserRepository);
 begin
-    FUserRepo := AUserRepo;
+    FUserRepo := UserRepo;
 end;
 
 function TUserService.GetAllUsers: TArray<TUserDTO>;

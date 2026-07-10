@@ -3,16 +3,20 @@ unit TagRepository;
 interface
 
 uses
-    System.SysUtils, System.Generics.Collections, Tag, System.Variants,
-    RepositoryBase;
+    System.SysUtils,
+    System.Generics.Collections,
+    Tag,
+    System.Variants,
+    RepositoryBase,
+    Core.Interfaces;
 
 type
-    TTagRepository = class(TRepositoryBase)
+    TTagRepository = class(TRepositoryBase, ITagRepository)
     private
         function InternalLoadTags(const SQL: string; const Params: array of Variant): TArray<TTagDTO>;
     public
-        function Add(const ATag: TTagDTO): NativeInt;
-        procedure Update(const ATag: TTagDTO);
+        function Add(const Tag: TTagDTO): NativeInt;
+        procedure Update(const Tag: TTagDTO);
         procedure Delete(ID: NativeInt);
 
         function GetByID(ID: NativeInt): TTagDTO;
@@ -27,15 +31,16 @@ type
         procedure UnlinkTagFromSnippet(SnippetID, TagID: NativeInt);
         procedure ClearTagsForSnippet(SnippetID: NativeInt);
 
-        // НОВЫЙ МЕТОД: Пакетная вставка тегов (Array DML)
         procedure LinkTagsToSnippetBatch(SnippetID: NativeInt; const TagIDs: TArray<NativeInt>);
-        function ExistsByName(const AName: string): Boolean;
+        function ExistsByName(const Name: string): Boolean;
     end;
 
 implementation
 
 uses
-    FireDAC.Stan.Param, FireDAC.Comp.Client, System.Classes;
+    FireDAC.Stan.Param,
+    FireDAC.Comp.Client,
+    System.Classes;
 
 function TTagRepository.InternalLoadTags(const SQL: string; const Params: array of Variant): TArray<TTagDTO>;
 var
@@ -44,7 +49,8 @@ var
     Tag: TTagDTO;
 begin
     Result := [];
-    if not FConnection.Connected then Exit;
+    if not FConnection.Connected then
+        Exit;
 
     List := TList<TTagDTO>.Create;
     Query := CreateQuery;
@@ -89,15 +95,15 @@ begin
     Result := InternalLoadTags('SELECT id, name FROM tags WHERE name LIKE ? ORDER BY name', ['%' + Name + '%']);
 end;
 
-function TTagRepository.Add(const ATag: TTagDTO): NativeInt;
+function TTagRepository.Add(const Tag: TTagDTO): NativeInt;
 begin
-    ExecuteSQL('INSERT INTO tags(name) VALUES(?)', [ATag.Name]);
+    ExecuteSQL('INSERT INTO tags(name) VALUES(?)', [Tag.Name]);
     Result := ExecuteSQLScalar('SELECT last_insert_rowid()', []);
 end;
 
-procedure TTagRepository.Update(const ATag: TTagDTO);
+procedure TTagRepository.Update(const Tag: TTagDTO);
 begin
-    ExecuteSQL('UPDATE tags SET name = ? WHERE id = ?', [ATag.Name, ATag.ID]);
+    ExecuteSQL('UPDATE tags SET name = ? WHERE id = ?', [Tag.Name, Tag.ID]);
 end;
 
 procedure TTagRepository.Delete(ID: NativeInt);
@@ -107,10 +113,7 @@ end;
 
 function TTagRepository.GetSnippetTags(SnippetID: NativeInt): TArray<TTagDTO>;
 begin
-    Result := InternalLoadTags(
-        'SELECT t.id, t.name FROM tags t ' +
-        'JOIN snippet_tags st ON st.tag_id = t.id ' +
-        'WHERE st.snippet_id = ? ORDER BY t.name', [SnippetID]);
+    Result := InternalLoadTags('SELECT t.id, t.name FROM tags t ' + 'JOIN snippet_tags st ON st.tag_id = t.id ' + 'WHERE st.snippet_id = ? ORDER BY t.name', [SnippetID]);
 end;
 
 procedure TTagRepository.DeleteUnusedTags;
@@ -124,7 +127,8 @@ var
     CleanName: string;
 begin
     CleanName := Trim(TagName);
-    if CleanName = '' then Exit(0);
+    if CleanName = '' then
+        Exit(0);
 
     TagID := ExecuteSQLScalar('SELECT id FROM tags WHERE name = ?', [CleanName]);
 
@@ -158,7 +162,8 @@ var
     Q: TFDQuery;
     I: Integer;
 begin
-    if Length(TagIDs) = 0 then Exit;
+    if Length(TagIDs) = 0 then
+        Exit;
 
     Q := CreateQuery;
     try
@@ -174,20 +179,21 @@ begin
             Q.ParamByName('tag_id').AsIntegers[I] := TagIDs[I];
         end;
 
-        // 3. Выполняем весь пакет одним разом!
+        // 3. Выполняем весь пакет одним разом
         Q.Execute(Q.Params.ArraySize);
     finally
         Q.Free;
     end;
 end;
 
-function TTagRepository.ExistsByName(const AName: string): Boolean;
+function TTagRepository.ExistsByName(const Name: string): Boolean;
 var
     Count: Variant;
 begin
     // Используем COLLATE NOCASE, чтобы 'Delphi' и 'delphi' считались одним тегом (если БД это поддерживает)
-    Count := ExecuteSQLScalar('SELECT COUNT(*) FROM tags WHERE name = ? COLLATE NOCASE', [Trim(AName)]);
+    Count := ExecuteSQLScalar('SELECT COUNT(*) FROM tags WHERE name = ? COLLATE NOCASE', [Trim(Name)]);
     Result := Integer(Count) > 0;
 end;
 
 end.
+

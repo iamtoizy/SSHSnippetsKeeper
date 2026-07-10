@@ -4,7 +4,6 @@ interface
 
 uses
     System.Classes,
-    MacroActions,
     System.SysUtils,
     System.SyncObjs,
     MacroInputTypes
@@ -21,7 +20,7 @@ type
         procedure Execute; override;
     public
         // Внедряем коллбэк через конструктор (по умолчанию nil, чтобы не ломать старый код, если где-то он вызывается без него)
-        constructor Create(const Actions: TArray<IScriptAction>; AContext: TMacroContext; AOnRecordRun: TProc<NativeInt, NativeInt> = nil);
+        constructor Create(const Actions: TArray<IScriptAction>; Context: TMacroContext; OnRecordRun: TProc<NativeInt, NativeInt> = nil);
         procedure Cancel;
     end;
 
@@ -32,11 +31,11 @@ uses
     System.StrUtils
     ;
 
-constructor TMacroThread.Create(const Actions: TArray<IScriptAction>; AContext: TMacroContext; AOnRecordRun: TProc<NativeInt, NativeInt> = nil);
+constructor TMacroThread.Create(const Actions: TArray<IScriptAction>; Context: TMacroContext; OnRecordRun: TProc<NativeInt, NativeInt> = nil);
 begin
     FActions := Actions;
-    FContext := AContext;
-    FOnRecordRun := AOnRecordRun; // Сохраняем коллбэк
+    FContext := Context;
+    FOnRecordRun := OnRecordRun; // Сохраняем коллбэк
 
     inherited Create(False);
 
@@ -82,22 +81,26 @@ begin
                 procedure
                 begin
                     try
-                        // Вместо жесткой привязки к БД, мы просто вызываем переданный коллбэк!
+                        // Вместо жесткой привязки к БД, просто вызываем переданный коллбэк
                         if Assigned(FOnRecordRun) then
                             FOnRecordRun(LSnippetID, LUserID);
                     except
                         on E: Exception do
+                            {$IFDEF DEBUG}
                             OutputDebugString(PChar('[MacroThread] Sync failed: ' + E.Message));
+                            {$ENDIF}
                     end;
                 end
             );
         end
         else
         begin
+            {$IFDEF DEBUG}
             OutputDebugString(PChar(Format('[MacroThread] Skipping record: Completed=%s, Context=%s, SnippetID=%s',
                 [BoolToStr(CompletedSuccessfully, True),
                  BoolToStr(Assigned(FContext), True),
                  IfThen(Assigned(FContext), FContext.SnippetID.ToString, '-1')])));
+            {$ENDIF}
         end;
 
         if Assigned(FContext) then

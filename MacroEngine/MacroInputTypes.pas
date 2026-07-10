@@ -37,7 +37,7 @@ type
     protected
         FContext: TMacroContext;
     public
-        constructor Create(AContext: TMacroContext);
+        constructor Create(Context: TMacroContext);
         procedure Execute; virtual; abstract;
     end;
 
@@ -45,7 +45,7 @@ type
     private
         FText: string;
     public
-        constructor Create(AContext: TMacroContext; const AText: string);
+        constructor Create(Context: TMacroContext; const AText: string);
         procedure Execute; override;
     end;
 
@@ -53,13 +53,13 @@ type
     private
         FMilliseconds: Cardinal;
     public
-        constructor Create(AContext: TMacroContext; AMS: Cardinal);
+        constructor Create(Context: TMacroContext; AMS: Cardinal);
         procedure Execute; override;
     end;
 
     TEnterAction = class(TScriptAction)
     public
-        constructor Create(AContext: TMacroContext);
+        constructor Create(Context: TMacroContext);
         procedure Execute; override;
     end;
 
@@ -67,7 +67,7 @@ type
     private
         FKey: Word;
     public
-        constructor Create(AContext: TMacroContext; AKey: Word);
+        constructor Create(Context: TMacroContext; AKey: Word);
         procedure Execute; override;
     end;
 
@@ -81,17 +81,17 @@ uses
 
 { TScriptAction }
 
-constructor TScriptAction.Create(AContext: TMacroContext);
+constructor TScriptAction.Create(Context: TMacroContext);
 begin
     inherited Create;
-    FContext := AContext;
+    FContext := Context;
 end;
 
 { TTypeTextAction }
 
-constructor TTypeTextAction.Create(AContext: TMacroContext; const AText: string);
+constructor TTypeTextAction.Create(Context: TMacroContext; const AText: string);
 begin
-    inherited Create(AContext);
+    inherited Create(Context);
     FText := AText;
 end;
 
@@ -103,9 +103,9 @@ end;
 
 { TSleepAction }
 
-constructor TSleepAction.Create(AContext: TMacroContext; AMS: Cardinal);
+constructor TSleepAction.Create(Context: TMacroContext; AMS: Cardinal);
 begin
-    inherited Create(AContext);
+    inherited Create(Context);
     FMilliseconds := AMS;
 end;
 
@@ -131,9 +131,9 @@ end;
 
 { TEnterAction }
 
-constructor TEnterAction.Create(AContext: TMacroContext);
+constructor TEnterAction.Create(Context: TMacroContext);
 begin
-    inherited Create(AContext);
+    inherited Create(Context);
 end;
 
 procedure TEnterAction.Execute;
@@ -144,9 +144,9 @@ end;
 
 { TSendKeyAction }
 
-constructor TSendKeyAction.Create(AContext: TMacroContext; AKey: Word);
+constructor TSendKeyAction.Create(Context: TMacroContext; AKey: Word);
 begin
-    inherited Create(AContext);
+    inherited Create(Context);
     FKey := AKey;
 end;
 

@@ -33,7 +33,6 @@ object WorkspaceManagerForm: TWorkspaceManagerForm
     ViewStyle = vsReport
     OnDblClick = lvWorkspacesDblClick
     OnEdited = lvWorkspacesEdited
-    OnKeyDown = lvWorkspacesKeyDown
     OnResize = lvWorkspacesResize
   end
   object pBottom: TPanel

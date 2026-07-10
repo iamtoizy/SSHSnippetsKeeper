@@ -5,19 +5,16 @@ interface
 uses
     System.SysUtils,
     Tag,
-    TagRepository;
+    Core.Interfaces;
 
 type
-    TTagService = class
+    TTagService = class(TInterfacedObject, ITagService)
     private
-        FTagRepo: TTagRepository;
+        FTagRepo: ITagRepository;
     public
-        constructor Create(ATagRepo: TTagRepository);
-
+        constructor Create(TagRepo: ITagRepository);
         function GetAllTags: TArray<TTagDTO>;
-        // Метод, который искал компилятор:
         function GetSnippetTags(SnippetID: NativeInt): TArray<TTagDTO>;
-
         function CreateTag(const Name, Color: string): NativeInt;
         procedure DeleteTag(TagID: NativeInt);
         procedure RenameTag(TagID: NativeInt; const NewName: string);
@@ -25,9 +22,9 @@ type
 
 implementation
 
-constructor TTagService.Create(ATagRepo: TTagRepository);
+constructor TTagService.Create(TagRepo: ITagRepository);
 begin
-    FTagRepo := ATagRepo;
+    FTagRepo := TagRepo;
 end;
 
 function TTagService.GetAllTags: TArray<TTagDTO>;
@@ -37,7 +34,7 @@ end;
 
 function TTagService.GetSnippetTags(SnippetID: NativeInt): TArray<TTagDTO>;
 begin
-    // Базовая проверка бизнес-логики: ID не может быть нулевым или отрицательным
+    // ID не может быть нулевым или отрицательным
     if SnippetID <= 0 then
         Exit(nil);
 
@@ -59,10 +56,6 @@ begin
 
     NewTag := Default(TTagDTO);
     NewTag.Name := CleanName;
-
-    // Если в будущем добавишь поддержку цвета:
-    // NewTag.Color := Color;
-
     Result := FTagRepo.Add(NewTag);
 end;
 
@@ -90,7 +83,6 @@ begin
     TagToUpdate := Default(TTagDTO);
     TagToUpdate.ID := TagID;
     TagToUpdate.Name := CleanName;
-
     FTagRepo.Update(TagToUpdate);
 end;
 

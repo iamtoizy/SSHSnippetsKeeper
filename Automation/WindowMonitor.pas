@@ -3,8 +3,9 @@ unit WindowMonitor;
 interface
 
 uses
-    Winapi.Windows, Winapi.Messages, System.SysUtils, System.Classes,
-    Vcl.Forms, System.Generics.Collections;
+    Winapi.Windows,
+    System.SysUtils,
+    ArrayHelper;
 
 type
     TWindowMonitorInfo = record
@@ -18,29 +19,28 @@ type
 
     TWindowMonitor = class
     private
-        FAllowedWindowHistory: TList<TWindowMonitorInfo>;
+        FAllowedWindowHistory: TArrayRecord<TWindowMonitorInfo>;
         FWinEventHook: THandle;
-        FAllowedProcesses: TList<string>;
+        FAllowedProcesses: TArrayRecord<string>;
 
-        function GetWindowInfo(AHWND: THandle): TWindowMonitorInfo;
-        function IsProcessAllowed(const AExeName: string): Boolean;
-        procedure AddToHistory(AWindowInfo: TWindowMonitorInfo);
-        procedure RemoveFromHistory(AHWND: THandle);
+        function GetWindowInfo(HWND: THandle): TWindowMonitorInfo;
+        function IsProcessAllowed(const ExeName: string): Boolean;
+        procedure AddToHistory(WindowInfo: TWindowMonitorInfo);
+        procedure RemoveFromHistory(HWND: THandle);
         procedure CleanupInvalidWindows;
         function GetAllowedWindowCount: Integer;
     public
-
         constructor Create;
         destructor Destroy; override;
 
         function GetLastAllowedWindow: TWindowMonitorInfo;
-        function GetAllowedWindowsHistory: TList<TWindowMonitorInfo>;
+        function GetAllowedWindowsHistory: TArray<TWindowMonitorInfo>;
         function GetCurrentForegroundWindow: TWindowMonitorInfo;
         function CanAutoType: Boolean;
         function ActivateWindow(AWindowInfo: TWindowMonitorInfo): Boolean;
 
-        procedure AddAllowedProcess(const AExeName: string);
-        procedure RemoveAllowedProcess(const AExeName: string);
+        procedure AddAllowedProcess(const ExeName: string);
+        procedure RemoveAllowedProcess(const ExeName: string);
         procedure ClearAllowedProcesses;
 
         procedure StartMonitoring;
@@ -53,21 +53,15 @@ type
 var
     WinMonitor: TWindowMonitor;
 
-procedure WinEventProc(hWinEventHook: THandle; eventType: DWORD; HWND: THandle;
-    idObject, idChild: LONG; dwEventThread, dwmsEventTime: DWORD); stdcall;
+procedure WinEventProc(hWinEventHook: THandle; eventType: DWORD; HWND: THandle; idObject, idChild: LONG; dwEventThread, dwmsEventTime: DWORD); stdcall;
 
 implementation
-
-uses
-    Winapi.PSAPI;
 
 const
     PROCESS_QUERY_LIMITED_INFORMATION = $1000;
     MAX_HISTORY_SIZE = 50;  // Храним только последние 50 окон
 
-function QueryFullProcessImageName(hProcess: THandle; dwFlags: DWORD;
-    lpExeName: PWideChar; var lpdwSize: DWORD): BOOL; stdcall;
-    external 'kernel32' name 'QueryFullProcessImageNameW';
+function QueryFullProcessImageName(hProcess: THandle; dwFlags: DWORD; lpExeName: PWideChar; var lpdwSize: DWORD): BOOL; stdcall; external 'kernel32' name 'QueryFullProcessImageNameW';
 
 function GetExeNameFromHWND(AHWND: THandle): string;
 var
@@ -99,8 +93,7 @@ begin
 end;
 
 { Глобальный колбэк - ведёт историю разрешённых окон }
-procedure WinEventProc(hWinEventHook: THandle; eventType: DWORD; HWND: THandle;
-    idObject, idChild: LONG; dwEventThread, dwmsEventTime: DWORD); stdcall;
+procedure WinEventProc(hWinEventHook: THandle; eventType: DWORD; HWND: THandle; idObject, idChild: LONG; dwEventThread, dwmsEventTime: DWORD); stdcall;
 var
     ExeName: string;
     WindowMonitorInfo: TWindowMonitorInfo;
@@ -115,19 +108,22 @@ begin
     if ExeName = '' then
         Exit;
 
-    // КЛЮЧЕВАЯ ЛОГИКА: добавляем в историю ТОЛЬКО разрешённые процессы
+    // Добавляем в историю ТОЛЬКО разрешённые процессы
     if Assigned(WinMonitor) and WinMonitor.IsProcessAllowed(ExeName) then
     begin
         WindowMonitorInfo := WinMonitor.GetWindowInfo(HWND);
         WindowMonitorInfo.ActivatedAt := Now;
         WinMonitor.AddToHistory(WindowMonitorInfo);
 
-        OutputDebugString(PChar(Format('[WinMonitor] Added to history: HWND=%d, Exe=%s, Title=%s',
-            [HWND, ExeName, WindowMonitorInfo.WindowTitle])));
+        {$IFDEF DEBUG}
+        OutputDebugString(PChar(Format('[WinMonitor] Added to history: HWND=%d, Exe=%s, Title=%s', [HWND, ExeName, WindowMonitorInfo.WindowTitle])));
+        {$ENDIF}
     end
     else
     begin
+        {$IFDEF DEBUG}
         OutputDebugString(PChar(Format('[WinMonitor] Ignored: HWND=%d, Exe=%s', [HWND, ExeName])));
+        {$ENDIF}
     end;
 end;
 
@@ -136,20 +132,16 @@ end;
 constructor TWindowMonitor.Create;
 begin
     inherited Create;
-    FAllowedWindowHistory := TList<TWindowMonitorInfo>.Create;
     FWinEventHook := 0;
-    FAllowedProcesses := TList<string>.Create;
 end;
 
 destructor TWindowMonitor.Destroy;
 begin
     StopMonitoring;
-    FAllowedWindowHistory.Free;
-    FAllowedProcesses.Free;
     inherited;
 end;
 
-procedure TWindowMonitor.AddToHistory(AWindowInfo: TWindowMonitorInfo);
+procedure TWindowMonitor.AddToHistory(WindowInfo: TWindowMonitorInfo);
 var
     I: Integer;
     ExistingWindow: TWindowMonitorInfo;
@@ -158,7 +150,7 @@ begin
     for I := 0 to FAllowedWindowHistory.Count - 1 do
     begin
         ExistingWindow := FAllowedWindowHistory[I];
-        if ExistingWindow.HWND = AWindowInfo.HWND then
+        if ExistingWindow.HWND = WindowInfo.HWND then
         begin
             // Окно уже в истории - удаляем его
             FAllowedWindowHistory.Delete(I);
@@ -167,26 +159,29 @@ begin
     end;
 
     // Добавляем в конец списка
-    FAllowedWindowHistory.Add(AWindowInfo);
+    FAllowedWindowHistory.Add(WindowInfo);
 
-    // ОГРАНИЧЕНИЕ: удаляем старые записи, если превышен лимит
+    // Удаляем старые записи, если превышен лимит
     while FAllowedWindowHistory.Count > MAX_HISTORY_SIZE do
     begin
-        OutputDebugString(PChar(Format('[WinMonitor] Removed old entry: HWND=%d',
-            [FAllowedWindowHistory[0].HWND])));
+        {$IFDEF DEBUG}
+        OutputDebugString(PChar(Format('[WinMonitor] Removed old entry: HWND=%d', [FAllowedWindowHistory[0].HWND])));
+        {$ENDIF}
         FAllowedWindowHistory.Delete(0);  // Удаляем самое старое
     end;
 
+    {$IFDEF DEBUG}
     OutputDebugString(PChar(Format('[WinMonitor] History size: %d', [FAllowedWindowHistory.Count])));
+    {$ENDIF}
 end;
 
-procedure TWindowMonitor.RemoveFromHistory(AHWND: THandle);
+procedure TWindowMonitor.RemoveFromHistory(HWND: THandle);
 var
     I: Integer;
 begin
     for I := FAllowedWindowHistory.Count - 1 downto 0 do
     begin
-        if FAllowedWindowHistory[I].HWND = AHWND then
+        if FAllowedWindowHistory[I].HWND = HWND then
         begin
             FAllowedWindowHistory.Delete(I);
             Break;
@@ -203,34 +198,35 @@ begin
     begin
         if not IsWindow(FAllowedWindowHistory[I].HWND) then
         begin
-            OutputDebugString(PChar(Format('[WinMonitor] Removed invalid window: HWND=%d',
-                [FAllowedWindowHistory[I].HWND])));
+            {$IFDEF DEBUG}
+            OutputDebugString(PChar(Format('[WinMonitor] Removed invalid window: HWND=%d', [FAllowedWindowHistory[I].HWND])));
+            {$ENDIF}
             FAllowedWindowHistory.Delete(I);
         end;
     end;
 end;
 
-function TWindowMonitor.IsProcessAllowed(const AExeName: string): Boolean;
+function TWindowMonitor.IsProcessAllowed(const ExeName: string): Boolean;
 var
     Process: string;
 begin
     Result := False;
     for Process in FAllowedProcesses do
     begin
-        if SameText(Process, AExeName) then
+        if SameText(Process, ExeName) then
             Exit(True);
     end;
 end;
 
-procedure TWindowMonitor.AddAllowedProcess(const AExeName: string);
+procedure TWindowMonitor.AddAllowedProcess(const ExeName: string);
 begin
-    if not FAllowedProcesses.Contains(LowerCase(AExeName)) then
-        FAllowedProcesses.Add(LowerCase(AExeName));
+    if not FAllowedProcesses.Contains(LowerCase(ExeName)) then
+        FAllowedProcesses.Add(LowerCase(ExeName));
 end;
 
-procedure TWindowMonitor.RemoveAllowedProcess(const AExeName: string);
+procedure TWindowMonitor.RemoveAllowedProcess(const ExeName: string);
 begin
-    FAllowedProcesses.Remove(LowerCase(AExeName));
+    FAllowedProcesses.Remove(LowerCase(ExeName));
 end;
 
 procedure TWindowMonitor.ClearAllowedProcesses;
@@ -238,27 +234,27 @@ begin
     FAllowedProcesses.Clear;
 end;
 
-function TWindowMonitor.GetWindowInfo(AHWND: THandle): TWindowMonitorInfo;
+function TWindowMonitor.GetWindowInfo(HWND: THandle): TWindowMonitorInfo;
 var
     hProcess: THandle;
-    Buffer: array [0 .. MAX_PATH] of Char;
-    TitleBuffer: array [0 .. 1023] of Char;
+    Buffer: array[0..MAX_PATH] of Char;
+    TitleBuffer: array[0..1023] of Char;
     dwSize: DWORD;
 begin
-    Result.HWND := AHWND;
+    Result.HWND := HWND;
     Result.PID := 0;
     Result.ExePath := '';
     Result.ExeName := '';
     Result.WindowTitle := '';
     Result.ActivatedAt := 0;
 
-    if (AHWND = 0) or (not IsWindow(AHWND)) then
+    if (HWND = 0) or (not IsWindow(HWND)) then
         Exit;
 
-    GetWindowText(AHWND, TitleBuffer, SizeOf(TitleBuffer) div SizeOf(Char));
+    GetWindowText(HWND, TitleBuffer, SizeOf(TitleBuffer) div SizeOf(Char));
     Result.WindowTitle := TitleBuffer;
 
-    GetWindowThreadProcessId(AHWND, @Result.PID);
+    GetWindowThreadProcessId(HWND, @Result.PID);
     if Result.PID = 0 then
         Exit;
 
@@ -286,7 +282,7 @@ begin
 
     // Возвращаем последний элемент истории (самый недавний)
     if FAllowedWindowHistory.Count > 0 then
-        Result := FAllowedWindowHistory.Last
+        Result := FAllowedWindowHistory[FAllowedWindowHistory.Count - 1]
     else
     begin
         Result.HWND := 0;
@@ -298,11 +294,11 @@ begin
     end;
 end;
 
-function TWindowMonitor.GetAllowedWindowsHistory: TList<TWindowMonitorInfo>;
+function TWindowMonitor.GetAllowedWindowsHistory: TArray<TWindowMonitorInfo>;
 begin
     // Чистим историю перед возвратом
     CleanupInvalidWindows;
-    Result := FAllowedWindowHistory;
+    Result := FAllowedWindowHistory.Items;
 end;
 
 function TWindowMonitor.GetAllowedWindowCount: Integer;
@@ -328,11 +324,14 @@ begin
     if Result then
     begin
         LastWindow := GetLastAllowedWindow;
-        OutputDebugString(PChar(Format('[WinMonitor] CanAutoType: YES, Target=%s (HWND=%d)',
-            [LastWindow.ExeName, LastWindow.HWND])));
+        {$IFDEF DEBUG}
+        OutputDebugString(PChar(Format('[WinMonitor] CanAutoType: YES, Target=%s (HWND=%d)', [LastWindow.ExeName, LastWindow.HWND])));
+        {$ENDIF}
     end
     else
+        {$IFDEF DEBUG}
         OutputDebugString('[WinMonitor] CanAutoType: NO, No allowed windows in history');
+        {$ENDIF}
 end;
 
 function TWindowMonitor.ActivateWindow(AWindowInfo: TWindowMonitorInfo): Boolean;
@@ -378,11 +377,13 @@ begin
     Result := (GetForegroundWindow = AWindowInfo.HWND);
 
     if Result then
-        OutputDebugString(PChar(Format('[WinMonitor] Activated: %s (HWND=%d)',
-            [AWindowInfo.ExeName, AWindowInfo.HWND])))
+        {$IFDEF DEBUG}
+        OutputDebugString(PChar(Format('[WinMonitor] Activated: %s (HWND=%d)', [AWindowInfo.ExeName, AWindowInfo.HWND])))
+        {$ENDIF}
     else
-        OutputDebugString(PChar(Format('[WinMonitor] Failed to activate: HWND=%d',
-            [AWindowInfo.HWND])));
+        {$IFDEF DEBUG}
+        OutputDebugString(PChar(Format('[WinMonitor] Failed to activate: HWND=%d', [AWindowInfo.HWND])));
+        {$ENDIF}
 end;
 
 procedure TWindowMonitor.StartMonitoring;
@@ -390,8 +391,7 @@ begin
     if FWinEventHook <> 0 then
         Exit;
 
-    FWinEventHook := SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND, 0, @WinEventProc, 0, 0,
-      WINEVENT_OUTOFCONTEXT or WINEVENT_SKIPOWNPROCESS);
+    FWinEventHook := SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND, 0, @WinEventProc, 0, 0, WINEVENT_OUTOFCONTEXT or WINEVENT_SKIPOWNPROCESS);
 
     if FWinEventHook = 0 then
         raise Exception.Create('Не удалось установить WinEventHook. Ошибка: ' + SysErrorMessage(GetLastError));
@@ -417,7 +417,9 @@ end;
 initialization
     WinMonitor := TWindowMonitor.Create;
 
+
 finalization
     WinMonitor.Free;
 
 end.
+

@@ -6,7 +6,6 @@ uses
     System.SysUtils,
     System.Generics.Collections,
     System.RegularExpressions,
-    Winapi.Windows,
     MacroInputTypes
     ;
 
@@ -111,7 +110,6 @@ begin
         begin
             MatchStart := Match.Index;
 
-            // ����� ����� ������� ������ � ����
             if MatchStart > LastPos then
             begin
                 Chunk := Copy(Text, LastPos, MatchStart - LastPos);
@@ -158,8 +156,8 @@ begin
                     BracketEnd := Pos(']', Args);
                     if BracketEnd > 0 then
                     begin
-                        ParamStr := Copy(Args, 2, BracketEnd - 2);  // "Hex:FF"
-                        Token.Text := Trim(Copy(Args, BracketEnd + 1, MaxInt));  // "���� � hex"
+                        ParamStr := Copy(Args, 2, BracketEnd - 2);  // Hex:FF
+                        Token.Text := Trim(Copy(Args, BracketEnd + 1, MaxInt));
                         ParseInputParams(ParamStr, Token.InputType, Token.DefaultValue);
                     end
                     else

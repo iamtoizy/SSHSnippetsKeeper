@@ -3,7 +3,6 @@ unit JSONSerializer;
 interface
 
 uses
-	Winapi.Windows,
 	System.SysUtils,
 	System.Rtti,
 	System.TypInfo,

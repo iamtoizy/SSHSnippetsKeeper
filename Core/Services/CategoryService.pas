@@ -5,29 +5,29 @@ interface
 uses
     System.SysUtils,
     Category,
-    CategoryRepository;
+    Core.Interfaces;
 
 type
-    TCategoryService = class
+    TCategoryService = class(TInterfacedObject, ICategoryService)
     private
-        FCategoryRepo: TCategoryRepository;
+        FCategoryRepo: ICategoryRepository;
     public
-        constructor Create(ACategoryRepo: TCategoryRepository);
+        constructor Create(CategoryRepo: ICategoryRepository);
 
-        function GetAllCategories(UserID: NativeInt = 0): TArray<TCategoryDTO>; // <-- днаюбкемн
-        function GetCategoryByID(CategoryID: NativeInt): TCategoryDTO;         // <-- днаюбкемн
+        function GetAllCategories(UserID: NativeInt = 0): TArray<TCategoryDTO>;
+        function GetCategoryByID(CategoryID: NativeInt): TCategoryDTO;
 
         function CreateCategory(const Category: TCategoryDTO): NativeInt;
-        procedure RenameCategory(CategoryID: NativeInt; const NewName: string);// <-- днаюбкемн
-        procedure MoveCategory(CategoryID, NewParentID, Position: NativeInt);  // <-- днаюбкемн
+        procedure RenameCategory(CategoryID: NativeInt; const NewName: string);
+        procedure MoveCategory(CategoryID, NewParentID, Position: NativeInt);
         procedure DeleteCategory(CategoryID: NativeInt);
     end;
 
 implementation
 
-constructor TCategoryService.Create(ACategoryRepo: TCategoryRepository);
+constructor TCategoryService.Create(CategoryRepo: ICategoryRepository);
 begin
-    FCategoryRepo := ACategoryRepo;
+    FCategoryRepo := CategoryRepo;
 end;
 
 function TCategoryService.GetAllCategories(UserID: NativeInt): TArray<TCategoryDTO>;

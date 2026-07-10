@@ -42,7 +42,6 @@ end;
 
 destructor TStateMgr.Destroy;
 begin
-    // Здесь можно выполнить необходимую очистку, если требуется
     inherited;
 end;
 
@@ -78,7 +77,7 @@ end;
 
 procedure TStateMgr.OpenDatabase;
 begin
-    ChangeState(bfsDBConnected);
+    ChangeState(bfsDBOpen);
 end;
 
 procedure TStateMgr.CloseDatabase;

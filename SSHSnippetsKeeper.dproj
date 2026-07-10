@@ -204,6 +204,7 @@
         <DCCReference Include="Core\Services\TagService.pas"/>
         <DCCReference Include="Core\Services\CategoryService.pas"/>
         <DCCReference Include="Core\Services\UserService.pas"/>
+        <DCCReference Include="Core\Core.Interfaces.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

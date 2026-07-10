@@ -3,7 +3,9 @@ unit ProcessProfile;
 interface
 
 uses
-    System.SysUtils, System.Generics.Collections, System.RegularExpressions;
+    System.SysUtils,
+    System.Generics.Collections,
+    System.RegularExpressions;
 
 type
     TProcessProfile = class
@@ -13,14 +15,14 @@ type
         FTitleExcludeRegex: string;
         FEnabled: Boolean;
     public
-        constructor Create(const AExeName: string);
+        constructor Create(const ExeName: string);
 
         property ExeName: string read FExeName write FExeName;
         property TitleIncludeRegex: string read FTitleIncludeRegex write FTitleIncludeRegex;
         property TitleExcludeRegex: string read FTitleExcludeRegex write FTitleExcludeRegex;
         property Enabled: Boolean read FEnabled write FEnabled;
 
-        function MatchesTitle(const ATitle: string): Boolean;
+        function MatchesTitle(const Title: string): Boolean;
     end;
 
     TProfileManager = class
@@ -46,16 +48,16 @@ implementation
 
 { TProcessProfile }
 
-constructor TProcessProfile.Create(const AExeName: string);
+constructor TProcessProfile.Create(const ExeName: string);
 begin
     inherited Create;
-    FExeName := AExeName;
+    FExeName := ExeName;
     FTitleIncludeRegex := '.*'; // По умолчанию разрешаем все заголовки
     FTitleExcludeRegex := '';
     FEnabled := True;
 end;
 
-function TProcessProfile.MatchesTitle(const ATitle: string): Boolean;
+function TProcessProfile.MatchesTitle(const Title: string): Boolean;
 var
     IncludeMatch, ExcludeMatch: Boolean;
 begin
@@ -67,7 +69,7 @@ begin
     // Проверяем Include regex
     if FTitleIncludeRegex <> '' then
     begin
-        IncludeMatch := TRegEx.IsMatch(ATitle, FTitleIncludeRegex, [roIgnoreCase]);
+        IncludeMatch := TRegEx.IsMatch(Title, FTitleIncludeRegex, [roIgnoreCase]);
         if not IncludeMatch then
             Exit;
     end;
@@ -75,7 +77,7 @@ begin
     // Проверяем Exclude regex
     if FTitleExcludeRegex <> '' then
     begin
-        ExcludeMatch := TRegEx.IsMatch(ATitle, FTitleExcludeRegex, [roIgnoreCase]);
+        ExcludeMatch := TRegEx.IsMatch(Title, FTitleExcludeRegex, [roIgnoreCase]);
         if ExcludeMatch then
             Exit(False);
     end;
@@ -134,11 +136,11 @@ begin
 end;
 
 initialization
+    ProfileManager := TProfileManager.Create;
 
-ProfileManager := TProfileManager.Create;
 
 finalization
-
-ProfileManager.Free;
+    ProfileManager.Free;
 
 end.
+

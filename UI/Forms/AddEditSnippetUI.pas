@@ -6,9 +6,7 @@ uses
     Winapi.Windows,
     Winapi.Messages,
     System.SysUtils,
-    System.Variants,
     System.Classes,
-    Vcl.Graphics,
     Snippet,
     Vcl.Controls,
     Vcl.Forms,
@@ -18,19 +16,17 @@ uses
     HintTextEdit,
     HintTextMemo,
     Vcl.ExtCtrls,
-    UITreeViewSearchHelper,
     SynEdit,
     SynThemeAdapter,
-    SynEditHighlighter,
     SynHighlighterUNIXShellScript,
-    SynEditMiscClasses,
     SynEditRegexSearch,
     SynCompletionProposal,
     SynEditTypes,
     CustomBashSyn,
     BashCompletionEngine,
-    SnippetService,
-    TagService; // <-- Добавили сервис тегов
+    Core.Interfaces,
+    SynEditMiscClasses,
+    SynEditHighlighter;
 
 type
     TOriginalSnippet = record
@@ -74,15 +70,15 @@ type
         procedure lvAllTagsDragDrop(Sender, Source: TObject; X, Y: Integer);
         procedure lvAllTagsDblClick(Sender: TObject);
         procedure mSnippetKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-        procedure mSnippetProcessCommand(Sender: TObject; var Command: TSynEditorCommand; var AChar: WideChar; Data: Pointer);
+        procedure mSnippetProcessCommand(Sender: TObject; var Command: TSynEditorCommand; var Char: WideChar; Data: Pointer);
         procedure SynCompletionProposalExecute(Kind: SynCompletionType; Sender: TObject; var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
         procedure tmrReloadCommandsTimer(Sender: TObject);
     protected
         procedure Loaded; override;
         procedure CMStyleChanged(var Message: TMessage); message CM_STYLECHANGED;
     private
-        FSnippetService: TSnippetService;
-        FTagService: TTagService; // <-- Добавили ссылку на сервис тегов
+        FSnippetService: ISnippetService;
+        FTagService: ITagService;
 
         FSnippet: TSnippetDTO;
         FOriginalSnippet: TOriginalSnippet;
@@ -103,7 +99,7 @@ type
         property UserID: NativeInt read FUserID write FUserID;
 
         // Конструктор теперь требует ОБА сервиса
-        constructor CreateWithService(AOwner: TComponent; ASnippetService: TSnippetService; ATagService: TTagService);
+        constructor CreateWithService(Owner: TComponent; SnippetService: ISnippetService; TagService: ITagService);
     end;
 
 var
@@ -112,9 +108,6 @@ var
 implementation
 
 uses
-    Vcl.Styles,
-    Vcl.Themes,
-    System.Hash,
     UIHelpers,
     Settings,
     System.Generics.Collections,
@@ -126,11 +119,11 @@ uses
 
 {$R *.dfm}
 
-constructor TAddEditSnippet.CreateWithService(AOwner: TComponent; ASnippetService: TSnippetService; ATagService: TTagService);
+constructor TAddEditSnippet.CreateWithService(Owner: TComponent; SnippetService: ISnippetService; TagService: ITagService);
 begin
-    inherited Create(AOwner);
-    FSnippetService := ASnippetService;
-    FTagService := ATagService;
+    inherited Create(Owner);
+    FSnippetService := SnippetService;
+    FTagService := TagService;
 end;
 
 procedure TAddEditSnippet.FormDestroy(Sender: TObject);
@@ -164,8 +157,14 @@ end;
 
 procedure TAddEditSnippet.bCancelClick(Sender: TObject);
 begin
-    if FIsEditMode and IsSnippetChanged and (Application.MessageBox('Обнаружены изменения, которые потеряются в случае закрытия этого окна.' + sLineBreak + sLineBreak + 'Закрыть окно без сохранения изменений?', 'Внимание', MB_YESNO) = IDNO) then
-        Exit;
+    if FIsEditMode
+        and IsSnippetChanged
+        and (Application.MessageBox(
+            'Обнаружены изменения, которые потеряются в случае закрытия этого окна.' +
+            sLineBreak + sLineBreak +
+            'Закрыть окно без сохранения изменений?',
+            'Внимание',
+            MB_YESNO) = IDNO) then Exit;
 
     ModalResult := mrCancel;
 end;
@@ -214,9 +213,7 @@ begin
             Snippet.CreatedAt := FSnippet.CreatedAt;
             Snippet.UpdatedAt := DateTimeToUnix(Now);
 
-            // ИСПРАВЛЕНИЕ: Передаем TagArr вместо пустых скобок []
-            // ПРИМЕЧАНИЕ: Убедись, что в TSnippetService есть метод UpdateSnippet.
-            // Если его еще нет, пока можно использовать CreateSnippet или добавить UpdateSnippet.
+            // Передаем TagArr вместо пустых скобок []
             FSnippetService.UpdateSnippet(Snippet, TagArr);
             ModalResult := mrOk;
         end
@@ -225,7 +222,7 @@ begin
             Snippet.CreatedAt := DateTimeToUnix(Now);
             Snippet.UpdatedAt := 0;
 
-            // ИСПРАВЛЕНИЕ: Передаем TagArr вместо пустых скобок []
+            // Передаем TagArr вместо пустых скобок []
             FSnippetService.CreateSnippet(Snippet, TagArr);
             ModalResult := mrOk;
         end;
@@ -271,7 +268,7 @@ var
     AllTags: TArray<TTagDTO>;
     Tag: TTagDTO;
 begin
-    // 1. ИСПРАВЛЕНИЕ: Сначала загружаем ВСЕ теги в левый список через Сервис
+    // Сначала загружаем ВСЕ теги в левый список через Сервис
     if Assigned(FTagService) then
     begin
         AllTags := FTagService.GetAllTags;
@@ -293,7 +290,7 @@ begin
         mSnippet.Text := FSnippet.Content;
         mComment.Text := FSnippet.Comment;
 
-        // 2. ИСПРАВЛЕНИЕ: Загружаем теги текущего сниппета через Сервис
+        // Загружаем теги текущего сниппета через Сервис
         if Assigned(FTagService) then
         begin
             SnippetTags := FTagService.GetSnippetTags(FSnippet.ID);
@@ -455,14 +452,14 @@ begin
     end;
 end;
 
-procedure TAddEditSnippet.mSnippetProcessCommand(Sender: TObject; var Command: TSynEditorCommand; var AChar: WideChar; Data: Pointer);
+procedure TAddEditSnippet.mSnippetProcessCommand(Sender: TObject; var Command: TSynEditorCommand; var Char: WideChar; Data: Pointer);
 begin
     if FBlockEnter then
     begin
-        if (Command = ecLineBreak) or ((Command = ecChar) and (AChar = #13)) then
+        if (Command = ecLineBreak) or ((Command = ecChar) and (Char = #13)) then
         begin
             Command := ecNone;
-            AChar := #0;
+            Char := #0;
         end;
         FBlockEnter := False;
         Exit;

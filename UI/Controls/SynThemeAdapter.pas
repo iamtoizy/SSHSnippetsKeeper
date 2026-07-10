@@ -11,13 +11,11 @@ uses
     Winapi.Windows,
     Winapi.Messages,
     SynEdit,
-    SynEditHighlighter,
-    System.Rtti,
-    System.TypInfo; // Добавлено RTTI
+    SynEditHighlighter;
 
 type
-    // 1. Глобальный класс-перехватчик.
-    // Теперь он доступен всем формам, которые подключат этот модуль.
+    // Глобальный класс-перехватчик.
+    // Он доступен всем формам, которые подключат этот модуль.
     TSynEdit = class(SynEdit.TSynEdit)
         private
         procedure WMEraseBkgnd(var Message: TWmEraseBkgnd); message WM_ERASEBKGND;
@@ -40,24 +38,24 @@ type
 
     TSynThemeAdapter = class
     private
-        class function IsDarkTheme(ABgColor: TColor): Boolean;
+        class function IsDarkTheme(BgColor: TColor): Boolean;
         class function GetDarkPalette: TSynPalette;
         class function GetLightPalette: TSynPalette;
     public
-        class procedure ApplyTheme(ASynEdit: TCustomSynEdit);
+        class procedure ApplyTheme(SynEdit: TCustomSynEdit);
     end;
 
 implementation
 
 { TSynThemeAdapter }
 
-class function TSynThemeAdapter.IsDarkTheme(ABgColor: TColor): Boolean;
+class function TSynThemeAdapter.IsDarkTheme(BgColor: TColor): Boolean;
 var
     RGBColor: Longint;
     R, G, B: Byte;
     Luminance: Integer;
 begin
-    RGBColor := ColorToRGB(ABgColor);
+    RGBColor := ColorToRGB(BgColor);
     R := GetRValue(RGBColor);
     G := GetGValue(RGBColor);
     B := GetBValue(RGBColor);
@@ -97,7 +95,7 @@ begin
     Result.RightEdge := clSilver;
 end;
 
-class procedure TSynThemeAdapter.ApplyTheme(ASynEdit: TCustomSynEdit);
+class procedure TSynThemeAdapter.ApplyTheme(SynEdit: TCustomSynEdit);
 var
     SysBgColor: TColor;
     Palette: TSynPalette;
@@ -106,7 +104,7 @@ var
     Attr: TSynHighlighterAttributes;
     AttrName: string;
 begin
-    if not Assigned(ASynEdit) then
+    if not Assigned(SynEdit) then
         Exit;
 
   // Берем цвет напрямую из текущего стиля VCL (решает проблему с мерцанием)
@@ -121,21 +119,21 @@ begin
         Palette := GetLightPalette;
 
   // Базовые цвета редактора
-    ASynEdit.Color := SysBgColor;
-    ASynEdit.Font.Color := Palette.Foreground;
-    ASynEdit.ActiveLineColor := Palette.ActiveLine;
+    SynEdit.Color := SysBgColor;
+    SynEdit.Font.Color := Palette.Foreground;
+    SynEdit.ActiveLineColor := Palette.ActiveLine;
 
   // Цвета панели Gutter
-    ASynEdit.Gutter.Color := Palette.GutterBackground;
-    ASynEdit.Gutter.Font.Color := Palette.GutterForeground;
+    SynEdit.Gutter.Color := Palette.GutterBackground;
+    SynEdit.Gutter.Font.Color := Palette.GutterForeground;
 
   // Именно это свойство отвечает за вертикальную разделительную линию
-    ASynEdit.Gutter.BorderColor := Palette.GutterBorder;
+    SynEdit.Gutter.BorderColor := Palette.GutterBorder;
 
-    ASynEdit.RightEdgeColor := Palette.RightEdge;
+    SynEdit.RightEdgeColor := Palette.RightEdge;
 
   // Адаптация хайлайтера
-    Hl := ASynEdit.Highlighter;
+    Hl := SynEdit.Highlighter;
     if Assigned(Hl) then
     begin
         for I := 0 to Hl.AttrCount - 1 do
@@ -167,8 +165,8 @@ begin
     end;
 
   // Настройка CodeFolding (плюсики/минусики и их линии)
-    ASynEdit.CodeFolding.CollapsedLineColor := Palette.GutterForeground;
-    ASynEdit.CodeFolding.FolderBarLinesColor := Palette.GutterBorder;
+    SynEdit.CodeFolding.CollapsedLineColor := Palette.GutterForeground;
+    SynEdit.CodeFolding.FolderBarLinesColor := Palette.GutterBorder;
 end;
 
 { TSynEdit }

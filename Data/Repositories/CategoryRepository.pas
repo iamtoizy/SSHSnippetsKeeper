@@ -7,21 +7,22 @@ uses
     Category,
     Snippet,
     FireDAC.Comp.Client,
-    RepositoryBase;
+    RepositoryBase,
+    Core.Interfaces;
 
 type
-    TCategoryRepository = class(TRepositoryBase)
-  private
+    TCategoryRepository = class(TRepositoryBase, ICategoryRepository)
+    private
     public
         function GetAll(UserID: NativeInt = 0): TArray<TCategoryDTO>;
         function GetByID(ID: Integer): TCategoryDTO;
-        function GetSnippetsByCategory(CategoryID: Integer): TArray<TSnippetDTO>;
+        function GetSnippetsByCategory(const CategoryID: Integer): TArray<TSnippetDTO>;
         procedure MoveCategory(ID, NewParentID, Position: NativeInt);
         procedure DeleteCategory(ID: Integer);
         function AddCategory(const Name: string; ParentID, UserID: Integer): Integer;
         procedure UpdateName(ID: Integer; const NewName: string);
         function GetUserID(ID: NativeInt): NativeInt;
-        function ExistsInParent(const AName: string; AParentID, AUserID: NativeInt): Boolean;
+        function ExistsInParent(const Name: string; ParentID, UserID: NativeInt): Boolean;
     end;
 
 implementation
@@ -46,18 +47,19 @@ begin
     List := TList<TCategoryDTO>.Create;
     Query := CreateQuery;
     try
-        // ИЗМЕНЕНО: добавлен sort_order и правильная сортировка
+        // sort_order и правильная сортировка
         if UserID > 0 then
-            Query.Open('SELECT id, name, parent_id, sort_order FROM snippet_categories WHERE user_id = ? ORDER BY parent_id, sort_order, name', [UserID])
+            Query.Open('SELECT id, user_id, name, parent_id, sort_order FROM snippet_categories WHERE user_id = ? ORDER BY parent_id, sort_order, name', [UserID])
         else
-            Query.Open('SELECT id, name, parent_id, sort_order FROM snippet_categories ORDER BY parent_id, sort_order, name');
+            Query.Open('SELECT id, user_id, name, parent_id, sort_order FROM snippet_categories ORDER BY parent_id, sort_order, name');
 
         while not Query.Eof do
         begin
             Cat.ID := Query.FieldByName('id').AsInteger;
             Cat.Name := Query.FieldByName('name').AsString;
             Cat.ParentID := Query.FieldByName('parent_id').AsInteger;
-            Cat.SortOrder := Query.FieldByName('sort_order').AsInteger; // <-- НОВОЕ
+            Cat.SortOrder := Query.FieldByName('sort_order').AsInteger;
+            Cat.UserID := Query.FieldByName('user_id').AsInteger;
 
             List.Add(Cat);
             Query.Next;
@@ -90,19 +92,23 @@ begin
             Result.Name := Q.FieldByName('name').AsString;
             Result.ParentID := Q.FieldByName('parent_id').AsInteger;
 
+            {$IFDEF DEBUG}
             OutputDebugString(PChar(Format('CategoryRepository.GetByID: Found category ID=%d, UserID=%d, Name="%s"',
                 [Result.ID, Result.UserID, Result.Name])));
+            {$ENDIF}
         end
         else
         begin
+            {$IFDEF DEBUG}
             OutputDebugString(PChar(Format('CategoryRepository.GetByID: Category ID=%d not found', [ID])));
+            {$ENDIF}
         end;
     finally
         Q.Free;
     end;
 end;
 
-function TCategoryRepository.GetSnippetsByCategory(CategoryID: Integer): TArray<TSnippetDTO>;
+function TCategoryRepository.GetSnippetsByCategory(const CategoryID: Integer): TArray<TSnippetDTO>;
 var
     Query: TFDQuery;
     List: TList<TSnippetDTO>;
@@ -352,13 +358,13 @@ begin
     end;
 end;
 
-function TCategoryRepository.ExistsInParent(const AName: string; AParentID, AUserID: NativeInt): Boolean;
+function TCategoryRepository.ExistsInParent(const Name: string; ParentID, UserID: NativeInt): Boolean;
 var
     Q: TFDQuery;
 begin
     Q := CreateQuery;
     try
-        if AParentID = 0 then
+        if ParentID = 0 then
         begin
             Q.SQL.Text :=
                 'SELECT COUNT(*) FROM snippet_categories ' +
@@ -369,10 +375,10 @@ begin
             Q.SQL.Text :=
                 'SELECT COUNT(*) FROM snippet_categories ' +
                 'WHERE name = :name AND parent_id = :pid AND user_id = :uid';
-            Q.ParamByName('pid').AsInteger := AParentID;
+            Q.ParamByName('pid').AsInteger := ParentID;
         end;
-        Q.ParamByName('name').AsString := AName;
-        Q.ParamByName('uid').AsInteger := AUserID;
+        Q.ParamByName('name').AsString := Name;
+        Q.ParamByName('uid').AsInteger := UserID;
         Q.Open;
         Result := Q.Fields[0].AsInteger > 0;
     finally
