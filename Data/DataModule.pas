@@ -42,7 +42,7 @@ uses
     FireDAC.Comp.DataSet;
 
 type
-    TAppDatabase = class(TDataModule)
+    TAppDatabase = class(TDataModule, IDatabaseManager)
         FDConnection: TFDConnection;
         FDQuery: TFDQuery;
         FDManager: TFDManager;
@@ -63,9 +63,10 @@ type
         procedure FlushToDisk;
         function LoadSQLFromResource(const ResourceName: string): string;
     public
-        procedure CreateDatabase(Filename: string);
-        procedure OpenDatabase(Filename: string);
+        procedure CreateDatabase(const Filename: string);
+        procedure OpenDatabase(const Filename: string);
         procedure CloseDatabase;
+        function IsConnected: Boolean;
 
         // Отдаем наружу только сервисы
         property SnippetService: ISnippetService read FSnippetService;
@@ -109,12 +110,12 @@ begin
 //
 end;
 
-procedure TAppDatabase.CreateDatabase(Filename: string);
+procedure TAppDatabase.CreateDatabase(const Filename: string);
 begin
     InitializeDatabase(Filename);
 end;
 
-procedure TAppDatabase.OpenDatabase(Filename: string);
+procedure TAppDatabase.OpenDatabase(const Filename: string);
 begin
     CloseDatabase;
 
@@ -148,6 +149,11 @@ begin
     end;
 
     FDConnection.ExecSQL('INSERT OR IGNORE INTO users (id, name) VALUES (1, ''Local User'');');
+end;
+
+function TAppDatabase.IsConnected: Boolean;
+begin
+    Result := FDConnection.Connected;
 end;
 
 function TAppDatabase.LoadSQLFromResource(const ResourceName: string): string;

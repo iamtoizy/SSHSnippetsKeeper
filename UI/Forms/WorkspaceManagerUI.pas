@@ -14,7 +14,8 @@ uses
     Vcl.ExtCtrls,
     Vcl.Menus,
     User,
-    Core.Interfaces
+    Core.Interfaces,
+    UI.Interfaces
     ;
 
 type
@@ -41,6 +42,7 @@ type
         procedure nRenameClick(Sender: TObject);
     private
         FUserService: IUserService;
+        FErrorHandler: IUIErrorHandler;
 
         procedure RefreshWorkspaces;
         procedure DoAddWorkspace;
@@ -70,6 +72,7 @@ end;
 
 procedure TWorkspaceManagerForm.FormCreate(Sender: TObject);
 begin
+    FErrorHandler := TVCLErrorHandler.Create;
     lvWorkspaces.OwnerData := False;
     lvWorkspaces.ReadOnly := False; // Разрешаем редактирование
 end;
@@ -126,7 +129,7 @@ begin
         Item.MakeVisible(False);
     except
         on E: Exception do
-            ShowMessage('Ошибка добавления пространства: ' + E.Message);
+            FErrorHandler.ShowError('Ошибка добавления пространства: ' + E.Message);
     end;
 end;
 
@@ -157,7 +160,7 @@ begin
         Item.Delete;
     except
         on E: Exception do
-            ShowMessage('Ошибка удаления пространства: ' + E.Message);
+            FErrorHandler.ShowError('Ошибка удаления пространства: ' + E.Message);
     end;
 end;
 
@@ -165,7 +168,7 @@ procedure TWorkspaceManagerForm.DoRenameWorkspace;
 begin
     if lvWorkspaces.Selected = nil then
     begin
-        ShowMessage('Сначала выберите пространство.');
+        FErrorHandler.ShowInfo('Сначала выберите пространство.');
         Exit;
     end;
     lvWorkspaces.Selected.EditCaption;
@@ -197,7 +200,7 @@ begin
     except
         on E: Exception do
         begin
-            ShowMessage('Ошибка переименования пространства: ' + E.Message);
+            FErrorHandler.ShowError('Ошибка переименования пространства: ' + E.Message);
             S := OldName;
         end;
     end;

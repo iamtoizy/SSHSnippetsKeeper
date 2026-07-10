@@ -27,7 +27,8 @@ uses
     Vcl.VirtualImageList,
     Vcl.BaseImageCollection,
     Vcl.ImageCollection,
-    DataModule;
+    Core.Interfaces,
+    UI.Interfaces;
 
 type
     TSnippetField = (sfContent, sfComment);
@@ -116,13 +117,20 @@ type
         procedure tvCategoriesEndDrag(Sender, Target: TObject; X, Y: Integer);
     private
         { Private declarations }
-        FMacroEngine: TMacroEngine;
         FHotItemIndex: NativeInt;
         FFilterByTagID: NativeInt;
         FCurrentSnippetID: NativeInt;
         FUserID: NativeInt;
         FFilterUserID: NativeInt;
         FIgnoreCategoryChange: Boolean;
+        FErrorHandler: IUIErrorHandler;
+
+        FDBManager: IDatabaseManager;
+
+        FSnippetService: ISnippetService;
+        FCategoryService: ICategoryService;
+        FTagService: ITagService;
+        FUserService: IUserService;
 
         procedure ApplyTagFilter(TagID: NativeInt; const TagName: string);
         procedure ClearTagFilter;
@@ -157,6 +165,12 @@ type
     public
         { Public declarations }
         procedure UpdateUI(const State: TBaseFormState); override;
+        procedure Initialize(
+            DBMgr: IDatabaseManager;
+            Snippet: ISnippetService;
+            Category: ICategoryService;
+            Tag: ITagService;
+            User: IUserService);
     end;
 
 var
@@ -187,7 +201,8 @@ uses
     InputFormUI,
     WorkspaceManagerUI,
     CommonHelpers,
-    CommonConsts;
+    CommonConsts,
+    SnippetRunner;
 
 const
     PRESERVE_CATEGORY_EMPTY_ID = -999;
@@ -195,6 +210,8 @@ const
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
     SetProp(Self.Handle, PChar(UNIQUE_APP_STR), 1);
+
+    FErrorHandler := TVCLErrorHandler.Create;
 
     FUserID := 1;
     FIgnoreCategoryChange := False;
@@ -225,7 +242,6 @@ end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
 begin
-    FMacroEngine.Free;
     WinMonitor.StopMonitoring;
     RemoveProp(Self.Handle, PChar(UNIQUE_APP_STR));
 end;
@@ -322,11 +338,8 @@ begin
     mComment.Text := '';
     FCurrentSnippetID := 0;
 
-    if Assigned(AppDatabase) and Assigned(AppDatabase.TagService) then
-    begin
-        AllTags := AppDatabase.TagService.GetAllTags;
-        TUIHelpers.FillTagListWithSelection(lvTags, AllTags, []);
-    end;
+    AllTags := FTagService.GetAllTags;
+    TUIHelpers.FillTagListWithSelection(lvTags, AllTags, []);
 end;
 
 procedure TMainForm.ReloadUI(PreserveCategoryID: NativeInt);
@@ -336,16 +349,13 @@ var
 begin
     FIgnoreCategoryChange := True;
     try
-        if Assigned(AppDatabase) then
-        begin
-            // Получаем данные через сервисы
-            Cats := AppDatabase.CategoryService.GetAllCategories(FFilterUserID);
-            Users := AppDatabase.UserService.GetAllUsers;
+        // Получаем данные через сервисы
+        Cats := FCategoryService.GetAllCategories(FFilterUserID);
+        Users := FUserService.GetAllUsers;
 
-            // Используем UIHelper
-            TUIHelpers.BuildCategoryTree(tvCategories, Cats, Users, FFilterUserID, PreserveCategoryID);
-            RefreshCurrentSnippetList;
-        end;
+        // Используем UIHelper
+        TUIHelpers.BuildCategoryTree(tvCategories, Cats, Users, FFilterUserID, PreserveCategoryID);
+        RefreshCurrentSnippetList;
     finally
         FIgnoreCategoryChange := False;
     end;
@@ -365,13 +375,13 @@ begin
         Exit;
     end;
 
-    CatID := NativeInt(Node.Data);
+    CatID := NativeInt(NativeUInt(Node.Data));
 
     if IsVirtualCategory(Node) then
     begin
         case CatID of
-            -1: Snippets := AppDatabase.SnippetService.GetTopSnippets(FUserID, 10);
-            -2: Snippets := AppDatabase.SnippetService.GetRecentSnippets(FUserID, 10);
+            -1: Snippets := FSnippetService.GetTopSnippets(FUserID, 10);
+            -2: Snippets := FSnippetService.GetRecentSnippets(FUserID, 10);
         else
             Snippets := [];
         end;
@@ -381,9 +391,9 @@ begin
     else
     begin
         if FFilterUserID > 0 then
-            Snippets := AppDatabase.SnippetService.GetSnippetsByCategory(CatID, FFilterUserID)
+            Snippets := FSnippetService.GetSnippetsByCategory(CatID, FFilterUserID)
         else
-            Snippets := AppDatabase.SnippetService.GetSnippetsByCategory(CatID, GetSelectedCategoryUserID);
+            Snippets := FSnippetService.GetSnippetsByCategory(CatID, GetSelectedCategoryUserID);
     end;
 
     FillSnippetListView(Snippets);
@@ -408,15 +418,15 @@ begin
     if IsWorkspaceNode(Node) then
     begin
         WorkspaceName := Node.Text;
-        Users := AppDatabase.UserService.GetAllUsers;
+        Users := FUserService.GetAllUsers;
         for User in Users do
             if SameText(User.Name, WorkspaceName) then Exit(User.ID);
     end;
 
     if (Node <> nil) and not IsVirtualCategory(Node) and (Node.Data <> nil) then
     begin
-        CatID := NativeInt(Node.Data);
-        Cat := AppDatabase.CategoryService.GetCategoryByID(CatID);
+        CatID := NativeInt(NativeUInt(Node.Data));
+        Cat := FCategoryService.GetCategoryByID(CatID);
         if Cat.ID > 0 then Exit(Cat.UserID);
     end;
 
@@ -428,7 +438,7 @@ begin
             if IsWorkspaceNode(ParentNode) then
             begin
                 WorkspaceName := ParentNode.Text;
-                Users := AppDatabase.UserService.GetAllUsers;
+                Users := FUserService.GetAllUsers;
                 for User in Users do
                     if SameText(User.Name, WorkspaceName) then Exit(User.ID);
             end;
@@ -466,20 +476,20 @@ begin
 
     if Node = nil then
     begin
-        ShowMessage('Сначала выбери пространство или категорию.');
+        FErrorHandler.ShowError('Сначала выбери пространство или категорию.');
         Exit;
     end;
 
     if IsVirtualCategory(Node) then
     begin
-        ShowMessage('Нельзя добавлять категории в виртуальные папки.');
+        FErrorHandler.ShowError('Нельзя добавлять категории в виртуальные папки.');
         Exit;
     end;
 
     if IsWorkspaceNode(Node) then
         ParentID := 0
     else
-        ParentID := NativeInt(Node.Data);
+        ParentID := NativeInt(NativeUInt(Node.Data));
 
     TargetUserID := GetWorkspaceUserID(Node);
     NewCatName := Trim(InputBox('Новая категория', 'Введите имя:', 'Новая категория'));
@@ -492,17 +502,17 @@ begin
         NewCat.ParentID := ParentID;
         NewCat.UserID := TargetUserID;
 
-        NewCatID := AppDatabase.CategoryService.CreateCategory(NewCat);
+        NewCatID := FCategoryService.CreateCategory(NewCat);
         ReloadUI(NewCatID);
 
         Node := tvCategories.Selected;
-        if (Node <> nil) and (NativeInt(Node.Data) = NewCatID) then
+        if (Node <> nil) and (NativeInt(NativeUInt(Node.Data)) = NewCatID) then
             Node.EditText;
 
         sbBottom.SimpleText := Format('Категория "%s" создана.', [NewCatName]);
     except
         on E: Exception do
-            ShowMessage('Ошибка создания категории: ' + E.Message);
+            FErrorHandler.ShowError('Ошибка создания категории: ' + E.Message);
     end;
 end;
 
@@ -514,18 +524,18 @@ begin
     Node := tvCategories.Selected;
     if (Node = nil) or IsVirtualCategory(Node) then Exit;
 
-    Cat := AppDatabase.CategoryService.GetCategoryByID(NativeInt(Node.Data));
+    Cat := FCategoryService.GetCategoryByID(NativeInt(NativeUInt(Node.Data)));
 
     if MessageBox(Handle, PChar(Format('Удалить категорию "%s" и все её вложенные элементы?', [Cat.Name])), 'Подтверждение', MB_YESNO or MB_ICONQUESTION) = IDYES then
     begin
         try
-            AppDatabase.CategoryService.DeleteCategory(Cat.ID);
+            FCategoryService.DeleteCategory(Cat.ID);
             ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
             ClearRightPanel;
             sbBottom.SimpleText := Format('Категория "%s" удалена.', [Cat.Name]);
         except
             on E: Exception do
-                ShowMessage('Ошибка удаления категории: ' + E.Message);
+                FErrorHandler.ShowError('Ошибка удаления категории: ' + E.Message);
         end;
     end;
 end;
@@ -538,7 +548,7 @@ begin
     if Node = nil then Exit;
 
     if IsWorkspaceNode(Node) then
-        ShowMessage('Для переименования пространства используй кнопку "Управление пространствами".')
+        FErrorHandler.ShowError('Для переименования пространства используй кнопку "Управление пространствами".')
     else if not IsVirtualCategory(Node) then
         Node.EditText;
 end;
@@ -563,12 +573,12 @@ begin
     end;
 
     try
-        Cat := AppDatabase.CategoryService.GetCategoryByID(NativeInt(Node.Data));
-        AppDatabase.CategoryService.RenameCategory(Cat.ID, S);
+        Cat := FCategoryService.GetCategoryByID(NativeInt(NativeUInt(Node.Data)));
+        FCategoryService.RenameCategory(Cat.ID, S);
     except
         on E: Exception do
         begin
-            ShowMessage('Ошибка переименования: ' + E.Message);
+            FErrorHandler.ShowError('Ошибка переименования: ' + E.Message);
             S := OldName;
         end;
     end;
@@ -624,11 +634,11 @@ begin
             Exit;
 
         try
-            AppDatabase.CategoryService.MoveCategory(SourceID, NewParentID, Position);
+            FCategoryService.MoveCategory(SourceID, NewParentID, Position);
             ReloadUI(SourceID);
         except
             on E: Exception do
-                ShowMessage('Ошибка перемещения: ' + E.Message);
+                FErrorHandler.ShowError('Ошибка перемещения: ' + E.Message);
         end;
     end;
 end;
@@ -670,6 +680,20 @@ begin
     tvCategories.Cursor := crDefault;
 end;
 
+procedure TMainForm.Initialize(
+    DBMgr: IDatabaseManager;
+    Snippet: ISnippetService;
+    Category: ICategoryService;
+    Tag: ITagService;
+    User: IUserService);
+begin
+    FDBManager := DBMgr;
+    FSnippetService := Snippet;
+    FCategoryService := Category;
+    FTagService := Tag;
+    FUserService := User;
+end;
+
 function TMainForm.IsDescendant(Parent, Node: TTreeNode): Boolean;
 begin
     Result := False;
@@ -704,16 +728,16 @@ begin
 
     if (Node = nil) or IsVirtualCategory(Node) or IsWorkspaceNode(Node) then
     begin
-        ShowMessage('Выбери конкретную категорию для добавления сниппета.');
+        FErrorHandler.ShowError('Выбери конкретную категорию для добавления сниппета.');
         Exit;
     end;
 
-    CategoryID := NativeInt(Node.Data);
+    CategoryID := NativeInt(NativeUInt(Node.Data));
     TargetUserID := GetWorkspaceUserID(Node);
 
     if TargetUserID <= 0 then
     begin
-        ShowMessage(
+        FErrorHandler.ShowInfo(
             Format(
                 'Не удалось определить пространство для сниппета (UserID=%d). Попробуй выбрать конкретное пространство в фильтре.',
                 [TargetUserID]
@@ -721,7 +745,7 @@ begin
         Exit;
     end;
 
-    AddEditSnippet := TAddEditSnippet.CreateWithService(Application, AppDatabase.SnippetService, AppDatabase.TagService);
+    AddEditSnippet := TAddEditSnippet.CreateWithService(Application, FSnippetService, FTagService);
     try
         AddEditSnippet.CategoryID := CategoryID;
         AddEditSnippet.UserID := TargetUserID;
@@ -747,11 +771,11 @@ begin
     Node := tvCategories.Selected;
 
     if (Node <> nil) and not IsVirtualCategory(Node) and (Node.Data <> nil) then
-        CategoryID := NativeInt(Node.Data)
+        CategoryID := NativeInt(NativeUInt(Node.Data))
     else
         CategoryID := Snippet.CategoryID;
 
-    AddEditSnippet := TAddEditSnippet.CreateWithService(Application, AppDatabase.SnippetService, AppDatabase.TagService);
+    AddEditSnippet := TAddEditSnippet.CreateWithService(Application, FSnippetService, FTagService);
     try
         AddEditSnippet.Snippet := Snippet;
         AddEditSnippet.CategoryID := CategoryID;
@@ -783,7 +807,7 @@ begin
     if MessageBox(Handle, PChar(Format('Удалить сниппет "%s"?', [Snippet.Title])), 'Подтверждение', MB_YESNO or MB_ICONQUESTION) = IDYES then
     begin
         try
-            AppDatabase.SnippetService.DeleteSnippet(Snippet.ID);
+            FSnippetService.DeleteSnippet(Snippet.ID);
 
             if tvCategories.Selected <> nil then
                 SelectedCatID := NativeInt(tvCategories.Selected.Data)
@@ -795,7 +819,7 @@ begin
             sbBottom.SimpleText := 'Сниппет удалён.';
         except
             on E: Exception do
-                ShowMessage('Ошибка удаления: ' + E.Message);
+                FErrorHandler.ShowError('Ошибка удаления: ' + E.Message);
         end;
     end;
 end;
@@ -884,76 +908,18 @@ end;
 procedure TMainForm.lvSnippetsDblClick(Sender: TObject);
 var
     Item: TListItem;
-    Snippet: TSnippetDTO;
-    Context: TMacroContext;
-    TargetWindow: TWindowMonitorInfo;
+    Runner: TSnippetRunner;
 begin
     Item := lvSnippets.Selected;
-    if Item = nil then Exit;
-
-    if not WinMonitor.CanAutoType then
-    begin
-        MessageBeep(MB_ICONHAND);
-        ShowMessage('Не найдено разрешённых окон терминала в истории.');
-        Exit;
-    end;
-
-    if WinMonitor.AllowedWindowCount = 1 then
-        TargetWindow := WinMonitor.GetLastAllowedWindow
-    else
-    begin
-        with TChooseTerminalWindow.Create(Self) do
-        try
-            if ShowModal <> mrOk then Exit;
-            TargetWindow := SelectedWindow;
-        finally
-            Free;
-        end;
-    end;
-
-    if not IsWindow(TargetWindow.HWND) then
-    begin
-        MessageBeep(MB_ICONHAND);
-        ShowMessage('Выбранное окно больше не существует.');
-        Exit;
-    end;
-
-    Snippet := ExtractSnippetByListItem(Item);
-    if Trim(Snippet.Content).IsEmpty then
-    begin
-        MessageBox(Handle, 'Текст сниппета пуст.', 'Внимание!', MB_OK or MB_ICONWARNING or MB_TOPMOST);
-        Exit;
-    end;
-
-    if MessageBox(Handle, PChar(Format('Ввести сниппет в окно:' + sLineBreak + '"%s" (%s)?', [TargetWindow.WindowTitle, TargetWindow.ExeName])), 'Подтверждение', MB_YESNO or MB_ICONQUESTION or MB_TOPMOST) <> IDYES then
+    if Item = nil then
         Exit;
 
-    Context := TMacroContext.Create;
-    Context.Executor := WinHelper;
-    Context.UserCancelled := False;
-    Context.SnippetID := Snippet.ID;
-    Context.UserID := FUserID;
-    Context.OnInput :=
-        function(const Prompt: string): string
-        begin
-            Result := '';
-            if ShowInputForm(Prompt, Context.CurrentDefaultValue, Context.CurrentInputType, Result) then
-                Context.UserCancelled := False
-            else
-            begin
-                Context.UserCancelled := True;
-                Exit('');
-            end;
-        end;
-    Context.OnConfirm :=
-        function(const Prompt: string): Boolean
-        begin
-            Result := MessageBox(IfThen(IsWindow(TargetWindow.HWND), TargetWindow.HWND, Application.Handle), PChar(Prompt), 'Подтверждение', MB_YESNO or MB_ICONQUESTION or MB_TOPMOST) = IDYES;
-            if not Result then Context.UserCancelled := True;
-        end;
-
-    WinHelper.SetTargetWindow(TargetWindow.HWND);
-    WinHelper.TypeTextIntoWindowWithContext(Snippet.Content, Context);
+    Runner := TSnippetRunner.Create(FUserID);
+    try
+        Runner.ExecuteSnippet(ExtractSnippetByListItem(Item));
+    finally
+        Runner.Free;
+    end;
 end;
 
 procedure TMainForm.DoAddTag;
@@ -966,7 +932,7 @@ begin
     if NewName = '' then Exit;
 
     try
-        NewID := AppDatabase.TagService.CreateTag(NewName, '');
+        NewID := FTagService.CreateTag(NewName, '');
 
         with lvTags.Items.Add do
         begin
@@ -979,7 +945,7 @@ begin
         sbBottom.SimpleText := Format('Тег "%s" добавлен.', [NewName]);
     except
         on E: Exception do
-            ShowMessage('Ошибка добавления тега: ' + E.Message);
+            FErrorHandler.ShowError('Ошибка добавления тега: ' + E.Message);
     end;
 end;
 
@@ -996,7 +962,7 @@ begin
         Exit;
 
     try
-        AppDatabase.TagService.DeleteTag(TagID);
+        FTagService.DeleteTag(TagID);
         Item.Delete;
 
         if FFilterByTagID = TagID then ClearTagFilter;
@@ -1004,14 +970,14 @@ begin
         if FCurrentSnippetID > 0 then
             TUIHelpers.FillTagListWithSelection(
                 lvTags,
-                AppDatabase.TagService.GetAllTags,
-                AppDatabase.TagService.GetSnippetTags(FCurrentSnippetID)
+                FTagService.GetAllTags,
+                FTagService.GetSnippetTags(FCurrentSnippetID)
             );
 
         sbBottom.SimpleText := 'Тег удалён.';
     except
         on E: Exception do
-            ShowMessage('Ошибка удаления тега: ' + E.Message);
+            FErrorHandler.ShowError('Ошибка удаления тега: ' + E.Message);
     end;
 end;
 
@@ -1036,12 +1002,12 @@ begin
 
     try
         TagID := NativeInt(NativeUInt(Item.Data));
-        AppDatabase.TagService.RenameTag(TagID, S);
+        FTagService.RenameTag(TagID, S);
         sbBottom.SimpleText := Format('Тег переименован: "%s" → "%s"', [OldName, S]);
     except
         on E: Exception do
         begin
-            ShowMessage('Ошибка переименования тега: ' + E.Message);
+            FErrorHandler.ShowError('Ошибка переименования тега: ' + E.Message);
             S := OldName;
         end;
     end;
@@ -1063,7 +1029,7 @@ end;
 procedure TMainForm.ApplyTagFilter(TagID: NativeInt; const TagName: string);
 begin
     FFilterByTagID := TagID;
-    FillSnippetListView(AppDatabase.SnippetService.GetSnippetsByTag(TagID));
+    FillSnippetListView(FSnippetService.GetSnippetsByTag(TagID));
     sbBottom.SimpleText := Format('Фильтр по тегу: "%s"', [TagName]);
 end;
 
@@ -1081,15 +1047,7 @@ procedure TMainForm.ebSearchChange(Sender: TObject);
 var
     Snippets: TArray<TSnippetDTO>;
 begin
-    if Length(ebSearch.Text) < 3 then
-        Snippets := AppDatabase.SnippetService.GetAllSnippets
-    else
-    begin
-        if rbText.Checked then
-            Snippets := AppDatabase.SnippetService.SearchSnippetsSimple(ebSearch.Text)
-        else
-            Snippets := AppDatabase.SnippetService.SearchSnippetsFTS(ebSearch.Text);
-    end;
+    Snippets := FSnippetService.SearchSnippets(ebSearch.Text, rbFTS.Checked);
     FillSnippetListView(Snippets);
 end;
 
@@ -1099,16 +1057,14 @@ begin
     if OpenDialog.Execute(Handle) then
     begin
         try
-            AppDatabase.OpenDatabase(OpenDialog.FileName);
-
+            FDBManager.OpenDatabase(OpenDialog.FileName);
             TStateMgr.Instance.OpenDatabase;
-
             ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
             LoadUsersToComboBox;
             ShowSimpleToast('Менеджер сниппетов', 'База данных SQLite открыта.');
         except
             on E: Exception do
-                ShowMessage('Ошибка открытия базы данных: ' + E.Message);
+                FErrorHandler.ShowError('Ошибка открытия базы данных: ' + E.Message);
         end;
     end;
 end;
@@ -1120,16 +1076,14 @@ begin
     begin
         Application.RestoreTopMosts;
         try
-            AppDatabase.CreateDatabase(SaveDialog.FileName);
-
+            FDBManager.CreateDatabase(SaveDialog.FileName);
             TStateMgr.Instance.CreateDatabase;
             ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
             LoadUsersToComboBox;
-
             ShowSimpleToast('Менеджер сниппетов', 'База данных SQLite создана.');
         except
             on E: Exception do
-                ShowMessage('Ошибка создания базы данных: ' + E.Message);
+                FErrorHandler.ShowError('Ошибка создания базы данных: ' + E.Message);
         end;
     end;
 end;
@@ -1141,10 +1095,11 @@ end;
 
 procedure TMainForm.CloseDatabase;
 begin
-    if Assigned(AppDatabase) and Assigned(AppDatabase.FDConnection) then
+    if Assigned(FDBManager) then
     begin
-        AppDatabase.CloseDatabase;
+        FDBManager.CloseDatabase;
         TStateMgr.Instance.CloseDatabase;
+        UpdateUI(bfsDBDisconnected);
     end;
 end;
 
@@ -1169,7 +1124,7 @@ begin
     try
         cbUser.Clear;
         cbUser.Items.AddObject('Все пространства', TObject(0));
-        Users := AppDatabase.UserService.GetAllUsers;
+        Users := FUserService.GetAllUsers;
         for User in Users do
             cbUser.Items.AddObject(User.Name, TObject(NativeInt(User.ID)));
         cbUser.ItemIndex := 0;
@@ -1180,7 +1135,7 @@ end;
 
 procedure TMainForm.bManageWorkspacesClick(Sender: TObject);
 begin
-    with TWorkspaceManagerForm.CreateWithService(Self, AppDatabase.UserService) do
+    with TWorkspaceManagerForm.CreateWithService(Self, FUserService) do
     try
         if ShowModal = mrOk then
             LoadUsersToComboBox;
@@ -1192,7 +1147,7 @@ end;
 function TMainForm.ExtractSnippetByListItem(Item: TListItem): TSnippetDTO;
 begin
     if not Assigned(Item) then Exit(Default(TSnippetDTO));
-    Result := AppDatabase.SnippetService.GetSnippetByID(TSnippetViewData(Item.Data).ID);
+    Result := FSnippetService.GetSnippetByID(TSnippetViewData(Item.Data).ID);
 end;
 
 procedure TMainForm.FillUserInterfaceFromSnippet(const Snippet: TSnippetDTO);
@@ -1203,7 +1158,7 @@ begin
     FCurrentSnippetID := Snippet.ID;
 
     // Получаем пользователя
-    User := AppDatabase.UserService.GetUserByID(Snippet.UserID);
+    User := FUserService.GetUserByID(Snippet.UserID);
     if User.ID > 0 then
         sbBottom.SimpleText := Format('[%d] %s (ID: %d) CID: %d', [Snippet.ID, User.Name, Snippet.UserID, Snippet.CategoryID]);
 
@@ -1211,14 +1166,14 @@ begin
     mComment.Text := Snippet.Comment;
 
     // Отрисовка тегов через TUIHelpers
-    AllTags := AppDatabase.TagService.GetAllTags;
-    SnippetTags := AppDatabase.TagService.GetSnippetTags(Snippet.ID);
+    AllTags := FTagService.GetAllTags;
+    SnippetTags := FTagService.GetSnippetTags(Snippet.ID);
     TUIHelpers.FillTagListWithSelection(lvTags, AllTags, SnippetTags);
 end;
 
 function TMainForm.IsVirtualCategory(Node: TTreeNode): Boolean;
 begin
-    Result := Assigned(Node) and (NativeInt(Node.Data) < 0);
+    Result := Assigned(Node) and (NativeInt(NativeUInt(Node.Data)) < 0);
 end;
 
 function TMainForm.IsWorkspaceNode(Node: TTreeNode): Boolean;
@@ -1273,7 +1228,7 @@ end;
 
 procedure TMainForm.nTagEditorClick(Sender: TObject);
 begin
-    with TTagEditorForm.CreateWithService(Self, AppDatabase.TagService) do
+    with TTagEditorForm.CreateWithService(Self, FTagService) do
     try
         ShowModal;
     finally

@@ -26,7 +26,8 @@ uses
     BashCompletionEngine,
     Core.Interfaces,
     SynEditMiscClasses,
-    SynEditHighlighter;
+    SynEditHighlighter,
+    UI.Interfaces;
 
 type
     TOriginalSnippet = record
@@ -89,6 +90,7 @@ type
         FBlockEnter: Boolean;
         FCurrentHighlighter: TCustomBashSyn;
         FCompletionEngine: TBashCompletionEngine;
+        FErrorHandler: IUIErrorHandler;
 
         function IsAutocompleteVisible: Boolean;
         function IsSnippetChanged: Boolean;
@@ -179,7 +181,7 @@ var
 begin
     if Trim(ebTitle.Text) = '' then
     begin
-        ShowMessage('Введи заголовок сниппета.');
+        FErrorHandler.ShowInfo('Введи заголовок сниппета.');
         ModalResult := mrNone;
         Exit;
     end;
@@ -229,7 +231,7 @@ begin
     except
         on E: Exception do
         begin
-            ShowMessage('Ошибка сохранения сниппета: ' + E.Message);
+            FErrorHandler.ShowError('Ошибка сохранения сниппета: ' + E.Message);
             ModalResult := mrNone;
         end;
     end;
@@ -249,16 +251,18 @@ end;
 
 procedure TAddEditSnippet.FormCreate(Sender: TObject);
 begin
-  ebTitle.EnableHintText := True;
-  ebTitle.HintText := 'Здесь введи имя сниппета...';
+    FErrorHandler := TVCLErrorHandler.Create;
 
-  FIsEditMode := False;
-  FSnippet := Default(TSnippetDTO);
+    ebTitle.EnableHintText := True;
+    ebTitle.HintText := 'Здесь введи имя сниппета...';
 
-  lvSelectedTags.StateImages := MainFormUI.MainForm.vilTags;
-  lvAllTags.StateImages := MainFormUI.MainForm.vilTags;
+    FIsEditMode := False;
+    FSnippet := Default(TSnippetDTO);
 
-  SynCompletionProposal.Options := SynCompletionProposal.Options + [scoUseInsertList];
+    lvSelectedTags.StateImages := MainFormUI.MainForm.vilTags;
+    lvAllTags.StateImages := MainFormUI.MainForm.vilTags;
+
+    SynCompletionProposal.Options := SynCompletionProposal.Options + [scoUseInsertList];
 end;
 
 procedure TAddEditSnippet.FormShow(Sender: TObject);

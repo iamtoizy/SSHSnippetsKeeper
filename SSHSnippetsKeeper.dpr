@@ -54,7 +54,9 @@ uses
   TagService in 'Core\Services\TagService.pas',
   CategoryService in 'Core\Services\CategoryService.pas',
   UserService in 'Core\Services\UserService.pas',
-  Core.Interfaces in 'Core\Core.Interfaces.pas';
+  Core.Interfaces in 'Core\Core.Interfaces.pas',
+  SnippetRunner in 'UI\Controllers\SnippetRunner.pas',
+  UI.Interfaces in 'UI\Abstractions\UI.Interfaces.pas';
 
 {$R *.res}
 
@@ -108,9 +110,17 @@ begin
     Application.Title := 'SSH Snippets Keeper';
     Application.CreateForm(TAppDatabase, AppDatabase);
   Application.CreateForm(TMainForm, MainForm);
-  Application.CreateForm(TInputForm, InputForm);
-  Application.Run;
-  // --- Освобождаем мьютекс при закрытии программы ---
+  MainForm.Initialize(
+        AppDatabase,
+        AppDatabase.SnippetService,
+        AppDatabase.CategoryService,
+        AppDatabase.TagService,
+        AppDatabase.UserService
+    );
+    MainForm.Show;
+    Application.CreateForm(TInputForm, InputForm);
+    Application.Run;
+    // --- Освобождаем мьютекс при закрытии программы ---
     if hMutex <> 0 then
     begin
         ReleaseMutex(hMutex);
