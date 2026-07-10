@@ -476,34 +476,37 @@ var
     List: TList<TSnippetDTO>;
     Snip: TSnippetDTO;
     SafeMask, SearchTerm: string;
+    Words: TArray<string>;
+    i: Integer;
 begin
     Result := [];
-    // Очищаем ввод от спецсимволов
-    SafeMask := SanitizeFTS5(Mask);
+
+    // 1. Очищаем ввод от спецсимволов FTS5 ( SanitizeFTS5 заменит * и другие символы на пробелы)
+    SafeMask := Trim(SanitizeFTS5(Mask));
 
     if SafeMask = '' then
         Exit;
 
+    // 2. FTS5 НЕ поддерживает инфиксный поиск (*word*).
+    // Разбиваем запрос на слова и добавляем '*' в конец каждого слова для префиксного поиска.
+    Words := SafeMask.Split([' '], TStringSplitOptions.ExcludeEmpty);
+    SearchTerm := '';
+
+    for i := 0 to High(Words) do
+    begin
+        if i > 0 then
+            SearchTerm := SearchTerm + ' ';
+
+        // Добавляем * в конец для префиксного поиска (например, docker -> docker*)
+        SearchTerm := SearchTerm + Words[i] + '*';
+    end;
+
     List := TList<TSnippetDTO>.Create;
     Query := CreateQuery;
     try
-        // Экранируем спецсимволы FTS, если нужно, но для простоты пока так:
-        SearchTerm := '*' + Mask + '*';
-
         Query.SQL.Text := SQL_SEARCH_BY_MASK_FTS;
 
-        // Экранируем спецсимволы FTS, если нужно, но для простоты пока так:
-        SearchTerm := '*' + Mask + '*';
-
-        // Оборачиваем уже безопасную строку в *, чтобы искать подстроку
-        Query.ParamByName('term').AsString := '*' + SafeMask + '*';
-        // FTS5 использует специальный синтаксис.
-        // Мы оборачиваем запрос в *, чтобы искать вхождение подстроки (как LIKE %mask%)
-        // Например, если пользователь ввел "sql", мы ищем "*sql*"
-
-        if Mask = '' then
-            Exit(Result);
-
+        // 3. Передаем корректно сформированный префиксный запрос
         Query.ParamByName('term').AsString := SearchTerm;
         Query.Open;
 
@@ -516,8 +519,6 @@ begin
             Snip.CategoryID := Query.FieldByName('category_id').AsInteger;
             Snip.CreatedAt := Query.FieldByName('created_at').AsLargeInt;
             Snip.UpdatedAt := Query.FieldByName('updated_at').AsLargeInt;
-
-            // Теги можно не загружать здесь для скорости, или загрузить батчем, как в GetAll
             Snip.Tags := [];
 
             List.Add(Snip);

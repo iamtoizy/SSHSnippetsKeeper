@@ -251,8 +251,11 @@ end;
 procedure TMainForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
     // Заменяем удаленный CloseDatabase
-    if Assigned(DataModuleCommon) and Assigned(DataModuleCommon.FDConnection) then
-        DataModuleCommon.FDConnection.Connected := False;
+    if Assigned(AppDatabase) and Assigned(AppDatabase.FDConnection) then
+    begin
+        AppDatabase.CloseDatabase;
+        TStateMgr.Instance.CloseDatabase;
+    end;
     CanClose := True;
 end;
 
@@ -330,9 +333,9 @@ begin
     FCurrentSnippetID := 0;
 
     // Заменяем старый вызов BuildTagListWithSelection
-    if Assigned(DataModuleCommon) and Assigned(DataModuleCommon.TagService) then
+    if Assigned(AppDatabase) and Assigned(AppDatabase.TagService) then
     begin
-        AllTags := DataModuleCommon.TagService.GetAllTags;
+        AllTags := AppDatabase.TagService.GetAllTags;
         TUIHelpers.FillTagListWithSelection(lvTags, AllTags, []);
     end;
 end;
@@ -344,11 +347,11 @@ var
 begin
     FIgnoreCategoryChange := True;
     try
-        if Assigned(DataModuleCommon) then
+        if Assigned(AppDatabase) then
         begin
             // Получаем данные через сервисы
-            Cats := DataModuleCommon.CategoryService.GetAllCategories(0);
-            Users := DataModuleCommon.UserService.GetAllUsers;
+            Cats := AppDatabase.CategoryService.GetAllCategories(0);
+            Users := AppDatabase.UserService.GetAllUsers;
 
             // Используем новый UIHelper
             TUIHelpers.BuildCategoryTree(tvCategories, Cats, Users, FFilterUserID, PreserveCategoryID);
@@ -378,8 +381,8 @@ begin
     if IsVirtualCategory(Node) then
     begin
         case CatID of
-            -1: Snippets := DataModuleCommon.SnippetService.GetTopSnippets(FUserID, 10);
-            -2: Snippets := DataModuleCommon.SnippetService.GetRecentSnippets(FUserID, 10);
+            -1: Snippets := AppDatabase.SnippetService.GetTopSnippets(FUserID, 10);
+            -2: Snippets := AppDatabase.SnippetService.GetRecentSnippets(FUserID, 10);
         else
             Snippets := [];
         end;
@@ -389,9 +392,9 @@ begin
     else
     begin
         if FFilterUserID > 0 then
-            Snippets := DataModuleCommon.SnippetService.GetSnippetsByCategory(CatID, FFilterUserID)
+            Snippets := AppDatabase.SnippetService.GetSnippetsByCategory(CatID, FFilterUserID)
         else
-            Snippets := DataModuleCommon.SnippetService.GetSnippetsByCategory(CatID, GetSelectedCategoryUserID);
+            Snippets := AppDatabase.SnippetService.GetSnippetsByCategory(CatID, GetSelectedCategoryUserID);
     end;
 
     FillSnippetListView(Snippets);
@@ -416,7 +419,7 @@ begin
     if IsWorkspaceNode(Node) then
     begin
         WorkspaceName := Node.Text;
-        Users := DataModuleCommon.UserService.GetAllUsers;
+        Users := AppDatabase.UserService.GetAllUsers;
         for User in Users do
             if SameText(User.Name, WorkspaceName) then Exit(User.ID);
     end;
@@ -424,7 +427,7 @@ begin
     if (Node <> nil) and not IsVirtualCategory(Node) and (Node.Data <> nil) then
     begin
         CatID := NativeInt(Node.Data);
-        Cat := DataModuleCommon.CategoryService.GetCategoryByID(CatID);
+        Cat := AppDatabase.CategoryService.GetCategoryByID(CatID);
         if Cat.ID > 0 then Exit(Cat.UserID);
     end;
 
@@ -436,7 +439,7 @@ begin
             if IsWorkspaceNode(ParentNode) then
             begin
                 WorkspaceName := ParentNode.Text;
-                Users := DataModuleCommon.UserService.GetAllUsers;
+                Users := AppDatabase.UserService.GetAllUsers;
                 for User in Users do
                     if SameText(User.Name, WorkspaceName) then Exit(User.ID);
             end;
@@ -502,7 +505,7 @@ begin
         NewCat.ParentID := ParentID;
         NewCat.UserID := TargetUserID;
 
-        NewCatID := DataModuleCommon.CategoryService.CreateCategory(NewCat);
+        NewCatID := AppDatabase.CategoryService.CreateCategory(NewCat);
         ReloadUI(NewCatID);
 
         Node := tvCategories.Selected;
@@ -524,12 +527,12 @@ begin
     Node := tvCategories.Selected;
     if (Node = nil) or IsVirtualCategory(Node) then Exit;
 
-    Cat := DataModuleCommon.CategoryService.GetCategoryByID(NativeInt(Node.Data));
+    Cat := AppDatabase.CategoryService.GetCategoryByID(NativeInt(Node.Data));
 
     if MessageBox(Handle, PChar(Format('Удалить категорию "%s" и все её вложенные элементы?', [Cat.Name])), 'Подтверждение', MB_YESNO or MB_ICONQUESTION) = IDYES then
     begin
         try
-            DataModuleCommon.CategoryService.DeleteCategory(Cat.ID);
+            AppDatabase.CategoryService.DeleteCategory(Cat.ID);
             ReloadUI(-999);
             ClearRightPanel;
             sbBottom.SimpleText := Format('Категория "%s" удалена.', [Cat.Name]);
@@ -573,8 +576,8 @@ begin
     end;
 
     try
-        Cat := DataModuleCommon.CategoryService.GetCategoryByID(NativeInt(Node.Data));
-        DataModuleCommon.CategoryService.RenameCategory(Cat.ID, S);
+        Cat := AppDatabase.CategoryService.GetCategoryByID(NativeInt(Node.Data));
+        AppDatabase.CategoryService.RenameCategory(Cat.ID, S);
     except
         on E: Exception do
         begin
@@ -634,7 +637,7 @@ begin
             Exit;
 
         try
-            DataModuleCommon.CategoryService.MoveCategory(SourceID, NewParentID, Position);
+            AppDatabase.CategoryService.MoveCategory(SourceID, NewParentID, Position);
             ReloadUI(SourceID);
         except
             on E: Exception do
@@ -729,7 +732,7 @@ begin
         Exit;
     end;
 
-    AddEditSnippet := TAddEditSnippet.CreateWithService(Application, DataModuleCommon.SnippetService, DataModuleCommon.TagService);
+    AddEditSnippet := TAddEditSnippet.CreateWithService(Application, AppDatabase.SnippetService, AppDatabase.TagService);
     try
         AddEditSnippet.CategoryID := CategoryID;
         AddEditSnippet.UserID := TargetUserID;
@@ -759,7 +762,7 @@ begin
     else
         CategoryID := Snippet.CategoryID;
 
-    AddEditSnippet := TAddEditSnippet.CreateWithService(Application, DataModuleCommon.SnippetService, DataModuleCommon.TagService);
+    AddEditSnippet := TAddEditSnippet.CreateWithService(Application, AppDatabase.SnippetService, AppDatabase.TagService);
     try
         AddEditSnippet.Snippet := Snippet;
         AddEditSnippet.CategoryID := CategoryID;
@@ -791,7 +794,7 @@ begin
     if MessageBox(Handle, PChar(Format('Удалить сниппет "%s"?', [Snippet.Title])), 'Подтверждение', MB_YESNO or MB_ICONQUESTION) = IDYES then
     begin
         try
-            DataModuleCommon.SnippetService.DeleteSnippet(Snippet.ID);
+            AppDatabase.SnippetService.DeleteSnippet(Snippet.ID);
 
             if tvCategories.Selected <> nil then
                 SelectedCatID := NativeInt(tvCategories.Selected.Data)
@@ -976,7 +979,7 @@ begin
     if NewName = '' then Exit;
 
     try
-        NewID := DataModuleCommon.TagService.CreateTag(NewName, '');
+        NewID := AppDatabase.TagService.CreateTag(NewName, '');
 
         with lvTags.Items.Add do
         begin
@@ -1006,13 +1009,13 @@ begin
         Exit;
 
     try
-        DataModuleCommon.TagService.DeleteTag(TagID);
+        AppDatabase.TagService.DeleteTag(TagID);
         Item.Delete;
 
         if FFilterByTagID = TagID then ClearTagFilter;
 
         if FCurrentSnippetID > 0 then
-            TUIHelpers.FillTagListWithSelection(lvTags, DataModuleCommon.TagService.GetAllTags, DataModuleCommon.TagService.GetSnippetTags(FCurrentSnippetID));
+            TUIHelpers.FillTagListWithSelection(lvTags, AppDatabase.TagService.GetAllTags, AppDatabase.TagService.GetSnippetTags(FCurrentSnippetID));
 
         sbBottom.SimpleText := 'Тег удалён.';
     except
@@ -1042,7 +1045,7 @@ begin
 
     try
         TagID := NativeInt(NativeUInt(Item.Data));
-        DataModuleCommon.TagService.RenameTag(TagID, S);
+        AppDatabase.TagService.RenameTag(TagID, S);
         sbBottom.SimpleText := Format('Тег переименован: "%s" → "%s"', [OldName, S]);
     except
         on E: Exception do
@@ -1069,7 +1072,7 @@ end;
 procedure TMainForm.ApplyTagFilter(ATagID: NativeInt; const ATagName: string);
 begin
     FFilterByTagID := ATagID;
-    FillSnippetListView(DataModuleCommon.SnippetService.GetSnippetsByTag(ATagID));
+    FillSnippetListView(AppDatabase.SnippetService.GetSnippetsByTag(ATagID));
     sbBottom.SimpleText := Format('Фильтр по тегу: "%s"', [ATagName]);
 end;
 
@@ -1088,13 +1091,13 @@ var
     Snippets: TArray<TSnippetDTO>;
 begin
     if Length(ebSearch.Text) < 3 then
-        Snippets := DataModuleCommon.SnippetService.GetAllSnippets
+        Snippets := AppDatabase.SnippetService.GetAllSnippets
     else
     begin
         if rbText.Checked then
-            Snippets := DataModuleCommon.SnippetService.SearchSnippetsSimple(ebSearch.Text)
+            Snippets := AppDatabase.SnippetService.SearchSnippetsSimple(ebSearch.Text)
         else
-            Snippets := DataModuleCommon.SnippetService.SearchSnippetsFTS(ebSearch.Text);
+            Snippets := AppDatabase.SnippetService.SearchSnippetsFTS(ebSearch.Text);
     end;
     FillSnippetListView(Snippets);
 end;
@@ -1108,9 +1111,9 @@ begin
     begin
         try
             // Подключаемся напрямую к компоненту, так как методы Open/Close были удалены
-            DataModuleCommon.FDConnection.Connected := False;
-            DataModuleCommon.FDConnection.Params.Values['Database'] := OpenDialog.FileName;
-            DataModuleCommon.FDConnection.Connected := True;
+            AppDatabase.FDConnection.Connected := False;
+            AppDatabase.FDConnection.Params.Values['Database'] := OpenDialog.FileName;
+            AppDatabase.FDConnection.Connected := True;
 
             ReloadUI(-999);
             LoadUsersToComboBox;
@@ -1127,15 +1130,18 @@ begin
     SaveDialog.FileName := System.IOUtils.TPath.GetDirectoryName(Application.ExeName) + '\snippets.sqlite';
     if SaveDialog.Execute(Handle) then
     begin
+        Application.RestoreTopMosts;
         try
-            DataModuleCommon.FDConnection.Connected := False;
-            DataModuleCommon.FDConnection.Params.Values['Database'] := SaveDialog.FileName;
-            DataModuleCommon.FDConnection.Connected := True;
-            // Внимание: Здесь требуется запустить скрипт инициализации схемы (Schema Init),
-            // если вы не восстановили метод CreateDatabase в DataModule.
+            AppDatabase.FDConnection.Connected := False;
+            AppDatabase.FDConnection.Params.Values['Database'] := SaveDialog.FileName;
+            AppDatabase.FDConnection.Connected := True;
+            AppDatabase.CreateDatabase(SaveDialog.FileName);
 
+            TStateMgr.Instance.CreateDatabase;
             ReloadUI(-999);
             LoadUsersToComboBox;
+
+            ShowSimpleToast('Менеджер сниппетов', 'База данных SQLite создана.');
         except
             on E: Exception do
                 ShowMessage('Ошибка создания базы данных: ' + E.Message);
@@ -1145,7 +1151,7 @@ end;
 
 procedure TMainForm.nCloseDatabaseClick(Sender: TObject);
 begin
-    DataModuleCommon.FDConnection.Connected := False;
+    AppDatabase.FDConnection.Connected := False;
 end;
 
 procedure TMainForm.cbUserChange(Sender: TObject);
@@ -1169,7 +1175,7 @@ begin
     try
         cbUser.Clear;
         cbUser.Items.AddObject('Все пространства', TObject(0));
-        Users := DataModuleCommon.UserService.GetAllUsers;
+        Users := AppDatabase.UserService.GetAllUsers;
         for User in Users do
             cbUser.Items.AddObject(User.Name, TObject(NativeInt(User.ID)));
         cbUser.ItemIndex := 0;
@@ -1180,7 +1186,7 @@ end;
 
 procedure TMainForm.bManageWorkspacesClick(Sender: TObject);
 begin
-    with TWorkspaceManagerForm.CreateWithService(Self, DataModuleCommon.UserService) do
+    with TWorkspaceManagerForm.CreateWithService(Self, AppDatabase.UserService) do
     try
         if ShowModal = mrOk then
             LoadUsersToComboBox;
@@ -1194,7 +1200,7 @@ end;
 function TMainForm.ExtractSnippetByListItem(Item: TListItem): TSnippetDTO;
 begin
     if not Assigned(Item) then Exit(Default(TSnippetDTO));
-    Result := DataModuleCommon.SnippetService.GetSnippetByID(TSnippetViewData(Item.Data).ID);
+    Result := AppDatabase.SnippetService.GetSnippetByID(TSnippetViewData(Item.Data).ID);
 end;
 
 procedure TMainForm.FillUserInterfaceFromSnippet(const Snippet: TSnippetDTO);
@@ -1205,7 +1211,7 @@ begin
     FCurrentSnippetID := Snippet.ID;
 
     // Получаем пользователя (заменяем TryGetByID на обычный GetByID или аналогичный)
-    User := DataModuleCommon.UserService.GetUserByID(Snippet.UserID);
+    User := AppDatabase.UserService.GetUserByID(Snippet.UserID);
     if User.ID > 0 then
         sbBottom.SimpleText := Format('[%d] %s (ID: %d) CID: %d', [Snippet.ID, User.Name, Snippet.UserID, Snippet.CategoryID]);
 
@@ -1213,8 +1219,8 @@ begin
     mComment.Text := Snippet.Comment;
 
     // Отрисовка тегов через новый TUIHelpers
-    AllTags := DataModuleCommon.TagService.GetAllTags;
-    SnippetTags := DataModuleCommon.TagService.GetSnippetTags(Snippet.ID);
+    AllTags := AppDatabase.TagService.GetAllTags;
+    SnippetTags := AppDatabase.TagService.GetSnippetTags(Snippet.ID);
     TUIHelpers.FillTagListWithSelection(lvTags, AllTags, SnippetTags);
 end;
 
@@ -1277,7 +1283,7 @@ end;
 
 procedure TMainForm.nTagEditorClick(Sender: TObject);
 begin
-    with TTagEditorForm.CreateWithService(Self, DataModuleCommon.TagService) do
+    with TTagEditorForm.CreateWithService(Self, AppDatabase.TagService) do
     try
         ShowModal;
     finally

@@ -13,7 +13,7 @@ uses
   MainFormUI in 'UI\Forms\MainFormUI.pas' {MainForm},
   JSONSerializer in 'Common\JSONSerializer.pas',
   Settings in 'Common\Settings.pas',
-  DataModule in 'Data\DataModule.pas' {DataModuleCommon: TDataModule},
+  DataModule in 'Data\DataModule.pas' {AppDatabase: TDataModule},
   Snippet in 'Core\Entities\Snippet.pas',
   SnippetRepository in 'Data\Repositories\SnippetRepository.pas',
   Tag in 'Core\Entities\Tag.pas',
@@ -103,7 +103,7 @@ begin
     Application.MainFormOnTaskbar := True;
     TStyleManager.TrySetStyle('Glow');
     Application.Title := 'SSH Snippets Keeper';
-    Application.CreateForm(TDataModuleCommon, DataModuleCommon);
+    Application.CreateForm(TAppDatabase, AppDatabase);
   Application.CreateForm(TMainForm, MainForm);
   Application.CreateForm(TInputForm, InputForm);
   Application.Run;

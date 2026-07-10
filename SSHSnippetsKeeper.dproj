@@ -153,7 +153,7 @@
         <DCCReference Include="Common\JSONSerializer.pas"/>
         <DCCReference Include="Common\Settings.pas"/>
         <DCCReference Include="Data\DataModule.pas">
-            <Form>DataModuleCommon</Form>
+            <Form>AppDatabase</Form>
             <DesignClass>TDataModule</DesignClass>
         </DCCReference>
         <DCCReference Include="Core\Entities\Snippet.pas"/>

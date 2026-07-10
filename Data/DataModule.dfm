@@ -1,10 +1,10 @@
-object DataModuleCommon: TDataModuleCommon
+object AppDatabase: TAppDatabase
   OnCreate = DataModuleCreate
   OnDestroy = DataModuleDestroy
   Height = 480
   Width = 640
   object FDQuery: TFDQuery
-    Left = 264
+    Left = 240
     Top = 8
   end
   object FDManager: TFDManager
@@ -14,7 +14,7 @@ object DataModuleCommon: TDataModuleCommon
     FormatOptions.MapRules = <>
     FormatOptions.StrsTrim = False
     Active = True
-    Left = 336
+    Left = 312
     Top = 8
   end
   object FDConnection: TFDConnection
@@ -32,12 +32,20 @@ object DataModuleCommon: TDataModuleCommon
   object FDGUIxWaitCursor: TFDGUIxWaitCursor
     Provider = 'Forms'
     ScreenCursor = gcrNone
-    Left = 416
+    Left = 408
     Top = 8
   end
   object FDPhysSQLiteDriverLink: TFDPhysSQLiteDriverLink
     VendorLib = 'libsqlcipher-0.dll'
     Left = 144
+    Top = 8
+  end
+  object FDScript: TFDScript
+    SQLScripts = <>
+    Connection = FDConnection
+    Params = <>
+    Macros = <>
+    Left = 496
     Top = 8
   end
 end
