@@ -21,10 +21,9 @@ type
         FCategoryRepo: ICategoryRepository;
         FTagRepo: ITagRepository;
         FUserRepo: IUserRepository;
-        function SearchSnippetsSimple(const Query: string): TArray<TSnippetDTO>;
-        function SearchSnippetsFTS(const Query: string): TArray<TSnippetDTO>;
+        function SearchSnippetsSimple(const Query: string; UserID: NativeInt): TArray<TSnippetDTO>;
+        function SearchSnippetsFTS(const Query: string; UserID: NativeInt): TArray<TSnippetDTO>;
     public
-        // Внедрение зависимостей (Dependency Injection) через конструктор
         constructor Create(
             ASnippetRepo: ISnippetRepository;
             ACategoryRepo: ICategoryRepository;
@@ -37,12 +36,14 @@ type
 
         // Методы для UI
         function GetSnippetByID(SnippetID: NativeInt): TSnippetDTO;
-        function GetAllSnippets: TArray<TSnippetDTO>;
+        function GetAllSnippets(UserID: NativeInt = 0): TArray<TSnippetDTO>;
         function GetSnippetsByCategory(CategoryID, UserID: NativeInt): TArray<TSnippetDTO>;
         function GetSnippetsByTag(TagID: NativeInt): TArray<TSnippetDTO>;
         function GetTopSnippets(UserID: NativeInt; Count: Integer): TArray<TSnippetDTO>;
         function GetRecentSnippets(UserID: NativeInt; Count: Integer): TArray<TSnippetDTO>;
-        function SearchSnippets(const Query: string; UseFTS: Boolean): TArray<TSnippetDTO>;
+
+        // Обновленный метод поиска с учетом пространства
+        function SearchSnippets(const Query: string; UseFTS: Boolean; UserID: NativeInt = 0): TArray<TSnippetDTO>;
     end;
 
 implementation
@@ -106,9 +107,9 @@ begin
     Result := FSnippetRepo.GetById(SnippetID);
 end;
 
-function TSnippetService.GetAllSnippets: TArray<TSnippetDTO>;
+function TSnippetService.GetAllSnippets(UserID: NativeInt = 0): TArray<TSnippetDTO>;
 begin
-    Result := FSnippetRepo.GetAll;
+    Result := FSnippetRepo.GetAll(UserID);
 end;
 
 function TSnippetService.GetSnippetsByCategory(CategoryID, UserID: NativeInt): TArray<TSnippetDTO>;
@@ -135,35 +136,31 @@ begin
     Result := FSnippetRepo.GetRecentSnippets(UserID, Count);
 end;
 
-function TSnippetService.SearchSnippetsSimple(const Query: string): TArray<TSnippetDTO>;
+function TSnippetService.SearchSnippetsSimple(const Query: string; UserID: NativeInt): TArray<TSnippetDTO>;
 begin
-    if Trim(Query) = '' then Exit(GetAllSnippets);
-    Result := FSnippetRepo.SearchByMaskSimple(Query);
+    if Trim(Query) = '' then Exit(GetAllSnippets(UserID));
+    Result := FSnippetRepo.SearchByMaskSimple(Query, UserID);
 end;
 
-function TSnippetService.SearchSnippets(const Query: string; UseFTS: Boolean): TArray<TSnippetDTO>;
+function TSnippetService.SearchSnippetsFTS(const Query: string; UserID: NativeInt): TArray<TSnippetDTO>;
+begin
+    if Trim(Query) = '' then Exit(GetAllSnippets(UserID));
+    Result := FSnippetRepo.SearchByMaskFTS(Query, UserID);
+end;
+
+function TSnippetService.SearchSnippets(const Query: string; UseFTS: Boolean; UserID: NativeInt = 0): TArray<TSnippetDTO>;
 var
     CleanQuery: string;
 begin
     CleanQuery := Trim(Query);
 
-    // Правило бизнес-логики №1: Если запрос пустой или слишком короткий,
-    // возвращаем полный список (как и было в UI)
     if Length(CleanQuery) < 3 then
-        Exit(GetAllSnippets);
+        Exit(GetAllSnippets(UserID));
 
-    // Правило бизнес-логики №2: В зависимости от флага UseFTS
-    // выбираем нужный алгоритм на уровне инфраструктуры базы данных
     if UseFTS then
-        Result := FSnippetRepo.SearchByMaskFTS(CleanQuery)
+        Result := FSnippetRepo.SearchByMaskFTS(CleanQuery, UserID)
     else
-        Result := FSnippetRepo.SearchByMaskSimple(CleanQuery);
-end;
-
-function TSnippetService.SearchSnippetsFTS(const Query: string): TArray<TSnippetDTO>;
-begin
-    if Trim(Query) = '' then Exit(GetAllSnippets);
-    Result := FSnippetRepo.SearchByMaskFTS(Query);
+        Result := FSnippetRepo.SearchByMaskSimple(CleanQuery, UserID);
 end;
 
 end.

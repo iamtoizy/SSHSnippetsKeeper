@@ -79,3 +79,4 @@ Binary/
 *.sqlite-shm
 *.sqlite-journal
 *.sqlite
+.idea/

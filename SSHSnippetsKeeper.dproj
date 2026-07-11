@@ -207,6 +207,12 @@
         <DCCReference Include="Core\Core.Interfaces.pas"/>
         <DCCReference Include="UI\Controllers\SnippetRunner.pas"/>
         <DCCReference Include="UI\Abstractions\UI.Interfaces.pas"/>
+        <DCCReference Include="UI\Forms\QuickSearchFormUI.pas">
+            <Form>QuickSearchForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="UI\Controllers\GlobalHotkeyManager.pas"/>
+        <DCCReference Include="UI\Controls\TrackBarEx.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

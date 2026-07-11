@@ -4,6 +4,7 @@ interface
 
 uses
     Winapi.Windows,
+    Winapi.Messages,
     System.SysUtils,
     System.Classes,
     Vcl.Controls,
@@ -113,6 +114,7 @@ type
         procedure nDeleteTagClick(Sender: TObject);
         procedure nEditCategoryClick(Sender: TObject);
         procedure nRenameTagClick(Sender: TObject);
+        procedure rbTextClick(Sender: TObject);
         procedure tvCategoriesClick(Sender: TObject);
         procedure tvCategoriesEndDrag(Sender, Target: TObject; X, Y: Integer);
     private
@@ -162,15 +164,12 @@ type
         procedure ClearRightPanel;
         function GetWorkspaceUserID(Node: TTreeNode): NativeInt;
         procedure CloseDatabase;
+    protected
+        procedure WMActivate(var Msg: TWMActivate); message WM_ACTIVATE;
     public
         { Public declarations }
         procedure UpdateUI(const State: TBaseFormState); override;
-        procedure Initialize(
-            DBMgr: IDatabaseManager;
-            Snippet: ISnippetService;
-            Category: ICategoryService;
-            Tag: ITagService;
-            User: IUserService);
+        procedure Initialize(DBMgr: IDatabaseManager; Snippet: ISnippetService; Category: ICategoryService; Tag: ITagService; User: IUserService);
     end;
 
 var
@@ -202,7 +201,7 @@ uses
     WorkspaceManagerUI,
     CommonHelpers,
     CommonConsts,
-    SnippetRunner;
+    SnippetRunner, QuickSearchFormUI;
 
 const
     PRESERVE_CATEGORY_EMPTY_ID = -999;
@@ -375,13 +374,18 @@ begin
         Exit;
     end;
 
+    if FDBManager.IsConnected = False then
+        Exit;
+
     CatID := NativeInt(NativeUInt(Node.Data));
 
     if IsVirtualCategory(Node) then
     begin
         case CatID of
-            -1: Snippets := FSnippetService.GetTopSnippets(FUserID, 10);
-            -2: Snippets := FSnippetService.GetRecentSnippets(FUserID, 10);
+            -1:
+                Snippets := FSnippetService.GetTopSnippets(FUserID, 10);
+            -2:
+                Snippets := FSnippetService.GetRecentSnippets(FUserID, 10);
         else
             Snippets := [];
         end;
@@ -413,21 +417,24 @@ var
     CatID: NativeInt;
     ParentNode: TTreeNode;
 begin
-    if FFilterUserID > 0 then Exit(FFilterUserID);
+    if FFilterUserID > 0 then
+        Exit(FFilterUserID);
 
     if IsWorkspaceNode(Node) then
     begin
         WorkspaceName := Node.Text;
         Users := FUserService.GetAllUsers;
         for User in Users do
-            if SameText(User.Name, WorkspaceName) then Exit(User.ID);
+            if SameText(User.Name, WorkspaceName) then
+                Exit(User.ID);
     end;
 
     if (Node <> nil) and not IsVirtualCategory(Node) and (Node.Data <> nil) then
     begin
         CatID := NativeInt(NativeUInt(Node.Data));
         Cat := FCategoryService.GetCategoryByID(CatID);
-        if Cat.ID > 0 then Exit(Cat.UserID);
+        if Cat.ID > 0 then
+            Exit(Cat.UserID);
     end;
 
     if Node <> nil then
@@ -440,7 +447,8 @@ begin
                 WorkspaceName := ParentNode.Text;
                 Users := FUserService.GetAllUsers;
                 for User in Users do
-                    if SameText(User.Name, WorkspaceName) then Exit(User.ID);
+                    if SameText(User.Name, WorkspaceName) then
+                        Exit(User.ID);
             end;
             ParentNode := ParentNode.Parent;
         end;
@@ -451,8 +459,10 @@ end;
 
 procedure TMainForm.tvCategoriesChange(Sender: TObject; Node: TTreeNode);
 begin
-    if FIgnoreCategoryChange then Exit;
-    if Node = nil then Exit;
+    if FIgnoreCategoryChange then
+        Exit;
+    if Node = nil then
+        Exit;
 
     FFilterByTagID := 0;
     RefreshCurrentSnippetList;
@@ -494,7 +504,8 @@ begin
     TargetUserID := GetWorkspaceUserID(Node);
     NewCatName := Trim(InputBox('Новая категория', 'Введите имя:', 'Новая категория'));
 
-    if NewCatName = '' then Exit;
+    if NewCatName = '' then
+        Exit;
 
     try
         NewCat := Default(TCategoryDTO);
@@ -522,7 +533,8 @@ var
     Cat: TCategoryDTO;
 begin
     Node := tvCategories.Selected;
-    if (Node = nil) or IsVirtualCategory(Node) then Exit;
+    if (Node = nil) or IsVirtualCategory(Node) then
+        Exit;
 
     Cat := FCategoryService.GetCategoryByID(NativeInt(NativeUInt(Node.Data)));
 
@@ -545,7 +557,8 @@ var
     Node: TTreeNode;
 begin
     Node := tvCategories.Selected;
-    if Node = nil then Exit;
+    if Node = nil then
+        Exit;
 
     if IsWorkspaceNode(Node) then
         FErrorHandler.ShowError('Для переименования пространства используй кнопку "Управление пространствами".')
@@ -594,11 +607,13 @@ begin
     begin
         SourceNode := tvCategories.Selected;
         SourceID := NativeInt(SourceNode.Data);
-        if SourceID < 0 then Exit;
+        if SourceID < 0 then
+            Exit;
 
         HitTest := tvCategories.GetHitTestInfoAt(X, Y);
         TargetNode := tvCategories.GetNodeAt(X, Y);
-        if IsVirtualCategory(TargetNode) or IsWorkspaceNode(TargetNode) then Exit;
+        if IsVirtualCategory(TargetNode) or IsWorkspaceNode(TargetNode) then
+            Exit;
 
         if (htOnItem in HitTest) and (TargetNode <> nil) then
         begin
@@ -669,7 +684,8 @@ begin
     if Button = mbLeft then
     begin
         Node := tvCategories.GetNodeAt(X, Y);
-        if IsVirtualCategory(Node) or IsWorkspaceNode(Node) then Exit;
+        if IsVirtualCategory(Node) or IsWorkspaceNode(Node) then
+            Exit;
         if (Node <> nil) and (Node.Selected) then
             tvCategories.BeginDrag(False, 5);
     end;
@@ -680,12 +696,7 @@ begin
     tvCategories.Cursor := crDefault;
 end;
 
-procedure TMainForm.Initialize(
-    DBMgr: IDatabaseManager;
-    Snippet: ISnippetService;
-    Category: ICategoryService;
-    Tag: ITagService;
-    User: IUserService);
+procedure TMainForm.Initialize(DBMgr: IDatabaseManager; Snippet: ISnippetService; Category: ICategoryService; Tag: ITagService; User: IUserService);
 begin
     FDBManager := DBMgr;
     FSnippetService := Snippet;
@@ -699,7 +710,8 @@ begin
     Result := False;
     while Node <> nil do
     begin
-        if Node = Parent then Exit(True);
+        if Node = Parent then
+            Exit(True);
         Node := Node.Parent;
     end;
 end;
@@ -737,11 +749,7 @@ begin
 
     if TargetUserID <= 0 then
     begin
-        FErrorHandler.ShowInfo(
-            Format(
-                'Не удалось определить пространство для сниппета (UserID=%d). Попробуй выбрать конкретное пространство в фильтре.',
-                [TargetUserID]
-            ));
+        FErrorHandler.ShowInfo(Format('Не удалось определить пространство для сниппета (UserID=%d). Попробуй выбрать конкретное пространство в фильтре.', [TargetUserID]));
         Exit;
     end;
 
@@ -765,7 +773,8 @@ var
     CategoryID: NativeInt;
 begin
     Item := lvSnippets.Selected;
-    if not Assigned(Item) then Exit;
+    if not Assigned(Item) then
+        Exit;
 
     Snippet := ExtractSnippetByListItem(Item);
     Node := tvCategories.Selected;
@@ -800,7 +809,8 @@ var
     SelectedCatID: NativeInt;
 begin
     Item := lvSnippets.Selected;
-    if Item = nil then Exit;
+    if Item = nil then
+        Exit;
 
     Snippet := ExtractSnippetByListItem(Item);
 
@@ -888,7 +898,8 @@ begin
     ZeroMemory(@HitTest, SizeOf(HitTest));
     HitTest.pt := Point(X, Y);
     ListView_SubItemHitTest(lvSnippets.Handle, @HitTest);
-    if HitTest.iItem >= 0 then Exit;
+    if HitTest.iItem >= 0 then
+        Exit;
 
     for I := 0 to lvSnippets.Items.Count - 1 do
     begin
@@ -927,9 +938,11 @@ var
     NewName: string;
     NewID: NativeInt;
 begin
-    if not InputQuery('Новый тег', 'Введите имя тега:', NewName) then Exit;
+    if not InputQuery('Новый тег', 'Введите имя тега:', NewName) then
+        Exit;
     NewName := Trim(NewName);
-    if NewName = '' then Exit;
+    if NewName = '' then
+        Exit;
 
     try
         NewID := FTagService.CreateTag(NewName, '');
@@ -955,7 +968,8 @@ var
     TagID: NativeInt;
 begin
     Item := lvTags.Selected;
-    if Item = nil then Exit;
+    if Item = nil then
+        Exit;
 
     TagID := NativeInt(NativeUInt(Item.Data));
     if MessageBox(Handle, PChar(Format('Удалить тег "%s"?', [Item.Caption])), 'Подтверждение', MB_YESNO or MB_ICONQUESTION) <> IDYES then
@@ -965,14 +979,11 @@ begin
         FTagService.DeleteTag(TagID);
         Item.Delete;
 
-        if FFilterByTagID = TagID then ClearTagFilter;
+        if FFilterByTagID = TagID then
+            ClearTagFilter;
 
         if FCurrentSnippetID > 0 then
-            TUIHelpers.FillTagListWithSelection(
-                lvTags,
-                FTagService.GetAllTags,
-                FTagService.GetSnippetTags(FCurrentSnippetID)
-            );
+            TUIHelpers.FillTagListWithSelection(lvTags, FTagService.GetAllTags, FTagService.GetSnippetTags(FCurrentSnippetID));
 
         sbBottom.SimpleText := 'Тег удалён.';
     except
@@ -1018,7 +1029,8 @@ var
     Item: TListItem;
 begin
     Item := lvTags.Selected;
-    if Item = nil then Exit;
+    if Item = nil then
+        Exit;
 
     if FFilterByTagID = NativeInt(NativeUInt(Item.Data)) then
         ClearTagFilter
@@ -1047,7 +1059,8 @@ procedure TMainForm.ebSearchChange(Sender: TObject);
 var
     Snippets: TArray<TSnippetDTO>;
 begin
-    Snippets := FSnippetService.SearchSnippets(ebSearch.Text, rbFTS.Checked);
+    // Передаем FFilterUserID (текущее выбранное пространство) напрямую в БД через сервис
+    Snippets := FSnippetService.SearchSnippets(ebSearch.Text, rbFTS.Checked, FFilterUserID);
     FillSnippetListView(Snippets);
 end;
 
@@ -1106,7 +1119,7 @@ end;
 procedure TMainForm.cbUserChange(Sender: TObject);
 begin
     if cbUser.ItemIndex >= 0 then
-        SetUserFilter(NativeInt(cbUser.Items.Objects[cbUser.ItemIndex]));
+        SetUserFilter(NativeInt(NativeUInt(cbUser.Items.Objects[cbUser.ItemIndex])));
 end;
 
 procedure TMainForm.SetUserFilter(UserID: NativeInt);
@@ -1146,7 +1159,8 @@ end;
 
 function TMainForm.ExtractSnippetByListItem(Item: TListItem): TSnippetDTO;
 begin
-    if not Assigned(Item) then Exit(Default(TSnippetDTO));
+    if not Assigned(Item) then
+        Exit(Default(TSnippetDTO));
     Result := FSnippetService.GetSnippetByID(TSnippetViewData(Item.Data).ID);
 end;
 
@@ -1236,4 +1250,25 @@ begin
     end;
 end;
 
+procedure TMainForm.rbTextClick(Sender: TObject);
+begin
+    ebSearchChange(Sender);
+end;
+
+procedure TMainForm.WMActivate(var Msg: TWMActivate);
+begin
+    // Если MainForm пытается стать активной во время выполнения макроса,
+    // блокируем стандартную обработку активации. Это предотвращает
+    // появление окна поверх терминала.
+    if (Msg.Active = WA_ACTIVE) and (TSnippetRunner.IsExecuting) then
+        Exit; // Игнорируем inherited
+
+    // Прежняя логика: игнорируем активацию, если форма быстрого поиска ещё видима
+    if (Msg.Active = WA_ACTIVE) and (QuickSearchForm <> nil) and (QuickSearchForm.Visible) then
+         Exit; // Игнорируем inherited
+
+    inherited;
+end;
+
 end.
+

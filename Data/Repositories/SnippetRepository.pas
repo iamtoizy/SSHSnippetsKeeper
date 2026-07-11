@@ -20,14 +20,14 @@ type
         procedure Update(const Snippet: TSnippetDTO);
         procedure Delete(ID: NativeInt);
         function GetById(ID: NativeInt): TSnippetDTO;
-        function GetAll: TArray<TSnippetDTO>;
+        function GetAll(UserID: NativeInt = 0): TArray<TSnippetDTO>;
         function GetSnippetByCategory(const CategoryID, UserID: NativeInt): TArray<TSnippetDTO>;
         procedure RecordRun(SnippetID: NativeInt; UserID: NativeInt);
         function GetSnippetTags(SnippetID: NativeInt): TArray<TTagDTO>;
         function GetSnippetsByTag(const TagID: NativeInt): TArray<TSnippetDTO>;
         function Search(const Query: string): TArray<TSnippetDTO>;
-        function SearchByMaskFTS(const Mask: string): TArray<TSnippetDTO>;
-        function SearchByMaskSimple(const Mask: string): TArray<TSnippetDTO>;
+        function SearchByMaskFTS(const Mask: string; UserID: NativeInt = 0): TArray<TSnippetDTO>;
+        function SearchByMaskSimple(const Mask: string; UserID: NativeInt = 0): TArray<TSnippetDTO>;
         procedure UpdateTags(SnippetID: NativeInt; const TagIDs: TArray<NativeInt>);
         function GetRecentSnippets(UserID: NativeInt; Limit: Integer): TArray<TSnippetDTO>;
         function GetTopSnippets(UserID: NativeInt; Limit: Integer): TArray<TSnippetDTO>;
@@ -44,6 +44,7 @@ uses
     Data.DB;
 
 const
+    SQL_GET_ALL_SNIPPETS_BASE = 'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at FROM snippets';
     SQL_ADD_SNIPPET = 'INSERT INTO snippets (user_id, category_id, title, content, comment, created_at, updated_at) ' +
             'VALUES (:user_id, :cat_id, :title, :content, :comment, :created_at, :updated_at)';
     SQL_DELETE_SNIPPET = 'DELETE FROM snippets WHERE id = :id';
@@ -136,9 +137,15 @@ begin
     end;
 end;
 
-function TSnippetRepository.GetAll: TArray<TSnippetDTO>;
+function TSnippetRepository.GetAll(UserID: NativeInt = 0): TArray<TSnippetDTO>;
+var
+    SQL: string;
 begin
-    Result := InternalLoadSnippets(SQL_GET_ALL_SNIPPETS, []);
+    SQL := SQL_GET_ALL_SNIPPETS_BASE;
+    if UserID > 0 then
+        Result := InternalLoadSnippets(SQL + ' WHERE user_id = ? ORDER BY title', [UserID])
+    else
+        Result := InternalLoadSnippets(SQL + ' ORDER BY title', []);
 end;
 
 function TSnippetRepository.GetById(ID: NativeInt): TSnippetDTO;
@@ -285,9 +292,14 @@ var
     Snip: TSnippetDTO;
     i: NativeInt;
 begin
+    Result := [];
+
     List := TList<TSnippetDTO>.Create;
     IDList := TList<NativeInt>.Create;
     Query := CreateQuery;
+    if not Assigned(Query.Connection) then
+        Exit(Result);
+
     TagMap := nil;
 
     try
@@ -468,30 +480,51 @@ begin
     end;
 end;
 
-function TSnippetRepository.SearchByMaskFTS(const Mask: string): TArray<TSnippetDTO>;
+function TSnippetRepository.SearchByMaskFTS(const Mask: string; UserID: NativeInt = 0): TArray<TSnippetDTO>;
 var
     Query: TFDQuery;
     List: TList<TSnippetDTO>;
     Snip: TSnippetDTO;
-    SafeMask: string;
+    SafeMask, SQL: string;
 begin
     Result := [];
     SafeMask := SanitizeFTS5(Mask);
 
-    // Ранний выход до выделения памяти
     if SafeMask = '' then Exit;
 
     List := TList<TSnippetDTO>.Create;
     Query := CreateQuery;
     try
-        Query.SQL.Text := SQL_SEARCH_BY_MASK_FTS;
-        // Используем только очищенную маску
-        Query.ParamByName('term').AsString := '*' + SafeMask + '*';
+        // Формируем динамический SQL в зависимости от UserID
+        SQL := 'SELECT s.id, s.user_id, s.title, s.content, s.category_id, s.created_at, s.updated_at, snippet_fts.rank ' +
+               'FROM snippet_fts ' +
+               'JOIN snippets s ON s.rowid = snippet_fts.rowid ' +
+               'WHERE snippet_fts MATCH :term ';
+
+        if UserID > 0 then
+            SQL := SQL + ' AND s.user_id = :uid ';
+
+        SQL := SQL + 'ORDER BY rank ASC';
+
+        Query.SQL.Text := SQL;
+        Query.ParamByName('term').AsString := SafeMask + '*';
+
+        if UserID > 0 then
+            Query.ParamByName('uid').AsInteger := UserID;
+
         Query.Open;
 
         while not Query.Eof do
         begin
-            // ... заполнение Snip ...
+            Snip.ID := Query.FieldByName('id').AsInteger;
+            Snip.UserID := Query.FieldByName('user_id').AsInteger;
+            Snip.Title := Query.FieldByName('title').AsString;
+            Snip.Content := Query.FieldByName('content').AsString;
+            Snip.CategoryID := Query.FieldByName('category_id').AsInteger;
+            Snip.CreatedAt := Query.FieldByName('created_at').AsLargeInt;
+            Snip.UpdatedAt := Query.FieldByName('updated_at').AsLargeInt;
+            Snip.Tags := [];
+
             List.Add(Snip);
             Query.Next;
         end;
@@ -502,27 +535,35 @@ begin
     end;
 end;
 
-function TSnippetRepository.SearchByMaskSimple(const Mask: string): TArray<TSnippetDTO>;
+function TSnippetRepository.SearchByMaskSimple(const Mask: string; UserID: NativeInt = 0): TArray<TSnippetDTO>;
 var
     Query: TFDQuery;
     List: TList<TSnippetDTO>;
     Snip: TSnippetDTO;
+    SQL: string;
 begin
     Result := [];
 
-    // Если маска пустая или состоит только из пробелов - возвращаем пустой массив
     if Trim(Mask) = '' then
         Exit;
 
     List := TList<TSnippetDTO>.Create;
     Query := CreateQuery;
     try
-        // COLLATE NOCASE обеспечивает регистронезависимый поиск
-        // Поиск ведется одновременно по заголовку и содержимому
-        Query.SQL.Text := SQL_FULLTEXT_SEARCH;
+        SQL := 'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at ' +
+               'FROM snippets ' +
+               'WHERE (title LIKE :m COLLATE NOCASE OR content LIKE :m COLLATE NOCASE)';
 
-        // Добавляем wildcards для поиска в любом месте строки
+        if UserID > 0 then
+            SQL := SQL + ' AND user_id = :uid';
+
+        SQL := SQL + ' ORDER BY updated_at DESC, title ASC';
+
+        Query.SQL.Text := SQL;
         Query.ParamByName('m').AsString := '%' + Trim(Mask) + '%';
+
+        if UserID > 0 then
+            Query.ParamByName('uid').AsInteger := UserID;
 
         Query.Open;
 
@@ -536,15 +577,11 @@ begin
             Snip.CategoryID := Query.FieldByName('category_id').AsInteger;
             Snip.CreatedAt := Query.FieldByName('created_at').AsLargeInt;
             Snip.UpdatedAt := Query.FieldByName('updated_at').AsLargeInt;
-
-            // Теги не загружаем для ускорения поиска.
-            // При необходимости их можно загрузить батчем через GetSnippetTagsBatch
             Snip.Tags := [];
 
             List.Add(Snip);
             Query.Next;
         end;
-
         Result := List.ToArray;
     finally
         Query.Free;

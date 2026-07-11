@@ -18,13 +18,13 @@ type
         procedure Delete(SnippetID: NativeInt);
         procedure UpdateTags(SnippetID: NativeInt; const TagIDs: TArray<NativeInt>);
         function GetById(SnippetID: NativeInt): TSnippetDTO;
-        function GetAll: TArray<TSnippetDTO>;
+        function GetAll(UserID: NativeInt = 0): TArray<TSnippetDTO>;
         function GetSnippetByCategory(const CategoryID, UserID: NativeInt): TArray<TSnippetDTO>;
         function GetSnippetsByTag(const TagID: NativeInt): TArray<TSnippetDTO>;
         function GetTopSnippets(UserID: NativeInt; Count: Integer): TArray<TSnippetDTO>;
         function GetRecentSnippets(UserID: NativeInt; Count: Integer): TArray<TSnippetDTO>;
-        function SearchByMaskSimple(const Query: string): TArray<TSnippetDTO>;
-        function SearchByMaskFTS(const Query: string): TArray<TSnippetDTO>;
+        function SearchByMaskFTS(const Mask: string; UserID: NativeInt = 0): TArray<TSnippetDTO>;
+        function SearchByMaskSimple(const Mask: string; UserID: NativeInt = 0): TArray<TSnippetDTO>;
     end;
 
     ICategoryRepository = interface
@@ -81,14 +81,14 @@ type
         procedure UpdateSnippet(const Snippet: TSnippetDTO; const TagIDs: TArray<NativeInt>);
         procedure DeleteSnippet(const SnippetID: NativeInt);
         function GetSnippetByID(SnippetID: NativeInt): TSnippetDTO;
-        function GetAllSnippets: TArray<TSnippetDTO>;
+        function GetAllSnippets(UserID: NativeInt = 0): TArray<TSnippetDTO>;
         function GetSnippetsByCategory(CategoryID, UserID: NativeInt): TArray<TSnippetDTO>;
         function GetSnippetsByTag(TagID: NativeInt): TArray<TSnippetDTO>;
         function GetTopSnippets(UserID: NativeInt; Count: Integer): TArray<TSnippetDTO>;
         function GetRecentSnippets(UserID: NativeInt; Count: Integer): TArray<TSnippetDTO>;
-        function SearchSnippetsSimple(const Query: string): TArray<TSnippetDTO>;
-        function SearchSnippetsFTS(const Query: string): TArray<TSnippetDTO>;
-        function SearchSnippets(const Query: string; UseFTS: Boolean): TArray<TSnippetDTO>;
+        function SearchSnippets(const Query: string; UseFTS: Boolean; UserID: NativeInt = 0): TArray<TSnippetDTO>;
+        function SearchSnippetsSimple(const Query: string; UserID: NativeInt): TArray<TSnippetDTO>;
+        function SearchSnippetsFTS(const Query: string; UserID: NativeInt): TArray<TSnippetDTO>;
     end;
 
     ICategoryService = interface

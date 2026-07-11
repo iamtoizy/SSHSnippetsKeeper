@@ -24,8 +24,9 @@ type
         function SelectTargetWindow(out TargetWindow: TWindowMonitorInfo): Boolean;
         function BuildMacroContext(SnippetID: NativeInt; TargetHWND: HWND): TMacroContext;
     public
+        class var IsExecuting: Boolean;
         constructor Create(UserID: NativeInt);
-        procedure ExecuteSnippet(const Snippet: TSnippetDTO);
+        procedure ExecuteSnippet(const Snippet: TSnippetDTO; RequireConfirmation: Boolean = True);
     end;
 
 implementation
@@ -114,7 +115,7 @@ begin
     Result := Context;
 end;
 
-procedure TSnippetRunner.ExecuteSnippet(const Snippet: TSnippetDTO);
+procedure TSnippetRunner.ExecuteSnippet(const Snippet: TSnippetDTO; RequireConfirmation: Boolean = True);
 var
     TargetWindow: TWindowMonitorInfo;
     Context: TMacroContext;
@@ -134,12 +135,31 @@ begin
         Exit;
     end;
 
-    if MessageBox(0, PChar(Format('Ввести сниппет в окно: "%s"?', [TargetWindow.WindowTitle])), 'Подтверждение', MB_YESNO or MB_ICONQUESTION or MB_TOPMOST) <> IDYES then
+    if RequireConfirmation and (
+        MessageBox(
+            0,
+            PChar(Format('Ввести сниппет в окно: "%s"?', [TargetWindow.WindowTitle])),
+            'Подтверждение',
+            MB_YESNO or MB_ICONQUESTION or MB_TOPMOST) <> IDYES) then
         Exit;
 
-    Context := BuildMacroContext(Snippet.ID, TargetWindow.HWND);
-    WinHelper.SetTargetWindow(TargetWindow.HWND);
-    WinHelper.TypeTextIntoWindowWithContext(Snippet.Content, Context);
+    IsExecuting := True;
+
+    // Блокируем смену фокуса для нашего процесса (ASFW_ANY = 2)
+    // Это не позволит MainForm "выпрыгнуть" вперед при переключении
+    try
+        LockSetForegroundWindow(2);
+        try
+            Context := BuildMacroContext(Snippet.ID, TargetWindow.HWND);
+            SetForegroundWindow(TargetWindow.HWND);
+            Sleep(50);
+            WinHelper.SetTargetWindow(TargetWindow.HWND);
+            WinHelper.TypeTextIntoWindowWithContext(Snippet.Content, Context);
+        finally
+        end;
+    finally
+        IsExecuting := False;
+    end;
 end;
 
 end.

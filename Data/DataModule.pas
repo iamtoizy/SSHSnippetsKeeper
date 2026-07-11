@@ -39,7 +39,8 @@ uses
     FireDAC.Phys.SQLiteWrapper.Stat,
     FireDAC.Comp.ScriptCommands,
     FireDAC.Stan.Util,
-    FireDAC.Comp.DataSet;
+    FireDAC.Comp.DataSet,
+    GlobalHotkeyManager;
 
 type
     TAppDatabase = class(TDataModule, IDatabaseManager)
@@ -57,6 +58,8 @@ type
         FCategoryService: ICategoryService;
         FTagService: ITagService;
         FUserService: IUserService;
+        //
+        FHotkeyMgr: TGlobalHotkeyManager;
         //
         procedure InitializeDatabase(Filename: string);
         procedure ApplyPRAGMA;
@@ -103,11 +106,16 @@ begin
     FCategoryService := TCategoryService.Create(CategoryRepo);
     FTagService := TTagService.Create(TagRepo);
     FUserService := TUserService.Create(UserRepo);
+
+    // Хоткеи
+    FHotkeyMgr := TGlobalHotkeyManager.Create(FSnippetService, FUserService, 0, Self); // дефолтный UserID - 0
+    FHotkeyMgr.StartListening;
 end;
 
 procedure TAppDatabase.DataModuleDestroy(Sender: TObject);
 begin
-//
+    if Assigned(FHotkeyMgr) then
+        FHotkeyMgr.Free;
 end;
 
 procedure TAppDatabase.CreateDatabase(const Filename: string);

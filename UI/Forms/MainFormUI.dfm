@@ -192,6 +192,7 @@ object MainForm: TMainForm
         Checked = True
         TabOrder = 0
         TabStop = True
+        OnClick = rbTextClick
       end
       object rbFTS: TRadioButton
         Left = 95
@@ -200,6 +201,7 @@ object MainForm: TMainForm
         Height = 17
         Caption = 'FTS'
         TabOrder = 1
+        OnClick = rbTextClick
       end
     end
   end

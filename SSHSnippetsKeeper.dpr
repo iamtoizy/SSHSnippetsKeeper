@@ -4,6 +4,7 @@ program SSHSnippetsKeeper;
 // TODO: [Feature] Горячая клавиша для повторного ввода сниппета
 // TODO: [Refactor] Добавить интерфейсы для юнит-тестирования
 // TODO: [Feature] Добавить юнит-тесты
+// TODO: [Feature] Добавить нейросети
 
 {$R '000_schema_init.res' 'Database\Schema\000_schema_init.rc'}
 
@@ -56,7 +57,10 @@ uses
   UserService in 'Core\Services\UserService.pas',
   Core.Interfaces in 'Core\Core.Interfaces.pas',
   SnippetRunner in 'UI\Controllers\SnippetRunner.pas',
-  UI.Interfaces in 'UI\Abstractions\UI.Interfaces.pas';
+  UI.Interfaces in 'UI\Abstractions\UI.Interfaces.pas',
+  QuickSearchFormUI in 'UI\Forms\QuickSearchFormUI.pas' {QuickSearchForm},
+  GlobalHotkeyManager in 'UI\Controllers\GlobalHotkeyManager.pas',
+  TrackBarEx in 'UI\Controls\TrackBarEx.pas';
 
 {$R *.res}
 
@@ -110,6 +114,7 @@ begin
     Application.Title := 'SSH Snippets Keeper';
     Application.CreateForm(TAppDatabase, AppDatabase);
   Application.CreateForm(TMainForm, MainForm);
+  Application.CreateForm(TQuickSearchForm, QuickSearchForm);
   MainForm.Initialize(
         AppDatabase,
         AppDatabase.SnippetService,
