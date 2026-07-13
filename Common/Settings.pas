@@ -21,15 +21,39 @@ type
         KeyPressInterval: NativeUInt;
     end;
 
-    TAllowedApplications = record
+    TAllowedApplicationsItem = record
         ExeName: string;
         Enabled: Boolean;
+    end;
+
+    TAIParams = record
+        Temperature: Single;
+        MaxOutputTokens: NativeUInt;
+        Content: string;
+        ReasoningEffort: string;    // none
+    end;
+
+    TAIItem = record
+        Name: string;
+        APIKey: string;
+        Folder: string;
+        Model: string;
+        Agent: string;
+        Params: TAIParams;
+    end;
+
+    TAIHub = record
+        Name: string;
+        URL: string;
+        Comment: string;
+        Items: TArrayRecord<TAIItem>;
     end;
 
     TJSONSettings = record
         AllowedWindows: TArrayRecord<TWindowsNode>;
         WindowHelper: TWindowHelperNode;
-        AllowedApplications: TArrayRecord<TAllowedApplications>;
+        AllowedApplications: TArrayRecord<TAllowedApplicationsItem>;
+        AISettings: TArrayRecord<TAIHub>;
     end;
 
 procedure LoadSettingsFromJson;
@@ -45,14 +69,20 @@ uses
     System.SysUtils,
     JSONSerializer,
     System.IOUtils,
-    Winapi.Windows
+    Winapi.Windows,
+    System.RegularExpressions
     ;
 
 procedure LoadSettingsFromJson;
 var
-    S: string;
+    FilePath, S: string;
 begin
-    S := TFile.ReadAllText(TDirectory.GetCurrentDirectory + '\settings.json');
+    FilePath := TPath.Combine(TDirectory.GetCurrentDirectory, 'settings.json');
+    if not TFile.Exists(FilePath) then
+        Exit;
+
+    // Явно указываем UTF8 при чтении, чтобы гарантированно понять русские буквы
+    S := TFile.ReadAllText(FilePath, TEncoding.UTF8);
     SettingsRecord := DSON.fromJson<TJSONSettings>(S);
 
     if SettingsRecord.WindowHelper.ActivationDelay = 0 then
@@ -63,18 +93,37 @@ begin
         SettingsRecord.WindowHelper.KeyPressInterval := 10;
 
     // Bash
-    BashAutocomplete.LoadFromFile(TDirectory.GetCurrentDirectory + '\bash-autocomplete.txt')
+    var BashPath := TPath.Combine(TDirectory.GetCurrentDirectory, 'bash-autocomplete.txt');
+    if TFile.Exists(BashPath) then
+        BashAutocomplete.LoadFromFile(BashPath, TEncoding.UTF8);
+
+//    SaveSettingsToJson;
 end;
 
 procedure SaveSettingsToJson;
 var
     S: string;
+    FilePath: string;
+    SL: TStringList;
 begin
     SettingsRecord.WindowHelper.ActivationDelay := 100;
     SettingsRecord.WindowHelper.SetFocusDelay := 50;
     SettingsRecord.WindowHelper.KeyPressInterval := 10;
+
+    // Получаем JSON строку
     S := DSON.toJson<TJSONSettings>(SettingsRecord);
-    TFile.WriteAllText(TDirectory.GetCurrentDirectory + '\settings.json', S);
+
+    FilePath := TPath.Combine(TDirectory.GetCurrentDirectory, 'settings.json');
+
+    // Сохраняем через TStringList с явным маркером BOM
+    SL := TStringList.Create;
+    try
+        SL.Text := S;
+        SL.WriteBOM := True; // <-- ВАЖНО: Записываем маркер UTF-8 (BOM). Это команда для Блокнота!
+        SL.SaveToFile(FilePath, TEncoding.UTF8);
+    finally
+        SL.Free;
+    end;
 end;
 
 initialization

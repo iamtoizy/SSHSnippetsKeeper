@@ -40,41 +40,42 @@ INSERT INTO tags(id, name) VALUES
 (5, 'mysql'),       (6, 'sqlite'),     (7, 'backup'),      (8, 'network'),
 (9, 'monitoring'),  (10, 'security'),  (11, 'systemd'),    (12, 'ansible');
 
--- SNIPPETS (с правильными category_id)
-INSERT INTO snippets(id, user_id, category_id, title, content, comment) VALUES
+-- SNIPPETS (с правильным набором полей и дефолтным is_security_ignored)
+INSERT INTO snippets(id, user_id, category_id, title, content, comment, is_security_ignored) VALUES
 -- Local User (1)
-(1,  1, 4, 'Очистка логов',          'find /var/log -type f -name "*.log" -delete',          'Использовать осторожно! Лучше сначала проверить find /var/log -type f -name "*.log" -print'),
-(2,  1, 4, 'Архивация директории',   'tar -czf backup.tar.gz /home',                         'Для инкрементального бэкапа использовать опцию --listed-incremental'),
-(3,  1, 5, 'Проверка открытых портов','ss -tulpn',                                           ''),
-(4,  1, 5, 'Трассировка маршрута',   'traceroute google.com',                                ''),
-(5,  1, 2, 'Список контейнеров',     'docker ps -a',                                         ''),
-(6,  1, 2, 'Очистка Docker',         'docker system prune -a',                               'Перед запуском убедиться, что нет нужных остановленных контейнеров'),
-(7,  1, 3, 'Перезапуск deployment',  'kubectl rollout restart deployment nginx',             ''),
-(8,  1, 3, 'Получение логов pod',    'kubectl logs my-pod',                                  ''),
-(9,  1, 8, 'Создание дампа MySQL',   'mysqldump -u root -p db > backup.sql',                 'Для больших БД использовать --single-transaction и --quick'),
-(10, 1, 8, 'Показ процессов MySQL',  'SHOW PROCESSLIST;',                                    ''),
-(11, 1, 9, 'Оптимизация SQLite',     'PRAGMA optimize;',                                     ''),
-(12, 1, 9, 'Проверка целостности',   'PRAGMA integrity_check;',                              ''),
-(13, 1, 6, 'Проверка дисков',        'df -h',                                                ''),
-(14, 1, 6, 'Память системы',         'free -m',                                              ''),
-(15, 1, 6, 'Перезапуск сервиса',     'systemctl restart nginx',                              ''),
-(16, 1, 6, 'Просмотр юнитов',        'systemctl list-units',                                 '');
+(1,  1, 4, 'Очистка логов',           'find /var/log -type f -name "*.log" -delete',          'Использовать осторожно! Лучше сначала проверить find /var/log -type f -name "*.log" -print', 0),
+(2,  1, 4, 'Архивация директории',    'tar -czf backup.tar.gz /home',                         'Для инкрементального бэкапа использовать опцию --listed-incremental', 0),
+(3,  1, 5, 'Проверка открытых портов','ss -tulpn',                                            '', 0),
+(4,  1, 5, 'Трассировка маршрута',    'traceroute google.com',                                '', 0),
+(5,  1, 2, 'Список контейнеров',      'docker ps -a',                                         '', 0),
+(6,  1, 2, 'Очистка Docker',          'docker system prune -a',                               'Перед запуском убедиться, что нет нужных остановленных контейнеров', 0),
+(7,  1, 3, 'Перезапуск deployment',   'kubectl rollout restart deployment nginx',              '', 0),
+(8,  1, 3, 'Получение логов pod',     'kubectl logs my-pod',                                  '', 0),
+(9,  1, 8, 'Создание дампа MySQL',    'mysqldump -u root -p db > backup.sql',                 'Для больших БД использовать --single-transaction и --quick', 0),
+(10, 1, 8, 'Показ процессов MySQL',   'SHOW PROCESSLIST;',                                    '', 0),
+(11, 1, 9, 'Оптимизация SQLite',      'PRAGMA optimize;',                                     '', 0),
+(12, 1, 9, 'Проверка целостности',    'PRAGMA integrity_check;',                              '', 0),
+(13, 1, 6, 'Проверка дисков',          'df -h',                                                '', 0),
+(14, 1, 6, 'Память системы',          'free -m',                                              '', 0),
+(15, 1, 6, 'Перезапуск сервиса',      'systemctl restart nginx',                              '', 0),
+(16, 1, 6, 'Просмотр юнитов',         'systemctl list-units',                                 '', 0);
 
 -- SNIPPET TAGS
-INSERT INTO snippet_tags VALUES (1,1),(1,2);
-INSERT INTO snippet_tags VALUES (2,1),(2,2),(2,7);
-INSERT INTO snippet_tags VALUES (3,1),(3,8);
-INSERT INTO snippet_tags VALUES (4,1),(4,8);
-INSERT INTO snippet_tags VALUES (5,3);
-INSERT INTO snippet_tags VALUES (6,3);
-INSERT INTO snippet_tags VALUES (7,4);
-INSERT INTO snippet_tags VALUES (8,4);
-INSERT INTO snippet_tags VALUES (9,5),(9,7);
-INSERT INTO snippet_tags VALUES (10,5);
-INSERT INTO snippet_tags VALUES (11,6);
-INSERT INTO snippet_tags VALUES (12,6);
-INSERT INTO snippet_tags VALUES (15,11);
-INSERT INTO snippet_tags VALUES (16,11);
+INSERT INTO snippet_tags(snippet_id, tag_id) VALUES 
+(1,1),(1,2),
+(2,1),(2,2),(2,7),
+(3,1),(3,8),
+(4,1),(4,8),
+(5,3),
+(6,3),
+(7,4),
+(8,4),
+(9,5),(9,7),
+(10,5),
+(11,6),
+(12,6),
+(15,11),
+(16,11);
 
 -- RUN HISTORY
 INSERT INTO snippet_runs(snippet_id, run_at, executed_by_user_id) VALUES

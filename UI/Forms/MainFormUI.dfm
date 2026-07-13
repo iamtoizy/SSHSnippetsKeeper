@@ -294,8 +294,18 @@ object MainForm: TMainForm
       end
       object nCloseDatabase: TMenuItem
         Caption = #1047#1072#1082#1088#1099#1090#1100' '#1073#1072#1079#1091' '#1076#1072#1085#1085#1099#1093
+        Enabled = False
         ShortCut = 16465
         OnClick = nCloseDatabaseClick
+      end
+      object N3: TMenuItem
+        Caption = '-'
+      end
+      object nSearch: TMenuItem
+        Caption = #1055#1086#1083#1085#1086#1090#1077#1082#1089#1090#1086#1074#1099#1081' '#1087#1086#1080#1089#1082
+        Enabled = False
+        ShortCut = 16454
+        OnClick = nSearchClick
       end
     end
     object nTerminals: TMenuItem
@@ -305,16 +315,19 @@ object MainForm: TMainForm
       Caption = #1050#1072#1090#1077#1075#1086#1088#1080#1080
       object nAddCategory: TMenuItem
         Caption = #1044#1086#1073#1072#1074#1080#1090#1100
+        Enabled = False
         ShortCut = 32833
         OnClick = nAddCategoryClick
       end
       object nDeleteCategory: TMenuItem
         Caption = #1059#1076#1072#1083#1080#1090#1100
+        Enabled = False
         ShortCut = 32814
         OnClick = nDeleteCategoryClick
       end
       object nEditCategory: TMenuItem
         Caption = #1048#1079#1084#1077#1085#1080#1090#1100
+        Enabled = False
         ShortCut = 32837
         OnClick = nEditCategoryClick
       end

@@ -8,7 +8,7 @@
         <AppType>Application</AppType>
         <FrameworkType>VCL</FrameworkType>
         <ProjectVersion>20.4</ProjectVersion>
-        <Platform Condition="'$(Platform)'==''">Win32</Platform>
+        <Platform Condition="'$(Platform)'==''">Win64</Platform>
         <ProjectName Condition="'$(ProjectName)'==''">SSHSnippetsKeeper</ProjectName>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
@@ -213,6 +213,13 @@
         </DCCReference>
         <DCCReference Include="UI\Controllers\GlobalHotkeyManager.pas"/>
         <DCCReference Include="UI\Controls\TrackBarEx.pas"/>
+        <DCCReference Include="UI\Services\AIService.pas"/>
+        <DCCReference Include="UI\Services\AITextCleaner.pas"/>
+        <DCCReference Include="UI\Forms\AISettingsFormUI.pas">
+            <Form>AISettingsForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="Core\Services\SecurityScanner.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

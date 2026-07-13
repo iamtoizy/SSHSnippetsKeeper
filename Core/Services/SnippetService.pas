@@ -39,8 +39,8 @@ type
         function GetAllSnippets(UserID: NativeInt = 0): TArray<TSnippetDTO>;
         function GetSnippetsByCategory(CategoryID, UserID: NativeInt): TArray<TSnippetDTO>;
         function GetSnippetsByTag(TagID: NativeInt): TArray<TSnippetDTO>;
-        function GetTopSnippets(UserID: NativeInt; Count: Integer): TArray<TSnippetDTO>;
-        function GetRecentSnippets(UserID: NativeInt; Count: Integer): TArray<TSnippetDTO>;
+        function GetTopSnippets(UserID: NativeInt; Count: NativeInt): TArray<TSnippetDTO>;
+        function GetRecentSnippets(UserID: NativeInt; Count: NativeInt): TArray<TSnippetDTO>;
 
         // ќбновленный метод поиска с учетом пространства
         function SearchSnippets(const Query: string; UseFTS: Boolean; UserID: NativeInt = 0): TArray<TSnippetDTO>;
@@ -124,13 +124,13 @@ begin
     Result := FSnippetRepo.GetSnippetsByTag(TagID);
 end;
 
-function TSnippetService.GetTopSnippets(UserID: NativeInt; Count: Integer): TArray<TSnippetDTO>;
+function TSnippetService.GetTopSnippets(UserID: NativeInt; Count: NativeInt): TArray<TSnippetDTO>;
 begin
     if Count <= 0 then Count := TOP_SNIPPETS_COUNT;
     Result := FSnippetRepo.GetTopSnippets(UserID, Count);
 end;
 
-function TSnippetService.GetRecentSnippets(UserID: NativeInt; Count: Integer): TArray<TSnippetDTO>;
+function TSnippetService.GetRecentSnippets(UserID: NativeInt; Count: NativeInt): TArray<TSnippetDTO>;
 begin
     if Count <= 0 then Count := RECENT_SNIPPETS_COUNT;
     Result := FSnippetRepo.GetRecentSnippets(UserID, Count);

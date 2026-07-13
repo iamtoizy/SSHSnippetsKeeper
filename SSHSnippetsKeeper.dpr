@@ -60,7 +60,11 @@ uses
   UI.Interfaces in 'UI\Abstractions\UI.Interfaces.pas',
   QuickSearchFormUI in 'UI\Forms\QuickSearchFormUI.pas' {QuickSearchForm},
   GlobalHotkeyManager in 'UI\Controllers\GlobalHotkeyManager.pas',
-  TrackBarEx in 'UI\Controls\TrackBarEx.pas';
+  TrackBarEx in 'UI\Controls\TrackBarEx.pas',
+  AIService in 'UI\Services\AIService.pas',
+  AITextCleaner in 'UI\Services\AITextCleaner.pas',
+  AISettingsFormUI in 'UI\Forms\AISettingsFormUI.pas' {AISettingsForm},
+  SecurityScanner in 'Core\Services\SecurityScanner.pas';
 
 {$R *.res}
 
@@ -115,6 +119,7 @@ begin
     Application.CreateForm(TAppDatabase, AppDatabase);
   Application.CreateForm(TMainForm, MainForm);
   Application.CreateForm(TQuickSearchForm, QuickSearchForm);
+  Application.CreateForm(TAISettingsForm, AISettingsForm);
   MainForm.Initialize(
         AppDatabase,
         AppDatabase.SnippetService,

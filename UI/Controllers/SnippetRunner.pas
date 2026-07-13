@@ -13,7 +13,8 @@ uses
     MacroEngine,
     MacroInputTypes,
     UI.Interfaces,
-    Core.Interfaces
+    Core.Interfaces,
+    SecurityScanner
     ;
 
 type
@@ -119,6 +120,9 @@ procedure TSnippetRunner.ExecuteSnippet(const Snippet: TSnippetDTO; RequireConfi
 var
     TargetWindow: TWindowMonitorInfo;
     Context: TMacroContext;
+    Security: ISecurityScanner;
+    WarningReason: string;
+    WarningMsg: string;
 begin
     if Trim(Snippet.Content).IsEmpty then
     begin
@@ -126,6 +130,25 @@ begin
         Exit;
     end;
 
+    // --- 1. АНАЛИЗ БЕЗОПАСНОСТИ ---
+    if not Snippet.IsSecurityCheckIgnored then
+    begin
+        Security := TSecurityScanner.Create;
+        if Security.HasSensitiveData(Snippet.Content, WarningReason) then
+        begin
+            WarningMsg :=
+                'Обнаружены потенциально чувствительные данные:' + sLineBreak +
+                '• ' + WarningReason + sLineBreak + sLineBreak +
+                'Необходимо проверить текст сниппета перед его отправкой в терминал.' + sLineBreak + sLineBreak +
+                'Берёшь ответственность на себя и хочешь продолжить отправку?';
+
+            // Если пользователь нажал "Нет" - прерываем.
+            if not FErrorHandler.AskWarning(WarningMsg) then
+                Exit;
+        end;
+    end;
+
+    // --- 2. ВЫБОР ОКНА И ПОДТВЕРЖДЕНИЕ ---
     if not SelectTargetWindow(TargetWindow) then
         Exit;
 
@@ -135,14 +158,14 @@ begin
         Exit;
     end;
 
-    if RequireConfirmation and (
-        MessageBox(
-            0,
-            PChar(Format('Ввести сниппет в окно: "%s"?', [TargetWindow.WindowTitle])),
-            'Подтверждение',
-            MB_YESNO or MB_ICONQUESTION or MB_TOPMOST) <> IDYES) then
-        Exit;
+    if RequireConfirmation then
+    begin
+        // Используем наш обычный диалог подтверждения
+        if not FErrorHandler.AskConfirmation(Format('Ввести сниппет в окно: "%s"?', [TargetWindow.WindowTitle])) then
+            Exit;
+    end;
 
+    // --- 3. ВЫПОЛНЕНИЕ МАКРОСА ---
     IsExecuting := True;
 
     // Блокируем смену фокуса для нашего процесса (ASFW_ANY = 2)

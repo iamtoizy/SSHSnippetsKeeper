@@ -29,9 +29,9 @@ type
         function SearchByMaskFTS(const Mask: string; UserID: NativeInt = 0): TArray<TSnippetDTO>;
         function SearchByMaskSimple(const Mask: string; UserID: NativeInt = 0): TArray<TSnippetDTO>;
         procedure UpdateTags(SnippetID: NativeInt; const TagIDs: TArray<NativeInt>);
-        function GetRecentSnippets(UserID: NativeInt; Limit: Integer): TArray<TSnippetDTO>;
-        function GetTopSnippets(UserID: NativeInt; Limit: Integer): TArray<TSnippetDTO>;
-        function GetSnippetCountByCategory(UserID: NativeInt): TDictionary<NativeInt, Integer>;
+        function GetRecentSnippets(UserID: NativeInt; Limit: NativeInt): TArray<TSnippetDTO>;
+        function GetTopSnippets(UserID: NativeInt; Limit: NativeInt): TArray<TSnippetDTO>;
+        function GetSnippetCountByCategory(UserID: NativeInt): TDictionary<NativeInt, NativeInt>;
     end;
 
 implementation
@@ -602,11 +602,11 @@ begin
         Result := InternalLoadSnippets(SQL_SELECT_SNIPPETS_BY_CATEGORY, [CategoryID]);
 end;
 
-function TSnippetRepository.GetSnippetCountByCategory(UserID: NativeInt): TDictionary<NativeInt, Integer>;
+function TSnippetRepository.GetSnippetCountByCategory(UserID: NativeInt): TDictionary<NativeInt, NativeInt>;
 var
     Q: TFDQuery;
 begin
-    Result := TDictionary<NativeInt, Integer>.Create;
+    Result := TDictionary<NativeInt, NativeInt>.Create;
     Q := CreateQuery;
     try
         if UserID > 0 then
@@ -633,12 +633,12 @@ begin
     end;
 end;
 
-function TSnippetRepository.GetTopSnippets(UserID: NativeInt; Limit: Integer): TArray<TSnippetDTO>;
+function TSnippetRepository.GetTopSnippets(UserID, Limit: NativeInt): TArray<TSnippetDTO>;
 begin
     Result := InternalLoadSnippets(SQL_GET_TOP_SNIPPETS, [UserID, Limit]);
 end;
 
-function TSnippetRepository.GetRecentSnippets(UserID: NativeInt; Limit: Integer): TArray<TSnippetDTO>;
+function TSnippetRepository.GetRecentSnippets(UserID, Limit: NativeInt): TArray<TSnippetDTO>;
 begin
     Result := InternalLoadSnippets(SQL_GET_RECENT_SNIPPETS, [UserID, Limit]);
 end;

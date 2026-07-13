@@ -15,12 +15,12 @@ type
     private
     public
         function GetAll(UserID: NativeInt = 0): TArray<TCategoryDTO>;
-        function GetByID(ID: Integer): TCategoryDTO;
-        function GetSnippetsByCategory(const CategoryID: Integer): TArray<TSnippetDTO>;
+        function GetByID(ID: NativeInt): TCategoryDTO;
+        function GetSnippetsByCategory(const CategoryID: NativeInt): TArray<TSnippetDTO>;
         procedure MoveCategory(ID, NewParentID, Position: NativeInt);
-        procedure DeleteCategory(ID: Integer);
-        function AddCategory(const Name: string; ParentID, UserID: Integer): Integer;
-        procedure UpdateName(ID: Integer; const NewName: string);
+        procedure DeleteCategory(ID: NativeInt);
+        function AddCategory(const Name: string; ParentID, UserID: NativeInt): NativeInt;
+        procedure UpdateName(ID: NativeInt; const NewName: string);
         function GetUserID(ID: NativeInt): NativeInt;
         function ExistsInParent(const Name: string; ParentID, UserID: NativeInt): Boolean;
     end;
@@ -108,7 +108,7 @@ begin
     end;
 end;
 
-function TCategoryRepository.GetSnippetsByCategory(const CategoryID: Integer): TArray<TSnippetDTO>;
+function TCategoryRepository.GetSnippetsByCategory(const CategoryID: NativeInt): TArray<TSnippetDTO>;
 var
     Query: TFDQuery;
     List: TList<TSnippetDTO>;
@@ -264,7 +264,7 @@ begin
     end;
 end;
 
-function TCategoryRepository.AddCategory(const Name: string; ParentID, UserID: NativeInt): Integer;
+function TCategoryRepository.AddCategory(const Name: string; ParentID, UserID: NativeInt): NativeInt;
 var
     Q, QMax: TFDQuery;
     MaxOrder: Integer;
@@ -310,7 +310,7 @@ begin
     end;
 end;
 
-procedure TCategoryRepository.UpdateName(ID: Integer; const NewName: string);
+procedure TCategoryRepository.UpdateName(ID: NativeInt; const NewName: string);
 var
     Q: TFDQuery;
 begin
@@ -325,7 +325,7 @@ begin
     end;
 end;
 
-procedure TCategoryRepository.DeleteCategory(ID: Integer);
+procedure TCategoryRepository.DeleteCategory(ID: NativeInt);
 var
     Q: TFDQuery;
 begin

@@ -21,8 +21,8 @@ type
         function GetAll(UserID: NativeInt = 0): TArray<TSnippetDTO>;
         function GetSnippetByCategory(const CategoryID, UserID: NativeInt): TArray<TSnippetDTO>;
         function GetSnippetsByTag(const TagID: NativeInt): TArray<TSnippetDTO>;
-        function GetTopSnippets(UserID: NativeInt; Count: Integer): TArray<TSnippetDTO>;
-        function GetRecentSnippets(UserID: NativeInt; Count: Integer): TArray<TSnippetDTO>;
+        function GetTopSnippets(UserID: NativeInt; Count: NativeInt): TArray<TSnippetDTO>;
+        function GetRecentSnippets(UserID: NativeInt; Count: NativeInt): TArray<TSnippetDTO>;
         function SearchByMaskFTS(const Mask: string; UserID: NativeInt = 0): TArray<TSnippetDTO>;
         function SearchByMaskSimple(const Mask: string; UserID: NativeInt = 0): TArray<TSnippetDTO>;
     end;
@@ -30,12 +30,12 @@ type
     ICategoryRepository = interface
         ['{BC294608-2FA0-4AE5-B163-7EA9F05435A8}']
         function GetAll(UserID: NativeInt = 0): TArray<TCategoryDTO>;
-        function GetByID(ID: Integer): TCategoryDTO;
-        function GetSnippetsByCategory(const CategoryID: Integer): TArray<TSnippetDTO>;
+        function GetByID(ID: NativeInt): TCategoryDTO;
+        function GetSnippetsByCategory(const CategoryID: NativeInt): TArray<TSnippetDTO>;
         procedure MoveCategory(ID, NewParentID, Position: NativeInt);
-        procedure DeleteCategory(ID: Integer);
-        function AddCategory(const Name: string; ParentID, UserID: Integer): Integer;
-        procedure UpdateName(ID: Integer; const NewName: string);
+        procedure DeleteCategory(ID: NativeInt);
+        function AddCategory(const Name: string; ParentID, UserID: NativeInt): NativeInt;
+        procedure UpdateName(ID: NativeInt; const NewName: string);
         function GetUserID(ID: NativeInt): NativeInt;
         function ExistsInParent(const Name: string; ParentID, UserID: NativeInt): Boolean;
     end;
@@ -64,14 +64,13 @@ type
 
     IUserRepository = interface
         ['{D4565779-919A-4287-B0A3-16273737BDC0}']
-        function Add(const User: TUserDTO): Integer;
+        function Add(const User: TUserDTO): NativeInt;
         procedure Update(const User: TUserDTO);
-        procedure Delete(Id: Integer);
-
-        function GetByID(Id: Integer): TUserDTO;
+        procedure Delete(Id: NativeInt);
+        function GetByID(Id: NativeInt): TUserDTO;
         function GetAll: TArray<TUserDTO>;
         function GetByName(const Name: string): TArray<TUserDTO>;
-        function TryGetByID(ID: Integer; out User: TUserDTO): Boolean;
+        function TryGetByID(ID: NativeInt; out User: TUserDTO): Boolean;
     end;
 
     // Сервисы
@@ -84,8 +83,8 @@ type
         function GetAllSnippets(UserID: NativeInt = 0): TArray<TSnippetDTO>;
         function GetSnippetsByCategory(CategoryID, UserID: NativeInt): TArray<TSnippetDTO>;
         function GetSnippetsByTag(TagID: NativeInt): TArray<TSnippetDTO>;
-        function GetTopSnippets(UserID: NativeInt; Count: Integer): TArray<TSnippetDTO>;
-        function GetRecentSnippets(UserID: NativeInt; Count: Integer): TArray<TSnippetDTO>;
+        function GetTopSnippets(UserID: NativeInt; Count: NativeInt): TArray<TSnippetDTO>;
+        function GetRecentSnippets(UserID: NativeInt; Count: NativeInt): TArray<TSnippetDTO>;
         function SearchSnippets(const Query: string; UseFTS: Boolean; UserID: NativeInt = 0): TArray<TSnippetDTO>;
         function SearchSnippetsSimple(const Query: string; UserID: NativeInt): TArray<TSnippetDTO>;
         function SearchSnippetsFTS(const Query: string; UserID: NativeInt): TArray<TSnippetDTO>;
@@ -132,6 +131,8 @@ type
         procedure ShowError(const Message: string);
         procedure ShowInfo(const Message: string);
         procedure ShowWarning(const Message: string);
+        function AskConfirmation(const Message: string): Boolean;
+        function AskWarning(const Message: string): Boolean;
     end;
 
 implementation

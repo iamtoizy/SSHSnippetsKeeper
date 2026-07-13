@@ -17,6 +17,7 @@ type
         CreatedAt: Int64;
         UpdatedAt: Int64;
         Tags: TArray<TTagDTO>;
+        IsSecurityCheckIgnored: Boolean;
     end;
 
 implementation

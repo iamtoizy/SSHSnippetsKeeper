@@ -83,6 +83,8 @@ type
         pSearchType: TPanel;
         rbText: TRadioButton;
         rbFTS: TRadioButton;
+        N3: TMenuItem;
+        nSearch: TMenuItem;
         procedure bManageWorkspacesClick(Sender: TObject);
         procedure cbUserChange(Sender: TObject);
         procedure nOpenDatabaseClick(Sender: TObject);
@@ -114,6 +116,7 @@ type
         procedure nDeleteTagClick(Sender: TObject);
         procedure nEditCategoryClick(Sender: TObject);
         procedure nRenameTagClick(Sender: TObject);
+        procedure nSearchClick(Sender: TObject);
         procedure rbTextClick(Sender: TObject);
         procedure tvCategoriesClick(Sender: TObject);
         procedure tvCategoriesEndDrag(Sender, Target: TObject; X, Y: Integer);
@@ -262,6 +265,7 @@ begin
                 nAddTag.Enabled := True;
                 nDeleteTag.Enabled := True;
                 nRenameTag.Enabled := True;
+                nSearch.Enabled := True;
                 cbUser.Enabled := True;
                 ebSearch.Enabled := True;
                 bManageWorkspaces.Enabled := True;
@@ -277,6 +281,7 @@ begin
                 nAddTag.Enabled := True;
                 nDeleteTag.Enabled := True;
                 nRenameTag.Enabled := True;
+                nSearch.Enabled := True;
                 cbUser.Enabled := True;
                 ebSearch.Enabled := True;
                 bManageWorkspaces.Enabled := True;
@@ -300,6 +305,7 @@ begin
                 nAddTag.Enabled := False;
                 nDeleteTag.Enabled := False;
                 nRenameTag.Enabled := False;
+                nSearch.Enabled := False;
                 nAddCategory.Enabled := False;
                 nDeleteCategory.Enabled := False;
                 nEditCategory.Enabled := False;
@@ -800,6 +806,7 @@ begin
     finally
         AddEditSnippet.Free;
     end;
+    ebSearch.OnChange(ebSearch);
 end;
 
 procedure TMainForm.DoDeleteSnippet;
@@ -1238,6 +1245,12 @@ end;
 procedure TMainForm.nRenameTagClick(Sender: TObject);
 begin
     DoRenameTag;
+end;
+
+procedure TMainForm.nSearchClick(Sender: TObject);
+begin
+    if FDBManager.IsConnected then
+        ebSearch.SetFocus;
 end;
 
 procedure TMainForm.nTagEditorClick(Sender: TObject);

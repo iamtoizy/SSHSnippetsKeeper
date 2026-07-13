@@ -2,7 +2,7 @@ PRAGMA foreign_keys = ON;
 PRAGMA journal_mode = WAL;
 PRAGMA synchronous = NORMAL;
 PRAGMA temp_store = MEMORY;
-PRAGMA user_version = 6; -- v6: приватные категории, удалены hosts, исправлены триггеры
+PRAGMA user_version = 7; -- v7: Добавлено поле is_security_ignored для отключения сканера утилиты
 PRAGMA recursive_triggers = OFF;
 PRAGMA busy_timeout = 5000;
 PRAGMA cache_size = -20000;
@@ -35,17 +35,18 @@ CREATE INDEX IF NOT EXISTS ix_categories_user ON snippet_categories(user_id);
 CREATE INDEX IF NOT EXISTS ix_categories_sort_order ON snippet_categories(user_id, parent_id, sort_order);
 
 ---------------------------------------------------------
--- 3. SNIPPETS (Сами команды)
+-- 3. SNIPPETS (Команды. Добавлено поле is_security_ignored)
 ---------------------------------------------------------
 CREATE TABLE IF NOT EXISTS snippets (
-  id          INTEGER PRIMARY KEY,
-  user_id     INTEGER NOT NULL,
-  category_id INTEGER REFERENCES snippet_categories(id) ON DELETE CASCADE,
-  title       TEXT COLLATE NOCASE,
-  content     TEXT NOT NULL COLLATE NOCASE,
-  comment     TEXT NOT NULL DEFAULT '',
-  created_at  INTEGER NOT NULL DEFAULT (strftime('%s','now')),
-  updated_at  INTEGER, -- Обновляется из кода (Слой сервисов)
+  id                  INTEGER PRIMARY KEY,
+  user_id             INTEGER NOT NULL,
+  category_id         INTEGER REFERENCES snippet_categories(id) ON DELETE CASCADE,
+  title               TEXT COLLATE NOCASE,
+  content             TEXT NOT NULL COLLATE NOCASE,
+  comment             TEXT NOT NULL DEFAULT '',
+  is_security_ignored INTEGER NOT NULL DEFAULT 0, -- v7: 0 = проверять сканером, 1 = доверять
+  created_at          INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+  updated_at          INTEGER, 
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 

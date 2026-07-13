@@ -14,14 +14,14 @@ type
     private
         function InternalLoadUsers(const SQL: string; const Params: array of Variant): TArray<TUserDTO>;
     public
-        function Add(const User: TUserDTO): Integer;
+        function Add(const User: TUserDTO): NativeInt;
         procedure Update(const User: TUserDTO);
-        procedure Delete(Id: Integer);
+        procedure Delete(Id: NativeInt);
 
-        function GetByID(Id: Integer): TUserDTO;
+        function GetByID(Id: NativeInt): TUserDTO;
         function GetAll: TArray<TUserDTO>;
         function GetByName(const Name: string): TArray<TUserDTO>;
-        function TryGetByID(ID: Integer; out User: TUserDTO): Boolean;
+        function TryGetByID(ID: NativeInt; out User: TUserDTO): Boolean;
     end;
 
 implementation
@@ -77,7 +77,7 @@ begin
     Result := InternalLoadUsers('SELECT id, name, created_at FROM users ORDER BY name', []);
 end;
 
-function TUserRepository.GetByID(Id: Integer): TUserDTO;
+function TUserRepository.GetByID(Id: NativeInt): TUserDTO;
 var
     Arr: TArray<TUserDTO>;
 begin
@@ -94,13 +94,13 @@ begin
     Result := InternalLoadUsers('SELECT id, name, created_at ' + 'FROM users ' + 'WHERE name LIKE ? ' + 'ORDER BY name', ['%' + Name + '%']);
 end;
 
-function TUserRepository.Add(const User: TUserDTO): Integer;
+function TUserRepository.Add(const User: TUserDTO): NativeInt;
 var
     NewID: Variant;
 begin
     FConnection.ExecSQL('INSERT INTO users (name, created_at) VALUES (?, ?)', [User.Name, User.CreatedAt]);
     NewID := FConnection.ExecSQLScalar('SELECT last_insert_rowid()');
-    Result := Integer(NewID);
+    Result := NativeInt(NewID);
 end;
 
 procedure TUserRepository.Update(const User: TUserDTO);
@@ -108,12 +108,12 @@ begin
     FConnection.ExecSQL('UPDATE users ' + 'SET name = ? ' + 'WHERE id = ?', [User.Name, User.Id]);
 end;
 
-procedure TUserRepository.Delete(Id: Integer);
+procedure TUserRepository.Delete(Id: NativeInt);
 begin
     FConnection.ExecSQL('DELETE FROM users WHERE id = ?', [Id]);
 end;
 
-function TUserRepository.TryGetByID(ID: Integer; out User: TUserDTO): Boolean;
+function TUserRepository.TryGetByID(ID: NativeInt; out User: TUserDTO): Boolean;
 var
     Arr: TArray<TUserDTO>;
 begin
