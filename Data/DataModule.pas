@@ -19,6 +19,7 @@ uses
     CategoryService,
     TagService,
     UserService,
+    PasswordService,
     FireDAC.Comp.Script,
     Core.Interfaces,
     FireDAC.Stan.Option,
@@ -58,9 +59,8 @@ type
         FCategoryService: ICategoryService;
         FTagService: ITagService;
         FUserService: IUserService;
-        //
-        FHotkeyMgr: TGlobalHotkeyManager;
-        //
+        FPasswordService: IPasswordService;
+
         procedure InitializeDatabase(Filename: string);
         procedure ApplyPRAGMA;
         procedure FlushToDisk;
@@ -76,6 +76,7 @@ type
         property CategoryService: ICategoryService read FCategoryService;
         property TagService: ITagService read FTagService;
         property UserService: IUserService read FUserService;
+        property PasswordService: IPasswordService read FPasswordService;
     end;
 
 var
@@ -106,16 +107,12 @@ begin
     FCategoryService := TCategoryService.Create(CategoryRepo);
     FTagService := TTagService.Create(TagRepo);
     FUserService := TUserService.Create(UserRepo);
-
-    // Хоткеи
-    FHotkeyMgr := TGlobalHotkeyManager.Create(FSnippetService, FUserService, 0, Self); // дефолтный UserID - 0
-    FHotkeyMgr.StartListening;
+    FPasswordService := TPasswordService.Create;
 end;
 
 procedure TAppDatabase.DataModuleDestroy(Sender: TObject);
 begin
-    if Assigned(FHotkeyMgr) then
-        FHotkeyMgr.Free;
+//
 end;
 
 procedure TAppDatabase.CreateDatabase(const Filename: string);

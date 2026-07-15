@@ -14,15 +14,15 @@ type
     TCategoryRepository = class(TRepositoryBase, ICategoryRepository)
     private
     public
-        function GetAll(UserID: NativeInt = 0): TArray<TCategoryDTO>;
-        function GetByID(ID: NativeInt): TCategoryDTO;
-        function GetSnippetsByCategory(const CategoryID: NativeInt): TArray<TSnippetDTO>;
-        procedure MoveCategory(ID, NewParentID, Position: NativeInt);
-        procedure DeleteCategory(ID: NativeInt);
-        function AddCategory(const Name: string; ParentID, UserID: NativeInt): NativeInt;
-        procedure UpdateName(ID: NativeInt; const NewName: string);
-        function GetUserID(ID: NativeInt): NativeInt;
-        function ExistsInParent(const Name: string; ParentID, UserID: NativeInt): Boolean;
+        function GetAll(UserID: Integer = 0): TArray<TCategoryDTO>;
+        function GetByID(ID: Integer): TCategoryDTO;
+        function GetSnippetsByCategory(const CategoryID: Integer): TArray<TSnippetDTO>;
+        procedure MoveCategory(ID, NewParentID, Position: Integer);
+        procedure DeleteCategory(ID: Integer);
+        function AddCategory(const Name: string; ParentID, UserID: Integer): Integer;
+        procedure UpdateName(ID: Integer; const NewName: string);
+        function GetUserID(ID: Integer): Integer;
+        function ExistsInParent(const Name: string; ParentID, UserID: Integer): Boolean;
     end;
 
 implementation
@@ -36,7 +36,7 @@ uses
 
 { TCategoryRepository }
 
-function TCategoryRepository.GetAll(UserID: NativeInt = 0): TArray<TCategoryDTO>;
+function TCategoryRepository.GetAll(UserID: Integer = 0): TArray<TCategoryDTO>;
 var
     Query: TFDQuery;
     List: TList<TCategoryDTO>;
@@ -71,7 +71,7 @@ begin
     end;
 end;
 
-function TCategoryRepository.GetByID(ID: NativeInt): TCategoryDTO;
+function TCategoryRepository.GetByID(ID: Integer): TCategoryDTO;
 var
     Q: TFDQuery;
 begin
@@ -108,7 +108,7 @@ begin
     end;
 end;
 
-function TCategoryRepository.GetSnippetsByCategory(const CategoryID: NativeInt): TArray<TSnippetDTO>;
+function TCategoryRepository.GetSnippetsByCategory(const CategoryID: Integer): TArray<TSnippetDTO>;
 var
     Query: TFDQuery;
     List: TList<TSnippetDTO>;
@@ -144,12 +144,12 @@ begin
     end;
 end;
 
-procedure TCategoryRepository.MoveCategory(ID, NewParentID, Position: NativeInt);
+procedure TCategoryRepository.MoveCategory(ID, NewParentID, Position: Integer);
 var
     QGetOwner, QGetSiblings, QUpd: TFDQuery;
-    SourceUserID, TargetUserID: NativeInt;
-    SiblingIDs: TList<NativeInt>;
-    i, CurrentPos: NativeInt;
+    SourceUserID, TargetUserID: Integer;
+    SiblingIDs: TList<Integer>;
+    i, CurrentPos: Integer;
 begin
     // === 1. Проверка владельца исходной категории ===
     QGetOwner := CreateQuery;
@@ -192,7 +192,7 @@ begin
     end;
 
     // === 3. Получаем список siblings в НОВОЙ позиции ===
-    SiblingIDs := TList<NativeInt>.Create;
+    SiblingIDs := TList<Integer>.Create;
     QGetSiblings := CreateQuery;
     try
         if NewParentID = 0 then
@@ -264,7 +264,7 @@ begin
     end;
 end;
 
-function TCategoryRepository.AddCategory(const Name: string; ParentID, UserID: NativeInt): NativeInt;
+function TCategoryRepository.AddCategory(const Name: string; ParentID, UserID: Integer): Integer;
 var
     Q, QMax: TFDQuery;
     MaxOrder: Integer;
@@ -310,7 +310,7 @@ begin
     end;
 end;
 
-procedure TCategoryRepository.UpdateName(ID: NativeInt; const NewName: string);
+procedure TCategoryRepository.UpdateName(ID: Integer; const NewName: string);
 var
     Q: TFDQuery;
 begin
@@ -325,7 +325,7 @@ begin
     end;
 end;
 
-procedure TCategoryRepository.DeleteCategory(ID: NativeInt);
+procedure TCategoryRepository.DeleteCategory(ID: Integer);
 var
     Q: TFDQuery;
 begin
@@ -340,7 +340,7 @@ begin
     end;
 end;
 
-function TCategoryRepository.GetUserID(ID: NativeInt): NativeInt;
+function TCategoryRepository.GetUserID(ID: Integer): Integer;
 var
     Query: TFDQuery;
 begin
@@ -358,7 +358,7 @@ begin
     end;
 end;
 
-function TCategoryRepository.ExistsInParent(const Name: string; ParentID, UserID: NativeInt): Boolean;
+function TCategoryRepository.ExistsInParent(const Name: string; ParentID, UserID: Integer): Boolean;
 var
     Q: TFDQuery;
 begin

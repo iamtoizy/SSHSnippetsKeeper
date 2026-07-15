@@ -7,6 +7,7 @@ program SSHSnippetsKeeper;
 // TODO: [Feature] Добавить нейросети
 
 {$R '000_schema_init.res' 'Database\Schema\000_schema_init.rc'}
+{$R *.dres}
 
 uses
   Vcl.Forms,
@@ -64,7 +65,9 @@ uses
   AIService in 'UI\Services\AIService.pas',
   AITextCleaner in 'UI\Services\AITextCleaner.pas',
   AISettingsFormUI in 'UI\Forms\AISettingsFormUI.pas' {AISettingsForm},
-  SecurityScanner in 'Core\Services\SecurityScanner.pas';
+  SecurityScanner in 'Core\Services\SecurityScanner.pas',
+  PasswordService in 'Core\Services\PasswordService.pas',
+  PasswordGenFormUI in 'UI\Forms\PasswordGenFormUI.pas' {PasswordGenForm};
 
 {$R *.res}
 
@@ -119,13 +122,13 @@ begin
     Application.CreateForm(TAppDatabase, AppDatabase);
   Application.CreateForm(TMainForm, MainForm);
   Application.CreateForm(TQuickSearchForm, QuickSearchForm);
-  Application.CreateForm(TAISettingsForm, AISettingsForm);
   MainForm.Initialize(
         AppDatabase,
         AppDatabase.SnippetService,
         AppDatabase.CategoryService,
         AppDatabase.TagService,
-        AppDatabase.UserService
+        AppDatabase.UserService,
+        AppDatabase.PasswordService
     );
     MainForm.Show;
     Application.CreateForm(TInputForm, InputForm);

@@ -14,10 +14,10 @@ type
     public
         constructor Create(TagRepo: ITagRepository);
         function GetAllTags: TArray<TTagDTO>;
-        function GetSnippetTags(SnippetID: NativeInt): TArray<TTagDTO>;
-        function CreateTag(const Name, Color: string): NativeInt;
-        procedure DeleteTag(TagID: NativeInt);
-        procedure RenameTag(TagID: NativeInt; const NewName: string);
+        function GetSnippetTags(SnippetID: Integer): TArray<TTagDTO>;
+        function CreateTag(const Name, Color: string): Integer;
+        procedure DeleteTag(TagID: Integer);
+        procedure RenameTag(TagID: Integer; const NewName: string);
     end;
 
 implementation
@@ -32,7 +32,7 @@ begin
     Result := FTagRepo.GetAll;
 end;
 
-function TTagService.GetSnippetTags(SnippetID: NativeInt): TArray<TTagDTO>;
+function TTagService.GetSnippetTags(SnippetID: Integer): TArray<TTagDTO>;
 begin
     // ID не может быть нулевым или отрицательным
     if SnippetID <= 0 then
@@ -41,7 +41,7 @@ begin
     Result := FTagRepo.GetSnippetTags(SnippetID);
 end;
 
-function TTagService.CreateTag(const Name, Color: string): NativeInt;
+function TTagService.CreateTag(const Name, Color: string): Integer;
 var
     CleanName: string;
     NewTag: TTagDTO;
@@ -59,7 +59,7 @@ begin
     Result := FTagRepo.Add(NewTag);
 end;
 
-procedure TTagService.DeleteTag(TagID: NativeInt);
+procedure TTagService.DeleteTag(TagID: Integer);
 begin
     if TagID <= 0 then
         raise Exception.Create('Некорректный ID тега');
@@ -67,7 +67,7 @@ begin
     FTagRepo.Delete(TagID);
 end;
 
-procedure TTagService.RenameTag(TagID: NativeInt; const NewName: string);
+procedure TTagService.RenameTag(TagID: Integer; const NewName: string);
 var
     CleanName: string;
     TagToUpdate: TTagDTO;

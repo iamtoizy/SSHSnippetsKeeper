@@ -9,23 +9,33 @@ uses
     Vcl.Forms,
     Vcl.Controls,
     WindowMonitor,
-    Core.Interfaces;
+    Core.Interfaces,
+    PasswordGenFormUI;
 
 type
     TGlobalHotkeyManager = class
     private
         const
-            HOTKEY_ID = 1001;
+            HOTKEY_ID_HUD = 1001;
+            HOTKEY_ID_PASSGEN = 1002;
     private
         FWindowHandle: Winapi.Windows.HWND;
         FSnippetService: ISnippetService;
         FUserService: IUserService;
         FDBManager: IDatabaseManager;
-        FUserID: NativeInt;
+        FPasswordService: IPasswordService;
+        FUserID: Integer;
         procedure WndProc(var Msg: TMessage);
-        procedure OnHotkeyTriggered;
+        procedure OnHUDHotkeyTriggered;
+        procedure OnPassGenHotkeyTriggered;
     public
-        constructor Create(SnippetService: ISnippetService; UserService: IUserService; UserID: NativeInt; DBManager: IDatabaseManager);
+        constructor Create(
+            SnippetService: ISnippetService;
+            UserService: IUserService;
+            PasswordService: IPasswordService;
+            UserID: Integer;
+            DBManager: IDatabaseManager
+        );
         destructor Destroy; override;
         procedure StartListening;
         procedure StopListening;
@@ -37,13 +47,19 @@ uses
     System.Classes,
     QuickSearchFormUI;
 
-constructor TGlobalHotkeyManager.Create(SnippetService: ISnippetService; UserService: IUserService; UserID: NativeInt; DBManager: IDatabaseManager);
+constructor TGlobalHotkeyManager.Create(
+    SnippetService: ISnippetService;
+    UserService: IUserService;
+    PasswordService: IPasswordService;
+    UserID: Integer;
+    DBManager: IDatabaseManager);
 begin
     inherited Create;
     FSnippetService := SnippetService;
     FUserService := UserService;
     FDBManager := DBManager;
     FUserID := UserID;
+    FPasswordService := PasswordService;
     // Создаем скрытое служебное окно для перехвата сообщений хоткея
     FWindowHandle := AllocateHWnd(WndProc);
 end;
@@ -57,30 +73,40 @@ end;
 
 procedure TGlobalHotkeyManager.StartListening;
 begin
-    // Регистрируем, например, Alt + Q (MOD_ALT и ORD('Q'))
+    // HUD-форма поиска и ввода сниппета:
+    // Регистрируем Alt + Q (MOD_ALT и ORD('Q'))
     // Можно вынести в настройки Settings.SettingsRecord
-    Winapi.Windows.RegisterHotKey(FWindowHandle, HOTKEY_ID, MOD_ALT, Ord('Q'));
+    Winapi.Windows.RegisterHotKey(FWindowHandle, HOTKEY_ID_HUD, MOD_ALT, Ord('Q'));
+    // Генератор паролей
+    Winapi.Windows.RegisterHotKey(FWindowHandle, HOTKEY_ID_PASSGEN, MOD_CONTROL or MOD_ALT, Ord('G'));
 end;
 
 procedure TGlobalHotkeyManager.StopListening;
 begin
-    Winapi.Windows.UnregisterHotKey(FWindowHandle, HOTKEY_ID);
+    Winapi.Windows.UnregisterHotKey(FWindowHandle, HOTKEY_ID_HUD);
 end;
 
 procedure TGlobalHotkeyManager.WndProc(var Msg: TMessage);
 begin
     if Msg.Msg = WM_HOTKEY then
     begin
-        if Msg.WParam = HOTKEY_ID then
-        begin
-            OnHotkeyTriggered;
-            Msg.Result := 0;
+        case Msg.WParam of
+            HOTKEY_ID_HUD:
+            begin
+                OnHUDHotkeyTriggered;
+                Msg.Result := 0;
+            end;
+            HOTKEY_ID_PASSGEN:
+            begin
+                OnPassGenHotkeyTriggered;
+                Msg.Result := 0;
+            end;
         end;
     end;
     Msg.Result := DefWindowProc(FWindowHandle, Msg.Msg, Msg.WParam, Msg.LParam);
 end;
 
-procedure TGlobalHotkeyManager.OnHotkeyTriggered;
+procedure TGlobalHotkeyManager.OnHUDHotkeyTriggered;
 var
     CurrentHWND: HWND;
     ActiveWindowInfo: TWindowMonitorInfo;
@@ -109,6 +135,11 @@ begin
         // Показываем как независимое окно
         QuickSearchForm.Show;
     end;
+end;
+
+procedure TGlobalHotkeyManager.OnPassGenHotkeyTriggered;
+begin
+    TPasswordGenForm.ExecuteGlobal(nil, FPasswordService);
 end;
 
 end.

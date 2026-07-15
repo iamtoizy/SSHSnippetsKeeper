@@ -62,25 +62,25 @@ type
         AI1: TMenuItem;
         nShowAIPrompt: TMenuItem;
         nAISettings: TMenuItem;
-    cbIgnoreSecurityChecks: TCheckBox;
-    tmrSecurityScan: TTimer;
-    sbBottom: TStatusBar;
-    pnlClient: TPanel;
-    pTop: TPanel;
-    bAISettings: TButton;
-    cbAIModel: TComboBox;
-    cbAIHub: TComboBox;
-    pcSnippet: TPageControl;
-    tsSnippet: TTabSheet;
-    sMiddle: TSplitter;
-    pAIOverlay: TPanel;
-    pbLoading: TProgressBar;
-    mAIPrompt: TSynEdit;
-    mContent: TSynEdit;
-    mComment: TSynEdit;
-    tsHelp: TTabSheet;
-    mInfo: TMemo;
-    spTopLeft: TSplitter;
+        cbIgnoreSecurityChecks: TCheckBox;
+        tmrSecurityScan: TTimer;
+        sbBottom: TStatusBar;
+        pnlClient: TPanel;
+        pTop: TPanel;
+        bAISettings: TButton;
+        cbAIModel: TComboBox;
+        cbAIHub: TComboBox;
+        pcSnippet: TPageControl;
+        tsSnippet: TTabSheet;
+        sMiddle: TSplitter;
+        pAIOverlay: TPanel;
+        pbLoading: TProgressBar;
+        mAIPrompt: TSynEdit;
+        mComment: TSynEdit;
+        tsHelp: TTabSheet;
+        mInfo: TMemo;
+        spTopLeft: TSplitter;
+        mContent: TSynEdit;
         procedure bAISettingsClick(Sender: TObject);
         procedure FormDestroy(Sender: TObject);
         procedure FormCreate(Sender: TObject);
@@ -116,8 +116,8 @@ type
 
         FSnippet: TSnippetDTO;
         FOriginalSnippet: TOriginalSnippet;
-        FCategoryID: NativeInt;
-        FUserID: NativeInt;
+        FCategoryID: Integer;
+        FUserID: Integer;
         FIsEditMode: Boolean;
         FBasicCommands: TStringList;
         FBlockEnter: Boolean;
@@ -133,13 +133,13 @@ type
         procedure SetSyntax;
         procedure PopulateHubs;
         procedure PopulateModels(HubIndex: Integer);
-    procedure UpdateSecurityStatusUI(IsSafe: Boolean; const Reason: string);
+        procedure UpdateSecurityStatusUI(IsSafe: Boolean; const Reason: string);
     public
         property Snippet: TSnippetDTO read FSnippet write FSnippet;
-        property CategoryID: NativeInt read FCategoryID write FCategoryID;
-        property UserID: NativeInt read FUserID write FUserID;
+        property CategoryID: Integer read FCategoryID write FCategoryID;
+        property UserID: Integer read FUserID write FUserID;
 
-        constructor CreateWithService(Owner: TComponent; SnippetService: ISnippetService; TagService: ITagService);
+        constructor Create(Owner: TComponent; SnippetService: ISnippetService; TagService: ITagService); reintroduce;
     end;
 
 var
@@ -164,9 +164,10 @@ uses
 
 {$R *.dfm}
 
-constructor TAddEditSnippet.CreateWithService(Owner: TComponent; SnippetService: ISnippetService; TagService: ITagService);
+constructor TAddEditSnippet.Create(Owner: TComponent; SnippetService: ISnippetService; TagService: ITagService);
 begin
     inherited Create(Owner);
+
     FSnippetService := SnippetService;
     FTagService := TagService;
 end;
@@ -227,9 +228,9 @@ end;
 procedure TAddEditSnippet.bOKClick(Sender: TObject);
 var
     Snippet: TSnippetDTO;
-    TagIDs: TList<NativeInt>;
+    TagIDs: TList<Integer>;
     i: Integer;
-    TagArr: TArray<NativeInt>;
+    TagArr: TArray<Integer>;
     UnixText: string;
 begin
     if Trim(ebTitle.Text) = '' then
@@ -239,11 +240,11 @@ begin
         Exit;
     end;
 
-    TagIDs := TList<NativeInt>.Create;
+    TagIDs := TList<Integer>.Create;
     try
         for i := 0 to lvSelectedTags.Items.Count - 1 do
         begin
-            var TagID := NativeInt(lvSelectedTags.Items[i].Data);
+            var TagID := Integer(lvSelectedTags.Items[i].Data);
             if TagID > 0 then
                 TagIDs.Add(TagID);
         end;
@@ -556,7 +557,7 @@ begin
                     begin
                         var Item := lvSelectedTags.Items.Add;
                         Item.Caption := Tag.Name;
-                        Item.Data := Pointer(NativeUInt(Tag.ID));
+                        Item.Data := Pointer(Integer(Tag.ID));
                         Item.StateIndex := 0;
                         lvAllTags.Items.Delete(i); // Удаляем из общего списка
 

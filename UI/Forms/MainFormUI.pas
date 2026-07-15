@@ -29,7 +29,9 @@ uses
     Vcl.BaseImageCollection,
     Vcl.ImageCollection,
     Core.Interfaces,
-    UI.Interfaces;
+    UI.Interfaces,
+    PasswordService,
+    GlobalHotkeyManager;
 
 type
     TSnippetField = (sfContent, sfComment);
@@ -85,6 +87,8 @@ type
         rbFTS: TRadioButton;
         N3: TMenuItem;
         nSearch: TMenuItem;
+        N4: TMenuItem;
+        nPasswordGenerator: TMenuItem;
         procedure bManageWorkspacesClick(Sender: TObject);
         procedure cbUserChange(Sender: TObject);
         procedure nOpenDatabaseClick(Sender: TObject);
@@ -115,6 +119,7 @@ type
         procedure nDeleteSnippetClick(Sender: TObject);
         procedure nDeleteTagClick(Sender: TObject);
         procedure nEditCategoryClick(Sender: TObject);
+        procedure nPasswordGeneratorClick(Sender: TObject);
         procedure nRenameTagClick(Sender: TObject);
         procedure nSearchClick(Sender: TObject);
         procedure rbTextClick(Sender: TObject);
@@ -122,22 +127,24 @@ type
         procedure tvCategoriesEndDrag(Sender, Target: TObject; X, Y: Integer);
     private
         { Private declarations }
-        FHotItemIndex: NativeInt;
-        FFilterByTagID: NativeInt;
-        FCurrentSnippetID: NativeInt;
-        FUserID: NativeInt;
-        FFilterUserID: NativeInt;
+        FHotItemIndex: Integer;
+        FFilterByTagID: Integer;
+        FCurrentSnippetID: Integer;
+        FUserID: Integer;
+        FFilterUserID: Integer;
         FIgnoreCategoryChange: Boolean;
         FErrorHandler: IUIErrorHandler;
 
         FDBManager: IDatabaseManager;
+        FHotkeyMgr: TGlobalHotkeyManager;
 
         FSnippetService: ISnippetService;
         FCategoryService: ICategoryService;
         FTagService: ITagService;
         FUserService: IUserService;
+        FPasswordService: IPasswordService;
 
-        procedure ApplyTagFilter(TagID: NativeInt; const TagName: string);
+        procedure ApplyTagFilter(TagID: Integer; const TagName: string);
         procedure ClearTagFilter;
         procedure FillSnippetListView(const Snippets: TArray<TSnippetDTO>);
         function ExtractSnippetByListItem(Item: TListItem): TSnippetDTO;
@@ -156,23 +163,29 @@ type
         procedure DoRenameCategory;
 
         // UI Helpers
-        procedure SetUserFilter(UserID: NativeInt);
+        procedure SetUserFilter(UserID: Integer);
         function IsVirtualCategory(Node: TTreeNode): Boolean;
         function IsWorkspaceNode(Node: TTreeNode): Boolean;
         procedure LoadUsersToComboBox;
         procedure UpdateMenuState;
-        function GetSelectedCategoryUserID: NativeInt;
+        function GetSelectedCategoryUserID: Integer;
         procedure RefreshCurrentSnippetList;
-        procedure ReloadUI(PreserveCategoryID: NativeInt);
+        procedure ReloadUI(PreserveCategoryID: Integer);
         procedure ClearRightPanel;
-        function GetWorkspaceUserID(Node: TTreeNode): NativeInt;
+        function GetWorkspaceUserID(Node: TTreeNode): Integer;
         procedure CloseDatabase;
     protected
         procedure WMActivate(var Msg: TWMActivate); message WM_ACTIVATE;
     public
         { Public declarations }
         procedure UpdateUI(const State: TBaseFormState); override;
-        procedure Initialize(DBMgr: IDatabaseManager; Snippet: ISnippetService; Category: ICategoryService; Tag: ITagService; User: IUserService);
+        procedure Initialize(
+            DBMgr: IDatabaseManager;
+            Snippet: ISnippetService;
+            Category: ICategoryService;
+            Tag: ITagService;
+            User: IUserService;
+            PasswordService: IPasswordService);
     end;
 
 var
@@ -204,7 +217,9 @@ uses
     WorkspaceManagerUI,
     CommonHelpers,
     CommonConsts,
-    SnippetRunner, QuickSearchFormUI;
+    SnippetRunner,
+    QuickSearchFormUI,
+    PasswordGenFormUI;
 
 const
     PRESERVE_CATEGORY_EMPTY_ID = -999;
@@ -246,6 +261,7 @@ procedure TMainForm.FormDestroy(Sender: TObject);
 begin
     WinMonitor.StopMonitoring;
     RemoveProp(Self.Handle, PChar(UNIQUE_APP_STR));
+    FHotkeyMgr.Free;
 end;
 
 procedure TMainForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
@@ -347,7 +363,7 @@ begin
     TUIHelpers.FillTagListWithSelection(lvTags, AllTags, []);
 end;
 
-procedure TMainForm.ReloadUI(PreserveCategoryID: NativeInt);
+procedure TMainForm.ReloadUI(PreserveCategoryID: Integer);
 var
     Cats: TArray<TCategoryDTO>;
     Users: TArray<TUserDTO>;
@@ -370,7 +386,7 @@ end;
 procedure TMainForm.RefreshCurrentSnippetList;
 var
     Node: TTreeNode;
-    CatID: NativeInt;
+    CatID: Integer;
     Snippets: TArray<TSnippetDTO>;
 begin
     Node := tvCategories.Selected;
@@ -383,7 +399,7 @@ begin
     if FDBManager.IsConnected = False then
         Exit;
 
-    CatID := NativeInt(NativeUInt(Node.Data));
+    CatID := Integer(IntPtr(Node.Data));
 
     if IsVirtualCategory(Node) then
     begin
@@ -409,18 +425,18 @@ begin
     FillSnippetListView(Snippets);
 end;
 
-function TMainForm.GetSelectedCategoryUserID: NativeInt;
+function TMainForm.GetSelectedCategoryUserID: Integer;
 begin
     Result := GetWorkspaceUserID(tvCategories.Selected);
 end;
 
-function TMainForm.GetWorkspaceUserID(Node: TTreeNode): NativeInt;
+function TMainForm.GetWorkspaceUserID(Node: TTreeNode): Integer;
 var
     WorkspaceName: string;
     Users: TArray<TUserDTO>;
     User: TUserDTO;
     Cat: TCategoryDTO;
-    CatID: NativeInt;
+    CatID: Integer;
     ParentNode: TTreeNode;
 begin
     if FFilterUserID > 0 then
@@ -437,7 +453,7 @@ begin
 
     if (Node <> nil) and not IsVirtualCategory(Node) and (Node.Data <> nil) then
     begin
-        CatID := NativeInt(NativeUInt(Node.Data));
+        CatID := Integer(IntPtr(Node.Data));
         Cat := FCategoryService.GetCategoryByID(CatID);
         if Cat.ID > 0 then
             Exit(Cat.UserID);
@@ -484,7 +500,7 @@ end;
 procedure TMainForm.DoAddCategory;
 var
     Node: TTreeNode;
-    ParentID, TargetUserID, NewCatID: NativeInt;
+    ParentID, TargetUserID, NewCatID: Integer;
     NewCatName: string;
     NewCat: TCategoryDTO;
 begin
@@ -505,7 +521,7 @@ begin
     if IsWorkspaceNode(Node) then
         ParentID := 0
     else
-        ParentID := NativeInt(NativeUInt(Node.Data));
+        ParentID := Integer(IntPtr(Node.Data));
 
     TargetUserID := GetWorkspaceUserID(Node);
     NewCatName := Trim(InputBox('Новая категория', 'Введите имя:', 'Новая категория'));
@@ -523,7 +539,7 @@ begin
         ReloadUI(NewCatID);
 
         Node := tvCategories.Selected;
-        if (Node <> nil) and (NativeInt(NativeUInt(Node.Data)) = NewCatID) then
+        if (Node <> nil) and (Integer(IntPtr(Node.Data)) = NewCatID) then
             Node.EditText;
 
         sbBottom.SimpleText := Format('Категория "%s" создана.', [NewCatName]);
@@ -542,7 +558,7 @@ begin
     if (Node = nil) or IsVirtualCategory(Node) then
         Exit;
 
-    Cat := FCategoryService.GetCategoryByID(NativeInt(NativeUInt(Node.Data)));
+    Cat := FCategoryService.GetCategoryByID(Integer(IntPtr(Node.Data)));
 
     if MessageBox(Handle, PChar(Format('Удалить категорию "%s" и все её вложенные элементы?', [Cat.Name])), 'Подтверждение', MB_YESNO or MB_ICONQUESTION) = IDYES then
     begin
@@ -592,7 +608,7 @@ begin
     end;
 
     try
-        Cat := FCategoryService.GetCategoryByID(NativeInt(NativeUInt(Node.Data)));
+        Cat := FCategoryService.GetCategoryByID(Integer(IntPtr(Node.Data)));
         FCategoryService.RenameCategory(Cat.ID, S);
     except
         on E: Exception do
@@ -606,13 +622,13 @@ end;
 procedure TMainForm.tvCategoriesDragDrop(Sender, Source: TObject; X, Y: Integer);
 var
     TargetNode, SourceNode: TTreeNode;
-    NewParentID, SourceID, Position: NativeInt;
+    NewParentID, SourceID, Position: Integer;
     HitTest: THitTests;
 begin
     if (Source = tvCategories) and (tvCategories.Selected <> nil) then
     begin
         SourceNode := tvCategories.Selected;
-        SourceID := NativeInt(SourceNode.Data);
+        SourceID := Integer(IntPtr(SourceNode.Data));
         if SourceID < 0 then
             Exit;
 
@@ -623,7 +639,7 @@ begin
 
         if (htOnItem in HitTest) and (TargetNode <> nil) then
         begin
-            NewParentID := NativeInt(TargetNode.Data);
+            NewParentID := Integer(TargetNode.Data);
             Position := -1;
         end
         else if TargetNode <> nil then
@@ -631,7 +647,7 @@ begin
             if Y < TargetNode.DisplayRect(False).Top then
             begin
                 if TargetNode.Parent <> nil then
-                    NewParentID := NativeInt(TargetNode.Parent.Data)
+                    NewParentID := Integer(TargetNode.Parent.Data)
                 else
                     NewParentID := 0;
                 Position := TargetNode.Index;
@@ -639,7 +655,7 @@ begin
             else
             begin
                 if TargetNode.Parent <> nil then
-                    NewParentID := NativeInt(TargetNode.Parent.Data)
+                    NewParentID := Integer(IntPtr(TargetNode.Parent.Data))
                 else
                     NewParentID := 0;
                 Position := TargetNode.Index + 1;
@@ -702,13 +718,17 @@ begin
     tvCategories.Cursor := crDefault;
 end;
 
-procedure TMainForm.Initialize(DBMgr: IDatabaseManager; Snippet: ISnippetService; Category: ICategoryService; Tag: ITagService; User: IUserService);
+procedure TMainForm.Initialize(DBMgr: IDatabaseManager; Snippet: ISnippetService; Category: ICategoryService; Tag: ITagService; User: IUserService; PasswordService: IPasswordService);
 begin
     FDBManager := DBMgr;
     FSnippetService := Snippet;
     FCategoryService := Category;
     FTagService := Tag;
     FUserService := User;
+    FPasswordService := PasswordService;
+
+    FHotkeyMgr := TGlobalHotkeyManager.Create(FSnippetService, FUserService, FPasswordService, FUserID, FDBManager);
+    FHotkeyMgr.StartListening;
 end;
 
 function TMainForm.IsDescendant(Parent, Node: TTreeNode): Boolean;
@@ -740,7 +760,7 @@ end;
 procedure TMainForm.DoAddSnippet;
 var
     Node: TTreeNode;
-    CategoryID, TargetUserID: NativeInt;
+    CategoryID, TargetUserID: Integer;
 begin
     Node := tvCategories.Selected;
 
@@ -750,7 +770,7 @@ begin
         Exit;
     end;
 
-    CategoryID := NativeInt(NativeUInt(Node.Data));
+    CategoryID := Integer(IntPtr(Node.Data));
     TargetUserID := GetWorkspaceUserID(Node);
 
     if TargetUserID <= 0 then
@@ -759,7 +779,7 @@ begin
         Exit;
     end;
 
-    AddEditSnippet := TAddEditSnippet.CreateWithService(Application, FSnippetService, FTagService);
+    AddEditSnippet := TAddEditSnippet.Create(Application, FSnippetService, FTagService);
     try
         AddEditSnippet.CategoryID := CategoryID;
         AddEditSnippet.UserID := TargetUserID;
@@ -776,7 +796,7 @@ var
     Item: TListItem;
     Snippet: TSnippetDTO;
     Node: TTreeNode;
-    CategoryID: NativeInt;
+    CategoryID: Integer;
 begin
     Item := lvSnippets.Selected;
     if not Assigned(Item) then
@@ -786,11 +806,11 @@ begin
     Node := tvCategories.Selected;
 
     if (Node <> nil) and not IsVirtualCategory(Node) and (Node.Data <> nil) then
-        CategoryID := NativeInt(NativeUInt(Node.Data))
+        CategoryID := Integer(IntPtr(Node.Data))
     else
         CategoryID := Snippet.CategoryID;
 
-    AddEditSnippet := TAddEditSnippet.CreateWithService(Application, FSnippetService, FTagService);
+    AddEditSnippet := TAddEditSnippet.Create(Application, FSnippetService, FTagService);
     try
         AddEditSnippet.Snippet := Snippet;
         AddEditSnippet.CategoryID := CategoryID;
@@ -799,7 +819,7 @@ begin
         if AddEditSnippet.ShowModal = mrOk then
         begin
             if tvCategories.Selected <> nil then
-                ReloadUI(NativeInt(tvCategories.Selected.Data))
+                ReloadUI(Integer(tvCategories.Selected.Data))
             else
                 ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
         end;
@@ -813,7 +833,7 @@ procedure TMainForm.DoDeleteSnippet;
 var
     Item: TListItem;
     Snippet: TSnippetDTO;
-    SelectedCatID: NativeInt;
+    SelectedCatID: Integer;
 begin
     Item := lvSnippets.Selected;
     if Item = nil then
@@ -821,13 +841,14 @@ begin
 
     Snippet := ExtractSnippetByListItem(Item);
 
+    // TODO: Вынести в IUIErrorHandler
     if MessageBox(Handle, PChar(Format('Удалить сниппет "%s"?', [Snippet.Title])), 'Подтверждение', MB_YESNO or MB_ICONQUESTION) = IDYES then
     begin
         try
             FSnippetService.DeleteSnippet(Snippet.ID);
 
             if tvCategories.Selected <> nil then
-                SelectedCatID := NativeInt(tvCategories.Selected.Data)
+                SelectedCatID := Integer(tvCategories.Selected.Data)
             else
                 SelectedCatID := PRESERVE_CATEGORY_EMPTY_ID;
 
@@ -900,7 +921,7 @@ procedure TMainForm.lvSnippetsMouseDown(Sender: TObject; Button: TMouseButton; S
 var
     HitTest: TLVHitTestInfo;
     TileRect: TRect;
-    I: NativeInt;
+    I: Integer;
 begin
     ZeroMemory(@HitTest, SizeOf(HitTest));
     HitTest.pt := Point(X, Y);
@@ -943,7 +964,7 @@ end;
 procedure TMainForm.DoAddTag;
 var
     NewName: string;
-    NewID: NativeInt;
+    NewID: Integer;
 begin
     if not InputQuery('Новый тег', 'Введите имя тега:', NewName) then
         Exit;
@@ -972,13 +993,13 @@ end;
 procedure TMainForm.DoDeleteTag;
 var
     Item: TListItem;
-    TagID: NativeInt;
+    TagID: Integer;
 begin
     Item := lvTags.Selected;
     if Item = nil then
         Exit;
 
-    TagID := NativeInt(NativeUInt(Item.Data));
+    TagID := Integer(Item.Data);
     if MessageBox(Handle, PChar(Format('Удалить тег "%s"?', [Item.Caption])), 'Подтверждение', MB_YESNO or MB_ICONQUESTION) <> IDYES then
         Exit;
 
@@ -1007,7 +1028,7 @@ end;
 
 procedure TMainForm.lvTagsEdited(Sender: TObject; Item: TListItem; var S: string);
 var
-    TagID: NativeInt;
+    TagID: Integer;
     OldName: string;
 begin
     OldName := Item.Caption;
@@ -1019,7 +1040,7 @@ begin
     end;
 
     try
-        TagID := NativeInt(NativeUInt(Item.Data));
+        TagID := Integer(Item.Data);
         FTagService.RenameTag(TagID, S);
         sbBottom.SimpleText := Format('Тег переименован: "%s" → "%s"', [OldName, S]);
     except
@@ -1039,13 +1060,13 @@ begin
     if Item = nil then
         Exit;
 
-    if FFilterByTagID = NativeInt(NativeUInt(Item.Data)) then
+    if FFilterByTagID = Integer(Item.Data) then
         ClearTagFilter
     else
-        ApplyTagFilter(NativeInt(NativeUInt(Item.Data)), Item.Caption);
+        ApplyTagFilter(Integer(Item.Data), Item.Caption);
 end;
 
-procedure TMainForm.ApplyTagFilter(TagID: NativeInt; const TagName: string);
+procedure TMainForm.ApplyTagFilter(TagID: Integer; const TagName: string);
 begin
     FFilterByTagID := TagID;
     FillSnippetListView(FSnippetService.GetSnippetsByTag(TagID));
@@ -1126,10 +1147,10 @@ end;
 procedure TMainForm.cbUserChange(Sender: TObject);
 begin
     if cbUser.ItemIndex >= 0 then
-        SetUserFilter(NativeInt(NativeUInt(cbUser.Items.Objects[cbUser.ItemIndex])));
+        SetUserFilter(Integer(cbUser.Items.Objects[cbUser.ItemIndex]));
 end;
 
-procedure TMainForm.SetUserFilter(UserID: NativeInt);
+procedure TMainForm.SetUserFilter(UserID: Integer);
 begin
     FFilterUserID := UserID;
     ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
@@ -1146,7 +1167,7 @@ begin
         cbUser.Items.AddObject('Все пространства', TObject(0));
         Users := FUserService.GetAllUsers;
         for User in Users do
-            cbUser.Items.AddObject(User.Name, TObject(NativeInt(User.ID)));
+            cbUser.Items.AddObject(User.Name, TObject(Integer(User.ID)));
         cbUser.ItemIndex := 0;
     finally
         cbUser.Items.EndUpdate;
@@ -1155,7 +1176,7 @@ end;
 
 procedure TMainForm.bManageWorkspacesClick(Sender: TObject);
 begin
-    with TWorkspaceManagerForm.CreateWithService(Self, FUserService) do
+    with TWorkspaceManagerForm.Create(Self, FUserService) do
     try
         if ShowModal = mrOk then
             LoadUsersToComboBox;
@@ -1194,7 +1215,7 @@ end;
 
 function TMainForm.IsVirtualCategory(Node: TTreeNode): Boolean;
 begin
-    Result := Assigned(Node) and (NativeInt(NativeUInt(Node.Data)) < 0);
+    Result := Assigned(Node) and (Integer(IntPtr(Node.Data)) < 0);
 end;
 
 function TMainForm.IsWorkspaceNode(Node: TTreeNode): Boolean;
@@ -1242,6 +1263,11 @@ begin
     DoDeleteTag;
 end;
 
+procedure TMainForm.nPasswordGeneratorClick(Sender: TObject);
+begin
+    TPasswordGenForm.ExecuteGlobal(Application, FPasswordService);
+end;
+
 procedure TMainForm.nRenameTagClick(Sender: TObject);
 begin
     DoRenameTag;
@@ -1255,7 +1281,7 @@ end;
 
 procedure TMainForm.nTagEditorClick(Sender: TObject);
 begin
-    with TTagEditorForm.CreateWithService(Self, FTagService) do
+    with TTagEditorForm.Create(Self, FTagService) do
     try
         ShowModal;
     finally

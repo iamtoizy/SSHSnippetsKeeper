@@ -14,24 +14,24 @@ type
     TSnippetRepository = class(TRepositoryBase, ISnippetRepository)
     private
         function InternalLoadSnippets(const SQL: string; const Params: array of Variant): TArray<TSnippetDTO>;
-        function GetSnippetTagsBatch(const SnippetIDs: TArray<NativeInt>): TDictionary<NativeInt, TArray<TTagDTO>>;
+        function GetSnippetTagsBatch(const SnippetIDs: TArray<Integer>): TDictionary<Integer, TArray<TTagDTO>>;
     public
-        function Add(const Snippet: TSnippetDTO): NativeInt;
+        function Add(const Snippet: TSnippetDTO): Integer;
         procedure Update(const Snippet: TSnippetDTO);
-        procedure Delete(ID: NativeInt);
-        function GetById(ID: NativeInt): TSnippetDTO;
-        function GetAll(UserID: NativeInt = 0): TArray<TSnippetDTO>;
-        function GetSnippetByCategory(const CategoryID, UserID: NativeInt): TArray<TSnippetDTO>;
-        procedure RecordRun(SnippetID: NativeInt; UserID: NativeInt);
-        function GetSnippetTags(SnippetID: NativeInt): TArray<TTagDTO>;
-        function GetSnippetsByTag(const TagID: NativeInt): TArray<TSnippetDTO>;
+        procedure Delete(ID: Integer);
+        function GetById(ID: Integer): TSnippetDTO;
+        function GetAll(UserID: Integer = 0): TArray<TSnippetDTO>;
+        function GetSnippetByCategory(const CategoryID, UserID: Integer): TArray<TSnippetDTO>;
+        procedure RecordRun(SnippetID: Integer; UserID: Integer);
+        function GetSnippetTags(SnippetID: Integer): TArray<TTagDTO>;
+        function GetSnippetsByTag(const TagID: Integer): TArray<TSnippetDTO>;
         function Search(const Query: string): TArray<TSnippetDTO>;
-        function SearchByMaskFTS(const Mask: string; UserID: NativeInt = 0): TArray<TSnippetDTO>;
-        function SearchByMaskSimple(const Mask: string; UserID: NativeInt = 0): TArray<TSnippetDTO>;
-        procedure UpdateTags(SnippetID: NativeInt; const TagIDs: TArray<NativeInt>);
-        function GetRecentSnippets(UserID: NativeInt; Limit: NativeInt): TArray<TSnippetDTO>;
-        function GetTopSnippets(UserID: NativeInt; Limit: NativeInt): TArray<TSnippetDTO>;
-        function GetSnippetCountByCategory(UserID: NativeInt): TDictionary<NativeInt, NativeInt>;
+        function SearchByMaskFTS(const Mask: string; UserID: Integer = 0): TArray<TSnippetDTO>;
+        function SearchByMaskSimple(const Mask: string; UserID: Integer = 0): TArray<TSnippetDTO>;
+        procedure UpdateTags(SnippetID: Integer; const TagIDs: TArray<Integer>);
+        function GetRecentSnippets(UserID: Integer; Limit: Integer): TArray<TSnippetDTO>;
+        function GetTopSnippets(UserID: Integer; Limit: Integer): TArray<TSnippetDTO>;
+        function GetSnippetCountByCategory(UserID: Integer): TDictionary<Integer, Integer>;
     end;
 
 implementation
@@ -121,7 +121,7 @@ begin
     end;
 end;
 
-procedure TSnippetRepository.Delete(ID: NativeInt);
+procedure TSnippetRepository.Delete(ID: Integer);
 var
     Q: TFDQuery;
 begin
@@ -137,7 +137,7 @@ begin
     end;
 end;
 
-function TSnippetRepository.GetAll(UserID: NativeInt = 0): TArray<TSnippetDTO>;
+function TSnippetRepository.GetAll(UserID: Integer = 0): TArray<TSnippetDTO>;
 var
     SQL: string;
 begin
@@ -148,7 +148,7 @@ begin
         Result := InternalLoadSnippets(SQL + ' ORDER BY title', []);
 end;
 
-function TSnippetRepository.GetById(ID: NativeInt): TSnippetDTO;
+function TSnippetRepository.GetById(ID: Integer): TSnippetDTO;
 var
     Arr: TArray<TSnippetDTO>;
 begin
@@ -158,12 +158,12 @@ begin
     Result := Default (TSnippetDTO);
 end;
 
-function TSnippetRepository.GetSnippetsByTag(const TagID: NativeInt): TArray<TSnippetDTO>;
+function TSnippetRepository.GetSnippetsByTag(const TagID: Integer): TArray<TSnippetDTO>;
 begin
     Result := InternalLoadSnippets(SQL_SELECT_SNIPPETS_BY_TAG, [TagID]);
 end;
 
-function TSnippetRepository.GetSnippetTags(SnippetID: NativeInt): TArray<TTagDTO>;
+function TSnippetRepository.GetSnippetTags(SnippetID: Integer): TArray<TTagDTO>;
 var
     Query: TFDQuery;
     Tag: TTagDTO;
@@ -191,25 +191,25 @@ begin
     end;
 end;
 
-function TSnippetRepository.GetSnippetTagsBatch(const SnippetIDs: TArray<NativeInt>): TDictionary<NativeInt, TArray<TTagDTO>>;
+function TSnippetRepository.GetSnippetTagsBatch(const SnippetIDs: TArray<Integer>): TDictionary<Integer, TArray<TTagDTO>>;
 const
     MAX_PARAMS = 900; // Защита от лимита SQLite
 var
     Query: TFDQuery;
-    Map: TDictionary<NativeInt, TList<TTagDTO>>;
-    i, ChunkStart, ChunkEnd: NativeInt;
-    Key: NativeInt;
+    Map: TDictionary<Integer, TList<TTagDTO>>;
+    i, ChunkStart, ChunkEnd: Integer;
+    Key: Integer;
     Tag: TTagDTO;
     ParamName: string;
     SQL: TStringBuilder;
-    ChunkIDs: TArray<NativeInt>;
+    ChunkIDs: TArray<Integer>;
 begin
     Result := nil;
 
     if Length(SnippetIDs) = 0 then
         Exit;
 
-    Map := TDictionary<NativeInt, TList<TTagDTO>>.Create;
+    Map := TDictionary<Integer, TList<TTagDTO>>.Create;
     try
         // ✅ Разбиваем на чанки
         ChunkStart := 0;
@@ -273,7 +273,7 @@ begin
         end;
 
         // Преобразуем в результат
-        Result := TDictionary<NativeInt, TArray<TTagDTO>>.Create;
+        Result := TDictionary<Integer, TArray<TTagDTO>>.Create;
         for Key in Map.Keys do
             Result.Add(Key, Map[Key].ToArray);
     finally
@@ -287,15 +287,15 @@ function TSnippetRepository.InternalLoadSnippets(const SQL: string; const Params
 var
     Query: TFDQuery;
     List: TList<TSnippetDTO>;
-    IDList: TList<NativeInt>;
-    TagMap: TDictionary<NativeInt, TArray<TTagDTO>>;
+    IDList: TList<Integer>;
+    TagMap: TDictionary<Integer, TArray<TTagDTO>>;
     Snip: TSnippetDTO;
-    i: NativeInt;
+    i: Integer;
 begin
     Result := [];
 
     List := TList<TSnippetDTO>.Create;
-    IDList := TList<NativeInt>.Create;
+    IDList := TList<Integer>.Create;
     Query := CreateQuery;
     if not Assigned(Query.Connection) then
         Exit(Result);
@@ -366,10 +366,10 @@ begin
     end;
 end;
 
-procedure TSnippetRepository.UpdateTags(SnippetID: NativeInt; const TagIDs: TArray<NativeInt>);
+procedure TSnippetRepository.UpdateTags(SnippetID: Integer; const TagIDs: TArray<Integer>);
 var
     Q, QTags: TFDQuery;
-    TagID: NativeInt;
+    TagID: Integer;
 begin
     // Удаляем все старые связи
     Q := CreateQuery;
@@ -399,10 +399,10 @@ begin
     end;
 end;
 
-function TSnippetRepository.Add(const Snippet: TSnippetDTO): NativeInt;
+function TSnippetRepository.Add(const Snippet: TSnippetDTO): Integer;
 var
     Q: TFDQuery;
-    SnippetID: NativeInt;
+    SnippetID: Integer;
 begin
     // Вставка сниппета
     Q := CreateQuery;
@@ -480,7 +480,7 @@ begin
     end;
 end;
 
-function TSnippetRepository.SearchByMaskFTS(const Mask: string; UserID: NativeInt = 0): TArray<TSnippetDTO>;
+function TSnippetRepository.SearchByMaskFTS(const Mask: string; UserID: Integer = 0): TArray<TSnippetDTO>;
 var
     Query: TFDQuery;
     List: TList<TSnippetDTO>;
@@ -535,7 +535,7 @@ begin
     end;
 end;
 
-function TSnippetRepository.SearchByMaskSimple(const Mask: string; UserID: NativeInt = 0): TArray<TSnippetDTO>;
+function TSnippetRepository.SearchByMaskSimple(const Mask: string; UserID: Integer = 0): TArray<TSnippetDTO>;
 var
     Query: TFDQuery;
     List: TList<TSnippetDTO>;
@@ -589,12 +589,12 @@ begin
     end;
 end;
 
-procedure TSnippetRepository.RecordRun(SnippetID: NativeInt; UserID: NativeInt);
+procedure TSnippetRepository.RecordRun(SnippetID: Integer; UserID: Integer);
 begin
     FConnection.ExecSQL(SQL_RECORD_RUN, [SnippetID, UserID]);
 end;
 
-function TSnippetRepository.GetSnippetByCategory(const CategoryID, UserID: NativeInt): TArray<TSnippetDTO>;
+function TSnippetRepository.GetSnippetByCategory(const CategoryID, UserID: Integer): TArray<TSnippetDTO>;
 begin
     if UserID > 0 then
         Result := InternalLoadSnippets(SQL_SELECT_SNIPPETS_BY_CATEGORY_USER, [CategoryID, UserID])
@@ -602,11 +602,11 @@ begin
         Result := InternalLoadSnippets(SQL_SELECT_SNIPPETS_BY_CATEGORY, [CategoryID]);
 end;
 
-function TSnippetRepository.GetSnippetCountByCategory(UserID: NativeInt): TDictionary<NativeInt, NativeInt>;
+function TSnippetRepository.GetSnippetCountByCategory(UserID: Integer): TDictionary<Integer, Integer>;
 var
     Q: TFDQuery;
 begin
-    Result := TDictionary<NativeInt, NativeInt>.Create;
+    Result := TDictionary<Integer, Integer>.Create;
     Q := CreateQuery;
     try
         if UserID > 0 then
@@ -633,12 +633,12 @@ begin
     end;
 end;
 
-function TSnippetRepository.GetTopSnippets(UserID, Limit: NativeInt): TArray<TSnippetDTO>;
+function TSnippetRepository.GetTopSnippets(UserID, Limit: Integer): TArray<TSnippetDTO>;
 begin
     Result := InternalLoadSnippets(SQL_GET_TOP_SNIPPETS, [UserID, Limit]);
 end;
 
-function TSnippetRepository.GetRecentSnippets(UserID, Limit: NativeInt): TArray<TSnippetDTO>;
+function TSnippetRepository.GetRecentSnippets(UserID, Limit: Integer): TArray<TSnippetDTO>;
 begin
     Result := InternalLoadSnippets(SQL_GET_RECENT_SNIPPETS, [UserID, Limit]);
 end;

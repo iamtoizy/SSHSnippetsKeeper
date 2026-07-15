@@ -20,13 +20,13 @@ uses
 type
     TSnippetRunner = class
     private
-        FUserID: NativeInt;
+        FUserID: Integer;
         FErrorHandler: IUIErrorHandler;
         function SelectTargetWindow(out TargetWindow: TWindowMonitorInfo): Boolean;
-        function BuildMacroContext(SnippetID: NativeInt; TargetHWND: HWND): TMacroContext;
+        function BuildMacroContext(SnippetID: Integer; TargetHWND: HWND): TMacroContext;
     public
         class var IsExecuting: Boolean;
-        constructor Create(UserID: NativeInt);
+        constructor Create(UserID: Integer);
         procedure ExecuteSnippet(const Snippet: TSnippetDTO; RequireConfirmation: Boolean = True);
     end;
 
@@ -40,7 +40,7 @@ uses
 
 { Реализация TSnippetRunner }
 
-constructor TSnippetRunner.Create(UserID: NativeInt);
+constructor TSnippetRunner.Create(UserID: Integer);
 begin
     FUserID := UserID;
     FErrorHandler := TVCLErrorHandler.Create;
@@ -76,7 +76,7 @@ begin
     end;
 end;
 
-function TSnippetRunner.BuildMacroContext(SnippetID: NativeInt; TargetHWND: HWND): TMacroContext;
+function TSnippetRunner.BuildMacroContext(SnippetID: Integer; TargetHWND: HWND): TMacroContext;
 var
     Context: TMacroContext;
 begin

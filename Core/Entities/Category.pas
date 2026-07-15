@@ -5,7 +5,7 @@ interface
 type
     TCategoryDTO = record
         ID: Integer;
-        UserID: NativeInt;
+        UserID: Integer;
         Name: string;
         ParentID: Integer; // 0 если корень
         SortOrder: Integer;

@@ -21,7 +21,7 @@ type
 
     TTagChange = record
         Action: TTagEditAction;
-        TagID: NativeUInt;   // Для Rename/Delete
+        TagID: Integer;   // Для Rename/Delete
         NewName: string;     // Для Add/Rename
     end;
 
@@ -48,14 +48,14 @@ type
         FChanges: TList<TTagChange>;
 
         procedure ApplyChangesToDB;
-        procedure RecordChange(Action: TTagEditAction; TagID: NativeUInt; const NewName: string = '');
+        procedure RecordChange(Action: TTagEditAction; TagID: Integer; const NewName: string = '');
         procedure DoAddTag;
         procedure DoDeleteTags;
         procedure DoRenameTag;
         procedure RefreshTagList;
     public
         // Внедрение зависимости (Dependency Injection) через конструктор
-        constructor CreateWithService(Owner: TComponent; TagService: ITagService);
+        constructor Create(Owner: TComponent; TagService: ITagService); reintroduce;
     end;
 
 var
@@ -71,7 +71,7 @@ uses
     System.UITypes,
     Winapi.CommCtrl;
 
-constructor TTagEditorForm.CreateWithService(Owner: TComponent; TagService: ITagService);
+constructor TTagEditorForm.Create(Owner: TComponent; TagService: ITagService);
 begin
     inherited Create(Owner);
     FTagService := TagService;
@@ -100,7 +100,7 @@ begin
     end;
 end;
 
-procedure TTagEditorForm.RecordChange(Action: TTagEditAction; TagID: NativeUInt; const NewName: string);
+procedure TTagEditorForm.RecordChange(Action: TTagEditAction; TagID: Integer; const NewName: string);
 var
     Change: TTagChange;
 begin
@@ -136,7 +136,7 @@ procedure TTagEditorForm.DoDeleteTags;
 var
     Dlg: TForm;
     I: Integer;
-    TagID: NativeUInt;
+    TagID: Integer;
 begin
     if lvTags.SelCount = 0 then
         Exit;
@@ -155,7 +155,7 @@ begin
     begin
         if lvTags.Items[I].Selected then
         begin
-            TagID := NativeUInt(lvTags.Items[I].Data);
+            TagID := Integer(lvTags.Items[I].Data);
             if TagID > 0 then
                 RecordChange(teaDelete, TagID);
             lvTags.Items.Delete(I);
@@ -195,7 +195,7 @@ end;
 
 procedure TTagEditorForm.lvTagsEdited(Sender: TObject; Item: TListItem; var S: string);
 var
-    TagID: NativeUInt;
+    TagID: Integer;
 begin
     S := Trim(S);
 
@@ -206,7 +206,7 @@ begin
         Exit;
     end;
 
-    TagID := NativeUInt(Item.Data);
+    TagID := Integer(Item.Data);
 
     // Записываем переименование в буфер только если тег уже есть в БД
     if TagID > 0 then
@@ -248,10 +248,10 @@ begin
 
             teaRename:
                 // Передаем ID (с приведением типов) и новое имя
-                FTagService.RenameTag(NativeInt(Change.TagID), Change.NewName);
+                FTagService.RenameTag(Integer(Change.TagID), Change.NewName);
 
             teaDelete:
-                FTagService.DeleteTag(NativeInt(Change.TagID));
+                FTagService.DeleteTag(Integer(Change.TagID));
         end;
     end;
 

@@ -51,7 +51,7 @@ end;
 
 procedure TChooseTerminalWindow.lvTerminalListDblClick(Sender: TObject);
 var
-    Index: NativeInt;
+    Index: Integer;
 begin
     // Подтверждение выбора здесь...
     if lvTerminalList.Selected <> nil then

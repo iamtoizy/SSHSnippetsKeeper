@@ -17,7 +17,7 @@ type
 
         // Централизованный метод для выполнения запросов с автоочисткой памяти
         procedure ExecuteQuery(const SQL: string; const Params: array of Variant; Proc: TProc<TFDQuery>);
-        function ExecuteSQL(const SQL: string; const Params: array of Variant): NativeInt;
+        function ExecuteSQL(const SQL: string; const Params: array of Variant): Integer;
         function ExecuteSQLScalar(const SQL: string; const Params: array of Variant): Variant;
     public
         constructor Create(Connection: TFDConnection);
@@ -69,7 +69,7 @@ begin
     end;
 end;
 
-function TRepositoryBase.ExecuteSQL(const SQL: string; const Params: array of Variant): NativeInt;
+function TRepositoryBase.ExecuteSQL(const SQL: string; const Params: array of Variant): Integer;
 begin
     Result := FConnection.ExecSQL(SQL, Params);
 end;
@@ -81,7 +81,7 @@ end;
 
 procedure TRepositoryBase.SetQueryParams(Query: TFDQuery; const Params: array of Variant);
 var
-    i: NativeInt;
+    i: Integer;
 begin
     for i := 0 to High(Params) do
         Query.Params[i].Value := Params[i];

@@ -14,13 +14,13 @@ type
     public
         constructor Create(CategoryRepo: ICategoryRepository);
 
-        function GetAllCategories(UserID: NativeInt = 0): TArray<TCategoryDTO>;
-        function GetCategoryByID(CategoryID: NativeInt): TCategoryDTO;
+        function GetAllCategories(UserID: Integer = 0): TArray<TCategoryDTO>;
+        function GetCategoryByID(CategoryID: Integer): TCategoryDTO;
 
-        function CreateCategory(const Category: TCategoryDTO): NativeInt;
-        procedure RenameCategory(CategoryID: NativeInt; const NewName: string);
-        procedure MoveCategory(CategoryID, NewParentID, Position: NativeInt);
-        procedure DeleteCategory(CategoryID: NativeInt);
+        function CreateCategory(const Category: TCategoryDTO): Integer;
+        procedure RenameCategory(CategoryID: Integer; const NewName: string);
+        procedure MoveCategory(CategoryID, NewParentID, Position: Integer);
+        procedure DeleteCategory(CategoryID: Integer);
     end;
 
 implementation
@@ -30,27 +30,27 @@ begin
     FCategoryRepo := CategoryRepo;
 end;
 
-function TCategoryService.GetAllCategories(UserID: NativeInt): TArray<TCategoryDTO>;
+function TCategoryService.GetAllCategories(UserID: Integer): TArray<TCategoryDTO>;
 begin
     // Передаем UserID в репозиторий (0 означает "все пользователи")
     Result := FCategoryRepo.GetAll(UserID);
 end;
 
-function TCategoryService.GetCategoryByID(CategoryID: NativeInt): TCategoryDTO;
+function TCategoryService.GetCategoryByID(CategoryID: Integer): TCategoryDTO;
 begin
     if CategoryID <= 0 then
         raise Exception.Create('Некорректный ID категории');
     Result := FCategoryRepo.GetByID(CategoryID);
 end;
 
-function TCategoryService.CreateCategory(const Category: TCategoryDTO): NativeInt;
+function TCategoryService.CreateCategory(const Category: TCategoryDTO): Integer;
 begin
     if Trim(Category.Name) = '' then
         raise Exception.Create('Имя категории не может быть пустым');
     Result := FCategoryRepo.AddCategory(Category.Name, Category.ParentID, Category.UserID);
 end;
 
-procedure TCategoryService.RenameCategory(CategoryID: NativeInt; const NewName: string);
+procedure TCategoryService.RenameCategory(CategoryID: Integer; const NewName: string);
 begin
     if CategoryID <= 0 then
         raise Exception.Create('Некорректный ID категории');
@@ -60,7 +60,7 @@ begin
     FCategoryRepo.UpdateName(CategoryID, NewName);
 end;
 
-procedure TCategoryService.MoveCategory(CategoryID, NewParentID, Position: NativeInt);
+procedure TCategoryService.MoveCategory(CategoryID, NewParentID, Position: Integer);
 begin
     if CategoryID <= 0 then
         raise Exception.Create('Некорректный ID категории');
@@ -68,7 +68,7 @@ begin
     FCategoryRepo.MoveCategory(CategoryID, NewParentID, Position);
 end;
 
-procedure TCategoryService.DeleteCategory(CategoryID: NativeInt);
+procedure TCategoryService.DeleteCategory(CategoryID: Integer);
 begin
     if CategoryID <= 0 then
         raise Exception.Create('Некорректный ID категории');

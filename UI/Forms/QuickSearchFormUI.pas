@@ -43,7 +43,7 @@ type
         FSnippetService: ISnippetService;
         FUserService: IUserService;
         FTargetHWND: HWND;
-        FUserID: NativeInt;
+        FUserID: Integer;
         FOldAppMessage: TMessageEvent;
         // Глобальный перехватчик подсказок
         FOldAppShowHint: TShowHintEvent;
@@ -60,7 +60,7 @@ type
     protected
         procedure CreateParams(var Params: TCreateParams); override;
     public
-        procedure ShowWithService(Sender: TObject; SnippetService: ISnippetService; UserService: IUserService; UserID: NativeInt; CurrentHWND: HWND);
+        procedure ShowWithService(Sender: TObject; SnippetService: ISnippetService; UserService: IUserService; UserID: Integer; CurrentHWND: HWND);
     end;
 
 var
@@ -452,7 +452,7 @@ begin
     end;
 end;
 
-procedure TQuickSearchForm.ShowWithService(Sender: TObject; SnippetService: ISnippetService; UserService: IUserService; UserID: NativeInt; CurrentHWND: HWND);
+procedure TQuickSearchForm.ShowWithService(Sender: TObject; SnippetService: ISnippetService; UserService: IUserService; UserID: Integer; CurrentHWND: HWND);
 var
     i: Integer;
     ForegroundThread, AppThread: DWORD;
@@ -467,7 +467,7 @@ begin
     cbUser.ItemIndex := 0;
     for i := 0 to cbUser.Items.Count - 1 do
     begin
-        if NativeInt(cbUser.Items.Objects[i]) = FUserID then
+        if Integer(cbUser.Items.Objects[i]) = FUserID then
         begin
             cbUser.ItemIndex := i;
             Break;
@@ -556,14 +556,14 @@ var
     Snip: TSnippetDTO;
     Item: TListItem;
     ViewData: TSnippetViewData;
-    SelectedUserID: NativeInt;
+    SelectedUserID: Integer;
 begin
     // Принудительно гасим подсказку, если она висит, чтобы не было "призраков"
     Application.CancelHint;
 
     SelectedUserID := 0;
     if cbUser.ItemIndex >= 0 then
-        SelectedUserID := NativeInt(cbUser.Items.Objects[cbUser.ItemIndex]);
+        SelectedUserID := Integer(cbUser.Items.Objects[cbUser.ItemIndex]);
 
     lvQuickResults.Items.BeginUpdate;
     try
@@ -614,7 +614,7 @@ begin
         cbUser.Items.AddObject('Все пространства', TObject(0));
         Users := FUserService.GetAllUsers;
         for User in Users do
-            cbUser.Items.AddObject(User.Name, TObject(NativeInt(User.ID)));
+            cbUser.Items.AddObject(User.Name, TObject(Integer(User.ID)));
         cbUser.ItemIndex := 0;
     finally
         cbUser.Items.EndUpdate;

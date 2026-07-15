@@ -24,7 +24,7 @@ type
             TreeView: TTreeView;
             const Categories: TArray<TCategoryDTO>;
             const Users: TArray<TUserDTO>;
-            FilterUserID: NativeInt;
+            FilterUserID: Integer;
             SelectID: Integer = -1); static;
     end;
 
@@ -45,7 +45,7 @@ begin
         begin
             Item := ListView.Items.Add;
             Item.Caption := Tag.Name;
-            Item.Data := Pointer(NativeUInt(Tag.ID));
+            Item.Data := Pointer(IntPtr(Tag.ID));
             Item.StateIndex := 0;
         end;
     finally
@@ -76,7 +76,7 @@ begin
                 begin
                     Item := ListView.Items.Add;
                     Item.Caption := Tag.Name;
-                    Item.Data := Pointer(NativeUInt(Tag.ID));
+                    Item.Data := Pointer(Integer(Tag.ID));
                     Item.StateIndex := 1; // Привязан
                 end;
             end;
@@ -88,7 +88,7 @@ begin
                 begin
                     Item := ListView.Items.Add;
                     Item.Caption := Tag.Name;
-                    Item.Data := Pointer(NativeUInt(Tag.ID));
+                    Item.Data := Pointer(Integer(Tag.ID));
                     Item.StateIndex := 0; // Не привязан
                 end;
             end;
@@ -100,10 +100,10 @@ begin
     end;
 end;
 
-class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categories: TArray<TCategoryDTO>; const Users: TArray<TUserDTO>; FilterUserID: NativeInt; SelectID: Integer = -1);
+class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categories: TArray<TCategoryDTO>; const Users: TArray<TUserDTO>; FilterUserID: Integer; SelectID: Integer = -1);
 
     // Вспомогательная рекурсивная процедура для добавления узлов
-    procedure AddNodesRecursive(ParentNode: TTreeNode; ParentCatID: NativeInt; const CatMap: TDictionary<NativeInt, TList<TCategoryDTO>>);
+    procedure AddNodesRecursive(ParentNode: TTreeNode; ParentCatID: Integer; const CatMap: TDictionary<Integer, TList<TCategoryDTO>>);
     var
         Children: TList<TCategoryDTO>;
         Cat: TCategoryDTO;
@@ -115,7 +115,7 @@ class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categori
         for Cat in Children do
         begin
             Node := TreeView.Items.AddChild(ParentNode, Cat.Name);
-            Node.Data := Pointer(NativeUInt(Cat.ID));
+            Node.Data := Pointer(Integer(Cat.ID));
             Node.ImageIndex := 0;
             Node.SelectedIndex := 0;
 
@@ -129,13 +129,13 @@ class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categori
     // Внутренняя отрисовка переданного подмножества категорий
     procedure RenderCategories(RootParentNode: TTreeNode; const LocalCats: TList<TCategoryDTO>);
     var
-        LocalCatMap: TDictionary<NativeInt, TList<TCategoryDTO>>;
+        LocalCatMap: TDictionary<Integer, TList<TCategoryDTO>>;
         LocalRoots: TList<TCategoryDTO>;
         Cat: TCategoryDTO;
         Node: TTreeNode;
         List: TList<TCategoryDTO>;
     begin
-        LocalCatMap := TDictionary<NativeInt, TList<TCategoryDTO>>.Create;
+        LocalCatMap := TDictionary<Integer, TList<TCategoryDTO>>.Create;
         LocalRoots := TList<TCategoryDTO>.Create;
         try
             // Группируем категории
@@ -158,7 +158,7 @@ class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categori
             for Cat in LocalRoots do
             begin
                 Node := TreeView.Items.AddChild(RootParentNode, Cat.Name);
-                Node.Data := Pointer(NativeUInt(Cat.ID));
+                Node.Data := Pointer(Integer(Cat.ID));
                 Node.ImageIndex := 0;
                 Node.SelectedIndex := 0;
 
@@ -187,13 +187,13 @@ begin
         TreeView.Items.Clear;
 
         // 1. Виртуальные узлы
-        Node := TreeView.Items.AddObjectFirst(nil, 'Часто используемые', TObject(-1));
+        Node := TreeView.Items.AddObjectFirst(nil, 'Часто используемые', Pointer(IntPtr(-1)));
         Node.ImageIndex := 1;
         Node.SelectedIndex := 1;
         if SelectID = -1 then
             Node.Selected := True;
 
-        Node := TreeView.Items.AddObjectFirst(nil, 'Недавние', TObject(-2));
+        Node := TreeView.Items.AddObjectFirst(nil, 'Недавние', Pointer(IntPtr(-2)));
         Node.ImageIndex := 2;
         Node.SelectedIndex := 2;
         if SelectID = -2 then

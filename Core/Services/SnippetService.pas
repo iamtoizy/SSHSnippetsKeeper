@@ -21,8 +21,8 @@ type
         FCategoryRepo: ICategoryRepository;
         FTagRepo: ITagRepository;
         FUserRepo: IUserRepository;
-        function SearchSnippetsSimple(const Query: string; UserID: NativeInt): TArray<TSnippetDTO>;
-        function SearchSnippetsFTS(const Query: string; UserID: NativeInt): TArray<TSnippetDTO>;
+        function SearchSnippetsSimple(const Query: string; UserID: Integer): TArray<TSnippetDTO>;
+        function SearchSnippetsFTS(const Query: string; UserID: Integer): TArray<TSnippetDTO>;
     public
         constructor Create(
             ASnippetRepo: ISnippetRepository;
@@ -30,20 +30,20 @@ type
             ATagRepo: ITagRepository;
             AUserRepo: IUserRepository);
 
-        function CreateSnippet(const Snippet: TSnippetDTO; const TagIDs: TArray<NativeInt>): NativeInt;
-        procedure UpdateSnippet(const Snippet: TSnippetDTO; const TagIDs: TArray<NativeInt>);
-        procedure DeleteSnippet(const SnippetID: NativeInt);
+        function CreateSnippet(const Snippet: TSnippetDTO; const TagIDs: TArray<Integer>): Integer;
+        procedure UpdateSnippet(const Snippet: TSnippetDTO; const TagIDs: TArray<Integer>);
+        procedure DeleteSnippet(const SnippetID: Integer);
 
         // Методы для UI
-        function GetSnippetByID(SnippetID: NativeInt): TSnippetDTO;
-        function GetAllSnippets(UserID: NativeInt = 0): TArray<TSnippetDTO>;
-        function GetSnippetsByCategory(CategoryID, UserID: NativeInt): TArray<TSnippetDTO>;
-        function GetSnippetsByTag(TagID: NativeInt): TArray<TSnippetDTO>;
-        function GetTopSnippets(UserID: NativeInt; Count: NativeInt): TArray<TSnippetDTO>;
-        function GetRecentSnippets(UserID: NativeInt; Count: NativeInt): TArray<TSnippetDTO>;
+        function GetSnippetByID(SnippetID: Integer): TSnippetDTO;
+        function GetAllSnippets(UserID: Integer = 0): TArray<TSnippetDTO>;
+        function GetSnippetsByCategory(CategoryID, UserID: Integer): TArray<TSnippetDTO>;
+        function GetSnippetsByTag(TagID: Integer): TArray<TSnippetDTO>;
+        function GetTopSnippets(UserID: Integer; Count: Integer): TArray<TSnippetDTO>;
+        function GetRecentSnippets(UserID: Integer; Count: Integer): TArray<TSnippetDTO>;
 
         // Обновленный метод поиска с учетом пространства
-        function SearchSnippets(const Query: string; UseFTS: Boolean; UserID: NativeInt = 0): TArray<TSnippetDTO>;
+        function SearchSnippets(const Query: string; UseFTS: Boolean; UserID: Integer = 0): TArray<TSnippetDTO>;
     end;
 
 implementation
@@ -63,9 +63,9 @@ begin
     FUserRepo := AUserRepo;
 end;
 
-function TSnippetService.CreateSnippet(const Snippet: TSnippetDTO; const TagIDs: TArray<NativeInt>): NativeInt;
+function TSnippetService.CreateSnippet(const Snippet: TSnippetDTO; const TagIDs: TArray<Integer>): Integer;
 var
-    CatUserID: NativeInt;
+    CatUserID: Integer;
 begin
     if Snippet.UserID <= 0 then raise ESnippetValidationException.Create('Некорректный UserID');
     if Snippet.CategoryID <= 0 then raise ESnippetValidationException.Create('Некорректный CategoryID');
@@ -81,9 +81,9 @@ begin
         FSnippetRepo.UpdateTags(Result, TagIDs);
 end;
 
-procedure TSnippetService.UpdateSnippet(const Snippet: TSnippetDTO; const TagIDs: TArray<NativeInt>);
+procedure TSnippetService.UpdateSnippet(const Snippet: TSnippetDTO; const TagIDs: TArray<Integer>);
 var
-    CatUserID: NativeInt;
+    CatUserID: Integer;
 begin
     if Snippet.ID <= 0 then raise ESnippetValidationException.Create('Некорректный ID сниппета');
 
@@ -95,60 +95,60 @@ begin
     FSnippetRepo.UpdateTags(Snippet.ID, TagIDs);
 end;
 
-procedure TSnippetService.DeleteSnippet(const SnippetID: NativeInt);
+procedure TSnippetService.DeleteSnippet(const SnippetID: Integer);
 begin
     if SnippetID <= 0 then raise ESnippetValidationException.Create('Некорректный ID для удаления');
     FSnippetRepo.Delete(SnippetID);
 end;
 
-function TSnippetService.GetSnippetByID(SnippetID: NativeInt): TSnippetDTO;
+function TSnippetService.GetSnippetByID(SnippetID: Integer): TSnippetDTO;
 begin
     if SnippetID <= 0 then raise ESnippetValidationException.Create('Некорректный ID сниппета');
     Result := FSnippetRepo.GetById(SnippetID);
 end;
 
-function TSnippetService.GetAllSnippets(UserID: NativeInt = 0): TArray<TSnippetDTO>;
+function TSnippetService.GetAllSnippets(UserID: Integer = 0): TArray<TSnippetDTO>;
 begin
     Result := FSnippetRepo.GetAll(UserID);
 end;
 
-function TSnippetService.GetSnippetsByCategory(CategoryID, UserID: NativeInt): TArray<TSnippetDTO>;
+function TSnippetService.GetSnippetsByCategory(CategoryID, UserID: Integer): TArray<TSnippetDTO>;
 begin
     if CategoryID <= 0 then raise ESnippetValidationException.Create('Некорректный ID категории');
     Result := FSnippetRepo.GetSnippetByCategory(CategoryID, UserID);
 end;
 
-function TSnippetService.GetSnippetsByTag(TagID: NativeInt): TArray<TSnippetDTO>;
+function TSnippetService.GetSnippetsByTag(TagID: Integer): TArray<TSnippetDTO>;
 begin
     if TagID <= 0 then raise ESnippetValidationException.Create('Некорректный ID тега');
     Result := FSnippetRepo.GetSnippetsByTag(TagID);
 end;
 
-function TSnippetService.GetTopSnippets(UserID: NativeInt; Count: NativeInt): TArray<TSnippetDTO>;
+function TSnippetService.GetTopSnippets(UserID: Integer; Count: Integer): TArray<TSnippetDTO>;
 begin
     if Count <= 0 then Count := TOP_SNIPPETS_COUNT;
     Result := FSnippetRepo.GetTopSnippets(UserID, Count);
 end;
 
-function TSnippetService.GetRecentSnippets(UserID: NativeInt; Count: NativeInt): TArray<TSnippetDTO>;
+function TSnippetService.GetRecentSnippets(UserID: Integer; Count: Integer): TArray<TSnippetDTO>;
 begin
     if Count <= 0 then Count := RECENT_SNIPPETS_COUNT;
     Result := FSnippetRepo.GetRecentSnippets(UserID, Count);
 end;
 
-function TSnippetService.SearchSnippetsSimple(const Query: string; UserID: NativeInt): TArray<TSnippetDTO>;
+function TSnippetService.SearchSnippetsSimple(const Query: string; UserID: Integer): TArray<TSnippetDTO>;
 begin
     if Trim(Query) = '' then Exit(GetAllSnippets(UserID));
     Result := FSnippetRepo.SearchByMaskSimple(Query, UserID);
 end;
 
-function TSnippetService.SearchSnippetsFTS(const Query: string; UserID: NativeInt): TArray<TSnippetDTO>;
+function TSnippetService.SearchSnippetsFTS(const Query: string; UserID: Integer): TArray<TSnippetDTO>;
 begin
     if Trim(Query) = '' then Exit(GetAllSnippets(UserID));
     Result := FSnippetRepo.SearchByMaskFTS(Query, UserID);
 end;
 
-function TSnippetService.SearchSnippets(const Query: string; UseFTS: Boolean; UserID: NativeInt = 0): TArray<TSnippetDTO>;
+function TSnippetService.SearchSnippets(const Query: string; UseFTS: Boolean; UserID: Integer = 0): TArray<TSnippetDTO>;
 var
     CleanQuery: string;
 begin

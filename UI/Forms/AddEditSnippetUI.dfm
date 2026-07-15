@@ -26,8 +26,6 @@ object AddEditSnippet: TAddEditSnippet
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 0
-    ExplicitTop = 23
-    ExplicitHeight = 473
     object lbCaption: TLabel
       Left = 0
       Top = 0
@@ -113,7 +111,6 @@ object AddEditSnippet: TAddEditSnippet
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitTop = 473
     DesignSize = (
       730
       32)
@@ -145,8 +142,6 @@ object AddEditSnippet: TAddEditSnippet
     Height = 19
     Panels = <>
     SimplePanel = True
-    ExplicitLeft = -8
-    ExplicitTop = 517
   end
   object pnlClient: TPanel
     Left = 201
@@ -156,10 +151,6 @@ object AddEditSnippet: TAddEditSnippet
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 3
-    ExplicitLeft = 296
-    ExplicitTop = 168
-    ExplicitWidth = 185
-    ExplicitHeight = 41
     object pTop: TPanel
       Left = 0
       Top = 0
@@ -168,7 +159,6 @@ object AddEditSnippet: TAddEditSnippet
       Align = alTop
       BevelOuter = bvNone
       TabOrder = 0
-      ExplicitTop = 16
       object spTopLeft: TSplitter
         Left = 240
         Top = 0
@@ -196,8 +186,6 @@ object AddEditSnippet: TAddEditSnippet
         Style = csDropDownList
         TabOrder = 1
         OnChange = cbAIModelChange
-        ExplicitLeft = 295
-        ExplicitWidth = 258
       end
       object cbAIHub: TComboBox
         Left = 0
@@ -208,7 +196,6 @@ object AddEditSnippet: TAddEditSnippet
         Style = csDropDownList
         TabOrder = 2
         OnChange = cbAIHubChange
-        ExplicitLeft = 17
       end
     end
     object pcSnippet: TPageControl
@@ -219,8 +206,6 @@ object AddEditSnippet: TAddEditSnippet
       ActivePage = tsSnippet
       Align = alClient
       TabOrder = 1
-      ExplicitLeft = 201
-      ExplicitHeight = 473
       object tsSnippet: TTabSheet
         Caption = #1057#1086#1076#1077#1088#1078#1080#1084#1086#1077' '#1089#1085#1080#1087#1087#1077#1090#1072
         object sMiddle: TSplitter
@@ -240,9 +225,8 @@ object AddEditSnippet: TAddEditSnippet
           Height = 169
           Align = alClient
           BevelOuter = bvNone
-          TabOrder = 2
+          TabOrder = 1
           Visible = False
-          ExplicitHeight = 222
           object pbLoading: TProgressBar
             Left = 0
             Top = 152
@@ -251,7 +235,6 @@ object AddEditSnippet: TAddEditSnippet
             Align = alBottom
             Style = pbstMarquee
             TabOrder = 1
-            ExplicitTop = 205
           end
           object mAIPrompt: TSynEdit
             Left = 0
@@ -312,76 +295,7 @@ object AddEditSnippet: TAddEditSnippet
                 FullRow = True
               end>
             WordWrap = True
-            ExplicitHeight = 205
           end
-        end
-        object mContent: TSynEdit
-          Left = 0
-          Top = 0
-          Width = 521
-          Height = 169
-          Align = alClient
-          DoubleBuffered = True
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -13
-          Font.Name = 'Consolas'
-          Font.Style = []
-          Font.Quality = fqClearTypeNatural
-          ParentDoubleBuffered = False
-          TabOrder = 1
-          TextHint = #1050#1086#1076' '#1089#1085#1080#1087#1087#1077#1090#1072' '#1074#1074#1086#1076#1080' '#1079#1076#1077#1089#1100'...'
-          OnKeyDown = mContentKeyDown
-          UseCodeFolding = False
-          Gutter.DigitCount = 2
-          Gutter.Font.Charset = DEFAULT_CHARSET
-          Gutter.Font.Color = clWindowText
-          Gutter.Font.Height = -11
-          Gutter.Font.Name = 'Consolas'
-          Gutter.Font.Style = []
-          Gutter.Font.Quality = fqClearTypeNatural
-          Gutter.ShowLineNumbers = True
-          Gutter.Bands = <
-            item
-              Kind = gbkMarks
-              Width = 13
-            end
-            item
-              Kind = gbkLineNumbers
-            end
-            item
-              Kind = gbkFold
-            end
-            item
-              Kind = gbkTrackChanges
-            end
-            item
-              Kind = gbkMargin
-              Width = 3
-            end>
-          Highlighter = SynUNIXShellScriptSyn
-          ScrollbarAnnotations = <
-            item
-              AnnType = sbaCarets
-              AnnPos = sbpFullWidth
-              FullRow = False
-            end
-            item
-              AnnType = sbaBookmark
-              AnnPos = sbpLeft
-              FullRow = True
-            end
-            item
-              AnnType = sbaTrackChanges
-              AnnPos = sbpRight
-              FullRow = True
-            end>
-          SearchEngine = SynEditRegexSearch
-          TabWidth = 4
-          WantTabs = True
-          OnChange = mContentChange
-          OnProcessCommand = mContentProcessCommand
-          ExplicitHeight = 222
         end
         object mComment: TSynEdit
           Left = 0
@@ -443,7 +357,74 @@ object AddEditSnippet: TAddEditSnippet
               FullRow = True
             end>
           WordWrap = True
-          ExplicitTop = 225
+        end
+        object mContent: TSynEdit
+          Left = 0
+          Top = 0
+          Width = 521
+          Height = 169
+          Align = alClient
+          DoubleBuffered = True
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -13
+          Font.Name = 'Consolas'
+          Font.Style = []
+          Font.Quality = fqClearTypeNatural
+          ParentDoubleBuffered = False
+          TabOrder = 2
+          TextHint = #1050#1086#1076' '#1089#1085#1080#1087#1087#1077#1090#1072' '#1074#1074#1086#1076#1080' '#1079#1076#1077#1089#1100'...'
+          OnKeyDown = mContentKeyDown
+          UseCodeFolding = False
+          Gutter.DigitCount = 2
+          Gutter.Font.Charset = DEFAULT_CHARSET
+          Gutter.Font.Color = clWindowText
+          Gutter.Font.Height = -11
+          Gutter.Font.Name = 'Consolas'
+          Gutter.Font.Style = []
+          Gutter.Font.Quality = fqClearTypeNatural
+          Gutter.ShowLineNumbers = True
+          Gutter.Bands = <
+            item
+              Kind = gbkMarks
+              Width = 13
+            end
+            item
+              Kind = gbkLineNumbers
+            end
+            item
+              Kind = gbkFold
+            end
+            item
+              Kind = gbkTrackChanges
+            end
+            item
+              Kind = gbkMargin
+              Width = 3
+            end>
+          Highlighter = SynUNIXShellScriptSyn
+          ScrollbarAnnotations = <
+            item
+              AnnType = sbaCarets
+              AnnPos = sbpFullWidth
+              FullRow = False
+            end
+            item
+              AnnType = sbaBookmark
+              AnnPos = sbpLeft
+              FullRow = True
+            end
+            item
+              AnnType = sbaTrackChanges
+              AnnPos = sbpRight
+              FullRow = True
+            end>
+          SearchEngine = SynEditRegexSearch
+          TabWidth = 4
+          WantTabs = True
+          OnChange = mContentChange
+          OnProcessCommand = mContentProcessCommand
+          ExplicitHeight = 152
         end
       end
       object tsHelp: TTabSheet
@@ -488,7 +469,6 @@ object AddEditSnippet: TAddEditSnippet
           ParentFont = False
           ScrollBars = ssVertical
           TabOrder = 0
-          ExplicitHeight = 447
         end
       end
     end

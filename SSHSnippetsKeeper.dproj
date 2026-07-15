@@ -8,7 +8,7 @@
         <AppType>Application</AppType>
         <FrameworkType>VCL</FrameworkType>
         <ProjectVersion>20.4</ProjectVersion>
-        <Platform Condition="'$(Platform)'==''">Win64</Platform>
+        <Platform Condition="'$(Platform)'==''">Win32</Platform>
         <ProjectName Condition="'$(ProjectName)'==''">SSHSnippetsKeeper</ProjectName>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
@@ -132,11 +132,9 @@
         <UWP_DelphiLogo150>Assets\Images\main-icon\main-icon.png</UWP_DelphiLogo150>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
-        <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
         <VerInfo_MajorVer>1</VerInfo_MajorVer>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
-        <Icon_MainIcon>Assets\Images\main-icon\main-icon.ico</Icon_MainIcon>
         <UWP_DelphiLogo44>Assets\Images\main-icon\main-icon.png</UWP_DelphiLogo44>
         <UWP_DelphiLogo150>Assets\Images\main-icon\main-icon.png</UWP_DelphiLogo150>
     </PropertyGroup>
@@ -220,6 +218,21 @@
             <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="Core\Services\SecurityScanner.pas"/>
+        <DCCReference Include="Core\Services\PasswordService.pas"/>
+        <DCCReference Include="UI\Forms\PasswordGenFormUI.pas">
+            <Form>PasswordGenForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <RcItem Include="Database\Schema\000_schema_init.sql">
+            <ContainerId>ResourceItem</ContainerId>
+            <ResourceType>RCDATA</ResourceType>
+            <ResourceId>SCHEMA_INIT_SQL</ResourceId>
+        </RcItem>
+        <RcItem Include="Database\Schema\000_seed_data_full.sql">
+            <ContainerId>ResourceItem</ContainerId>
+            <ResourceType>RCDATA</ResourceType>
+            <ResourceId>SCHEMA_SEED_SQL</ResourceId>
+        </RcItem>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -251,24 +264,40 @@
             </Platforms>
             <Deployment Version="4">
                 <DeployFile LocalName="Assets\Images\main-icon\main-icon.png" Configuration="Debug" Class="UWP_DelphiLogo44"/>
-                <DeployFile LocalName="Assets\Images\main-icon\main-icon.png" Configuration="Debug" Class="UWP_DelphiLogo44">
-                    <Platform Name="Win32">
-                        <RemoteDir>Assets\</RemoteDir>
-                        <RemoteName>Logo44x44.png</RemoteName>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
-                <DeployFile LocalName="Assets\Images\main-icon\main-icon.png" Configuration="Debug" Class="UWP_DelphiLogo44">
-                    <Platform Name="Win64">
-                        <RemoteDir>Assets\</RemoteDir>
-                        <RemoteName>Logo44x44.png</RemoteName>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
                 <DeployFile LocalName="Binary\Win32\Debug\SSHSnippetsKeeper.exe" Configuration="Debug" Class="ProjectOutput"/>
                 <DeployFile LocalName="Binary\Win32\Debug\SSHSnippetsKeeper.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win32">
                         <RemoteName>SSHSnippetsKeeper.exe</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="Binary\Win64\Debug\SSHSnippetsKeeper.exe" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="Win64">
+                        <RemoteName>SSHSnippetsKeeper.exe</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="Database\Schema\000_schema_init.sql" Configuration="Debug" Class="ProjectFile">
+                    <Platform Name="Win32">
+                        <RemoteDir>.\</RemoteDir>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="Database\Schema\000_schema_init.sql" Configuration="Debug" Class="ProjectFile">
+                    <Platform Name="Win64">
+                        <RemoteDir>.\</RemoteDir>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="Database\Schema\000_seed_data_full.sql" Configuration="Debug" Class="ProjectFile">
+                    <Platform Name="Win32">
+                        <RemoteDir>.\</RemoteDir>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="Database\Schema\000_seed_data_full.sql" Configuration="Debug" Class="ProjectFile">
+                    <Platform Name="Win64">
+                        <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>

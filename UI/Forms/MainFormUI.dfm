@@ -374,6 +374,14 @@ object MainForm: TMainForm
         OnClick = nRenameTagClick
       end
     end
+    object N4: TMenuItem
+      Caption = #1048#1085#1089#1090#1088#1091#1084#1077#1085#1090#1099
+      object nPasswordGenerator: TMenuItem
+        Caption = #1043#1077#1085#1077#1088#1072#1090#1086#1088' '#1087#1072#1088#1086#1083#1077#1081
+        ShortCut = 16455
+        OnClick = nPasswordGeneratorClick
+      end
+    end
   end
   object OpenDialog: TOpenDialog
     Filter = #1041#1072#1079#1099' '#1076#1072#1085#1085#1099#1093' SQLite|*.sqlite|'#1042#1089#1077' '#1092#1072#1081#1083#1099'|*.*'

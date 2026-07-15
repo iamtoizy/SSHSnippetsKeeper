@@ -16,9 +16,9 @@ type
     end;
 
     TWindowHelperNode = record
-        ActivationDelay: NativeUInt;
-        SetFocusDelay: NativeUInt;
-        KeyPressInterval: NativeUInt;
+        ActivationDelay: Integer;
+        SetFocusDelay: Integer;
+        KeyPressInterval: Integer;
     end;
 
     TAllowedApplicationsItem = record
@@ -28,7 +28,7 @@ type
 
     TAIParams = record
         Temperature: Single;
-        MaxOutputTokens: NativeUInt;
+        MaxOutputTokens: Integer;
         Content: string;
         ReasoningEffort: string;    // none
     end;
@@ -119,7 +119,7 @@ begin
     SL := TStringList.Create;
     try
         SL.Text := S;
-        SL.WriteBOM := True; // <-- ВАЖНО: Записываем маркер UTF-8 (BOM). Это команда для Блокнота!
+        SL.WriteBOM := True; // Записываем маркер UTF-8 (BOM)
         SL.SaveToFile(FilePath, TEncoding.UTF8);
     finally
         SL.Free;

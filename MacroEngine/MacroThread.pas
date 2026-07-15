@@ -15,12 +15,12 @@ type
         FActions: TArray<IScriptAction>;
         FContext: TMacroContext;
         // Добавляем поле для коллбэка
-        FOnRecordRun: TProc<NativeInt, NativeInt>;
+        FOnRecordRun: TProc<Integer, Integer>;
     protected
         procedure Execute; override;
     public
         // Внедряем коллбэк через конструктор (по умолчанию nil, чтобы не ломать старый код, если где-то он вызывается без него)
-        constructor Create(const Actions: TArray<IScriptAction>; Context: TMacroContext; OnRecordRun: TProc<NativeInt, NativeInt> = nil);
+        constructor Create(const Actions: TArray<IScriptAction>; Context: TMacroContext; OnRecordRun: TProc<Integer, Integer> = nil);
         procedure Cancel;
     end;
 
@@ -31,7 +31,7 @@ uses
     System.StrUtils
     ;
 
-constructor TMacroThread.Create(const Actions: TArray<IScriptAction>; Context: TMacroContext; OnRecordRun: TProc<NativeInt, NativeInt> = nil);
+constructor TMacroThread.Create(const Actions: TArray<IScriptAction>; Context: TMacroContext; OnRecordRun: TProc<Integer, Integer> = nil);
 begin
     FActions := Actions;
     FContext := Context;

@@ -51,7 +51,7 @@ type
         procedure AdjustColumnWidth;
     public
         // Внедрение зависимости
-        constructor CreateWithService(Owner: TComponent; UserService: IUserService);
+        constructor Create(Owner: TComponent; UserService: IUserService); reintroduce;
     end;
 
 var
@@ -59,9 +59,12 @@ var
 
 implementation
 
+uses
+    Winapi.CommCtrl;
+
 {$R *.dfm}
 
-constructor TWorkspaceManagerForm.CreateWithService(Owner: TComponent; UserService: IUserService);
+constructor TWorkspaceManagerForm.Create(Owner: TComponent; UserService: IUserService);
 begin
     inherited Create(Owner);
     FUserService := UserService;
@@ -94,7 +97,7 @@ begin
         begin
             Item := lvWorkspaces.Items.Add;
             Item.Caption := User.Name;
-            Item.Data := Pointer(NativeInt(User.ID));
+            Item.Data := Pointer(Integer(User.ID));
         end;
     finally
         lvWorkspaces.Items.EndUpdate;
@@ -106,7 +109,7 @@ var
     NewName: string;
     UserDTO: TUserDTO;
     Item: TListItem;
-    NewID: NativeInt;
+    NewID: Integer;
 begin
     if not InputQuery('Новое пространство', 'Введите имя:', NewName) then
         Exit;
@@ -136,14 +139,14 @@ end;
 procedure TWorkspaceManagerForm.DoDeleteWorkspace;
 var
     Item: TListItem;
-    UserID: NativeInt;
+    UserID: Integer;
     UserName: string;
 begin
     Item := lvWorkspaces.Selected;
     if Item = nil then
         Exit;
 
-    UserID := NativeInt(Item.Data);
+    UserID := Integer(Item.Data);
     UserName := Item.Caption;
 
     if MessageBox(
@@ -176,7 +179,7 @@ end;
 
 procedure TWorkspaceManagerForm.lvWorkspacesEdited(Sender: TObject; Item: TListItem; var S: string);
 var
-    UserID: NativeInt;
+    UserID: Integer;
     OldName: string;
     UserDTO: TUserDTO;
 begin
@@ -189,7 +192,7 @@ begin
         Exit;
     end;
 
-    UserID := NativeInt(Item.Data);
+    UserID := Integer(Item.Data);
 
     try
         UserDTO := Default(TUserDTO);
@@ -220,9 +223,9 @@ procedure TWorkspaceManagerForm.AdjustColumnWidth;
 begin
     if not Assigned(lvWorkspaces) or (lvWorkspaces.Handle = 0) then
         Exit;
-    // Константа -2 приказывает Windows автоматически растянуть
+    // Константа LVSCW_AUTOSIZE_USEHEADER (-2) приказывает Windows автоматически растянуть
     // последнюю колонку на всё доступное пространство.
-    lvWorkspaces.Columns[0].Width := -2;
+    lvWorkspaces.Columns[0].Width := LVSCW_AUTOSIZE_USEHEADER;
 end;
 
 procedure TWorkspaceManagerForm.FormResize(Sender: TObject);

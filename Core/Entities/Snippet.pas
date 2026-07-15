@@ -7,12 +7,12 @@ uses
 
 type
     TSnippetDTO = record
-        ID: NativeInt;
-        UserID: NativeInt;
+        ID: Integer;
+        UserID: Integer;
         Title: string;
         Content: string;
         Comment: string;
-        CategoryID: NativeInt;
+        CategoryID: Integer;
         Category: TCategoryDTO;
         CreatedAt: Int64;
         UpdatedAt: Int64;
