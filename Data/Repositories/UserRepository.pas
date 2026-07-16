@@ -39,8 +39,8 @@ var
     User: TUserDTO;
     i: Integer;
 begin
-    if not Assigned(FConnection) or FConnection.Connected = False then
-        Exit;
+    if not Assigned(FConnection) or (FConnection.Connected = False) then
+        raise Exception.Create('Ошибка: нет подключения к базе данных (FConnection is nil/disconnected).');
 
     List := TList<TUserDTO>.Create;
     Query := TFDQuery.Create(nil);
@@ -98,8 +98,11 @@ function TUserRepository.Add(const User: TUserDTO): Integer;
 var
     NewID: Variant;
 begin
-    FConnection.ExecSQL('INSERT INTO users (name, created_at) VALUES (?, ?)', [User.Name, User.CreatedAt]);
-    NewID := FConnection.ExecSQLScalar('SELECT last_insert_rowid()');
+    // Безопасная вставка, исключающая гонку потоков
+    NewID := FConnection.ExecSQLScalar(
+        'INSERT INTO users (name, created_at) VALUES (?, ?) RETURNING id',
+        [User.Name, User.CreatedAt]
+    );
     Result := Integer(NewID);
 end;
 

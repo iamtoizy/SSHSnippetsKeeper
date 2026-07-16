@@ -26,6 +26,7 @@ type
         FRegex: TRegEx;
         FCache: TDictionary<string, TArray<TMacroToken>>;
         FCacheLock: TObject;
+        FCacheOrder: TQueue<string>; // Очередь для контроля порядка кэша
         function ParseTokens(const Text: string): TArray<TMacroToken>;
     public
         constructor Create;
@@ -44,7 +45,8 @@ uses
 constructor TMacroEngine.Create;
 begin
     inherited;
-    FCache := TDictionary < string, TArray < TMacroToken >>.Create;
+    FCache := TDictionary<string, TArray<TMacroToken>>.Create;
+    FCacheOrder := TQueue<string>.Create;
     FCacheLock := TObject.Create;
     FRegex := TRegEx.Create('\{([^}]*)\}');
 end;
@@ -52,6 +54,7 @@ end;
 destructor TMacroEngine.Destroy;
 begin
     FCache.Free;
+    FCacheOrder.Free;
     FCacheLock.Free;
     inherited;
 end;
@@ -151,7 +154,7 @@ begin
 
                 if (Args <> '') and (Args[1] = '[') then
                 begin
-                    BracketEnd := Pos(']', Args);
+                    BracketEnd := LastDelimiter(']', Args); // Ищем последнюю ']'
                     if BracketEnd > 0 then
                     begin
                         ParamStr := Copy(Args, 2, BracketEnd - 2);  // Hex:FF
@@ -245,13 +248,16 @@ begin
         if not FCache.TryGetValue(Text, Tokens) then
         begin
             Tokens := ParseTokens(Text);
-            FCache.Add(Text, Tokens);
+
+            // Если кэш переполнен, удаляем самый старый элемент по очереди
             if FCache.Count >= MAX_MACRO_CACHE then
-                for var Pair in FCache do
-                begin
-                    FCache.Remove(Pair.Key);
-                    Break;
-                end;
+            begin
+                if FCacheOrder.Count > 0 then
+                    FCache.Remove(FCacheOrder.Dequeue);
+            end;
+
+            FCache.Add(Text, Tokens);
+            FCacheOrder.Enqueue(Text);
         end;
     finally
         TMonitor.Exit(FCacheLock);

@@ -1114,8 +1114,11 @@ begin
         try
             FDBManager.OpenDatabase(OpenDialog.FileName);
             TStateMgr.Instance.OpenDatabase;
-            ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
-            LoadUsersToComboBox;
+
+            LoadUsersToComboBox;  // Сначала загружаем выпадающий список
+            cbUserChange(cbUser); // Вызываем OnChange, что инициирует ReloadUI с правильным ID
+            ClearRightPanel;      // Сбрасываем старые данные на панелях
+
             ShowSimpleToast('Менеджер сниппетов', 'База данных SQLite открыта.');
         except
             on E: Exception do
@@ -1133,8 +1136,11 @@ begin
         try
             FDBManager.CreateDatabase(SaveDialog.FileName);
             TStateMgr.Instance.CreateDatabase;
-            ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
-            LoadUsersToComboBox;
+
+            LoadUsersToComboBox;  // Сначала выпадающий список
+            cbUserChange(cbUser); // Применяем и перерисовываем дерево (ReloadUI)
+            ClearRightPanel;      // Очищаем старые артефакты
+
             ShowSimpleToast('Менеджер сниппетов', 'База данных SQLite создана.');
         except
             on E: Exception do
@@ -1193,7 +1199,11 @@ begin
     with TWorkspaceManagerForm.Create(Self, FUserService) do
     try
         if ShowModal = mrOk then
-            LoadUsersToComboBox;
+        begin
+            LoadUsersToComboBox;  // Перезагружает список пространств и ставит ItemIndex := 0
+            cbUserChange(cbUser); // Явно вызываем OnChange. Он обновит FFilterUserID и вызовет ReloadUI
+            ClearRightPanel;      // Очищаем сниппеты, т.к. активное пространство могло быть удалено
+        end;
     finally
         Free;
     end;

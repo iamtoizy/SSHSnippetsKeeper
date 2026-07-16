@@ -260,7 +260,7 @@ type
         // Генерация по кастомным правилам
         function GenerateCustomPassword(const Settings: TCustomPasswordSettings; Length: Integer; UniqueChars: Boolean): string;
         // Перегруженный метод для истории, чтобы он принимал строку описания напрямую
-        procedure AddToHistoryCustom(const Password, CustomDescription: string; Entropy: Double);
+        procedure AddToHistoryCustom(const Password, CustomDescription: string; PassLen: Integer; Entropy: Double);
     end;
 
     TWindowHelperInfo = record

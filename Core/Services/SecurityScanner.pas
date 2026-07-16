@@ -152,9 +152,9 @@ end;
 
 function TSecurityScanner.CalculateEntropy(const S: string): Double;
 var
-    CharCounts: array[Char] of Integer;
+    CharCounts: array[0..255] of Integer; // Массив всего на 1 КБ (256 * 4 байта)
     C: Char;
-    Len: Integer;
+    Len, ValidLen, I: Integer;
     Prob: Double;
 begin
     Result := 0.0;
@@ -163,16 +163,27 @@ begin
         Exit;
 
     FillChar(CharCounts, SizeOf(CharCounts), 0);
-    for C in S do
-        Inc(CharCounts[C]);
+    ValidLen := 0;
 
+    // Считаем только ASCII-символы, игнорируем кириллицу/юникод при расчете энтропии токенов
     for C in S do
     begin
-        if CharCounts[C] > 0 then
+        if Ord(C) <= 255 then
         begin
-            Prob := CharCounts[C] / Len;
-            Result := Result - (Prob * (Log2(Prob)));
-            CharCounts[C] := 0; // Сбрасываем, чтобы не считать дважды
+            Inc(CharCounts[Ord(C)]);
+            Inc(ValidLen);
+        end;
+    end;
+
+    if ValidLen = 0 then
+        Exit;
+
+    for I := 0 to 255 do
+    begin
+        if CharCounts[I] > 0 then
+        begin
+            Prob := CharCounts[I] / ValidLen;
+            Result := Result - (Prob * Log2(Prob));
         end;
     end;
 end;

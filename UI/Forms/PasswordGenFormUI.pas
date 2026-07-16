@@ -429,7 +429,7 @@ begin
                                 begin
                                     PoolSize := FPasswordService.GetCustomPoolSize(Settings);
                                     Entropy := FPasswordService.CalculateEntropy(seLength.Value, PoolSize);
-                                    FPasswordService.AddToHistoryCustom(RawPassword, BuildCustomDescription(Settings), Entropy);
+                                    FPasswordService.AddToHistoryCustom(RawPassword, BuildCustomDescription(Settings), seLength.Value, Entropy);
                                 end
                                 else
                                     FPasswordService.AddToHistory(RawPassword, FSelectedPreset, seLength.Value);

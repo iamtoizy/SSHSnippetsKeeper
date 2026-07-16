@@ -7,7 +7,8 @@ uses
     System.SysUtils,
     Core.Interfaces,
     System.Generics.Collections,
-    Winapi.Windows;
+    Winapi.Windows,
+    System.SyncObjs;
 
 type
     TPasswordHistoryBuffer = class
@@ -43,7 +44,8 @@ type
 
             MAX_HISTORY_LEN = 512;
     private
-        FHistory: TList<TPasswordHistoryItem>;
+        FHistory: TPasswordHistoryBuffer;
+        FHistoryLock: TCriticalSection;
 
         // Вспомогательный метод: Фильтрует строку, удаляя из нее запрещенные символы
         function FilterForbiddenChars(const Source, Forbidden: string): string;
@@ -61,7 +63,9 @@ type
         function IsValidForActiveDirectory(const Pwd: string): Boolean;
 
         // История
-        procedure AddToHistory(const Password: string; Preset: TPasswordPreset; PassLen: Integer);
+        procedure AddToHistory(const Password: string; Preset: TPasswordPreset; PassLen: Integer); overload;
+        procedure AddToHistoryCustom(const Password, CustomDescription: string; PassLen: Integer; Entropy: Double);
+
         function GetHistory: TArray<TPasswordHistoryItem>;
         procedure ClearHistory;
 
@@ -78,7 +82,6 @@ type
         function GetPoolSize(Preset: TPasswordPreset): Integer;
         function CalculateEntropy(Length, PoolSize: Integer): Double;
         function GenerateCustomPassword(const Settings: TCustomPasswordSettings; Length: Integer; UniqueChars: Boolean): string;
-        procedure AddToHistoryCustom(const Password, CustomDescription: string; Entropy: Double);
     end;
 
 function RtlGenRandom(RandomBuffer: Pointer; RandomBufferLength: ULONG): BOOLEAN; stdcall; external 'advapi32.dll' name 'SystemFunction036';
@@ -153,18 +156,16 @@ begin
 end;
 
 procedure TPasswordService.AddToHistory(const Password: string; Preset: TPasswordPreset; PassLen: Integer);
-var
-    Item: TPasswordHistoryItem;
 begin
-    Item.Password := Password;
-    Item.PresetName := GetPresetDescription(Preset);
-    Item.Entropy := CalculateEntropy(PassLen, GetPoolSize(Preset));
-    Item.CreatedAt := Now;
-
-    FHistory.Add(Item);
+    AddToHistoryCustom(
+        Password,
+        GetPresetDescription(Preset),
+        PassLen,
+        CalculateEntropy(PassLen, GetPoolSize(Preset))
+    );
 end;
 
-procedure TPasswordService.AddToHistoryCustom(const Password, CustomDescription: string; Entropy: Double);
+procedure TPasswordService.AddToHistoryCustom(const Password, CustomDescription: string; PassLen: Integer; Entropy: Double);
 var
     Item: TPasswordHistoryItem;
 begin
@@ -173,9 +174,12 @@ begin
     Item.Entropy := Entropy;
     Item.CreatedAt := Now;
 
-    FHistory.Insert(0, Item);
-    while FHistory.Count > 20 do
-        FHistory.Delete(FHistory.Count - 1);
+    FHistoryLock.Acquire;
+    try
+        FHistory.Add(Item);
+    finally
+        FHistoryLock.Release;
+    end;
 end;
 
 function TPasswordService.CalculateEntropy(Length, PoolSize: Integer): Double;
@@ -331,11 +335,13 @@ end;
 constructor TPasswordService.Create;
 begin
     inherited Create;
-    FHistory := TList<TPasswordHistoryItem>.Create;
+    FHistory := TPasswordHistoryBuffer.Create(MAX_HISTORY_LEN); // Используем буфер
+    FHistoryLock := TCriticalSection.Create; // Инициализируем лок
 end;
 
 destructor TPasswordService.Destroy;
 begin
+    FHistoryLock.Free;
     FHistory.Free;
     inherited Destroy;
 end;
