@@ -12,17 +12,9 @@ uses
     ;
 
 type
-    TWindowHelperInfo = record
-        Handle: HWND;
-        Parent: HWND;
-        ClassName: string;
-        ParentClassName: string;
-        WindowText: string;
-    end;
-
-    TWindowHelper = class(TObject, ITextExecutor)
+    TWindowHelper = class(TObject, IWindowHelper, ITextExecutor)
     private
-        FWindow: TWindowHelperInfo;
+        FWindowHelperInfo: TWindowHelperInfo;
         FMacroEngine: TMacroEngine;
         FMacroThread: TMacroThread;
         FSettingsManager: ISettingsManager;
@@ -44,13 +36,14 @@ type
         procedure TypeTextIntoWindow(const Text: string);
         procedure TypeTextIntoWindowWithContext(const Text: string; Context: TMacroContext);
         procedure SetTargetWindow(Handle: HWND);
+        function GetWindowInfo: TWindowHelperInfo;
 
         // ITextExecutor
         procedure TypeRawText(const Text: string);
         procedure PressEnter;
         procedure PressKey(Key: Word);
 
-        property Window: TWindowHelperInfo read FWindow;
+        property Window: TWindowHelperInfo read FWindowHelperInfo;
         property MacroEngine: TMacroEngine read FMacroEngine;
     end;
 
@@ -111,11 +104,16 @@ end;
 
 procedure TWindowHelper.Reset;
 begin
-    FWindow.Handle := 0;
-    FWindow.Parent := 0;
-    FWindow.ClassName := '';
-    FWindow.ParentClassName := '';
-    FWindow.WindowText := '';
+    FWindowHelperInfo.Handle := 0;
+    FWindowHelperInfo.Parent := 0;
+    FWindowHelperInfo.ClassName := '';
+    FWindowHelperInfo.ParentClassName := '';
+    FWindowHelperInfo.WindowText := '';
+end;
+
+function TWindowHelper.GetWindowInfo: TWindowHelperInfo;
+begin
+    Result := FWindowHelperInfo;
 end;
 
 function TWindowHelper.GetWindowUnderCursor: Boolean;
@@ -133,18 +131,18 @@ begin
     if TargetWnd = 0 then
         Exit(False);
 
-    FWindow.Handle := TargetWnd;
+    FWindowHelperInfo.Handle := TargetWnd;
 
     if GetClassName(TargetWnd, Buffer, Length(Buffer)) > 0 then
-        FWindow.ClassName := string(Buffer);
+        FWindowHelperInfo.ClassName := string(Buffer);
 
     if GetWindowText(TargetWnd, Buffer, Length(Buffer)) > 0 then
-        FWindow.WindowText := string(Buffer);
+        FWindowHelperInfo.WindowText := string(Buffer);
 
-    FWindow.Parent := GetAncestor(TargetWnd, GA_PARENT);
+    FWindowHelperInfo.Parent := GetAncestor(TargetWnd, GA_PARENT);
 
-    if (FWindow.Parent <> 0) and (GetClassName(FWindow.Parent, Buffer, Length(Buffer)) > 0) then
-        FWindow.ParentClassName := string(Buffer);
+    if (FWindowHelperInfo.Parent <> 0) and (GetClassName(FWindowHelperInfo.Parent, Buffer, Length(Buffer)) > 0) then
+        FWindowHelperInfo.ParentClassName := string(Buffer);
 
     Result := True;
 end;
@@ -223,10 +221,10 @@ procedure TWindowHelper.TypeRawText(const Text: string);
 var
     I: Integer;
 begin
-    if FWindow.Handle = 0 then
+    if FWindowHelperInfo.Handle = 0 then
         Exit;
 
-    SetForegroundWindow(FWindow.Handle);
+    SetForegroundWindow(FWindowHelperInfo.Handle);
     Sleep(FSettingsManager.Data.WindowHelper.ActivationDelay);
 
     ActivateTargetWindow; // либо вообще SetForegroundWindow(FWindow.Handle);
@@ -337,13 +335,13 @@ var
 begin
     CurrentThread := GetCurrentThreadId;
 
-    TargetThread := GetWindowThreadProcessId(FWindow.Handle, nil);
+    TargetThread := GetWindowThreadProcessId(FWindowHelperInfo.Handle, nil);
 
     AttachThreadInput(CurrentThread, TargetThread, True);
 
     try
-        SetForegroundWindow(FWindow.Handle);
-        Winapi.Windows.SetFocus(FWindow.Handle);
+        SetForegroundWindow(FWindowHelperInfo.Handle);
+        Winapi.Windows.SetFocus(FWindowHelperInfo.Handle);
     finally
         AttachThreadInput(CurrentThread, TargetThread, False);
     end;
@@ -354,20 +352,20 @@ var
     Buffer: array[0..255] of Char;
 begin
     Reset;
-    FWindow.Handle := Handle;
+    FWindowHelperInfo.Handle := Handle;
 
     if Handle <> 0 then
     begin
         if GetClassName(Handle, Buffer, Length(Buffer)) > 0 then
-            FWindow.ClassName := string(Buffer);
+            FWindowHelperInfo.ClassName := string(Buffer);
 
         if GetWindowText(Handle, Buffer, Length(Buffer)) > 0 then
-            FWindow.WindowText := string(Buffer);
+            FWindowHelperInfo.WindowText := string(Buffer);
 
-        FWindow.Parent := GetAncestor(Handle, GA_PARENT);
+        FWindowHelperInfo.Parent := GetAncestor(Handle, GA_PARENT);
 
-        if (FWindow.Parent <> 0) and (GetClassName(FWindow.Parent, Buffer, Length(Buffer)) > 0) then
-            FWindow.ParentClassName := string(Buffer);
+        if (FWindowHelperInfo.Parent <> 0) and (GetClassName(FWindowHelperInfo.Parent, Buffer, Length(Buffer)) > 0) then
+            FWindowHelperInfo.ParentClassName := string(Buffer);
     end;
 end;
 

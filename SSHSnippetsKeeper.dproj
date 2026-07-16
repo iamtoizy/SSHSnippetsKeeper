@@ -118,11 +118,13 @@
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
-        <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
+        <DCC_Define>DEBUG;FastMM_FullDebugMode;FastMM_EnableMemoryLeakReporting;$(DCC_Define)</DCC_Define>
         <DCC_Optimize>false</DCC_Optimize>
         <DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
         <DCC_RangeChecking>true</DCC_RangeChecking>
         <DCC_IntegerOverflowCheck>true</DCC_IntegerOverflowCheck>
+        <DCC_MapFile>3</DCC_MapFile>
+        <DCC_UnitSearchPath>C:\DC\FastMM5;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
         <VerInfo_Locale>1033</VerInfo_Locale>
@@ -166,7 +168,7 @@
         <DCCReference Include="Common\ArrayHelper.pas"/>
         <DCCReference Include="Automation\WindowHelper.pas"/>
         <DCCReference Include="UI\Forms\AddEditSnippetUI.pas">
-            <Form>AddEditSnippet</Form>
+            <Form>AddEditSnippetForm</Form>
         </DCCReference>
         <DCCReference Include="UI\Controls\HintTextEdit.pas"/>
         <DCCReference Include="UI\Controls\HintTextMemo.pas"/>

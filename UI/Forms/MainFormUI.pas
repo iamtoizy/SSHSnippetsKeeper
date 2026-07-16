@@ -34,7 +34,9 @@ uses
     GlobalHotkeyManager,
     Settings,
     WindowHelper,
-    Core.AppContext;
+    Core.AppContext,
+    System.Threading
+    ;
 
 type
     TSnippetField = (sfContent, sfComment);
@@ -139,7 +141,7 @@ type
         FErrorHandler: IUIErrorHandler;
         FAppContext: IAppContext;
         FSettingsManager: ISettingsManager;
-        FWindowHelper: TWindowHelper;
+        FWindowHelper: IWindowHelper;
         FDBManager: IDatabaseManager;
         FHotkeyMgr: TGlobalHotkeyManager;
         FSnippetService: ISnippetService;
@@ -147,6 +149,7 @@ type
         FTagService: ITagService;
         FUserService: IUserService;
         FPasswordService: IPasswordService;
+        FSearchTask: ITask;
         procedure ApplyTagFilter(TagID: Integer; const TagName: string);
         procedure ClearTagFilter;
         procedure FillSnippetListView(const Snippets: TArray<TSnippetDTO>);
@@ -177,6 +180,9 @@ type
         procedure ClearRightPanel;
         function GetWorkspaceUserID(Node: TTreeNode): Integer;
         procedure CloseDatabase;
+        //
+        procedure PerformSearchAsync(const Mask: string);
+        procedure DisplaySearchResults(const Results: TArray<TSnippetDTO>);
     protected
         procedure WMActivate(var Msg: TWMActivate); message WM_ACTIVATE;
     public
@@ -214,7 +220,8 @@ uses
     CommonConsts,
     SnippetRunner,
     QuickSearchFormUI,
-    PasswordGenFormUI;
+    PasswordGenFormUI,
+    FireDAC.Comp.Client;
 
 const
     PRESERVE_CATEGORY_EMPTY_ID = -999;
@@ -250,7 +257,6 @@ begin
     WinMonitor.StopMonitoring;
     RemoveProp(Self.Handle, PChar(UNIQUE_APP_STR));
     FHotkeyMgr.Free;
-    FWindowHelper.Free;
 end;
 
 procedure TMainForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
@@ -486,6 +492,11 @@ begin
     UpdateMenuState;
 end;
 
+procedure TMainForm.DisplaySearchResults(const Results: TArray<TSnippetDTO>);
+begin
+    FillSnippetListView(Results);
+end;
+
 procedure TMainForm.DoAddCategory;
 var
     Node: TTreeNode;
@@ -717,15 +728,10 @@ begin
     FUserService := AppContext.UserService;
     FPasswordService := AppContext.PasswordService;
     FSettingsManager := AppContext.SettingsManager;
-    FWindowHelper := TWindowHelper.Create(FSettingsManager);
+    FWindowHelper := AppContext.WindowHelper;
 
     FHotkeyMgr := TGlobalHotkeyManager.Create(
-        FSnippetService,
-        FUserService,
-        FPasswordService,
-        FUserID,
-        FDBManager,
-        FWindowHelper
+        AppContext
     );
     FHotkeyMgr.StartListening;
 
@@ -784,18 +790,18 @@ begin
         Exit;
     end;
 
-    AddEditSnippet := TAddEditSnippet.Create(Application, FAppContext);
+    AddEditSnippetForm := TAddEditSnippet.Create(Application, FAppContext);
     try
-        AddEditSnippet.CategoryID := CategoryID;
-        AddEditSnippet.UserID := TargetUserID;
+        AddEditSnippetForm.CategoryID := CategoryID;
+        AddEditSnippetForm.UserID := TargetUserID;
 
         var NewSnippet := Default(TSnippetDTO);
-        AddEditSnippet.Prepare(False, NewSnippet, CategoryID, TargetUserID);
+        AddEditSnippetForm.Prepare(False, NewSnippet, CategoryID, TargetUserID);
 
-        if AddEditSnippet.ShowModal = mrOk then
+        if AddEditSnippetForm.ShowModal = mrOk then
             ReloadUI(CategoryID);
     finally
-        AddEditSnippet.Free;
+        AddEditSnippetForm.Free;
     end;
 end;
 
@@ -819,15 +825,15 @@ begin
         CategoryID := Snippet.CategoryID;
 
 
-    AddEditSnippet := TAddEditSnippet.Create(MainForm, FAppContext);
+    AddEditSnippetForm := TAddEditSnippet.Create(MainForm, FAppContext);
     try
-        AddEditSnippet.Snippet := Snippet;
-        AddEditSnippet.CategoryID := CategoryID;
-        AddEditSnippet.UserID := Snippet.UserID;
+        AddEditSnippetForm.Snippet := Snippet;
+        AddEditSnippetForm.CategoryID := CategoryID;
+        AddEditSnippetForm.UserID := Snippet.UserID;
 
-        AddEditSnippet.Prepare(True, Snippet, CategoryID, Snippet.UserID);
+        AddEditSnippetForm.Prepare(True, Snippet, CategoryID, Snippet.UserID);
 
-        if AddEditSnippet.ShowModal = mrOk then
+        if AddEditSnippetForm.ShowModal = mrOk then
         begin
             if tvCategories.Selected <> nil then
                 ReloadUI(Integer(tvCategories.Selected.Data))
@@ -835,7 +841,7 @@ begin
                 ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
         end;
     finally
-        AddEditSnippet.Free;
+        AddEditSnippetForm.Free;
     end;
 
     ebSearch.OnChange(ebSearch);
@@ -1096,12 +1102,8 @@ begin
 end;
 
 procedure TMainForm.ebSearchChange(Sender: TObject);
-var
-    Snippets: TArray<TSnippetDTO>;
 begin
-    // Передаем FFilterUserID (текущее выбранное пространство) напрямую в БД через сервис
-    Snippets := FSnippetService.SearchSnippets(ebSearch.Text, rbFTS.Checked, FFilterUserID);
-    FillSnippetListView(Snippets);
+    PerformSearchAsync(ebSearch.Text);
 end;
 
 procedure TMainForm.nOpenDatabaseClick(Sender: TObject);
@@ -1299,6 +1301,81 @@ begin
     finally
         Free;
     end;
+end;
+
+procedure TMainForm.PerformSearchAsync(const Mask: string);
+var
+    TaskUserID: Integer;
+    IsFTS: Boolean;
+    SearchStr: string;
+begin
+    SearchStr := Trim(Mask);
+
+    // Отменяем старую задачу в любом случае (даже если в строке 1 символ)
+    if Assigned(FSearchTask) then
+        FSearchTask.Cancel;
+
+    // Если строка пустая - возвращаем пользователю обычный список его категории
+    if SearchStr.IsEmpty then
+    begin
+        RefreshCurrentSnippetList; // Восстанавливаем список
+        Exit;
+    end;
+
+    // Ждем минимум 3 символа для старта тяжелого запроса
+    if SearchStr.Length < 3 then
+        Exit;
+
+    // Захватываем параметры UI для передачи в фон
+    TaskUserID := FFilterUserID;
+    IsFTS := rbFTS.Checked;
+
+    FSearchTask := TTask.Run(
+        procedure
+        var
+            BgConnection: TComponent;
+            BgService: ISnippetService;
+            Results: TArray<TSnippetDTO>;
+        begin
+            try
+                // Создаем изолированный сервис
+                BgService := FAppContext.CreateIsolatedSnippetService(BgConnection);
+                try
+                    // Проверяем, не успел ли пользователь ввести новую букву
+                    if TTask.CurrentTask.Status = TTaskStatus.Canceled then Exit;
+
+                    // Выполняем поиск
+                    Results := BgService.SearchSnippets(SearchStr, IsFTS, TaskUserID);
+
+                    if TTask.CurrentTask.Status = TTaskStatus.Canceled then Exit;
+
+                    // Синхронизируем с главным потоком
+                    TThread.Queue(nil,
+                        procedure
+                        begin
+                            DisplaySearchResults(Results);
+                        end
+                    );
+                finally
+                    // Обязательно освобождаем коннект БД
+                    if Assigned(BgConnection) then
+                        BgConnection.Free;
+                end;
+            except
+                on E: Exception do
+                begin
+                    // ЕСЛИ В ФОНЕ ПРОИЗОШЛА ОШИБКА БД, МЫ ДОЛЖНЫ ЭТО УВИДЕТЬ!
+                    var ErrMsg := E.Message;
+                    TThread.Queue(nil,
+                        procedure
+                        begin
+                            FErrorHandler.ShowError('Ошибка фонового поиска: ' + ErrMsg);
+                        end
+                    );
+                end;
+            end;
+        end
+    );
 end;
 
 procedure TMainForm.rbTextClick(Sender: TObject);

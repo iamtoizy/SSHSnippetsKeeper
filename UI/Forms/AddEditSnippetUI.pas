@@ -147,7 +147,7 @@ type
     end;
 
 var
-    AddEditSnippet: TAddEditSnippet;
+    AddEditSnippetForm: TAddEditSnippet;
 
 implementation
 

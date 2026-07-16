@@ -42,8 +42,6 @@ type
         FDGUIxWaitCursor: TFDGUIxWaitCursor;
         FDPhysSQLiteDriverLink: TFDPhysSQLiteDriverLink;
         FDScript: TFDScript;
-        procedure DataModuleCreate(Sender: TObject);
-        procedure DataModuleDestroy(Sender: TObject);
     private
         procedure InitializeDatabase(Filename: string);
         procedure ApplyPRAGMA;
@@ -54,6 +52,7 @@ type
         procedure OpenDatabase(const Filename: string);
         procedure CloseDatabase;
         function IsConnected: Boolean;
+        function GetConnectionString: string;
     end;
 
 var
@@ -62,16 +61,6 @@ var
 implementation
 
 {$R *.dfm}
-
-procedure TAppDatabase.DataModuleCreate(Sender: TObject);
-begin
-//
-end;
-
-procedure TAppDatabase.DataModuleDestroy(Sender: TObject);
-begin
-//
-end;
 
 procedure TAppDatabase.CreateDatabase(const Filename: string);
 begin
@@ -92,8 +81,6 @@ end;
 
 procedure TAppDatabase.InitializeDatabase(Filename: string);
 begin
-    // Вместо дублирования кода просто вызываем OpenDatabase,
-    // который всё подключит и применит PRAGMA
     OpenDatabase(Filename);
 
     FDScript.Connection := FDConnection;
@@ -160,11 +147,16 @@ procedure TAppDatabase.FlushToDisk;
 begin
     if FDConnection.Connected then
     begin
-        // Принудительный checkpoint: все данные из WAL → основной файл
+        // Принудительный checkpoint: все данные из WAL -> основной файл
         FDConnection.ExecSQL('PRAGMA wal_checkpoint(TRUNCATE)');
         // Освобождаем -wal и -shm файлы
         FDConnection.ExecSQL('PRAGMA wal_checkpoint(PASSIVE)');
     end;
+end;
+
+function TAppDatabase.GetConnectionString: string;
+begin
+    Result := FDConnection.Params.Text;
 end;
 
 end.

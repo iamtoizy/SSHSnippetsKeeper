@@ -1,5 +1,7 @@
 unit GlobalHotkeyManager;
 
+{$DEFINE FastMM_FullDebugMode}
+
 interface
 
 uses
@@ -11,7 +13,8 @@ uses
     WindowMonitor,
     Core.Interfaces,
     PasswordGenFormUI,
-    WindowHelper
+    WindowHelper,
+    Core.AppContext
     ;
 
 type
@@ -22,24 +25,12 @@ type
             HOTKEY_ID_PASSGEN = 1002;
     private
         FWindowHandle: Winapi.Windows.HWND;
-        FSnippetService: ISnippetService;
-        FUserService: IUserService;
-        FDBManager: IDatabaseManager;
-        FPasswordService: IPasswordService;
-        FUserID: Integer;
-        FWindowHelper: TWindowHelper;
+        FAppContext: IAppContext;
         procedure WndProc(var Msg: TMessage);
         procedure OnHUDHotkeyTriggered;
         procedure OnPassGenHotkeyTriggered;
     public
-        constructor Create(
-            SnippetService: ISnippetService;
-            UserService: IUserService;
-            PasswordService: IPasswordService;
-            UserID: Integer;
-            DBManager: IDatabaseManager;
-            WindowHelper: TWindowHelper
-        );
+        constructor Create(AppContext: IAppContext);
         destructor Destroy; override;
         procedure StartListening;
         procedure StopListening;
@@ -51,22 +42,10 @@ uses
     System.Classes,
     QuickSearchFormUI;
 
-constructor TGlobalHotkeyManager.Create(
-    SnippetService: ISnippetService;
-    UserService: IUserService;
-    PasswordService: IPasswordService;
-    UserID: Integer;
-    DBManager: IDatabaseManager;
-    WindowHelper: TWindowHelper
-);
+constructor TGlobalHotkeyManager.Create(AppContext: IAppContext);
 begin
     inherited Create;
-    FSnippetService := SnippetService;
-    FUserService := UserService;
-    FDBManager := DBManager;
-    FUserID := UserID;
-    FPasswordService := PasswordService;
-    FWindowHelper := WindowHelper;
+    FAppContext := AppContext;
     // Создаем скрытое служебное окно для перехвата сообщений хоткея
     FWindowHandle := AllocateHWnd(WndProc);
 end;
@@ -133,11 +112,11 @@ begin
         QuickSearchForm.Hide;
         Exit;
     end;
-    if (ActiveWindowInfo.HWND = CurrentHWND) and IsWindow(CurrentHWND) and (FDBManager.IsConnected) then
+    if (ActiveWindowInfo.HWND = CurrentHWND) and IsWindow(CurrentHWND) and (FAppContext.DatabaseManager.IsConnected) then
     begin
         // 3. Создаем и показываем полупрозрачную поисковую форму поверх
         // Создаем форму БЕЗ модального режима
-        QuickSearchForm.ShowWithService(nil, FSnippetService, FUserService, FUserID, CurrentHWND, FWindowHelper);
+        QuickSearchForm.ShowWithService(nil, FAppContext, 0, CurrentHWND);
 
         // Показываем как независимое окно
         QuickSearchForm.Show;
@@ -146,7 +125,7 @@ end;
 
 procedure TGlobalHotkeyManager.OnPassGenHotkeyTriggered;
 begin
-    TPasswordGenForm.ExecuteGlobal(nil, FPasswordService);
+    TPasswordGenForm.ExecuteGlobal(nil, FAppContext.PasswordService);
 end;
 
 end.

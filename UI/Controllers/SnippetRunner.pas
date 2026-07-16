@@ -14,8 +14,7 @@ uses
     MacroInputTypes,
     UI.Interfaces,
     Core.Interfaces,
-    SecurityScanner,
-    WindowHelper
+    SecurityScanner
     ;
 
 type
@@ -23,12 +22,12 @@ type
     private
         FUserID: Integer;
         FErrorHandler: IUIErrorHandler;
-        FWindowHelper: TWindowHelper;
+        FWindowHelper: IWindowHelper;
         function SelectTargetWindow(out TargetWindow: TWindowMonitorInfo): Boolean;
         function BuildMacroContext(SnippetID: Integer; TargetHWND: HWND): TMacroContext;
     public
         class var IsExecuting: Boolean;
-        constructor Create(UserID: Integer; WindowHelper: TWindowHelper);
+        constructor Create(UserID: Integer; WindowHelper: IWindowHelper);
         procedure ExecuteSnippet(const Snippet: TSnippetDTO; RequireConfirmation: Boolean = True);
     end;
 
@@ -41,7 +40,7 @@ uses
 
 { Реализация TSnippetRunner }
 
-constructor TSnippetRunner.Create(UserID: Integer; WindowHelper: TWindowHelper);
+constructor TSnippetRunner.Create(UserID: Integer; WindowHelper: IWindowHelper);
 begin
     FUserID := UserID;
     FWindowHelper := WindowHelper;

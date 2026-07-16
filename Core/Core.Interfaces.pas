@@ -8,7 +8,9 @@ uses
     Category,
     User,
     System.Classes,
-    ArrayHelper;
+    ArrayHelper,
+    MacroInputTypes,
+    Winapi.Windows;
 
 type
     // Domain Models настроек
@@ -186,6 +188,7 @@ type
         procedure CreateDatabase(const Filename: string);
         procedure CloseDatabase;
         function IsConnected: Boolean;
+        function GetConnectionString: string;
     end;
 
     IUIErrorHandler = interface
@@ -260,6 +263,23 @@ type
         procedure AddToHistoryCustom(const Password, CustomDescription: string; Entropy: Double);
     end;
 
+    TWindowHelperInfo = record
+        Handle: HWND;
+        Parent: HWND;
+        ClassName: string;
+        ParentClassName: string;
+        WindowText: string;
+    end;
+
+    IWindowHelper = interface(ITextExecutor)
+        ['{9A6E6337-0CD6-4F38-948C-C2AFB36471F2}']
+        function GetWindowUnderCursor: Boolean;
+        procedure TypeTextIntoWindow(const Text: string);
+        procedure TypeTextIntoWindowWithContext(const Text: string; Context: TMacroContext);
+        procedure SetTargetWindow(Handle: HWND);
+        function GetWindowInfo: TWindowHelperInfo;
+    end;
+
     //  онтейнер всех глобальных сервисов приложени€
     IAppContext = interface
         ['{05B6A3A0-F265-4DF3-85A1-BF260B30957F}']
@@ -270,6 +290,9 @@ type
         function GetUserService: IUserService;
         function GetPasswordService: IPasswordService;
         function GetSettingsManager: ISettingsManager;
+        function GetWindowHelper: IWindowHelper;
+        // ‘абрика дл€ фоновых потоков. ¬озвращает готовый сервис и ссылку на коннект дл€ его очистки.
+        function CreateIsolatedSnippetService(out ABackgroundConnection: TComponent): ISnippetService;
 
         property DatabaseManager: IDatabaseManager read GetDatabaseManager;
         property SnippetService: ISnippetService read GetSnippetService;
@@ -278,6 +301,7 @@ type
         property UserService: IUserService read GetUserService;
         property PasswordService: IPasswordService read GetPasswordService;
         property SettingsManager: ISettingsManager read GetSettingsManager;
+        property WindowHelper: IWindowHelper read GetWindowHelper;
     end;
 
 implementation

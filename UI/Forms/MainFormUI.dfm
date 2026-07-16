@@ -238,6 +238,7 @@ object MainForm: TMainForm
       HotTrack = True
       HotTrackStyles = [htHandPoint, htUnderlineHot]
       TileOptions.SubLineCount = 2
+      Items.ItemData = {050000000000000000}
       ReadOnly = True
       ParentFont = False
       ParentShowHint = False
@@ -268,6 +269,7 @@ object MainForm: TMainForm
         Columns = <>
         HideSelection = False
         TileOptions.SubLineCount = 2
+        Items.ItemData = {050000000000000000}
         MultiSelect = True
         StateImages = vilTags
         TabOrder = 0

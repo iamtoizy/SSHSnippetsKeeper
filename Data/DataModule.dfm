@@ -1,6 +1,4 @@
 object AppDatabase: TAppDatabase
-  OnCreate = DataModuleCreate
-  OnDestroy = DataModuleDestroy
   Height = 480
   Width = 640
   object FDQuery: TFDQuery

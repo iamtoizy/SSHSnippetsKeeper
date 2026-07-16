@@ -9,6 +9,9 @@ program SSHSnippetsKeeper;
 {$R *.dres}
 
 uses
+{$IFDEF DEBUG}
+  FastMM5,
+{$ENDIF}
   Vcl.Forms,
   Vcl.Themes,
   Vcl.Styles,
@@ -29,7 +32,7 @@ uses
   RepositoryBase in 'Data\RepositoryBase.pas',
   ArrayHelper in 'Common\ArrayHelper.pas',
   WindowHelper in 'Automation\WindowHelper.pas',
-  AddEditSnippetUI in 'UI\Forms\AddEditSnippetUI.pas' {AddEditSnippet},
+  AddEditSnippetUI in 'UI\Forms\AddEditSnippetUI.pas' {AddEditSnippetForm},
   HintTextEdit in 'UI\Controls\HintTextEdit.pas',
   HintTextMemo in 'UI\Controls\HintTextMemo.pas',
   BaseFormUI in 'UI\Forms\BaseFormUI.pas',
@@ -75,7 +78,8 @@ uses
 var
     hMutex: THandle;
     FoundWnd: HWND;
-    SettingsManager: TSettingsManager;
+    SettingsManager: ISettingsManager;
+    WindowHelper: TWindowHelper;
     AppContext: IAppContext;
 
 // Callback-функция, которая перебирает все окна в системе
@@ -125,6 +129,8 @@ ReportMemoryLeaksOnShutdown := True;
     SettingsManager := TSettingsManager.Create;
     SettingsManager.Load;
 
+    WindowHelper := TWindowHelper.Create(SettingsManager);
+
     Application.Initialize;
     Application.MainFormOnTaskbar := True;
     TStyleManager.TrySetStyle('Glow');
@@ -136,13 +142,18 @@ ReportMemoryLeaksOnShutdown := True;
     AppContext := TAppContext.Create(
         AppDatabase,               // Реализует IDatabaseManager
         AppDatabase.FDConnection,  // Ссылка на компонент подключения
-        SettingsManager            // Настройки
+        SettingsManager,           // Настройки
+        WindowHelper               //
     );
     //
     MainForm.Initialize(AppContext);
     MainForm.Show;
     Application.CreateForm(TInputForm, InputForm);
     Application.Run;
+
+    AppContext := nil;
+    SettingsManager := nil;
+
     // Освобождаем мьютекс при закрытии программы
     if hMutex <> 0 then
     begin

@@ -46,7 +46,7 @@ type
         FTargetHWND: HWND;
         FUserID: Integer;
         FOldAppMessage: TMessageEvent;
-        FWindowHelper: TWindowHelper;
+        FWindowHelper: IWindowHelper;
         // Глобальный перехватчик подсказок
         FOldAppShowHint: TShowHintEvent;
         FDeactivateTimer: TTimer;
@@ -64,11 +64,9 @@ type
     public
         procedure ShowWithService(
             Sender: TObject;
-            SnippetService: ISnippetService;
-            UserService: IUserService;
+            AppContext: IAppContext;
             UserID: Integer;
-            CurrentHWND: HWND;
-            WindowHelper: TWindowHelper
+            CurrentHWND: HWND
         );
     end;
 
@@ -463,21 +461,19 @@ end;
 
 procedure TQuickSearchForm.ShowWithService(
     Sender: TObject;
-    SnippetService: ISnippetService;
-    UserService: IUserService;
+    AppContext: IAppContext;
     UserID: Integer;
-    CurrentHWND: HWND;
-    WindowHelper: TWindowHelper
+    CurrentHWND: HWND
 );
 var
     i: Integer;
     ForegroundThread, AppThread: DWORD;
 begin
-    FSnippetService := SnippetService;
-    FUserService := UserService;
+    FSnippetService := AppContext.SnippetService;
+    FUserService := AppContext.UserService;
     FTargetHWND := CurrentHWND;
     FUserID := UserID;
-    FWindowHelper := WindowHelper;
+    FWindowHelper := AppContext.WindowHelper;
 
     LoadUsersToComboBox;
 
