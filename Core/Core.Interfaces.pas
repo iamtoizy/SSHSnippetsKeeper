@@ -6,10 +6,72 @@ uses
     Snippet,
     Tag,
     Category,
-    User
-    ;
+    User,
+    System.Classes,
+    ArrayHelper;
 
 type
+    // Domain Models настроек
+    TWindowsNode = record
+        Name: string;
+        WinClass: string;
+    end;
+
+    TWindowHelperNode = record
+        ActivationDelay: Integer;
+        SetFocusDelay: Integer;
+        KeyPressInterval: Integer;
+    end;
+
+    TAllowedApplicationsItem = record
+        ExeName: string;
+        Enabled: Boolean;
+    end;
+
+    TAIParams = record
+        Temperature: Single;
+        MaxOutputTokens: Integer;
+        Content: string;
+        ReasoningEffort: string;
+    end;
+
+    TAIItem = record
+        Name: string;
+        APIKey: string;
+        Folder: string;
+        Model: string;
+        Agent: string;
+        Params: TAIParams;
+    end;
+
+    TAIHub = record
+        Name: string;
+        URL: string;
+        Comment: string;
+        Items: TArrayRecord<TAIItem>;
+    end;
+
+    TAppSettings = record // Можно переименовать в TAppSettings, чтобы отвязаться от слова JSON
+        AllowedWindows: TArrayRecord<TWindowsNode>;
+        WindowHelper: TWindowHelperNode;
+        AllowedApplications: TArrayRecord<TAllowedApplicationsItem>;
+        AISettings: TArrayRecord<TAIHub>;
+    end;
+
+    // Интерфейс менеджера
+    ISettingsManager = interface
+        ['{A1B2C3D4-E5F6-47A8-9B0C-1D2E3F4A5B6C}']
+        function GetSettings: TAppSettings;
+        procedure SetSettings(const Value: TAppSettings);
+        function GetBashAutocomplete: TStringList;
+
+        procedure Load;
+        procedure Save;
+
+        property Data: TAppSettings read GetSettings write SetSettings;
+        property BashAutocomplete: TStringList read GetBashAutocomplete;
+    end;
+
     // Репозитории
     ISnippetRepository = interface
         ['{DD06967A-A691-4AE5-B0E0-44595ABC6A34}']
@@ -196,6 +258,26 @@ type
         function GenerateCustomPassword(const Settings: TCustomPasswordSettings; Length: Integer; UniqueChars: Boolean): string;
         // Перегруженный метод для истории, чтобы он принимал строку описания напрямую
         procedure AddToHistoryCustom(const Password, CustomDescription: string; Entropy: Double);
+    end;
+
+    // Контейнер всех глобальных сервисов приложения
+    IAppContext = interface
+        ['{05B6A3A0-F265-4DF3-85A1-BF260B30957F}']
+        function GetDatabaseManager: IDatabaseManager;
+        function GetSnippetService: ISnippetService;
+        function GetCategoryService: ICategoryService;
+        function GetTagService: ITagService;
+        function GetUserService: IUserService;
+        function GetPasswordService: IPasswordService;
+        function GetSettingsManager: ISettingsManager;
+
+        property DatabaseManager: IDatabaseManager read GetDatabaseManager;
+        property SnippetService: ISnippetService read GetSnippetService;
+        property CategoryService: ICategoryService read GetCategoryService;
+        property TagService: ITagService read GetTagService;
+        property UserService: IUserService read GetUserService;
+        property PasswordService: IPasswordService read GetPasswordService;
+        property SettingsManager: ISettingsManager read GetSettingsManager;
     end;
 
 implementation

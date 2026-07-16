@@ -6,62 +6,31 @@ uses
     System.Classes,
     System.JSON,
     System.Generics.Collections,
-    ArrayHelper
-    ;
+    ArrayHelper,
+    Core.Interfaces;
 
 type
-    TWindowsNode = record
-        Name: string;
-        WinClass: string;
+    // Реализация менеджера
+    TSettingsManager = class(TInterfacedObject, ISettingsManager)
+    private
+        FSettings: TAppSettings;
+        FBashAutocomplete: TStringList;
+        FErrorHandler: IUIErrorHandler;
+
+        function GetSettingsPath: string;
+        function GetBashPath: string;
+        procedure ApplyDefaults;
+
+        function GetSettings: TAppSettings;
+        procedure SetSettings(const Value: TAppSettings);
+        function GetBashAutocomplete: TStringList;
+    public
+        constructor Create;
+        destructor Destroy; override;
+
+        procedure Load;
+        procedure Save;
     end;
-
-    TWindowHelperNode = record
-        ActivationDelay: Integer;
-        SetFocusDelay: Integer;
-        KeyPressInterval: Integer;
-    end;
-
-    TAllowedApplicationsItem = record
-        ExeName: string;
-        Enabled: Boolean;
-    end;
-
-    TAIParams = record
-        Temperature: Single;
-        MaxOutputTokens: Integer;
-        Content: string;
-        ReasoningEffort: string;    // none
-    end;
-
-    TAIItem = record
-        Name: string;
-        APIKey: string;
-        Folder: string;
-        Model: string;
-        Agent: string;
-        Params: TAIParams;
-    end;
-
-    TAIHub = record
-        Name: string;
-        URL: string;
-        Comment: string;
-        Items: TArrayRecord<TAIItem>;
-    end;
-
-    TJSONSettings = record
-        AllowedWindows: TArrayRecord<TWindowsNode>;
-        WindowHelper: TWindowHelperNode;
-        AllowedApplications: TArrayRecord<TAllowedApplicationsItem>;
-        AISettings: TArrayRecord<TAIHub>;
-    end;
-
-procedure LoadSettingsFromJson;
-procedure SaveSettingsToJson;
-
-var
-    SettingsRecord: TJSONSettings;
-    BashAutocomplete: TStringList;
 
 implementation
 
@@ -70,68 +39,114 @@ uses
     JSONSerializer,
     System.IOUtils,
     Winapi.Windows,
-    System.RegularExpressions
-    ;
+    UI.Interfaces;
 
-procedure LoadSettingsFromJson;
-var
-    FilePath, S: string;
+{ TSettingsManager }
+
+constructor TSettingsManager.Create;
 begin
-    FilePath := TPath.Combine(TDirectory.GetCurrentDirectory, 'settings.json');
-    if not TFile.Exists(FilePath) then
-        Exit;
-
-    // Явно указываем UTF8 при чтении, чтобы гарантированно понять русские буквы
-    S := TFile.ReadAllText(FilePath, TEncoding.UTF8);
-    SettingsRecord := DSON.fromJson<TJSONSettings>(S);
-
-    if SettingsRecord.WindowHelper.ActivationDelay = 0 then
-        SettingsRecord.WindowHelper.ActivationDelay := 100;
-    if SettingsRecord.WindowHelper.SetFocusDelay = 0 then
-        SettingsRecord.WindowHelper.SetFocusDelay := 50;
-    if SettingsRecord.WindowHelper.KeyPressInterval = 0 then
-        SettingsRecord.WindowHelper.KeyPressInterval := 10;
-
-    // Bash
-    var BashPath := TPath.Combine(TDirectory.GetCurrentDirectory, 'bash-autocomplete.txt');
-    if TFile.Exists(BashPath) then
-        BashAutocomplete.LoadFromFile(BashPath, TEncoding.UTF8);
-
-//    SaveSettingsToJson;
+    inherited Create;
+    FBashAutocomplete := TStringList.Create;
+    ApplyDefaults; // Сразу ставим дефолты на случай, если файла еще нет
+    FErrorHandler := TVCLErrorHandler.Create;
 end;
 
-procedure SaveSettingsToJson;
-var
-    S: string;
-    FilePath: string;
-    SL: TStringList;
+destructor TSettingsManager.Destroy;
 begin
-    SettingsRecord.WindowHelper.ActivationDelay := 100;
-    SettingsRecord.WindowHelper.SetFocusDelay := 50;
-    SettingsRecord.WindowHelper.KeyPressInterval := 10;
+    FBashAutocomplete.Free;
+    inherited;
+end;
 
-    // Получаем JSON строку
-    S := DSON.toJson<TJSONSettings>(SettingsRecord);
+// Безопасное получение пути рядом с exe-файлом!
+function TSettingsManager.GetSettingsPath: string;
+begin
+    Result := TPath.Combine(TPath.GetDirectoryName(ParamStr(0)), 'settings.json');
+end;
 
-    FilePath := TPath.Combine(TDirectory.GetCurrentDirectory, 'settings.json');
+function TSettingsManager.GetBashPath: string;
+begin
+    Result := TPath.Combine(TPath.GetDirectoryName(ParamStr(0)), 'bash-autocomplete.txt');
+end;
 
-    // Сохраняем через TStringList с явным маркером BOM
-    SL := TStringList.Create;
+// Установка значений по умолчанию
+procedure TSettingsManager.ApplyDefaults;
+begin
+    // Заполняем только критичные числовые значения
+    FSettings.WindowHelper.ActivationDelay := 100;
+    FSettings.WindowHelper.SetFocusDelay := 50;
+    FSettings.WindowHelper.KeyPressInterval := 10;
+end;
+
+procedure TSettingsManager.Load;
+var
+    JsonString: string;
+begin
+    // 1. Загрузка Bash-скриптов
+    if TFile.Exists(GetBashPath) then
     try
-        SL.Text := S;
-        SL.WriteBOM := True; // Записываем маркер UTF-8 (BOM)
-        SL.SaveToFile(FilePath, TEncoding.UTF8);
-    finally
-        SL.Free;
+        FBashAutocomplete.LoadFromFile(GetBashPath, TEncoding.UTF8);
+    except
+        // Игнорируем ошибку чтения, просто список будет пуст
+    end;
+
+    // 2. Загрузка JSON настроек
+    if not TFile.Exists(GetSettingsPath) then
+    begin
+        Save; // Если файла нет, сразу создаем его с дефолтными значениями
+        Exit;
+    end;
+
+    try
+        JsonString := TFile.ReadAllText(GetSettingsPath, TEncoding.UTF8);
+        FSettings := DSON.fromJson<TAppSettings>(JsonString);
+
+        // Проверка: если парсер загрузил нули (ключи отсутствовали в json), восстанавливаем дефолты
+        if FSettings.WindowHelper.ActivationDelay <= 0 then
+            FSettings.WindowHelper.ActivationDelay := 100;
+        if FSettings.WindowHelper.SetFocusDelay <= 0 then
+            FSettings.WindowHelper.SetFocusDelay := 50;
+        if FSettings.WindowHelper.KeyPressInterval <= 0 then
+            FSettings.WindowHelper.KeyPressInterval := 10;
+
+    except
+        on E: Exception do
+        begin
+            // Если ИТ-шник сломал JSON руками, мы не даем программе упасть.
+            // Мы применяем безопасные дефолты.
+            ApplyDefaults;
+            // В идеале тут залогировать ошибку или показать MessageDlg
+        end;
     end;
 end;
 
-initialization
+procedure TSettingsManager.Save;
+var
+    JsonString: string;
+begin
+    try
+        JsonString := DSON.toJson<TAppSettings>(FSettings);
 
-//SaveSettingsToJson;
-    BashAutocomplete := TStringList.Create;
+        // Современный и быстрый способ записи без TStringList.
+        // TFile.WriteAllText корректно работает с UTF8.
+        TFile.WriteAllText(GetSettingsPath, JsonString, TEncoding.UTF8);
+    except
+        // Обработка ошибки, если нет прав на запись в папку
+    end;
+end;
 
-finalization
-    BashAutocomplete.Free;
+function TSettingsManager.GetSettings: TAppSettings;
+begin
+    Result := FSettings;
+end;
+
+procedure TSettingsManager.SetSettings(const Value: TAppSettings);
+begin
+    FSettings := Value;
+end;
+
+function TSettingsManager.GetBashAutocomplete: TStringList;
+begin
+    Result := FBashAutocomplete;
+end;
 
 end.

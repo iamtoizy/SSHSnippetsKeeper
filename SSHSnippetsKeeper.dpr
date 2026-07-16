@@ -4,7 +4,6 @@ program SSHSnippetsKeeper;
 // TODO: [Feature] Горячая клавиша для повторного ввода сниппета
 // TODO: [Refactor] Добавить интерфейсы для юнит-тестирования
 // TODO: [Feature] Добавить юнит-тесты
-// TODO: [Feature] Добавить нейросети
 
 {$R '000_schema_init.res' 'Database\Schema\000_schema_init.rc'}
 {$R *.dres}
@@ -13,6 +12,7 @@ uses
   Vcl.Forms,
   Vcl.Themes,
   Vcl.Styles,
+  Vcl.StdCtrls,
   Winapi.Windows,
   MainFormUI in 'UI\Forms\MainFormUI.pas' {MainForm},
   JSONSerializer in 'Common\JSONSerializer.pas',
@@ -67,13 +67,16 @@ uses
   AISettingsFormUI in 'UI\Forms\AISettingsFormUI.pas' {AISettingsForm},
   SecurityScanner in 'Core\Services\SecurityScanner.pas',
   PasswordService in 'Core\Services\PasswordService.pas',
-  PasswordGenFormUI in 'UI\Forms\PasswordGenFormUI.pas' {PasswordGenForm};
+  PasswordGenFormUI in 'UI\Forms\PasswordGenFormUI.pas' {PasswordGenForm},
+  Core.AppContext in 'Core\Core.AppContext.pas';
 
 {$R *.res}
 
 var
     hMutex: THandle;
     FoundWnd: HWND;
+    SettingsManager: TSettingsManager;
+    AppContext: IAppContext;
 
 // Callback-функция, которая перебирает все окна в системе
 function EnumWindowsProc(Wnd: HWND; lParam: LParam): BOOL; stdcall;
@@ -90,7 +93,11 @@ begin
 end;
 
 begin
-    // 1. Создаем мьютекс
+{$IFDEF DEBUG}
+ReportMemoryLeaksOnShutdown := True;
+{$ENDIF}
+
+    // Создаем мьютекс
     hMutex := CreateMutex(nil, False, PChar(UNIQUE_APP_STR + '_Mutex'));
 
     if GetLastError = ERROR_ALREADY_EXISTS then
@@ -115,25 +122,28 @@ begin
         Exit;
     end;
 
+    SettingsManager := TSettingsManager.Create;
+    SettingsManager.Load;
+
     Application.Initialize;
     Application.MainFormOnTaskbar := True;
     TStyleManager.TrySetStyle('Glow');
     Application.Title := 'SSH Snippets Keeper';
     Application.CreateForm(TAppDatabase, AppDatabase);
-  Application.CreateForm(TMainForm, MainForm);
-  Application.CreateForm(TQuickSearchForm, QuickSearchForm);
-  MainForm.Initialize(
-        AppDatabase,
-        AppDatabase.SnippetService,
-        AppDatabase.CategoryService,
-        AppDatabase.TagService,
-        AppDatabase.UserService,
-        AppDatabase.PasswordService
+    Application.CreateForm(TMainForm, MainForm);
+    Application.CreateForm(TQuickSearchForm, QuickSearchForm);
+    //
+    AppContext := TAppContext.Create(
+        AppDatabase,               // Реализует IDatabaseManager
+        AppDatabase.FDConnection,  // Ссылка на компонент подключения
+        SettingsManager            // Настройки
     );
+    //
+    MainForm.Initialize(AppContext);
     MainForm.Show;
     Application.CreateForm(TInputForm, InputForm);
     Application.Run;
-    // --- Освобождаем мьютекс при закрытии программы ---
+    // Освобождаем мьютекс при закрытии программы
     if hMutex <> 0 then
     begin
         ReleaseMutex(hMutex);

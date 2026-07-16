@@ -14,7 +14,6 @@ object AISettingsForm: TAISettingsForm
   FormStyle = fsStayOnTop
   Menu = MainMenu
   Position = poScreenCenter
-  OnCreate = FormCreate
   OnDestroy = FormDestroy
   TextHeight = 15
   object spLeft: TSplitter
@@ -33,7 +32,6 @@ object AISettingsForm: TAISettingsForm
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 0
-    ExplicitHeight = 441
     object tvAIStructure: TTreeView
       Left = 0
       Top = 0
@@ -43,7 +41,6 @@ object AISettingsForm: TAISettingsForm
       Indent = 19
       TabOrder = 0
       OnChange = tvAIStructureChange
-      ExplicitHeight = 441
     end
   end
   object pnlClient: TPanel
@@ -54,7 +51,6 @@ object AISettingsForm: TAISettingsForm
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitHeight = 441
   end
   object pcDetails: TPageControl
     Left = 188
@@ -64,7 +60,6 @@ object AISettingsForm: TAISettingsForm
     ActivePage = tsHub
     Align = alClient
     TabOrder = 2
-    ExplicitHeight = 441
     object tsHub: TTabSheet
       Caption = 'tsHub'
       TabVisible = False

@@ -32,7 +32,8 @@ uses
     System.Threading,
     AIService,
     SynHighlighterMarkdown,
-    Vcl.Menus;
+    Vcl.Menus,
+    Settings;
 
 type
     TOriginalSnippet = record
@@ -108,11 +109,11 @@ type
         procedure tmrSecurityScanTimer(Sender: TObject);
     protected
         procedure Loaded; override;
-        procedure CMStyleChanged(var Message: TMessage); message CM_STYLECHANGED;
     private
         FSnippetService: ISnippetService;
         FTagService: ITagService;
         FIsAICanceled: Boolean;
+        FFirstShow: Boolean;
 
         FSnippet: TSnippetDTO;
         FOriginalSnippet: TOriginalSnippet;
@@ -125,6 +126,7 @@ type
         FCompletionEngine: TBashCompletionEngine;
         FErrorHandler: IUIErrorHandler;
         FAIService: IAIService;
+        FSettingsManager: ISettingsManager;
 
         procedure ShowAIOverlay;
         procedure ExecuteAICommand;
@@ -135,11 +137,13 @@ type
         procedure PopulateModels(HubIndex: Integer);
         procedure UpdateSecurityStatusUI(IsSafe: Boolean; const Reason: string);
     public
+        procedure Prepare(IsEditMode: Boolean; const ASnippet: TSnippetDTO; ACatID, AUserID: Integer);
+
         property Snippet: TSnippetDTO read FSnippet write FSnippet;
         property CategoryID: Integer read FCategoryID write FCategoryID;
         property UserID: Integer read FUserID write FUserID;
 
-        constructor Create(Owner: TComponent; SnippetService: ISnippetService; TagService: ITagService); reintroduce;
+        constructor Create(Owner: TComponent; AppContext: IAppContext); reintroduce;
     end;
 
 var
@@ -149,7 +153,6 @@ implementation
 
 uses
     UIHelpers,
-    Settings,
     System.Generics.Collections,
     System.DateUtils,
     MainFormUI,
@@ -160,22 +163,37 @@ uses
     Vcl.Graphics,
     Vcl.Styles,
     AISettingsFormUI,
-    SecurityScanner;
+    SecurityScanner,
+    System.IOUtils,
+    Winapi.ActiveX;
 
 {$R *.dfm}
 
-constructor TAddEditSnippet.Create(Owner: TComponent; SnippetService: ISnippetService; TagService: ITagService);
+constructor TAddEditSnippet.Create(Owner: TComponent; AppContext: IAppContext);
 begin
+    // Инициализируем зависимости до вызова inherited
+    FSnippetService := AppContext.SnippetService;
+    FTagService := AppContext.TagService;
+    FSettingsManager := AppContext.SettingsManager;
+
+    if Assigned(FSettingsManager) then
+        FBasicCommands := FSettingsManager.BashAutocomplete;
+
+    // Теперь VCL может безопасно создавать форму и вызывать FormCreate/Loaded
     inherited Create(Owner);
 
-    FSnippetService := SnippetService;
-    FTagService := TagService;
+    // Создаем движок автокомплита
+    FCompletionEngine := TBashCompletionEngine.Create(FBasicCommands);
+    FCompletionEngine.LoadFromJsonFile(TPath.Combine(TPath.GetDirectoryName(ParamStr(0)), 'extra-commands.json'));
+
+    // Сразу применяем подсветку синтаксиса до показа формы (не ждем таймер!)
+    SetSyntax;
 end;
 
 procedure TAddEditSnippet.bAISettingsClick(Sender: TObject);
 begin
     // Вызываем модальную форму редактора структуры ИИ
-    if TAISettingsForm.Execute then
+    if TAISettingsForm.Execute(FSettingsManager) then
     begin
         // Если пользователь сохранил настройки — обновляем выпадающие списки
         // на форме редактирования сниппета, чтобы новые модели сразу появились!
@@ -185,6 +203,12 @@ end;
 
 procedure TAddEditSnippet.FormDestroy(Sender: TObject);
 begin
+    // ИСПРАВЛЕНИЕ УТЕЧКИ TSynDropTarget:
+    // Принудительно отключаем OLE Drag&Drop до того, как уничтожатся Handle окон.
+    if mContent.HandleAllocated then RevokeDragDrop(mContent.Handle);
+    if mComment.HandleAllocated then RevokeDragDrop(mComment.Handle);
+    if mAIPrompt.HandleAllocated then RevokeDragDrop(mAIPrompt.Handle);
+
     if Assigned(FCurrentHighlighter) then
         FCurrentHighlighter.Free;
 
@@ -299,8 +323,8 @@ begin
     if cbAIHub.ItemIndex < 0 then
         Exit;
 
-  // Получаем индекс хаба, который мы сохранили, и обновляем второй список
-    SelectedHubIndex := Integer(cbAIHub.Items.Objects[cbAIHub.ItemIndex]);
+    // Получаем индекс хаба, который мы сохранили, и обновляем второй список
+    SelectedHubIndex := Integer(IntPtr(cbAIHub.Items.Objects[cbAIHub.ItemIndex]));
     PopulateModels(SelectedHubIndex);
 end;
 
@@ -312,16 +336,16 @@ begin
     if (cbAIHub.ItemIndex < 0) or (cbAIModel.ItemIndex < 0) then
         Exit;
 
-  // Получаем индексы
-    HubIdx := Integer(cbAIHub.Items.Objects[cbAIHub.ItemIndex]);
-    ModIdx := Integer(cbAIModel.Items.Objects[cbAIModel.ItemIndex]);
+    // Получаем индексы
+    HubIdx := Integer(IntPtr(cbAIHub.Items.Objects[cbAIHub.ItemIndex]));
+    ModIdx := Integer(IntPtr(cbAIModel.Items.Objects[cbAIModel.ItemIndex]));
 
-  // Вытаскиваем выбранную модель
-    SelectedAI := SettingsRecord.AISettings[HubIdx].Items[ModIdx];
+    // Вытаскиваем выбранную модель
+    SelectedAI := FSettingsManager.Data.AISettings[HubIdx].Items[ModIdx];
 
-  // Сюда можно добавить код обновления UI. Например:
-  // lbAIInfo.Caption := Format('Лимит: %d токенов, Temp: %0.1f',
-  //   [SelectedAI.Params.MaxOutputTokens, SelectedAI.Params.Temperature]);
+    // Сюда можно добавить код обновления UI. Например:
+    // lbAIInfo.Caption := Format('Лимит: %d токенов, Temp: %0.1f',
+    //   [SelectedAI.Params.MaxOutputTokens, SelectedAI.Params.Temperature]);
 end;
 
 procedure TAddEditSnippet.cbIgnoreSecurityChecksClick(Sender: TObject);
@@ -361,10 +385,10 @@ begin
     cbAIHub.Items.BeginUpdate;
     try
         cbAIHub.Clear;
-        for I := 0 to SettingsRecord.AISettings.Count - 1 do
+        for I := 0 to FSettingsManager.Data.AISettings.Count - 1 do
         begin
             // Сохраняем индекс хаба прямо в объект (без выделения памяти)
-            cbAIHub.Items.AddObject(SettingsRecord.AISettings[I].Name, TObject(I));
+            cbAIHub.Items.AddObject(FSettingsManager.Data.AISettings[I].Name, TObject(IntPtr(I)));
         end;
     finally
         cbAIHub.Items.EndUpdate;
@@ -376,13 +400,6 @@ begin
         cbAIHub.ItemIndex := 0;
         PopulateModels(0);
     end;
-end;
-
-procedure TAddEditSnippet.CMStyleChanged(var Message: TMessage);
-begin
-    TSynThemeAdapter.ApplyTheme(mContent);
-    TSynThemeAdapter.ApplyTheme(mComment);
-    TSynThemeAdapter.ApplyTheme(mAIPrompt);
 end;
 
 procedure TAddEditSnippet.ebCategorySearchChange(Sender: TObject);
@@ -407,14 +424,14 @@ begin
         Exit;
     end;
 
-    // 1. Получаем реальные индексы из структуры
-    HubIdx := Integer(cbAIHub.Items.Objects[cbAIHub.ItemIndex]);
-    ModIdx := Integer(cbAIModel.Items.Objects[cbAIModel.ItemIndex]);
+    // Получаем реальные индексы из структуры
+    HubIdx := Integer(IntPtr(cbAIHub.Items.Objects[cbAIHub.ItemIndex]));
+    ModIdx := Integer(IntPtr(cbAIModel.Items.Objects[cbAIModel.ItemIndex]));
 
-    // 2. Берем нужную модель из настроек
-    SelectedAI := SettingsRecord.AISettings[HubIdx].Items[ModIdx];
+    // Берем нужную модель из настроек
+    SelectedAI := FSettingsManager.Data.AISettings[HubIdx].Items[ModIdx];
 
-    // 3. Создаем сервис с её параметрами
+    // Создаем сервис с её параметрами
     FAIService := TYandexAIService.Create(
         SelectedAI.APIKey,
         SelectedAI.Folder,
@@ -495,6 +512,7 @@ end;
 
 procedure TAddEditSnippet.FormCreate(Sender: TObject);
 begin
+    FFirstShow := True;
     FErrorHandler := TVCLErrorHandler.Create;
 
     ebTitle.EnableHintText := True;
@@ -507,78 +525,13 @@ begin
     lvAllTags.StateImages := MainFormUI.MainForm.vilTags;
 
     SynCompletionProposal.Options := SynCompletionProposal.Options + [scoUseInsertList];
-
-    PopulateHubs; // Просто заполняем списки
-
-    pAIOverlay.Visible := False;
 end;
 
 procedure TAddEditSnippet.FormShow(Sender: TObject);
-var
-    i: Integer;
-    SnippetTags: TArray<TTagDTO>;
-    AllTags: TArray<TTagDTO>;
-    Tag: TTagDTO;
 begin
-    FIsAICanceled := False;
-
-    // Сначала загружаем ВСЕ теги в левый список через Сервис
-    if Assigned(FTagService) then
-    begin
-        AllTags := FTagService.GetAllTags;
-        TUIHelpers.FillTagList(lvAllTags, AllTags);
-    end;
-    lvSelectedTags.Items.Clear;
-
-    if FSnippet.ID > 0 then
-    begin
-        FIsEditMode := True;
-        Caption := 'Редактирование сниппета';
-
-        FOriginalSnippet.Title := FSnippet.Title;
-        FOriginalSnippet.Content := FSnippet.Content;
-        FOriginalSnippet.Comment := FSnippet.Comment;
-        FOriginalSnippet.Tags := '';
-
-        ebTitle.Text := FSnippet.Title;
-        mContent.Text := FSnippet.Content;
-        mComment.Text := FSnippet.Comment;
-
-        // Загружаем теги текущего сниппета через Сервис
-        if Assigned(FTagService) then
-        begin
-            SnippetTags := FTagService.GetSnippetTags(FSnippet.ID);
-            for Tag in SnippetTags do
-            begin
-                // Ищем тег в lvAllTags и переносим в lvSelectedTags
-                for i := lvAllTags.Items.Count - 1 downto 0 do
-                begin
-                    if Integer(lvAllTags.Items[i].Data) = Tag.ID then
-                    begin
-                        var Item := lvSelectedTags.Items.Add;
-                        Item.Caption := Tag.Name;
-                        Item.Data := Pointer(Integer(Tag.ID));
-                        Item.StateIndex := 0;
-                        lvAllTags.Items.Delete(i); // Удаляем из общего списка
-
-                        FOriginalSnippet.Tags := FOriginalSnippet.Tags + ';' + Tag.Name;
-                        Break;
-                    end;
-                end;
-            end;
-        end;
-    end
-    else
-    begin
-        FIsEditMode := False;
-        Caption := 'Добавление сниппета';
-        FOriginalSnippet.Title := '';
-        FOriginalSnippet.Content := '';
-        FOriginalSnippet.Comment := '';
-        FOriginalSnippet.Tags := '';
-    end;
-
+    // Вся тяжелая работа уже выполнена в памяти
     tmrReloadCommands.Enabled := True;
+    ebTitle.SetFocus;
 end;
 
 function TAddEditSnippet.GetSnippet: TSnippetDTO;
@@ -590,16 +543,8 @@ procedure TAddEditSnippet.Loaded;
 begin
     inherited;
 
-    FBasicCommands := Settings.BashAutocomplete;
-    FCompletionEngine := TBashCompletionEngine.Create(FBasicCommands);
-
-    FCompletionEngine.LoadFromJsonFile(ExtractFilePath(Application.ExeName) + 'extra-commands.json');
-
-    SetSyntax;
-
-    TSynThemeAdapter.ApplyTheme(mContent);
-    TSynThemeAdapter.ApplyTheme(mComment);
-    TSynThemeAdapter.ApplyTheme(mAIPrompt);
+//    FCompletionEngine := TBashCompletionEngine.Create(FBasicCommands);
+//    FCompletionEngine.LoadFromJsonFile(TPath.Combine(TPath.GetDirectoryName(ParamStr(0)), 'extra-commands.json'));
 end;
 
 procedure TAddEditSnippet.lvAllTagsDblClick(Sender: TObject);
@@ -767,15 +712,14 @@ end;
 
 procedure TAddEditSnippet.PopulateModels(HubIndex: Integer);
 var
-    J: Integer;
+    I: Integer;
 begin
     cbAIModel.Items.BeginUpdate;
     try
-        cbAIModel.Clear;
         // Берем модели только из выбранного провайдера
-        for J := 0 to SettingsRecord.AISettings[HubIndex].Items.Count - 1 do
+        for I := 0 to FSettingsManager.Data.AISettings[HubIndex].Items.Count - 1 do
         begin
-            cbAIModel.Items.AddObject(SettingsRecord.AISettings[HubIndex].Items[J].Name, TObject(J));
+            cbAIModel.Items.AddObject(FSettingsManager.Data.AISettings[HubIndex].Items[I].Name, TObject(IntPtr(I)));
         end;
     finally
         cbAIModel.Items.EndUpdate;
@@ -785,9 +729,95 @@ begin
         cbAIModel.ItemIndex := 0;
 end;
 
+procedure TAddEditSnippet.Prepare(IsEditMode: Boolean; const ASnippet: TSnippetDTO; ACatID, AUserID: Integer);
+var
+    i: Integer;
+    SnippetTags: TArray<TTagDTO>;
+    AllTags: TArray<TTagDTO>;
+    Tag: TTagDTO;
+begin
+    // 1. Принимаем входящие данные
+    FIsEditMode := IsEditMode;
+    FSnippet := ASnippet;
+    FCategoryID := ACatID;
+    FUserID := AUserID;
+
+    FIsAICanceled := False;
+
+    // 2. Применяем темы ДО показа на экране
+    TSynThemeAdapter.ApplyTheme(mContent);
+    TSynThemeAdapter.ApplyTheme(mComment);
+    TSynThemeAdapter.ApplyTheme(mAIPrompt);
+
+    // 3. Заполняем комбобоксы ДО показа (Никаких белых вспышек!)
+    PopulateHubs;
+
+    // 4. Заполняем теги и списки
+    lvAllTags.Items.BeginUpdate;
+    lvSelectedTags.Items.BeginUpdate;
+    try
+        if Assigned(FTagService) then
+        begin
+            AllTags := FTagService.GetAllTags;
+            TUIHelpers.FillTagList(lvAllTags, AllTags);
+        end;
+        lvSelectedTags.Items.Clear;
+
+        if FIsEditMode then
+        begin
+            Caption := 'Редактирование сниппета';
+
+            FOriginalSnippet.Title := FSnippet.Title;
+            FOriginalSnippet.Content := FSnippet.Content;
+            FOriginalSnippet.Comment := FSnippet.Comment;
+            FOriginalSnippet.Tags := '';
+
+            ebTitle.Text := FSnippet.Title;
+            mContent.Text := FSnippet.Content;
+            mComment.Text := FSnippet.Comment;
+
+            if Assigned(FTagService) then
+            begin
+                SnippetTags := FTagService.GetSnippetTags(FSnippet.ID);
+                for Tag in SnippetTags do
+                begin
+                    for i := lvAllTags.Items.Count - 1 downto 0 do
+                    begin
+                        if Integer(lvAllTags.Items[i].Data) = Tag.ID then
+                        begin
+                            var Item := lvSelectedTags.Items.Add;
+                            Item.Caption := Tag.Name;
+                            Item.Data := Pointer(Integer(Tag.ID));
+                            Item.StateIndex := 0;
+                            lvAllTags.Items.Delete(i);
+
+                            FOriginalSnippet.Tags := FOriginalSnippet.Tags + ';' + Tag.Name;
+                            Break;
+                        end;
+                    end;
+                end;
+            end;
+        end
+        else
+        begin
+            Caption := 'Добавление сниппета';
+            FOriginalSnippet.Title := '';
+            FOriginalSnippet.Content := '';
+            FOriginalSnippet.Comment := '';
+            FOriginalSnippet.Tags := '';
+
+            ebTitle.Text := '';
+            mContent.Text := '';
+            mComment.Text := '';
+        end;
+    finally
+        lvSelectedTags.Items.EndUpdate;
+        lvAllTags.Items.EndUpdate;
+    end;
+end;
+
 procedure TAddEditSnippet.SetSyntax;
 begin
-    FBasicCommands := Settings.BashAutocomplete;
     if Assigned(FCurrentHighlighter) then
         FreeAndNil(FCurrentHighlighter);
 
@@ -796,9 +826,14 @@ begin
     if Assigned(FBasicCommands) then
         TCustomBashSyn(FCurrentHighlighter).ExtraKeywords.AddStrings(FBasicCommands);
 
-    FCompletionEngine.ExportKeywords(FCurrentHighlighter.ExtraKeywords);
+    if Assigned(FCompletionEngine) then
+        FCompletionEngine.ExportKeywords(FCurrentHighlighter.ExtraKeywords);
 
     mContent.Highlighter := FCurrentHighlighter;
+
+//    TSynThemeAdapter.ApplyTheme(mContent);
+//    TSynThemeAdapter.ApplyTheme(mComment);
+//    TSynThemeAdapter.ApplyTheme(mAIPrompt);
 end;
 
 procedure TAddEditSnippet.ShowAIOverlay;
@@ -873,6 +908,3 @@ begin
 end;
 
 end.
-
-
-

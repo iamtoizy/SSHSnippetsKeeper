@@ -25,10 +25,11 @@ type
         function SearchSnippetsFTS(const Query: string; UserID: Integer): TArray<TSnippetDTO>;
     public
         constructor Create(
-            ASnippetRepo: ISnippetRepository;
-            ACategoryRepo: ICategoryRepository;
-            ATagRepo: ITagRepository;
-            AUserRepo: IUserRepository);
+            SnippetRepo: ISnippetRepository;
+            CategoryRepo: ICategoryRepository;
+            TagRepo: ITagRepository;
+            UserRepo: IUserRepository
+        );
 
         function CreateSnippet(const Snippet: TSnippetDTO; const TagIDs: TArray<Integer>): Integer;
         procedure UpdateSnippet(const Snippet: TSnippetDTO; const TagIDs: TArray<Integer>);
@@ -51,16 +52,17 @@ implementation
 { TSnippetService }
 
 constructor TSnippetService.Create(
-    ASnippetRepo: ISnippetRepository;
-    ACategoryRepo: ICategoryRepository;
-    ATagRepo: ITagRepository;
-    AUserRepo: IUserRepository);
+    SnippetRepo: ISnippetRepository;
+    CategoryRepo: ICategoryRepository;
+    TagRepo: ITagRepository;
+    UserRepo: IUserRepository
+);
 begin
     inherited Create;
-    FSnippetRepo := ASnippetRepo;
-    FCategoryRepo := ACategoryRepo;
-    FTagRepo := ATagRepo;
-    FUserRepo := AUserRepo;
+    FSnippetRepo := SnippetRepo;
+    FCategoryRepo := CategoryRepo;
+    FTagRepo := TagRepo;
+    FUserRepo := UserRepo;
 end;
 
 function TSnippetService.CreateSnippet(const Snippet: TSnippetDTO; const TagIDs: TArray<Integer>): Integer;

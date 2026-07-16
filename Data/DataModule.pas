@@ -11,15 +11,6 @@ uses
     FireDAC.Phys.SQLite,
     FireDAC.Comp.UI,
     Data.DB,
-    SnippetRepository,
-    CategoryRepository,
-    TagRepository,
-    UserRepository,
-    SnippetService,
-    CategoryService,
-    TagService,
-    UserService,
-    PasswordService,
     FireDAC.Comp.Script,
     Core.Interfaces,
     FireDAC.Stan.Option,
@@ -54,13 +45,6 @@ type
         procedure DataModuleCreate(Sender: TObject);
         procedure DataModuleDestroy(Sender: TObject);
     private
-        // Сервисы (Слой бизнес-логики)
-        FSnippetService: ISnippetService;
-        FCategoryService: ICategoryService;
-        FTagService: ITagService;
-        FUserService: IUserService;
-        FPasswordService: IPasswordService;
-
         procedure InitializeDatabase(Filename: string);
         procedure ApplyPRAGMA;
         procedure FlushToDisk;
@@ -70,13 +54,6 @@ type
         procedure OpenDatabase(const Filename: string);
         procedure CloseDatabase;
         function IsConnected: Boolean;
-
-        // Отдаем наружу только сервисы
-        property SnippetService: ISnippetService read FSnippetService;
-        property CategoryService: ICategoryService read FCategoryService;
-        property TagService: ITagService read FTagService;
-        property UserService: IUserService read FUserService;
-        property PasswordService: IPasswordService read FPasswordService;
     end;
 
 var
@@ -87,27 +64,8 @@ implementation
 {$R *.dfm}
 
 procedure TAppDatabase.DataModuleCreate(Sender: TObject);
-var
-    SnippetRepo: ISnippetRepository;
-    CategoryRepo: ICategoryRepository;
-    TagRepo: ITagRepository;
-    UserRepo: IUserRepository;
 begin
-    // Объекты создаются, но присваиваются переменным типа ИНТЕРФЕЙС.
-    // Благодаря этому они удалятся сами при завершении работы приложения.
-    //
-    // 1. Создаем репозитории
-    SnippetRepo := TSnippetRepository.Create(FDConnection);
-    CategoryRepo := TCategoryRepository.Create(FDConnection);
-    TagRepo := TTagRepository.Create(FDConnection);
-    UserRepo := TUserRepository.Create(FDConnection);
-
-    // 2. Создаем сервисы и присваиваем их переменным-интерфейсам
-    FSnippetService := TSnippetService.Create(SnippetRepo, CategoryRepo, TagRepo, UserRepo);
-    FCategoryService := TCategoryService.Create(CategoryRepo);
-    FTagService := TTagService.Create(TagRepo);
-    FUserService := TUserService.Create(UserRepo);
-    FPasswordService := TPasswordService.Create;
+//
 end;
 
 procedure TAppDatabase.DataModuleDestroy(Sender: TObject);

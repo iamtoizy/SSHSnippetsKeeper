@@ -21,7 +21,8 @@ uses
     Vcl.ComCtrls,
     Vcl.ExtCtrls,
     System.UITypes,
-    TrackBarEx;
+    TrackBarEx,
+    WindowHelper;
 
 type
     TQuickSearchForm = class(TForm)
@@ -45,6 +46,7 @@ type
         FTargetHWND: HWND;
         FUserID: Integer;
         FOldAppMessage: TMessageEvent;
+        FWindowHelper: TWindowHelper;
         // Глобальный перехватчик подсказок
         FOldAppShowHint: TShowHintEvent;
         FDeactivateTimer: TTimer;
@@ -60,7 +62,14 @@ type
     protected
         procedure CreateParams(var Params: TCreateParams); override;
     public
-        procedure ShowWithService(Sender: TObject; SnippetService: ISnippetService; UserService: IUserService; UserID: Integer; CurrentHWND: HWND);
+        procedure ShowWithService(
+            Sender: TObject;
+            SnippetService: ISnippetService;
+            UserService: IUserService;
+            UserID: Integer;
+            CurrentHWND: HWND;
+            WindowHelper: TWindowHelper
+        );
     end;
 
 var
@@ -452,7 +461,14 @@ begin
     end;
 end;
 
-procedure TQuickSearchForm.ShowWithService(Sender: TObject; SnippetService: ISnippetService; UserService: IUserService; UserID: Integer; CurrentHWND: HWND);
+procedure TQuickSearchForm.ShowWithService(
+    Sender: TObject;
+    SnippetService: ISnippetService;
+    UserService: IUserService;
+    UserID: Integer;
+    CurrentHWND: HWND;
+    WindowHelper: TWindowHelper
+);
 var
     i: Integer;
     ForegroundThread, AppThread: DWORD;
@@ -461,6 +477,7 @@ begin
     FUserService := UserService;
     FTargetHWND := CurrentHWND;
     FUserID := UserID;
+    FWindowHelper := WindowHelper;
 
     LoadUsersToComboBox;
 
@@ -542,7 +559,7 @@ begin
 
     Hide;
 
-    Runner := TSnippetRunner.Create(FUserID);
+    Runner := TSnippetRunner.Create(FUserID, FWindowHelper);
     try
         Runner.ExecuteSnippet(Snippet, False);
     finally

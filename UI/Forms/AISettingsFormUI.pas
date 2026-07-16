@@ -16,7 +16,7 @@ uses
     Vcl.ComCtrls,
     Vcl.ExtCtrls,
     Vcl.StdCtrls,
-    Settings;
+    Core.Interfaces;
 
 type
     // Указатели типов для хранения в свойстве Data узлов TreeView
@@ -69,23 +69,23 @@ type
         lbSystemPrompt: TLabel;
         N9: TMenuItem;
         N10: TMenuItem;
-    ebModelPath: TEdit;
-    lbModelPath: TLabel;
+        ebModelPath: TEdit;
+        lbModelPath: TLabel;
         procedure FormDestroy(Sender: TObject);
-        procedure FormCreate(Sender: TObject);
         procedure N10Click(Sender: TObject);
         procedure N2Click(Sender: TObject);
         procedure N3Click(Sender: TObject);
         procedure N6Click(Sender: TObject);
         procedure tvAIStructureChange(Sender: TObject; Node: TTreeNode);
     private
-        FLocalSettings: TJSONSettings; // Локальная копия для работы без порчи основного конфига до сохранения
+        FLocalSettings: TAppSettings; // Локальная копия для работы без порчи основного конфига до сохранения
+        FSettingsManager: ISettingsManager;
         procedure LoadStructureToTree;
         procedure ClearTreeData;
         procedure SaveCurrentEditorData;
         function CreateNodeData(AType: TNodeType; AHub, AModel: Integer): PNodeData;
     public
-        class function Execute: Boolean;
+        class function Execute(SettingsManager: ISettingsManager): Boolean;
     end;
 
 var
@@ -101,14 +101,6 @@ uses
 procedure TAISettingsForm.FormDestroy(Sender: TObject);
 begin
     ClearTreeData;
-end;
-
-procedure TAISettingsForm.FormCreate(Sender: TObject);
-begin
-  // Копируем глобальные настройки во временную структуру
-    FLocalSettings := SettingsRecord;
-    pcDetails.ActivePageIndex := 0;
-    LoadStructureToTree;
 end;
 
 { TAISettingsForm }
@@ -135,12 +127,16 @@ begin
     Result^.ModelIndex := AModel;
 end;
 
-class function TAISettingsForm.Execute: Boolean;
+class function TAISettingsForm.Execute(SettingsManager: ISettingsManager): Boolean;
 var
     Form: TAISettingsForm;
 begin
     Form := TAISettingsForm.Create(Application);
     try
+        Form.FSettingsManager := SettingsManager;
+        Form.FLocalSettings := SettingsManager.Data;
+        Form.pcDetails.ActivePageIndex := 0;
+        Form.LoadStructureToTree;
         Result := Form.ShowModal = mrOk;
     finally
         Form.Free;
@@ -177,77 +173,79 @@ end;
 
 procedure TAISettingsForm.N10Click(Sender: TObject);
 begin
-  SaveCurrentEditorData; // Сохраняем то, что открыто в редакторе прямо сейчас
+    SaveCurrentEditorData; // Сохраняем то, что открыто в редакторе прямо сейчас
 
-  // Переносим изменения из локальной структуры в глобальную
-  SettingsRecord := FLocalSettings;
+    // Переносим изменения из локальной структуры в глобальную
+    FSettingsManager.Data := FLocalSettings;
 
-  // Записываем обновленный пуленепробиваемый JSON на диск
-  SaveSettingsToJson;
+    // Записываем обновленный пуленепробиваемый JSON на диск
+    FSettingsManager.Save;
 
-  ModalResult := mrOk;
+    ModalResult := mrOk;
 end;
 
 procedure TAISettingsForm.N2Click(Sender: TObject);
 var
-  NewHub: TAIHub;
+    NewHub: TAIHub;
 begin
-  SaveCurrentEditorData; // Сохраняем старое
+    SaveCurrentEditorData; // Сохраняем старое
 
-  NewHub := Default(TAIHub);
-  NewHub.Name := 'Новый провайдер ИИ';
-  FLocalSettings.AISettings.Add(NewHub);
+    NewHub := Default(TAIHub);
+    NewHub.Name := 'Новый провайдер ИИ';
+    FLocalSettings.AISettings.Add(NewHub);
 
-  LoadStructureToTree;
-  // Фокусируемся на последнем созданном хабе
-  tvAIStructure.Items[tvAIStructure.Items.Count - 1].Selected := True;
+    LoadStructureToTree;
+    // Фокусируемся на последнем созданном хабе
+    tvAIStructure.Items[tvAIStructure.Items.Count - 1].Selected := True;
 end;
 
 procedure TAISettingsForm.N3Click(Sender: TObject);
 var
-  ActiveNode: TTreeNode;
-  Data: PNodeData;
+    ActiveNode: TTreeNode;
+    Data: PNodeData;
 begin
-  ActiveNode := tvAIStructure.Selected;
-  if (ActiveNode = nil) or (ActiveNode.Data = nil) then Exit;
+    ActiveNode := tvAIStructure.Selected;
+    if (ActiveNode = nil) or (ActiveNode.Data = nil) then
+        Exit;
 
-  Data := PNodeData(ActiveNode.Data);
+    Data := PNodeData(ActiveNode.Data);
 
-  if Data^.NodeType = ntHub then
-  begin
-    if Application.MessageBox('Удалить провайдера и ВСЕ его модели?', 'Внимание', MB_YESNO or MB_ICONWARNING) = IDYES then
-      FLocalSettings.AISettings.Delete(Data^.HubIndex);
-  end
-  else
-  begin
-    FLocalSettings.AISettings[Data^.HubIndex].Items.Delete(Data^.ModelIndex);
-  end;
+    if Data^.NodeType = ntHub then
+    begin
+        if Application.MessageBox('Удалить провайдера и ВСЕ его модели?', 'Внимание', MB_YESNO or MB_ICONWARNING) = IDYES then
+            FLocalSettings.AISettings.Delete(Data^.HubIndex);
+    end
+    else
+    begin
+        FLocalSettings.AISettings[Data^.HubIndex].Items.Delete(Data^.ModelIndex);
+    end;
 
-  LoadStructureToTree;
+    LoadStructureToTree;
 end;
 
 procedure TAISettingsForm.N6Click(Sender: TObject);
 var
-  ActiveNode: TTreeNode;
-  Data: PNodeData;
-  NewModel: TAIItem;
-  HubIdx: Integer;
+    ActiveNode: TTreeNode;
+    Data: PNodeData;
+    NewModel: TAIItem;
+    HubIdx: Integer;
 begin
-  ActiveNode := tvAIStructure.Selected;
-  if ActiveNode = nil then Exit;
+    ActiveNode := tvAIStructure.Selected;
+    if ActiveNode = nil then
+        Exit;
 
-  SaveCurrentEditorData;
-  Data := PNodeData(ActiveNode.Data);
-  HubIdx := Data^.HubIndex; // Добавляем модель в хаб, на котором (или внутри которого) стоим
+    SaveCurrentEditorData;
+    Data := PNodeData(ActiveNode.Data);
+    HubIdx := Data^.HubIndex; // Добавляем модель в хаб, на котором (или внутри которого) стоим
 
-  NewModel := Default(TAIItem);
-  NewModel.Name := 'Новая модель/Агент';
-  NewModel.Params.Temperature := 0.3;
-  NewModel.Params.MaxOutputTokens := 1024;
+    NewModel := Default(TAIItem);
+    NewModel.Name := 'Новая модель/Агент';
+    NewModel.Params.Temperature := 0.3;
+    NewModel.Params.MaxOutputTokens := 1024;
 
-  FLocalSettings.AISettings[HubIdx].Items.Add(NewModel);
+    FLocalSettings.AISettings[HubIdx].Items.Add(NewModel);
 
-  LoadStructureToTree;
+    LoadStructureToTree;
 end;
 
 procedure TAISettingsForm.SaveCurrentEditorData;

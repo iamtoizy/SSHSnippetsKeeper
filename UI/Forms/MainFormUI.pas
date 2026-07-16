@@ -31,7 +31,10 @@ uses
     Core.Interfaces,
     UI.Interfaces,
     PasswordService,
-    GlobalHotkeyManager;
+    GlobalHotkeyManager,
+    Settings,
+    WindowHelper,
+    Core.AppContext;
 
 type
     TSnippetField = (sfContent, sfComment);
@@ -134,16 +137,16 @@ type
         FFilterUserID: Integer;
         FIgnoreCategoryChange: Boolean;
         FErrorHandler: IUIErrorHandler;
-
+        FAppContext: IAppContext;
+        FSettingsManager: ISettingsManager;
+        FWindowHelper: TWindowHelper;
         FDBManager: IDatabaseManager;
         FHotkeyMgr: TGlobalHotkeyManager;
-
         FSnippetService: ISnippetService;
         FCategoryService: ICategoryService;
         FTagService: ITagService;
         FUserService: IUserService;
         FPasswordService: IPasswordService;
-
         procedure ApplyTagFilter(TagID: Integer; const TagName: string);
         procedure ClearTagFilter;
         procedure FillSnippetListView(const Snippets: TArray<TSnippetDTO>);
@@ -179,13 +182,7 @@ type
     public
         { Public declarations }
         procedure UpdateUI(const State: TBaseFormState); override;
-        procedure Initialize(
-            DBMgr: IDatabaseManager;
-            Snippet: ISnippetService;
-            Category: ICategoryService;
-            Tag: ITagService;
-            User: IUserService;
-            PasswordService: IPasswordService);
+        procedure Initialize(AppContext: IAppContext);
     end;
 
 var
@@ -200,12 +197,10 @@ uses
     Winapi.CommCtrl,
     System.Types,
     ArrayHelper,
-    Settings,
     TagEditorUI,
     User,
     Tag,
     Category,
-    WindowHelper,
     AddEditSnippetUI,
     AppStateManager,
     UIHelpers,
@@ -233,7 +228,6 @@ begin
     FUserID := 1;
     FIgnoreCategoryChange := False;
     TStateMgr.Instance.FirstRun;
-    Settings.LoadSettingsFromJson;
 
     FHotItemIndex := -1;
     FFilterByTagID := 0;
@@ -249,12 +243,6 @@ begin
 
     lvTags.OwnerData := False;
     lvSnippets.OwnerData := False;
-
-    for var Item in Settings.SettingsRecord.AllowedApplications do
-        if Item.Enabled then
-            WinMonitor.AddAllowedProcess(Item.ExeName.ToLower);
-
-    WinMonitor.StartMonitoring;
 end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
@@ -262,6 +250,7 @@ begin
     WinMonitor.StopMonitoring;
     RemoveProp(Self.Handle, PChar(UNIQUE_APP_STR));
     FHotkeyMgr.Free;
+    FWindowHelper.Free;
 end;
 
 procedure TMainForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
@@ -718,17 +707,33 @@ begin
     tvCategories.Cursor := crDefault;
 end;
 
-procedure TMainForm.Initialize(DBMgr: IDatabaseManager; Snippet: ISnippetService; Category: ICategoryService; Tag: ITagService; User: IUserService; PasswordService: IPasswordService);
+procedure TMainForm.Initialize(AppContext: IAppContext);
 begin
-    FDBManager := DBMgr;
-    FSnippetService := Snippet;
-    FCategoryService := Category;
-    FTagService := Tag;
-    FUserService := User;
-    FPasswordService := PasswordService;
+    FAppContext := AppContext;
+    FDBManager := AppContext.DatabaseManager;
+    FSnippetService := AppContext.SnippetService;
+    FCategoryService := AppContext.CategoryService;
+    FTagService := AppContext.TagService;
+    FUserService := AppContext.UserService;
+    FPasswordService := AppContext.PasswordService;
+    FSettingsManager := AppContext.SettingsManager;
+    FWindowHelper := TWindowHelper.Create(FSettingsManager);
 
-    FHotkeyMgr := TGlobalHotkeyManager.Create(FSnippetService, FUserService, FPasswordService, FUserID, FDBManager);
+    FHotkeyMgr := TGlobalHotkeyManager.Create(
+        FSnippetService,
+        FUserService,
+        FPasswordService,
+        FUserID,
+        FDBManager,
+        FWindowHelper
+    );
     FHotkeyMgr.StartListening;
+
+    for var Item in FSettingsManager.Data.AllowedApplications do
+        if Item.Enabled then
+            WinMonitor.AddAllowedProcess(Item.ExeName.ToLower);
+
+    WinMonitor.StartMonitoring;
 end;
 
 function TMainForm.IsDescendant(Parent, Node: TTreeNode): Boolean;
@@ -779,10 +784,13 @@ begin
         Exit;
     end;
 
-    AddEditSnippet := TAddEditSnippet.Create(Application, FSnippetService, FTagService);
+    AddEditSnippet := TAddEditSnippet.Create(Application, FAppContext);
     try
         AddEditSnippet.CategoryID := CategoryID;
         AddEditSnippet.UserID := TargetUserID;
+
+        var NewSnippet := Default(TSnippetDTO);
+        AddEditSnippet.Prepare(False, NewSnippet, CategoryID, TargetUserID);
 
         if AddEditSnippet.ShowModal = mrOk then
             ReloadUI(CategoryID);
@@ -810,11 +818,14 @@ begin
     else
         CategoryID := Snippet.CategoryID;
 
-    AddEditSnippet := TAddEditSnippet.Create(Application, FSnippetService, FTagService);
+
+    AddEditSnippet := TAddEditSnippet.Create(MainForm, FAppContext);
     try
         AddEditSnippet.Snippet := Snippet;
         AddEditSnippet.CategoryID := CategoryID;
         AddEditSnippet.UserID := Snippet.UserID;
+
+        AddEditSnippet.Prepare(True, Snippet, CategoryID, Snippet.UserID);
 
         if AddEditSnippet.ShowModal = mrOk then
         begin
@@ -826,6 +837,7 @@ begin
     finally
         AddEditSnippet.Free;
     end;
+
     ebSearch.OnChange(ebSearch);
 end;
 
@@ -953,7 +965,7 @@ begin
     if Item = nil then
         Exit;
 
-    Runner := TSnippetRunner.Create(FUserID);
+    Runner := TSnippetRunner.Create(FUserID, FWindowHelper);
     try
         Runner.ExecuteSnippet(ExtractSnippetByListItem(Item));
     finally

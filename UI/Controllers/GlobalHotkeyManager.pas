@@ -10,7 +10,9 @@ uses
     Vcl.Controls,
     WindowMonitor,
     Core.Interfaces,
-    PasswordGenFormUI;
+    PasswordGenFormUI,
+    WindowHelper
+    ;
 
 type
     TGlobalHotkeyManager = class
@@ -25,6 +27,7 @@ type
         FDBManager: IDatabaseManager;
         FPasswordService: IPasswordService;
         FUserID: Integer;
+        FWindowHelper: TWindowHelper;
         procedure WndProc(var Msg: TMessage);
         procedure OnHUDHotkeyTriggered;
         procedure OnPassGenHotkeyTriggered;
@@ -34,7 +37,8 @@ type
             UserService: IUserService;
             PasswordService: IPasswordService;
             UserID: Integer;
-            DBManager: IDatabaseManager
+            DBManager: IDatabaseManager;
+            WindowHelper: TWindowHelper
         );
         destructor Destroy; override;
         procedure StartListening;
@@ -52,7 +56,9 @@ constructor TGlobalHotkeyManager.Create(
     UserService: IUserService;
     PasswordService: IPasswordService;
     UserID: Integer;
-    DBManager: IDatabaseManager);
+    DBManager: IDatabaseManager;
+    WindowHelper: TWindowHelper
+);
 begin
     inherited Create;
     FSnippetService := SnippetService;
@@ -60,6 +66,7 @@ begin
     FDBManager := DBManager;
     FUserID := UserID;
     FPasswordService := PasswordService;
+    FWindowHelper := WindowHelper;
     // Создаем скрытое служебное окно для перехвата сообщений хоткея
     FWindowHandle := AllocateHWnd(WndProc);
 end;
@@ -130,7 +137,7 @@ begin
     begin
         // 3. Создаем и показываем полупрозрачную поисковую форму поверх
         // Создаем форму БЕЗ модального режима
-        QuickSearchForm.ShowWithService(nil, FSnippetService, FUserService, FUserID, CurrentHWND);
+        QuickSearchForm.ShowWithService(nil, FSnippetService, FUserService, FUserID, CurrentHWND, FWindowHelper);
 
         // Показываем как независимое окно
         QuickSearchForm.Show;

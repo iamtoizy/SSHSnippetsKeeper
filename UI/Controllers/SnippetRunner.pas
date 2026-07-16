@@ -14,7 +14,8 @@ uses
     MacroInputTypes,
     UI.Interfaces,
     Core.Interfaces,
-    SecurityScanner
+    SecurityScanner,
+    WindowHelper
     ;
 
 type
@@ -22,27 +23,28 @@ type
     private
         FUserID: Integer;
         FErrorHandler: IUIErrorHandler;
+        FWindowHelper: TWindowHelper;
         function SelectTargetWindow(out TargetWindow: TWindowMonitorInfo): Boolean;
         function BuildMacroContext(SnippetID: Integer; TargetHWND: HWND): TMacroContext;
     public
         class var IsExecuting: Boolean;
-        constructor Create(UserID: Integer);
+        constructor Create(UserID: Integer; WindowHelper: TWindowHelper);
         procedure ExecuteSnippet(const Snippet: TSnippetDTO; RequireConfirmation: Boolean = True);
     end;
 
 implementation
 
 uses
-    WindowHelper,
     ChooseTerminalWindowUI,
     InputFormUI
     ;
 
 { Реализация TSnippetRunner }
 
-constructor TSnippetRunner.Create(UserID: Integer);
+constructor TSnippetRunner.Create(UserID: Integer; WindowHelper: TWindowHelper);
 begin
     FUserID := UserID;
+    FWindowHelper := WindowHelper;
     FErrorHandler := TVCLErrorHandler.Create;
 end;
 
@@ -81,7 +83,7 @@ var
     Context: TMacroContext;
 begin
     Context := TMacroContext.Create;
-    Context.Executor := WinHelper;
+    Context.Executor := FWindowHelper;
     Context.UserCancelled := False;
     Context.SnippetID := SnippetID;
     Context.UserID := FUserID;
@@ -176,8 +178,8 @@ begin
             Context := BuildMacroContext(Snippet.ID, TargetWindow.HWND);
             SetForegroundWindow(TargetWindow.HWND);
             Sleep(50);
-            WinHelper.SetTargetWindow(TargetWindow.HWND);
-            WinHelper.TypeTextIntoWindowWithContext(Snippet.Content, Context);
+            FWindowHelper.SetTargetWindow(TargetWindow.HWND);
+            FWindowHelper.TypeTextIntoWindowWithContext(Snippet.Content, Context);
         finally
         end;
     finally

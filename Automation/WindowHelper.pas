@@ -7,7 +7,8 @@ uses
     System.SysUtils,
     MacroEngine,
     MacroThread,
-    MacroInputTypes
+    MacroInputTypes,
+    Core.Interfaces
     ;
 
 type
@@ -24,6 +25,7 @@ type
         FWindow: TWindowHelperInfo;
         FMacroEngine: TMacroEngine;
         FMacroThread: TMacroThread;
+        FSettingsManager: ISettingsManager;
 
         procedure Reset;
         procedure SendUnicodeChar(CharCode: Word);
@@ -35,7 +37,7 @@ type
         function _AddRef: Integer; stdcall;
         function _Release: Integer; stdcall;
     public
-        constructor Create;
+        constructor Create(SettingsManager: ISettingsManager);
         destructor Destroy; override;
 
         function GetWindowUnderCursor: Boolean;
@@ -52,20 +54,17 @@ type
         property MacroEngine: TMacroEngine read FMacroEngine;
     end;
 
-var
-    WinHelper: TWindowHelper;
-
 implementation
 
 uses
-    Settings,
     System.Classes;
 
 { TWindowHelper }
 
-constructor TWindowHelper.Create;
+constructor TWindowHelper.Create(SettingsManager: ISettingsManager);
 begin
-    inherited;
+//    inherited;
+    FSettingsManager := SettingsManager;
     FMacroEngine := TMacroEngine.Create;
 end;
 
@@ -191,7 +190,7 @@ begin
 
     SendInput(Length(Inputs), Inputs[0], SizeOf(TInput));
 
-    Sleep(SettingsRecord.WindowHelper.KeyPressInterval);
+    Sleep(FSettingsManager.Data.WindowHelper.KeyPressInterval);
 end;
 
 procedure TWindowHelper.PressKey(Key: Word);
@@ -209,7 +208,7 @@ begin
 
     SendInput(Length(Inputs), Inputs[0], SizeOf(TInput));
 
-    Sleep(SettingsRecord.WindowHelper.KeyPressInterval);
+    Sleep(FSettingsManager.Data.WindowHelper.KeyPressInterval);
 end;
 
 function TWindowHelper.QueryInterface(const IID: TGUID; out Obj): HResult;
@@ -228,10 +227,10 @@ begin
         Exit;
 
     SetForegroundWindow(FWindow.Handle);
-    Sleep(SettingsRecord.WindowHelper.ActivationDelay);
+    Sleep(FSettingsManager.Data.WindowHelper.ActivationDelay);
 
     ActivateTargetWindow; // либо вообще SetForegroundWindow(FWindow.Handle);
-    Sleep(SettingsRecord.WindowHelper.SetFocusDelay);
+    Sleep(FSettingsManager.Data.WindowHelper.SetFocusDelay);
 
     for I := 1 to Length(Text) do
     begin
@@ -240,7 +239,7 @@ begin
         else
             SendUnicodeChar(Ord(Text[I]));
 
-        Sleep(SettingsRecord.WindowHelper.KeyPressInterval);
+        Sleep(FSettingsManager.Data.WindowHelper.KeyPressInterval);
     end;
 end;
 
@@ -371,13 +370,5 @@ begin
             FWindow.ParentClassName := string(Buffer);
     end;
 end;
-
-initialization
-
-WinHelper := TWindowHelper.Create;
-
-finalization
-
-WinHelper.Free;
 
 end.

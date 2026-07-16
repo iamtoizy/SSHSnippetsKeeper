@@ -207,7 +207,6 @@
         <DCCReference Include="UI\Abstractions\UI.Interfaces.pas"/>
         <DCCReference Include="UI\Forms\QuickSearchFormUI.pas">
             <Form>QuickSearchForm</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="UI\Controllers\GlobalHotkeyManager.pas"/>
         <DCCReference Include="UI\Controls\TrackBarEx.pas"/>
@@ -215,14 +214,13 @@
         <DCCReference Include="UI\Services\AITextCleaner.pas"/>
         <DCCReference Include="UI\Forms\AISettingsFormUI.pas">
             <Form>AISettingsForm</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="Core\Services\SecurityScanner.pas"/>
         <DCCReference Include="Core\Services\PasswordService.pas"/>
         <DCCReference Include="UI\Forms\PasswordGenFormUI.pas">
             <Form>PasswordGenForm</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
+        <DCCReference Include="Core\Core.AppContext.pas"/>
         <RcItem Include="Database\Schema\000_schema_init.sql">
             <ContainerId>ResourceItem</ContainerId>
             <ResourceType>RCDATA</ResourceType>
@@ -264,6 +262,20 @@
             </Platforms>
             <Deployment Version="4">
                 <DeployFile LocalName="Assets\Images\main-icon\main-icon.png" Configuration="Debug" Class="UWP_DelphiLogo44"/>
+                <DeployFile LocalName="Assets\Images\main-icon\main-icon.png" Configuration="Debug" Class="UWP_DelphiLogo44">
+                    <Platform Name="Win32">
+                        <RemoteDir>Assets\</RemoteDir>
+                        <RemoteName>Logo44x44.png</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="Assets\Images\main-icon\main-icon.png" Configuration="Debug" Class="UWP_DelphiLogo44">
+                    <Platform Name="Win64">
+                        <RemoteDir>Assets\</RemoteDir>
+                        <RemoteName>Logo44x44.png</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployFile LocalName="Binary\Win32\Debug\SSHSnippetsKeeper.exe" Configuration="Debug" Class="ProjectOutput"/>
                 <DeployFile LocalName="Binary\Win32\Debug\SSHSnippetsKeeper.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win32">

@@ -194,6 +194,8 @@ object AddEditSnippet: TAddEditSnippet
         Height = 23
         Align = alLeft
         Style = csDropDownList
+        DoubleBuffered = True
+        ParentDoubleBuffered = False
         TabOrder = 2
         OnChange = cbAIHubChange
       end
@@ -233,6 +235,8 @@ object AddEditSnippet: TAddEditSnippet
             Width = 521
             Height = 17
             Align = alBottom
+            DoubleBuffered = False
+            ParentDoubleBuffered = False
             Style = pbstMarquee
             TabOrder = 1
           end
@@ -424,7 +428,6 @@ object AddEditSnippet: TAddEditSnippet
           WantTabs = True
           OnChange = mContentChange
           OnProcessCommand = mContentProcessCommand
-          ExplicitHeight = 152
         end
       end
       object tsHelp: TTabSheet
