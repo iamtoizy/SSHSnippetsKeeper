@@ -132,7 +132,7 @@ begin
         Exit;
     end;
 
-    // --- 1. АНАЛИЗ БЕЗОПАСНОСТИ ---
+    // Анализ безопасности
     if not Snippet.IsSecurityCheckIgnored then
     begin
         Security := TSecurityScanner.Create;
@@ -150,7 +150,7 @@ begin
         end;
     end;
 
-    // --- 2. ВЫБОР ОКНА И ПОДТВЕРЖДЕНИЕ ---
+    // Выбор окна и подтверждение
     if not SelectTargetWindow(TargetWindow) then
         Exit;
 
@@ -167,7 +167,7 @@ begin
             Exit;
     end;
 
-    // --- 3. ВЫПОЛНЕНИЕ МАКРОСА ---
+    // Выполнение макроса
     IsExecuting := True;
 
     // Блокируем смену фокуса для нашего процесса (ASFW_ANY = 2)

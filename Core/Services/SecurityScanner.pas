@@ -24,7 +24,7 @@ type
         FPatterns: TArray<TSecretPattern>;
         procedure InitializePatterns;
         function CalculateEntropy(const S: string): Double;
-        function HasMixedCharacters(const S: string): Boolean;
+        function IsValidSecretCandidate(const S: string): Boolean;
         function ScanByRegex(const Text: string; out Reason: string): Boolean;
         function ScanByEntropy(const Text: string; out Reason: string): Boolean;
     public
@@ -123,7 +123,7 @@ begin
         if Length(WordStr) >= 16 then
         begin
             // Проверяем, что в слове есть и буквы, и цифры (уменьшает ложные срабатывания на длинных URL)
-            if HasMixedCharacters(WordStr) then
+            if IsValidSecretCandidate(WordStr) then
             begin
                 Entropy := CalculateEntropy(WordStr);
 
@@ -138,25 +138,16 @@ begin
     end;
 end;
 
-function TSecurityScanner.HasMixedCharacters(const S: string): Boolean;
-var
-    C: Char;
-    HasLetter, HasDigit: Boolean;
+function TSecurityScanner.IsValidSecretCandidate(const S: string): Boolean;
 begin
-    HasLetter := False;
-    HasDigit := False;
+    // Секреты (токены, пароли, хэши) крайне редко содержат пробелы.
+    // Если в строке есть пробел, скорее всего это обычный текст или SQL-запрос.
+    if S.Contains(' ') then
+        Exit(False);
 
-    for C in S do
-    begin
-        if C.IsLetter then
-            HasLetter := True
-        else if C.IsDigit then
-            HasDigit := True;
-
-        if HasLetter and HasDigit then
-            Exit(True);
-    end;
-    Result := False;
+    // Дополнительно можно отсечь строки, где нет ни букв, ни цифр
+    // (например, кусок ASCII-арта), но для базовой проверки этого достаточно.
+    Result := True;
 end;
 
 function TSecurityScanner.CalculateEntropy(const S: string): Double;

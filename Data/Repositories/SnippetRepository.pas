@@ -71,10 +71,10 @@ const
         'WHERE title LIKE :m COLLATE NOCASE ' + '   OR content LIKE :m COLLATE NOCASE ' + 'ORDER BY updated_at DESC, title ASC';
     SQL_SNIPPET_SEARCH = 'SELECT s.id, s.title, s.category_id, snippet_fts.rank ' + 'FROM snippet_fts ' + 'JOIN snippets s ON s.id = snippet_fts.rowid ' +
         'WHERE snippet_fts MATCH :search ' + 'ORDER BY rank DESC';
-    SQL_SEARCH_BY_MASK_FTS = 'SELECT s.id, s.user_id, s.title, s.content, s.category_id, s.created_at, s.updated_at, snippet_fts.rank ' +
-        'FROM snippet_fts ' +
-        'JOIN snippets s ON s.rowid = snippet_fts.rowid ' + // В FTS5 rowid совпадает с ID сниппета
-        'WHERE snippet_fts MATCH :term ' + 'ORDER BY rank ASC'; // Чем меньше rank, тем точнее совпадение;
+//    SQL_SEARCH_BY_MASK_FTS = 'SELECT s.id, s.user_id, s.title, s.content, s.category_id, s.created_at, s.updated_at, snippet_fts.rank ' +
+//        'FROM snippet_fts ' +
+//        'JOIN snippets s ON s.rowid = snippet_fts.rowid ' + // В FTS5 rowid совпадает с ID сниппета
+//        'WHERE snippet_fts MATCH :term ' + 'ORDER BY rank ASC'; // Чем меньше rank, тем точнее совпадение;
     SQL_RECORD_RUN = 'INSERT INTO snippet_runs (snippet_id, run_at, executed_by_user_id) VALUES (?, strftime(''%s'', ''now''), ?)';
     SQL_GET_SNIPPET_BY_CATEGORY_ID_WITH_USER_ID = 'SELECT category_id, COUNT(*) AS cnt FROM snippets WHERE user_id = ? GROUP BY category_id';
     SQL_GET_SNIPPET_BY_CATEGORY_ID_NO_USER_ID = 'SELECT category_id, COUNT(*) AS cnt FROM snippets GROUP BY category_id';
@@ -504,6 +504,8 @@ begin
         if UserID > 0 then
             SQL := SQL + ' AND s.user_id = :uid ';
 
+        // ВАЖНО: FTS5 rank возвращает отрицательные значения (алгоритм BM25).
+        // Чем больше минус (меньше число), тем выше релевантность. Поэтому используем ASC.
         SQL := SQL + 'ORDER BY rank ASC';
 
         Query.SQL.Text := SQL;

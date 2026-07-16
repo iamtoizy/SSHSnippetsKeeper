@@ -6,9 +6,23 @@ uses
     System.Math,
     System.SysUtils,
     Core.Interfaces,
-    System.Generics.Collections;
+    System.Generics.Collections,
+    Winapi.Windows;
 
 type
+    TPasswordHistoryBuffer = class
+    private
+        FItems: TArray<TPasswordHistoryItem>;
+        FCapacity: Integer;
+        FHead: Integer;
+        FCount: Integer;
+    public
+        constructor Create(ACapacity: Integer);
+        procedure Add(const Item: TPasswordHistoryItem);
+        function ToArray: TArray<TPasswordHistoryItem>;
+        procedure Clear;
+    end;
+
     TPasswordService = class(TInterfacedObject, IPasswordService)
     private
         const
@@ -67,7 +81,51 @@ type
         procedure AddToHistoryCustom(const Password, CustomDescription: string; Entropy: Double);
     end;
 
+function RtlGenRandom(RandomBuffer: Pointer; RandomBufferLength: ULONG): BOOLEAN; stdcall; external 'advapi32.dll' name 'SystemFunction036';
+
 implementation
+
+uses
+    System.Hash;
+
+function SecureRandom(Max: Integer): Integer;
+var
+    Buffer: Cardinal;
+    UMax: Cardinal;
+    Guid: TGUID;
+    HashBytes: TBytes;
+    Product: UInt64;
+begin
+    if Max <= 0 then
+        Exit(0);
+
+    UMax := Cardinal(Max);
+
+    // В 99.99999% случаев этот цикл отработает ровно 1 раз
+    repeat
+        // Пытаемся получить 4 байта криптографически стойких случайных данных
+        if not RtlGenRandom(@Buffer, SizeOf(Buffer)) then
+        begin
+            // Fallback: если ОС вдруг откажет (что бывает крайне редко), падаем на вариант с THash
+			// CreateGUID использует системные криптографические функции (Утиль ОС)
+            CreateGUID(Guid);
+			// Хэшируем GUID через SHA256, чтобы равномерно распределить биты
+            HashBytes := THashSHA2.GetHashBytes(Guid.ToString);
+			// Берем первые 4 байта хэша
+            Move(HashBytes[0], Buffer, SizeOf(Buffer));
+        end;
+
+        // Умножаем случайное число на Max (алгоритм Fast Range, популяризован Дэниелом Лемиром)
+        Product := UInt64(Buffer) * UInt64(UMax);
+
+        // Нижние 32 бита (Product and $FFFFFFFF) служат нам "остатком".
+        // Если они меньше UMax, то это те самые "лишние карты", которые нужно отбросить
+        // для идеальной криптографии (Modulo Bias elimination).
+    until Cardinal(Product) >= UMax;
+
+    // Старшие 32 бита - это наш идеально ровный результат в диапазоне [0, Max - 1]
+    Result := Integer(Product shr 32);
+end;
 
 { TPasswordGeneratorService }
 
@@ -97,17 +155,13 @@ end;
 procedure TPasswordService.AddToHistory(const Password: string; Preset: TPasswordPreset; PassLen: Integer);
 var
     Item: TPasswordHistoryItem;
-    PoolSize: Integer;
 begin
     Item.Password := Password;
     Item.PresetName := GetPresetDescription(Preset);
-    PoolSize := GetPoolSize(Preset);
-    Item.Entropy := CalculateEntropy(PassLen, PoolSize);
+    Item.Entropy := CalculateEntropy(PassLen, GetPoolSize(Preset));
     Item.CreatedAt := Now;
 
-    FHistory.Insert(0, Item);
-    while FHistory.Count > MAX_HISTORY_LEN do
-        FHistory.Delete(FHistory.Count - 1);
+    FHistory.Add(Item);
 end;
 
 procedure TPasswordService.AddToHistoryCustom(const Password, CustomDescription: string; Entropy: Double);
@@ -190,9 +244,11 @@ var
 begin
     Result := '';
     if Length <= 0 then Exit;
-    Result := Result + FirstCharPool[Random(FirstCharPool.Length) + 1];
+
+    Result := Result + FirstCharPool[SecureRandom(FirstCharPool.Length) + 1];
+
     for I := 2 to Length do
-        Result := Result + FullPool[Random(FullPool.Length) + 1];
+        Result := Result + FullPool[SecureRandom(FullPool.Length) + 1];
 end;
 
 function TPasswordService.GenerateUniqueSequence(const FullPool, FirstCharPool: string; Length: Integer): string;
@@ -202,7 +258,7 @@ var
     ResultStr: string;
     I: Integer;
 begin
-    FirstChar := FirstCharPool[Random(FirstCharPool.Length) + 1];
+    FirstChar := FirstCharPool[SecureRandom(FirstCharPool.Length) + 1];
     ResultStr := FirstChar;
 
     RemainingPool := FullPool;
@@ -220,7 +276,7 @@ begin
     end;
 
     while ResultStr.Length < Length do
-        ResultStr := ResultStr + FullPool[Random(FullPool.Length) + 1];
+        ResultStr := ResultStr + FullPool[SecureRandom(FullPool.Length) + 1];
 
     if (Length > 2) and (Length > FullPool.Length) then
     begin
@@ -232,23 +288,11 @@ begin
 end;
 
 function TPasswordService.GenerateUUIDv4: string;
-const
-    HEX_ALL = '0123456789abcdef';
-    HEX_Y   = '89ab'; // UUIDv4 требует 8, 9, a или b в этой позиции
 var
-    I: Integer;
+  Guid: TGUID;
 begin
-    Result := '';
-    for I := 1 to 8 do Result := Result + HEX_ALL[Random(16) + 1];
-    Result := Result + '-';
-    for I := 1 to 4 do Result := Result + HEX_ALL[Random(16) + 1];
-    Result := Result + '-4'; // Версия 4
-    for I := 1 to 3 do Result := Result + HEX_ALL[Random(16) + 1];
-    Result := Result + '-';
-    Result := Result + HEX_Y[Random(4) + 1];
-    for I := 1 to 3 do Result := Result + HEX_ALL[Random(16) + 1];
-    Result := Result + '-';
-    for I := 1 to 12 do Result := Result + HEX_ALL[Random(16) + 1];
+  CreateGUID(Guid);
+  Result := LowerCase(Copy(GuidToString(Guid), 2, 36));
 end;
 
 function TPasswordService.HasAnyChar(const Str, Chars: string): Boolean;
@@ -315,10 +359,9 @@ begin
     if Result.Length <= 1 then
         Exit;
 
-    // Идеальное перемешивание напрямую в строке (Delphi использует индексацию с 1)
     for I := Result.Length downto 2 do
     begin
-        J := Random(I) + 1; // Возвращает случайный индекс от 1 до I
+        J := SecureRandom(I) + 1; // Заменили Random на SecureRandom
         Temp := Result[I];
         Result[I] := Result[J];
         Result[J] := Temp;
@@ -331,37 +374,44 @@ var
     I: Integer;
     Positions: TList<Integer>;
     RndIdx, TargetPos: Integer;
+    SB: TStringBuilder;
 begin
     if Length <= 0 then Exit('');
 
-    // 1. Собираем пул на основе чекбоксов
-    FullPool := '';
-    if Settings.UseLower then FullPool := FullPool + ALPHA_LOWER;
-    if Settings.UseUpper then FullPool := FullPool + ALPHA_UPPER;
-    if Settings.UseNumbers then FullPool := FullPool + NUMBERS;
-    if Settings.UseSymbols then FullPool := FullPool + SYMBOLS_STD;
+    // Быстро собираем базовый пул через TStringBuilder (без лишней аллокации памяти)
+    SB := TStringBuilder.Create;
+    try
+        if Settings.UseLower then SB.Append(ALPHA_LOWER);
+        if Settings.UseUpper then SB.Append(ALPHA_UPPER);
+        if Settings.UseNumbers then SB.Append(NUMBERS);
+        if Settings.UseSymbols then SB.Append(SYMBOLS_STD);
 
-    // 2. Подмешиваем кастомные символы (без дублей)
+        FullPool := SB.ToString;
+    finally
+        SB.Free;
+    end;
+
+    // Подмешиваем кастомные символы (без дублей)
     for I := 1 to Settings.IncludeChars.Length do
     begin
         if Pos(Settings.IncludeChars[I], FullPool) = 0 then
             FullPool := FullPool + Settings.IncludeChars[I];
     end;
 
-    // 3. Вырезаем исключенные символы
+    // Вырезаем исключенные символы
     FullPool := FilterForbiddenChars(FullPool, Settings.ExcludeChars);
 
-    // Защита от пустого пула
+    // Защита от пустого пула (например, пользователь снял все чекбоксы и ничего не вписал)
     if FullPool.IsEmpty then
         FullPool := ALPHA_LOWER + NUMBERS;
 
-    // 4. Генерируем стандартный скелет
+    // Генерируем стандартный скелет
     if UniqueChars then
         Result := GenerateUniqueSequence(FullPool, FullPool, Length)
     else
         Result := GenerateStandardSequence(FullPool, FullPool, Length);
 
-    // 5. Криптографическая гарантия обязательных символов (Include)
+    // Криптографическая гарантия обязательных символов (Include)
     if not Settings.IncludeChars.IsEmpty and (Length >= Settings.IncludeChars.Length) then
     begin
         Positions := TList<Integer>.Create;
@@ -371,7 +421,7 @@ begin
 
             for I := 1 to Settings.IncludeChars.Length do
             begin
-                RndIdx := Random(Positions.Count);
+                RndIdx := SecureRandom(Positions.Count);
                 TargetPos := Positions[RndIdx];
                 Positions.Delete(RndIdx); // Исключаем повторное использование одной позиции
 
@@ -391,9 +441,9 @@ var
     I: Integer;
 begin
     // Генерируем валидный локальный Unicast MAC (младший бит первого байта равен 0)
-    Result := HEX_ALL[Random(16) + 1] + HEX_EVEN[Random(8) + 1];
+    Result := HEX_ALL[SecureRandom(16) + 1] + HEX_EVEN[SecureRandom(8) + 1];
     for I := 1 to 5 do
-        Result := Result + ':' + HEX_ALL[Random(16) + 1] + HEX_ALL[Random(16) + 1];
+        Result := Result + ':' + HEX_ALL[SecureRandom(16) + 1] + HEX_ALL[SecureRandom(16) + 1];
 end;
 
 function TPasswordService.GeneratePassword(Preset: TPasswordPreset; Length: Integer; UniqueChars: Boolean): string;
@@ -445,6 +495,44 @@ begin
         end
         else
             Result := GenerateStandardSequence(FullPool, FirstCharPool, Length);
+    end;
+end;
+
+{ TPasswordHistoryBuffer }
+
+procedure TPasswordHistoryBuffer.Add(const Item: TPasswordHistoryItem);
+begin
+    FItems[FHead] := Item;
+    FHead := (FHead + 1) mod FCapacity; // Идем по кругу
+    if FCount < FCapacity then
+        Inc(FCount);
+end;
+
+procedure TPasswordHistoryBuffer.Clear;
+begin
+    FHead := 0;
+    FCount := 0;
+end;
+
+constructor TPasswordHistoryBuffer.Create(ACapacity: Integer);
+begin
+    FCapacity := ACapacity;
+    SetLength(FItems, FCapacity);
+    Clear;
+end;
+
+function TPasswordHistoryBuffer.ToArray: TArray<TPasswordHistoryItem>;
+var
+    I, Idx: Integer;
+begin
+    SetLength(Result, FCount);
+    // Возвращаем в обратном порядке: от самых свежих к старым (удобно для UI)
+    for I := 0 to FCount - 1 do
+    begin
+        Idx := FHead - 1 - I;
+        if Idx < 0 then
+            Inc(Idx, FCapacity);
+        Result[I] := FItems[Idx];
     end;
 end;
 

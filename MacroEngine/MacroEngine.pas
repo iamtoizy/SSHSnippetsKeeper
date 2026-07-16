@@ -22,9 +22,8 @@ type
     end;
 
     TMacroEngine = class
-    class var
-        FRegex: TRegEx;
     private
+        FRegex: TRegEx;
         FCache: TDictionary<string, TArray<TMacroToken>>;
         FCacheLock: TObject;
         function ParseTokens(const Text: string): TArray<TMacroToken>;
@@ -47,7 +46,6 @@ begin
     inherited;
     FCache := TDictionary < string, TArray < TMacroToken >>.Create;
     FCacheLock := TObject.Create;
-//    FRegex := TRegEx.Create('\{(.+?)\}');
     FRegex := TRegEx.Create('\{([^}]*)\}');
 end;
 
