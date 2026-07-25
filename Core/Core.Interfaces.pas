@@ -168,8 +168,6 @@ type
         function GetTopSnippets(UserID: Integer; Count: Integer): TArray<TSnippetDTO>;
         function GetRecentSnippets(UserID: Integer; Count: Integer): TArray<TSnippetDTO>;
         function SearchSnippets(const Query: string; UseFTS: Boolean; UserID: Integer = 0): TArray<TSnippetDTO>;
-        function SearchSnippetsSimple(const Query: string; UserID: Integer): TArray<TSnippetDTO>;
-        function SearchSnippetsFTS(const Query: string; UserID: Integer): TArray<TSnippetDTO>;
     end;
 
     ICategoryService = interface

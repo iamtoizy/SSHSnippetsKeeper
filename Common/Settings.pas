@@ -82,6 +82,9 @@ begin
     FSettings.WindowHelper.ActivationDelay := 100;
     FSettings.WindowHelper.SetFocusDelay := 50;
     FSettings.WindowHelper.KeyPressInterval := 10;
+    FSettings.UISettings.Help.HelpButton.HoverDelay := 1000;
+    FSettings.UISettings.Help.HelpButton.FadeDuration := 350;
+    FSettings.CurrentLanguage := 'ru';
 end;
 
 procedure TSettingsManager.Load;

@@ -21,8 +21,6 @@ type
         FCategoryRepo: ICategoryRepository;
         FTagRepo: ITagRepository;
         FUserRepo: IUserRepository;
-        function SearchSnippetsSimple(const Query: string; UserID: Integer): TArray<TSnippetDTO>;
-        function SearchSnippetsFTS(const Query: string; UserID: Integer): TArray<TSnippetDTO>;
     public
         constructor Create(
             SnippetRepo: ISnippetRepository;
@@ -164,26 +162,18 @@ begin
     Result := FSnippetRepo.GetRecentSnippets(UserID, Count);
 end;
 
-function TSnippetService.SearchSnippetsSimple(const Query: string; UserID: Integer): TArray<TSnippetDTO>;
-begin
-    if Trim(Query) = '' then Exit(GetAllSnippets(UserID));
-    Result := FSnippetRepo.SearchByMaskSimple(Query, UserID);
-end;
-
-function TSnippetService.SearchSnippetsFTS(const Query: string; UserID: Integer): TArray<TSnippetDTO>;
-begin
-    if Trim(Query) = '' then Exit(GetAllSnippets(UserID));
-    Result := FSnippetRepo.SearchByMaskFTS(Query, UserID);
-end;
-
 function TSnippetService.SearchSnippets(const Query: string; UseFTS: Boolean; UserID: Integer = 0): TArray<TSnippetDTO>;
 var
     CleanQuery: string;
 begin
     CleanQuery := Trim(Query);
+    Result := [];
 
     if Length(CleanQuery) < 3 then
-        Exit(GetAllSnippets(UserID));
+    begin
+//        Exit(GetAllSnippets(UserID));
+        Exit(Result);
+    end;
 
     if UseFTS then
         Result := FSnippetRepo.SearchByMaskFTS(CleanQuery, UserID)

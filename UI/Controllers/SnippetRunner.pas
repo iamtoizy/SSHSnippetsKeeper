@@ -179,7 +179,7 @@ begin
     // Блокируем смену фокуса для нашего процесса (ASFW_ANY = 2)
     // Это не позволит MainForm "выпрыгнуть" вперед при переключении
     try
-        LockSetForegroundWindow(2);
+        LockSetForegroundWindow(LSFW_LOCK);
         try
             Context := BuildMacroContext(Snippet.ID, TargetWindow.HWND);
             SetForegroundWindow(TargetWindow.HWND);
@@ -189,6 +189,7 @@ begin
         finally
         end;
     finally
+        LockSetForegroundWindow(LSFW_UNLOCK);
         IsExecuting := False;
     end;
 end;

@@ -173,7 +173,6 @@ begin
     Query := CreateQuery;
     try
         Query.SQL.Text := SQL_SELECT_SNIPPET_TAGS;
-        // Теперь FireDAC точно знает, куда подставить значение
         Query.ParamByName('SnippetID').AsInteger := SnippetID;
         Query.Open;
 
@@ -273,9 +272,10 @@ begin
         end;
 
         // Преобразуем в результат
-        Result := TDictionary<Integer, TArray<TTagDTO>>.Create;
+        var MappedData := TDictionary<Integer, TArray<TTagDTO>>.Create;
         for Key in Map.Keys do
-            Result.Add(Key, Map[Key].ToArray);
+            MappedData.Add(Key, Map[Key].ToArray);
+        Result := MappedData;   // На случай исключения юзаю временную переменную
     finally
         for Key in Map.Keys do
             Map[Key].Free;
@@ -430,24 +430,6 @@ begin
     finally
         Q.Free;
     end;
-
-    // БЛОК "Вставка связей с тегами" ПОЛНОСТЬЮ УДАЛЕН ОТСЮДА!
-    // Вставка связей с тегами
-//    if Length(TagIDs) > 0 then
-//    begin
-//        QTags := CreateQuery;
-//        try
-//            QTags.SQL.Text := 'INSERT INTO snippet_tags (snippet_id, tag_id) VALUES (:snip_id, :tag_id)';
-//            for TagID in TagIDs do
-//            begin
-//                QTags.ParamByName('snip_id').AsInteger := SnippetID;
-//                QTags.ParamByName('tag_id').AsInteger := TagID;
-//                QTags.ExecSQL;
-//            end;
-//        finally
-//            QTags.Free;
-//        end;
-//    end;
 end;
 
 function TSnippetRepository.Search(const Query: string): TArray<TSnippetDTO>;

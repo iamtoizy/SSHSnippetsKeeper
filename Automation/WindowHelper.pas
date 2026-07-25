@@ -258,44 +258,49 @@ begin
         Exit;
     end;
 
-    if Assigned(FMacroThread) then
-    begin
-        FMacroThread.Cancel;
-        FMacroThread := nil;
-    end;
+    try
+        if Assigned(FMacroThread) then
+        begin
+            FMacroThread.Cancel;
+            FMacroThread := nil;
+        end;
 
-    Context.Executor := Self;
-    Actions := FMacroEngine.Parse(Text, Context);
+        Context.Executor := Self;
+        Actions := FMacroEngine.Parse(Text, Context);
 
-    {$IFDEF DEBUG}
-    OutputDebugString(PChar(Format('[WinHelper] Parsed %d actions', [Length(Actions)])));
-    // Собираем все InputQuery ДО запуска потока
-    OutputDebugString('[WinHelper] Pre-collecting inputs...');
-    {$ENDIF}
-
-    FMacroEngine.PreCollectInputs(Actions, Context);
-
-    // Если пользователь отменил ввод - прерываем
-    if Context.UserCancelled then
-    begin
         {$IFDEF DEBUG}
-        OutputDebugString('[WinHelper] User cancelled input, macro will NOT start');
+        OutputDebugString(PChar(Format('[WinHelper] Parsed %d actions', [Length(Actions)])));
+        // Собираем все InputQuery ДО запуска потока
+        OutputDebugString('[WinHelper] Pre-collecting inputs...');
         {$ENDIF}
-        Context.Free;  // Освобождаем контекст
-        Exit;
+
+        FMacroEngine.PreCollectInputs(Actions, Context);
+
+        // Если пользователь отменил ввод - прерываем
+        if Context.UserCancelled then
+        begin
+            {$IFDEF DEBUG}
+            OutputDebugString('[WinHelper] User cancelled input, macro will NOT start');
+            {$ENDIF}
+            Context.Free;  // Освобождаем контекст
+            Exit;
+        end;
+
+        {$IFDEF DEBUG}
+        OutputDebugString('[WinHelper] Pre-collection completed successfully');
+        {$ENDIF}
+
+        // Создаём и запускаем поток только если ввод не был отменён
+        FMacroThread := TMacroThread.Create(Actions, Context);
+        FMacroThread.OnTerminate := OnMacroTerminate;
+
+        {$IFDEF DEBUG}
+        OutputDebugString('[WinHelper] Thread started');
+        {$ENDIF}
+    except
+        Context.Free; // Гарантированно освобождаем при сбое парсинга
+        raise;
     end;
-
-    {$IFDEF DEBUG}
-    OutputDebugString('[WinHelper] Pre-collection completed successfully');
-    {$ENDIF}
-
-    // Создаём и запускаем поток только если ввод не был отменён
-    FMacroThread := TMacroThread.Create(Actions, Context);
-    FMacroThread.OnTerminate := OnMacroTerminate;
-
-    {$IFDEF DEBUG}
-    OutputDebugString('[WinHelper] Thread started');
-    {$ENDIF}
 end;
 
 procedure TWindowHelper.TypeTextIntoWindow(const Text: string);

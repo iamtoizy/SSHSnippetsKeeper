@@ -215,7 +215,12 @@ end;
 
 function TPasswordService.GetHistory: TArray<TPasswordHistoryItem>;
 begin
-    Result := FHistory.ToArray;
+    FHistoryLock.Acquire;
+    try
+        Result := FHistory.ToArray;
+    finally
+        FHistoryLock.Release;
+    end;
 end;
 
 function TPasswordService.GetPoolSize(Preset: TPasswordPreset): Integer;
@@ -330,7 +335,12 @@ end;
 
 procedure TPasswordService.ClearHistory;
 begin
-    FHistory.Clear;
+    FHistoryLock.Acquire;
+    try
+        FHistory.Clear;
+    finally
+        FHistoryLock.Release;
+    end;
 end;
 
 constructor TPasswordService.Create;

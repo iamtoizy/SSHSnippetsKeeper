@@ -42,7 +42,6 @@ object MainForm: TMainForm
     Align = alLeft
     BevelOuter = bvNone
     TabOrder = 0
-    ExplicitHeight = 508
     object tvCategories: TTreeView
       Left = 0
       Top = 0
@@ -65,7 +64,6 @@ object MainForm: TMainForm
       OnEdited = tvCategoriesEdited
       OnEndDrag = tvCategoriesEndDrag
       OnMouseDown = tvCategoriesMouseDown
-      ExplicitHeight = 508
     end
   end
   object sbBottom: TStatusBar
@@ -180,7 +178,6 @@ object MainForm: TMainForm
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 3
-    ExplicitHeight = 508
     object splRight: TSplitter
       Left = 426
       Top = 0
@@ -219,7 +216,6 @@ object MainForm: TMainForm
       OnDeletion = lvSnippetsDeletion
       OnInfoTip = lvSnippetsInfoTip
       OnMouseDown = lvSnippetsMouseDown
-      ExplicitHeight = 508
     end
     object pRight: TPanel
       Left = 429
@@ -229,7 +225,6 @@ object MainForm: TMainForm
       Align = alRight
       BevelOuter = bvNone
       TabOrder = 1
-      ExplicitHeight = 508
       object lvTags: TListView
         Left = 0
         Top = 0
@@ -246,7 +241,6 @@ object MainForm: TMainForm
         OnClick = lvTagsClick
         OnDblClick = lvTagsDblClick
         OnEdited = lvTagsEdited
-        ExplicitHeight = 508
       end
     end
   end

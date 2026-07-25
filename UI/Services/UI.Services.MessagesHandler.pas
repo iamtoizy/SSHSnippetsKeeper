@@ -27,7 +27,7 @@ uses
     UI.StateLoader
     ;
 
-{ TVCLErrorHandler }
+{ TUIMessagesHandler }
 
 function TUIMessagesHandler.GetSafeHandle: HWND;
 begin

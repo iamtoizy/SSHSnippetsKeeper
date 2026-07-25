@@ -35,7 +35,8 @@ type
 implementation
 
 uses
-    UI.StateLoader
+    UI.StateLoader,
+    System.Generics.Collections
     ;
 
 { TSecurityScanner }
@@ -167,22 +168,38 @@ begin
 end;
 
 function TSecurityScanner.IsValidSecretCandidate(const S: string): Boolean;
+var
+    C: Char;
+    HasDigit, HasAlpha: Boolean;
 begin
-    // Секреты (токены, пароли, хэши) крайне редко содержат пробелы.
-    // Если в строке есть пробел, скорее всего это обычный текст или SQL-запрос.
-    if S.Contains(' ') then
-        Exit(False);
+    HasDigit := False;
+    HasAlpha := False;
 
-    // Дополнительно можно отсечь строки, где нет ни букв, ни цифр
-    // (например, кусок ASCII-арта), но для базовой проверки этого достаточно.
-    Result := True;
+    for C in S do
+    begin
+        // 1. Если в слове есть кириллица или не-ASCII символы (Ord > 127) —
+        // это точно человеческий текст/комментарий, а не ключ/хэш/токен.
+        if Ord(C) > 127 then
+            Exit(False);
+
+        if CharInSet(C, ['0'..'9']) then
+            HasDigit := True
+        else if CharInSet(C, ['a'..'z', 'A'..'Z']) then
+            HasAlpha := True;
+    end;
+
+    // 2. Токены и секреты высокой энтропии практически всегда состоят
+    // из комбинации букв И цифр (Base64, API keys, Hashes).
+    // Это исключает ложные срабатывания на длинные последовательности из одних спецсимволов или слов.
+    Result := HasDigit and HasAlpha;
 end;
 
 function TSecurityScanner.CalculateEntropy(const S: string): Double;
 var
-    CharCounts: array[0..255] of Integer; // Массив всего на 1 КБ (256 * 4 байта)
+    CharCounts: TDictionary<Char, Integer>;
     C: Char;
-    Len, ValidLen, I: Integer;
+    Count: Integer;
+    Len: Integer;
     Prob: Double;
 begin
     Result := 0.0;
@@ -190,29 +207,24 @@ begin
     if Len = 0 then
         Exit;
 
-    FillChar(CharCounts, SizeOf(CharCounts), 0);
-    ValidLen := 0;
-
-    // Считаем только ASCII-символы, игнорируем кириллицу/юникод при расчете энтропии токенов
-    for C in S do
-    begin
-        if Ord(C) <= 255 then
+    // Честный расчёт энтропии через словарь для всех символов без искажения длины
+    CharCounts := TDictionary<Char, Integer>.Create;
+    try
+        for C in S do
         begin
-            Inc(CharCounts[Ord(C)]);
-            Inc(ValidLen);
+            if CharCounts.TryGetValue(C, Count) then
+                CharCounts[C] := Count + 1
+            else
+                CharCounts.Add(C, 1);
         end;
-    end;
 
-    if ValidLen = 0 then
-        Exit;
-
-    for I := 0 to 255 do
-    begin
-        if CharCounts[I] > 0 then
+        for Count in CharCounts.Values do
         begin
-            Prob := CharCounts[I] / ValidLen;
+            Prob := Count / Len;
             Result := Result - (Prob * Log2(Prob));
         end;
+    finally
+        CharCounts.Free;
     end;
 end;
 
