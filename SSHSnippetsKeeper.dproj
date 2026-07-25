@@ -8,7 +8,7 @@
         <AppType>Application</AppType>
         <FrameworkType>VCL</FrameworkType>
         <ProjectVersion>20.4</ProjectVersion>
-        <Platform Condition="'$(Platform)'==''">Win64</Platform>
+        <Platform Condition="'$(Platform)'==''">Win32</Platform>
         <ProjectName Condition="'$(ProjectName)'==''">SSHSnippetsKeeper</ProjectName>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
@@ -77,7 +77,7 @@
         <Custom_Styles>Glow|VCLSTYLE|$(BDSCOMMONDIR)\Styles\Glow.vsf</Custom_Styles>
         <DCC_ExeOutput>Binary\$(Platform)\$(Config)</DCC_ExeOutput>
         <BRCC_OutputDir>Resources</BRCC_OutputDir>
-        <DCC_UnitSearchPath>C:\DC\SynEdit\Source;C:\DC\SynEdit\Source\Highlighters;C:\DC\SynEdit\Source\Highlighters\Omni Highlighters;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>C:\DC\SynEdit\Source;C:\DC\SynEdit\Source\Highlighters;C:\DC\SynEdit\Source\Highlighters\Omni Highlighters;C:\DC\HtmlViewer\source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
@@ -206,7 +206,6 @@
         <DCCReference Include="Core\Services\UserService.pas"/>
         <DCCReference Include="Core\Core.Interfaces.pas"/>
         <DCCReference Include="UI\Controllers\SnippetRunner.pas"/>
-        <DCCReference Include="UI\Abstractions\UI.Interfaces.pas"/>
         <DCCReference Include="UI\Forms\QuickSearchFormUI.pas">
             <Form>QuickSearchForm</Form>
         </DCCReference>
@@ -223,6 +222,13 @@
             <Form>PasswordGenForm</Form>
         </DCCReference>
         <DCCReference Include="Core\Core.AppContext.pas"/>
+        <DCCReference Include="UI\Helpers\UI.StateLoader.pas"/>
+        <DCCReference Include="UI\Helpers\UI.HoverHelpManager.pas"/>
+        <DCCReference Include="UI\Forms\CustomHelpFormUI.pas">
+            <Form>CustomHelpForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="UI\Services\UI.Services.MessagesHandler.pas"/>
         <RcItem Include="Database\Schema\000_schema_init.sql">
             <ContainerId>ResourceItem</ContainerId>
             <ResourceType>RCDATA</ResourceType>

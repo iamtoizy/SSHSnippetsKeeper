@@ -10,10 +10,13 @@ uses
     Vcl.StdCtrls,
     Vcl.ExtCtrls,
     Vcl.ComCtrls,
-    MacroInputTypes;
+    MacroInputTypes,
+    BaseFormUI,
+    Core.Interfaces,
+    Core.AppContext;
 
 type
-    TInputForm = class(TForm)
+    TInputForm = class(TBaseForm)
         pnlMain: TPanel;
         bOK: TButton;
         bCancel: TButton;
@@ -33,28 +36,34 @@ type
         FResultValue: string;
         procedure ValidateInput;
     public
+        procedure Initialize(AppContext: IAppContext);
         property ResultValue: string read FResultValue;
     end;
 
-function ShowInputForm(const Prompt, DefaultValue: string; InputType: TMacroInputType; var FormResult: string): Boolean;
+function ShowInputForm(const Prompt, DefaultValue: string; InputType: TMacroInputType; const AppContext: IAppContext; var FormResult: string): Boolean;
 
 var
     InputForm: TInputForm;
 
 implementation
 
+uses
+    UI.StateLoader
+    ;
+
 const
     SP_PREFIX = '⏵ ';
-    SP_POSTFIX = ', нажми ⏎';
+    SP_POSTFIX = ', ⏎';
 
 {$R *.dfm}
 
-function ShowInputForm(const Prompt, DefaultValue: string; InputType: TMacroInputType; var FormResult: string): Boolean;
+function ShowInputForm(const Prompt, DefaultValue: string; InputType: TMacroInputType; const AppContext: IAppContext; var FormResult: string): Boolean;
 var
     Form: TInputForm;
 begin
     Form := TInputForm.Create(nil);
     try
+        Form.Initialize(AppContext);
         if (Prompt <> '') then
         begin
             Form.Caption := Prompt;
@@ -84,38 +93,38 @@ begin
     case FInputType of
         mitString:
             begin
-                sbBottom.SimpleText := SP_PREFIX + 'Введи текст' + SP_POSTFIX;
+                sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.String') + SP_POSTFIX;
             end;
 
         mitNumber:
             begin
-                sbBottom.SimpleText := SP_PREFIX + 'Введи целое число' + SP_POSTFIX;
+                sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Number') + SP_POSTFIX;
                 ebEdit.Text := FDefaultValue;
             end;
 
         mitHex:
             begin
-                sbBottom.SimpleText := SP_PREFIX + 'Введи hex значение (например, FF или 0xFF)' + SP_POSTFIX;
+                sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Hex') + SP_POSTFIX;
                 ebEdit.Text := FDefaultValue;
                 ebEdit.CharCase := ecUpperCase;
             end;
 
         mitFloat:
             begin
-                sbBottom.SimpleText := SP_PREFIX + 'Введи число с плавающей точкой (например, 3.14)' + SP_POSTFIX;
+                sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Float') + SP_POSTFIX;
                 ebEdit.Text := FDefaultValue;
             end;
 
         mitPassword:
             begin
-                sbBottom.SimpleText := SP_PREFIX + 'Введи пароль' + SP_POSTFIX;
+                sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Password') + SP_POSTFIX;
                 ebEdit.PasswordChar := '*';
                 ebEdit.Text := FDefaultValue;
             end;
 
         mitDate:
             begin
-                sbBottom.SimpleText := SP_PREFIX + 'Введи дату (ГГГГ-ММ-ДД)' + SP_POSTFIX;
+                sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Date') + SP_POSTFIX;
                 ebEdit.Text := FDefaultValue;
             end;
     end;
@@ -131,6 +140,12 @@ begin
         27:
             bCancelClick(InputForm);
     end;
+end;
+
+procedure TInputForm.Initialize(AppContext: IAppContext);
+begin
+    inherited;
+    FAppContext := AppContext;
 end;
 
 procedure TInputForm.bCancelClick(Sender: TObject);
@@ -166,9 +181,9 @@ begin
             begin
                 Valid := TryStrToInt(Value, IntVal);
                 if not Valid then
-                    sbBottom.SimpleText := 'Ошибка: введи целое число'
+                    sbBottom.SimpleText := TUIStateLoader.GetMessage('InputForm.Error.Number')
                 else
-                    sbBottom.SimpleText := SP_PREFIX + 'Введи целое число' + SP_POSTFIX;
+                    sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Number') + SP_POSTFIX;
             end;
 
         mitHex:
@@ -191,18 +206,18 @@ begin
                 end;
 
                 if not Valid then
-                    sbBottom.SimpleText := 'Ошибка: введи hex значение (0-9, A-F)'
+                    sbBottom.SimpleText := TUIStateLoader.GetMessage('InputForm.Error.Hex')
                 else
-                    sbBottom.SimpleText := SP_PREFIX + 'Введи hex значение' + SP_POSTFIX;
+                    sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Hex') + SP_POSTFIX;
             end;
 
         mitFloat:
             begin
                 Valid := TryStrToFloat(Value, FloatVal);
                 if not Valid then
-                    sbBottom.SimpleText := 'Ошибка: введи число (например, 3.14)'
+                    sbBottom.SimpleText := TUIStateLoader.GetMessage('InputForm.Error.Float')
                 else
-                    sbBottom.SimpleText := SP_PREFIX + 'Введи число с плавающей точкой' + SP_POSTFIX;
+                    sbBottom.SimpleText := TUIStateLoader.GetMessage('InputForm.Prompt.Float') + SP_POSTFIX;
             end;
 
         mitPassword:
@@ -213,9 +228,9 @@ begin
                 var DateVal: TDateTime;
                 Valid := TryStrToDate(Value, DateVal);
                 if not Valid then
-                    sbBottom.SimpleText := 'Ошибка: формат даты ГГГГ-ММ-ДД'
+                    sbBottom.SimpleText := TUIStateLoader.GetMessage('InputForm.Error.Date')
                 else
-                    sbBottom.SimpleText := SP_PREFIX + 'Введи дату (ГГГГ-ММ-ДД)' + SP_POSTFIX;
+                    sbBottom.SimpleText := TUIStateLoader.GetMessage('InputForm.Prompt.Date') + SP_POSTFIX;
             end;
     end;
 

@@ -23,6 +23,10 @@ type
 
 implementation
 
+uses
+    UI.StateLoader
+    ;
+
 constructor TUserService.Create(UserRepo: IUserRepository);
 begin
     FUserRepo := UserRepo;
@@ -36,7 +40,9 @@ end;
 function TUserService.GetUserByID(UserID: Integer): TUserDTO;
 begin
     if UserID <= 0 then
-        raise Exception.Create('Ќекорректный ID пользовател€');
+        raise Exception.Create(
+            TUIStateLoader.GetMessage('User.InvalidIdError')
+        );
     // ƒелегируем получение данных репозиторию
     Result := FUserRepo.GetByID(UserID);
 end;
@@ -44,21 +50,27 @@ end;
 function TUserService.AddUser(const User: TUserDTO): Integer;
 begin
     if Trim(User.Name) = '' then
-        raise Exception.Create('»м€ пространства не может быть пустым');
+        raise Exception.Create(
+            TUIStateLoader.GetMessage('Workspace.EmptyNameError')
+        );
     Result := FUserRepo.Add(User);
 end;
 
 procedure TUserService.UpdateUser(const User: TUserDTO);
 begin
     if Trim(User.Name) = '' then
-        raise Exception.Create('»м€ пространства не может быть пустым');
+        raise Exception.Create(
+            TUIStateLoader.GetMessage('Workspace.EmptyNameError')
+        );
     FUserRepo.Update(User);
 end;
 
 procedure TUserService.DeleteUser(UserID: Integer);
 begin
     if UserID = 1 then
-        raise Exception.Create('Ёто пространство нельз€ удалить (системное).');
+        raise Exception.Create(
+            TUIStateLoader.GetMessage('Workspace.SystemSpaceError')
+        );
     FUserRepo.Delete(UserID);
 end;
 

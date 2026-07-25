@@ -33,7 +33,7 @@ type
         FAgentID: string; // ID Агента из Yandex AI Studio
         FUseAgent: Boolean;
     public
-    // Конструктор поддерживает как обычную модель, так и Агента (передаем пустую строку в AModel, если нужен Агент)
+        // Конструктор поддерживает как обычную модель, так и Агента (передаем пустую строку в AModel, если нужен Агент)
         constructor Create(const AApiKey, AFolderID, AModel, AAgentID: string);
         function AskAssistant(const Instruction, CodeContext: string): string;
     end;
@@ -41,7 +41,8 @@ type
 implementation
 
 uses
-    System.Generics.Collections
+    System.Generics.Collections,
+    UI.StateLoader
     ;
 
 { TAITextCleaner }
@@ -118,7 +119,7 @@ begin
     FFolderID := AFolderID;
     FModel := AModel;
     FAgentID := AAgentID;
-  // Если передан AgentID, значит используем режим Агента
+    // Если передан AgentID, значит используем режим Агента
     FUseAgent := not FAgentID.Trim.IsEmpty;
 end;
 
@@ -147,16 +148,16 @@ begin
     RequestJSON := TJSONObject.Create;
     StringStream := TStringStream.Create('', TEncoding.UTF8);
     try
-    // Формируем ввод для ИИ (Инструкция + контекст существующего кода)
+        // Формируем ввод для ИИ (Инструкция + контекст существующего кода)
         if CodeContext.Trim.IsEmpty then
             CombinedInput := Instruction
         else
-            CombinedInput := Format('Инструкция: %s' + #13#10 + 'Текущий код сниппета:' + #13#10 + '%s', [Instruction, CodeContext]);
+            CombinedInput := Format('Instructions: %s' + #13#10 + 'Current code:' + #13#10 + '%s', [Instruction, CodeContext]);
 
-    // --- РАЗДЕЛЕНИЕ ЛОГИКИ ЗАПРОСА ---
+        // --- РАЗДЕЛЕНИЕ ЛОГИКИ ЗАПРОСА ---
         if FUseAgent then
         begin
-      // Сборка JSON для Агента согласно новой инструкции
+            // Сборка JSON для Агента согласно новой инструкции
             PromptJSON := TJSONObject.Create;
             PromptJSON.AddPair('id', FAgentID);
             RequestJSON.AddPair('prompt', PromptJSON);
@@ -164,7 +165,7 @@ begin
             RequestJSON.AddPair('input', CombinedInput);
             RequestJSON.AddPair('max_output_tokens', TJSONNumber.Create(1500));
 
-      // Добавляем обязательный массив tools для code_interpreter
+            // Добавляем обязательный массив tools для code_interpreter
             ToolsArray := TJSONArray.Create;
             ToolObj := TJSONObject.Create;
             ToolObj.AddPair('type', 'code_interpreter');
@@ -181,16 +182,16 @@ begin
         end
         else
         begin
-      // Стандартный JSON для обычной текстовой модели (YandexGPT / DeepSeek)
+            // Стандартный JSON для обычной текстовой модели (YandexGPT / DeepSeek)
             RequestJSON.AddPair('model', Format('gpt://%s/%s', [FFolderID, FModel]));
             RequestJSON.AddPair('temperature', TJSONNumber.Create(0.3));
             RequestJSON.AddPair('max_output_tokens', TJSONNumber.Create(1500));
             RequestJSON.AddPair('instructions', Instruction);
-            RequestJSON.AddPair('content', 'Верни ТОЛЬКО чистый программный код.');
+            RequestJSON.AddPair('content', 'Return ONLY clean source code.');
             RequestJSON.AddPair('reasoning_effort', 'none');
 
             if CodeContext.Trim.IsEmpty then
-                RequestJSON.AddPair('input', 'Напиши полезный сниппет кода.')
+                RequestJSON.AddPair('input', 'Write a useful code snippet.')
             else
                 RequestJSON.AddPair('input', CodeContext);
         end;
@@ -215,7 +216,9 @@ begin
         RawResponse := Response.ContentAsString;
 
         if Response.StatusCode <> 200 then
-            raise Exception.CreateFmt('Ошибка API (%d): %s', [Response.StatusCode, RawResponse]);
+            raise Exception.Create(
+                TUIStateLoader.GetMessage('AI.APIError', [Response.StatusCode, RawResponse])
+            );
 
         ResponseJSON := TJSONObject.ParseJSONValue(RawResponse) as TJSONObject;
         try
@@ -228,7 +231,7 @@ begin
                     Exit;
                 end;
 
-        // Fallback-партинг по массиву output (если ответ всё же разбился на части)
+                // Fallback-партинг по массиву output (если ответ всё же разбился на части)
                 if ResponseJSON.TryGetValue('output', OutputArray) then
                 begin
                     for I := 0 to OutputArray.Count - 1 do
@@ -256,10 +259,12 @@ begin
                 end
                 else if ResponseJSON.TryGetValue('content', Result) then
                 begin
-          // Обычная строка контента
+                    // Обычная строка контента
                 end
                 else
-                    raise Exception.Create('Не удалось извлечь ответ из JSON: ' + RawResponse);
+                    raise Exception.Create(
+                        TUIStateLoader.GetMessage('AI.JSONError', [RawResponse])
+                    );
 
                 Result := TAITextCleaner.ExtractPureCode(Result);
             end;

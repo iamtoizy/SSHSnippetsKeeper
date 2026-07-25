@@ -59,13 +59,17 @@ CREATE INDEX IF NOT EXISTS ix_snippets_updated_at ON snippets(updated_at DESC);
 ---------------------------------------------------------
 -- 4. FTS (Полнотекстовый поиск)
 ---------------------------------------------------------
--- Используем стандартную FTS5 таблицу для надежной индексации тегов
+-- ВАЖНО: Если таблица уже существовала с другим токенайзером, 
+-- её нужно пересоздать (DROP), иначе SQLite проигнорирует новые настройки.
+-- DROP TABLE IF EXISTS snippet_fts; 
+
+-- Используем токенайзер trigram для поиска подстрок внутри кода (поведение LIKE)
 CREATE VIRTUAL TABLE IF NOT EXISTS snippet_fts USING fts5(
     title,
     content,
     comment,
     tags,
-    tokenize='unicode61 remove_diacritics 1'
+    tokenize='trigram'
 );
 
 ---------------------------------------------------------

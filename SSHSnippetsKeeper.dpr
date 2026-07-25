@@ -9,14 +9,16 @@ program SSHSnippetsKeeper;
 {$R *.dres}
 
 uses
-{$IFDEF DEBUG}
+  {$IFDEF DEBUG}
   FastMM5,
-{$ENDIF}
+  {$ENDIF }
   Vcl.Forms,
   Vcl.Themes,
   Vcl.Styles,
   Vcl.StdCtrls,
   Winapi.Windows,
+  System.IOUtils,
+  System.SysUtils,
   MainFormUI in 'UI\Forms\MainFormUI.pas' {MainForm},
   JSONSerializer in 'Common\JSONSerializer.pas',
   Settings in 'Common\Settings.pas',
@@ -61,7 +63,6 @@ uses
   UserService in 'Core\Services\UserService.pas',
   Core.Interfaces in 'Core\Core.Interfaces.pas',
   SnippetRunner in 'UI\Controllers\SnippetRunner.pas',
-  UI.Interfaces in 'UI\Abstractions\UI.Interfaces.pas',
   QuickSearchFormUI in 'UI\Forms\QuickSearchFormUI.pas' {QuickSearchForm},
   GlobalHotkeyManager in 'UI\Controllers\GlobalHotkeyManager.pas',
   TrackBarEx in 'UI\Controls\TrackBarEx.pas',
@@ -71,7 +72,11 @@ uses
   SecurityScanner in 'Core\Services\SecurityScanner.pas',
   PasswordService in 'Core\Services\PasswordService.pas',
   PasswordGenFormUI in 'UI\Forms\PasswordGenFormUI.pas' {PasswordGenForm},
-  Core.AppContext in 'Core\Core.AppContext.pas';
+  Core.AppContext in 'Core\Core.AppContext.pas',
+  UI.StateLoader in 'UI\Helpers\UI.StateLoader.pas',
+  UI.HoverHelpManager in 'UI\Helpers\UI.HoverHelpManager.pas',
+  CustomHelpFormUI in 'UI\Forms\CustomHelpFormUI.pas' {CustomHelpForm},
+  UI.Services.MessagesHandler in 'UI\Services\UI.Services.MessagesHandler.pas';
 
 {$R *.res}
 
@@ -81,6 +86,7 @@ var
     SettingsManager: ISettingsManager;
     WindowHelper: TWindowHelper;
     AppContext: IAppContext;
+    ErrorHandler: IUIMessagesHandler;
 
 // Callback-функция, которая перебирает все окна в системе
 function EnumWindowsProc(Wnd: HWND; lParam: LParam): BOOL; stdcall;
@@ -130,21 +136,25 @@ ReportMemoryLeaksOnShutdown := True;
     SettingsManager.Load;
 
     WindowHelper := TWindowHelper.Create(SettingsManager);
+    ErrorHandler := TUIMessagesHandler.Create;
 
     Application.Initialize;
     Application.MainFormOnTaskbar := True;
     TStyleManager.TrySetStyle('Glow');
-    Application.Title := 'SSH Snippets Keeper';
+  Application.Title := 'SSH Snippets Keeper';
     Application.CreateForm(TAppDatabase, AppDatabase);
-    Application.CreateForm(TMainForm, MainForm);
-    Application.CreateForm(TQuickSearchForm, QuickSearchForm);
-    //
+  Application.CreateForm(TMainForm, MainForm);
+  Application.CreateForm(TQuickSearchForm, QuickSearchForm);
+  Application.CreateForm(TCustomHelpForm, CustomHelpForm);
+  //
     AppContext := TAppContext.Create(
         AppDatabase,               // Реализует IDatabaseManager
         AppDatabase.FDConnection,  // Ссылка на компонент подключения
         SettingsManager,           // Настройки
-        WindowHelper               //
+        WindowHelper,              //
+        ErrorHandler               //
     );
+    QuickSearchForm.Initialize(AppContext);
     //
     MainForm.Initialize(AppContext);
     MainForm.Show;

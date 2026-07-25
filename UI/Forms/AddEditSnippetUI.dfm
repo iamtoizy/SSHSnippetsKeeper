@@ -1,4 +1,4 @@
-object AddEditSnippet: TAddEditSnippet
+object AddEditSnippetForm: TAddEditSnippetForm
   Left = 0
   Top = 0
   Caption = #1044#1086#1073#1072#1074#1080#1090#1100'/'#1080#1079#1084#1077#1085#1080#1090#1100' '#1089#1085#1080#1087#1087#1077#1090
@@ -33,14 +33,14 @@ object AddEditSnippet: TAddEditSnippet
       Height = 15
       Caption = #1048#1084#1103' '#1089#1085#1080#1087#1087#1077#1090#1072
     end
-    object lbTag: TLabel
+    object lbAllTags: TLabel
       Left = 0
       Top = 46
       Width = 87
       Height = 15
       Caption = #1044#1086#1089#1090#1091#1087#1085#1099#1077' '#1090#1077#1075#1080
     end
-    object Label1: TLabel
+    object lbSelectedTags: TLabel
       Left = 0
       Top = 219
       Width = 79
@@ -54,6 +54,8 @@ object AddEditSnippet: TAddEditSnippet
       Height = 23
       DoubleBuffered = True
       ParentDoubleBuffered = False
+      ParentShowHint = False
+      ShowHint = True
       TabOrder = 0
     end
     object lvSelectedTags: TListView
@@ -66,6 +68,8 @@ object AddEditSnippet: TAddEditSnippet
       MultiSelect = True
       ReadOnly = True
       RowSelect = True
+      ParentShowHint = False
+      ShowHint = True
       SortType = stText
       TabOrder = 1
       ViewStyle = vsList
@@ -84,6 +88,8 @@ object AddEditSnippet: TAddEditSnippet
       MultiSelect = True
       ReadOnly = True
       RowSelect = True
+      ParentShowHint = False
+      ShowHint = True
       SortType = stText
       TabOrder = 2
       ViewStyle = vsList
@@ -98,6 +104,8 @@ object AddEditSnippet: TAddEditSnippet
       Width = 193
       Height = 41
       Caption = #1044#1086#1074#1077#1088#1103#1090#1100' '#1101#1090#1086#1084#1091' '#1089#1085#1080#1087#1087#1077#1090#1091' ('#1086#1090#1082#1083#1102#1095#1080#1090#1100' '#1087#1088#1086#1074#1077#1088#1082#1091' '#1073#1077#1079#1086#1087#1072#1089#1085#1086#1089#1090#1080')'
+      ParentShowHint = False
+      ShowHint = True
       TabOrder = 3
       WordWrap = True
       OnClick = cbIgnoreSecurityChecksClick
@@ -121,6 +129,8 @@ object AddEditSnippet: TAddEditSnippet
       Height = 25
       Anchors = [akTop, akRight]
       Caption = 'OK'
+      ParentShowHint = False
+      ShowHint = True
       TabOrder = 0
       OnClick = bOKClick
     end
@@ -131,6 +141,8 @@ object AddEditSnippet: TAddEditSnippet
       Height = 25
       Anchors = [akTop, akRight]
       Caption = #1054#1090#1084#1077#1085#1072
+      ParentShowHint = False
+      ShowHint = True
       TabOrder = 1
       OnClick = bCancelClick
     end
@@ -174,6 +186,8 @@ object AddEditSnippet: TAddEditSnippet
         Height = 23
         Align = alRight
         Caption = #9881
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 0
         OnClick = bAISettingsClick
       end
@@ -184,6 +198,8 @@ object AddEditSnippet: TAddEditSnippet
         Height = 23
         Align = alClient
         Style = csDropDownList
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 1
         OnChange = cbAIModelChange
       end
@@ -196,6 +212,8 @@ object AddEditSnippet: TAddEditSnippet
         Style = csDropDownList
         DoubleBuffered = True
         ParentDoubleBuffered = False
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 2
         OnChange = cbAIHubChange
       end
@@ -316,6 +334,8 @@ object AddEditSnippet: TAddEditSnippet
           Font.Style = []
           Font.Quality = fqClearTypeNatural
           ParentDoubleBuffered = False
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 0
           TextHint = #1050#1086#1084#1084#1077#1085#1090#1072#1088#1080#1081' '#1082' '#1089#1085#1080#1087#1087#1077#1090#1091' '#1074#1074#1086#1076#1080' '#1089#1102#1076#1072'...'
           UseCodeFolding = False
@@ -376,6 +396,8 @@ object AddEditSnippet: TAddEditSnippet
           Font.Style = []
           Font.Quality = fqClearTypeNatural
           ParentDoubleBuffered = False
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 2
           TextHint = #1050#1086#1076' '#1089#1085#1080#1087#1087#1077#1090#1072' '#1074#1074#1086#1076#1080' '#1079#1076#1077#1089#1100'...'
           OnKeyDown = mContentKeyDown
@@ -430,7 +452,7 @@ object AddEditSnippet: TAddEditSnippet
           OnProcessCommand = mContentProcessCommand
         end
       end
-      object tsHelp: TTabSheet
+      object tsMacros: TTabSheet
         Caption = #1052#1072#1082#1088#1086#1089#1099
         ImageIndex = 1
         object mInfo: TMemo
@@ -555,7 +577,7 @@ object AddEditSnippet: TAddEditSnippet
   object MainMenu: TMainMenu
     Left = 592
     Top = 376
-    object AI1: TMenuItem
+    object nAI: TMenuItem
       Caption = #1048#1048' '#1087#1086#1084#1086#1097#1085#1080#1082
       object nShowAIPrompt: TMenuItem
         Caption = #1042#1099#1079#1074#1072#1090#1100' '#1048#1048

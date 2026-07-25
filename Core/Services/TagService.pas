@@ -22,6 +22,10 @@ type
 
 implementation
 
+uses
+    UI.StateLoader
+    ;
+
 constructor TTagService.Create(TagRepo: ITagRepository);
 begin
     FTagRepo := TagRepo;
@@ -49,10 +53,14 @@ begin
     CleanName := Trim(Name);
 
     if CleanName = '' then
-        raise Exception.Create('Имя тега не может быть пустым');
+        raise Exception.Create(
+            TUIStateLoader.GetMessage('Tag.EmptyNameError')
+        );
 
     if FTagRepo.ExistsByName(CleanName) then
-        raise Exception.CreateFmt('Тег с именем "%s" уже существует!', [CleanName]);
+        raise Exception.Create(
+            TUIStateLoader.GetMessage('Tag.DuplicateNameError', [CleanName])
+        );
 
     NewTag := Default(TTagDTO);
     NewTag.Name := CleanName;
@@ -62,7 +70,9 @@ end;
 procedure TTagService.DeleteTag(TagID: Integer);
 begin
     if TagID <= 0 then
-        raise Exception.Create('Некорректный ID тега');
+        raise Exception.Create(
+            TUIStateLoader.GetMessage('Tag.InvalidIdError')
+        );
 
     FTagRepo.Delete(TagID);
 end;
@@ -75,10 +85,14 @@ begin
     CleanName := Trim(NewName);
 
     if CleanName = '' then
-        raise Exception.Create('Имя тега не может быть пустым');
+        raise Exception.Create(
+            TUIStateLoader.GetMessage('Tag.EmptyNameError')
+        );
 
     if FTagRepo.ExistsByName(CleanName) then
-        raise Exception.CreateFmt('Тег с именем "%s" уже существует!', [CleanName]);
+        raise Exception.Create(
+            TUIStateLoader.GetMessage('Tag.EmptyNameError', [CleanName])
+        );
 
     TagToUpdate := Default(TTagDTO);
     TagToUpdate.ID := TagID;

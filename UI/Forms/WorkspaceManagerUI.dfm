@@ -70,22 +70,22 @@ object WorkspaceManagerForm: TWorkspaceManagerForm
   object MainMenu: TMainMenu
     Left = 168
     Top = 208
-    object N1: TMenuItem
+    object nWorkspaces: TMenuItem
       Caption = #1055#1088#1086#1089#1090#1088#1072#1085#1089#1090#1074#1072
-      object nAdd: TMenuItem
+      object nWorkspaceAdd: TMenuItem
         Caption = #1044#1086#1073#1072#1074#1080#1090#1100
         ShortCut = 16449
-        OnClick = nAddClick
+        OnClick = nWorkspaceAddClick
       end
-      object nDelete: TMenuItem
+      object nWorkspaceDelete: TMenuItem
         Caption = #1059#1076#1072#1083#1080#1090#1100
         ShortCut = 16452
-        OnClick = nDeleteClick
+        OnClick = nWorkspaceDeleteClick
       end
-      object nRename: TMenuItem
+      object nWorkspaceRename: TMenuItem
         Caption = #1048#1079#1084#1077#1085#1080#1090#1100
         ShortCut = 16453
-        OnClick = nRenameClick
+        OnClick = nWorkspaceRenameClick
       end
     end
   end

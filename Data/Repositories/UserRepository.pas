@@ -30,7 +30,9 @@ uses
     System.SysUtils,
     System.Variants,
     FireDAC.Stan.Param,
-    System.Classes;
+    System.Classes,
+    UI.StateLoader
+    ;
 
 function TUserRepository.InternalLoadUsers(const SQL: string; const Params: array of Variant): TArray<TUserDTO>;
 var
@@ -40,7 +42,9 @@ var
     i: Integer;
 begin
     if not Assigned(FConnection) or (FConnection.Connected = False) then
-        raise Exception.Create('Ошибка: нет подключения к базе данных (FConnection is nil/disconnected).');
+        raise Exception.Create(
+            TUIStateLoader.GetMessage('NoConnectionError')
+        );
 
     List := TList<TUserDTO>.Create;
     Query := TFDQuery.Create(nil);

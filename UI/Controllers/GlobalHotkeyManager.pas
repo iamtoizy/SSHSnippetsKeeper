@@ -125,7 +125,7 @@ end;
 
 procedure TGlobalHotkeyManager.OnPassGenHotkeyTriggered;
 begin
-    TPasswordGenForm.ExecuteGlobal(nil, FAppContext.PasswordService);
+    TPasswordGenForm.ExecuteGlobal(nil, FAppContext.PasswordService, FAppContext);
 end;
 
 end.

@@ -229,43 +229,43 @@ object AISettingsForm: TAISettingsForm
   object MainMenu: TMainMenu
     Left = 520
     Top = 16
-    object N9: TMenuItem
+    object nFile: TMenuItem
       Caption = #1060#1072#1081#1083
-      object N10: TMenuItem
+      object nSave: TMenuItem
         Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100
         ShortCut = 16467
-        OnClick = N10Click
+        OnClick = nSaveClick
       end
     end
-    object N1: TMenuItem
+    object nProvider: TMenuItem
       Caption = #1055#1088#1086#1074#1072#1081#1076#1077#1088
-      object N2: TMenuItem
+      object nProviderCreate: TMenuItem
         Caption = #1057#1086#1079#1076#1072#1090#1100
         ShortCut = 16462
-        OnClick = N2Click
+        OnClick = nProviderCreateClick
       end
-      object N3: TMenuItem
+      object nProviderDelete: TMenuItem
         Caption = #1059#1076#1072#1083#1080#1090#1100
         ShortCut = 16452
-        OnClick = N3Click
+        OnClick = nProviderDeleteClick
       end
-      object N4: TMenuItem
+      object nProviderEdit: TMenuItem
         Caption = #1048#1079#1084#1077#1085#1080#1090#1100
         ShortCut = 16453
       end
     end
-    object N5: TMenuItem
+    object nModel: TMenuItem
       Caption = #1052#1086#1076#1077#1083#1100
-      object N6: TMenuItem
+      object nModelCreate: TMenuItem
         Caption = #1057#1086#1079#1076#1072#1090#1100
         ShortCut = 24654
-        OnClick = N6Click
+        OnClick = nModelCreateClick
       end
-      object N7: TMenuItem
+      object nModelDelete: TMenuItem
         Caption = #1059#1076#1072#1083#1080#1090#1100
         ShortCut = 24644
       end
-      object N8: TMenuItem
+      object nModelEdit: TMenuItem
         Caption = #1048#1079#1084#1077#1085#1080#1090#1100
         ShortCut = 24645
       end

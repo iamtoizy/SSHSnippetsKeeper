@@ -49,6 +49,10 @@ type
 
 implementation
 
+uses
+    UI.StateLoader
+    ;
+
 { TSnippetService }
 
 constructor TSnippetService.Create(
@@ -69,14 +73,24 @@ function TSnippetService.CreateSnippet(const Snippet: TSnippetDTO; const TagIDs:
 var
     CatUserID: Integer;
 begin
-    if Snippet.UserID <= 0 then raise ESnippetValidationException.Create('Некорректный UserID');
-    if Snippet.CategoryID <= 0 then raise ESnippetValidationException.Create('Некорректный CategoryID');
+    if Snippet.UserID <= 0 then
+        raise ESnippetValidationException.Create(
+            TUIStateLoader.GetMessage('User.InvalidIdError')
+        );
+    if Snippet.CategoryID <= 0 then
+        raise ESnippetValidationException.Create(
+            TUIStateLoader.GetMessage('Category.InvalidIdError')
+        );
 
     CatUserID := FCategoryRepo.GetUserID(Snippet.CategoryID);
-    if CatUserID = -1 then raise ESnippetValidationException.Create('Категория не найдена');
+    if CatUserID = -1 then raise ESnippetValidationException.Create(
+        TUIStateLoader.GetMessage('Category.CategoryNotFound')
+    );
 
     if CatUserID <> Snippet.UserID then
-        raise EAccessDeniedException.Create('Ошибка доступа: Категория принадлежит другому пользователю');
+        raise EAccessDeniedException.Create(
+            TUIStateLoader.GetMessage('Category.AccessDenied')
+        );
 
     Result := FSnippetRepo.Add(Snippet);
     if Length(TagIDs) > 0 then
@@ -87,11 +101,15 @@ procedure TSnippetService.UpdateSnippet(const Snippet: TSnippetDTO; const TagIDs
 var
     CatUserID: Integer;
 begin
-    if Snippet.ID <= 0 then raise ESnippetValidationException.Create('Некорректный ID сниппета');
+    if Snippet.ID <= 0 then raise ESnippetValidationException.Create(
+        TUIStateLoader.GetMessage('Snippet.InvalidIdError')
+    );
 
     CatUserID := FCategoryRepo.GetUserID(Snippet.CategoryID);
     if CatUserID <> Snippet.UserID then
-        raise EAccessDeniedException.Create('Ошибка доступа: Вы не можете переместить сниппет в чужую категорию');
+        raise EAccessDeniedException.Create(
+            TUIStateLoader.GetMessage('Category.AccessDenied')
+        );
 
     FSnippetRepo.Update(Snippet);
     FSnippetRepo.UpdateTags(Snippet.ID, TagIDs);
@@ -99,13 +117,17 @@ end;
 
 procedure TSnippetService.DeleteSnippet(const SnippetID: Integer);
 begin
-    if SnippetID <= 0 then raise ESnippetValidationException.Create('Некорректный ID для удаления');
+    if SnippetID <= 0 then raise ESnippetValidationException.Create(
+        TUIStateLoader.GetMessage('Snippet.InvalidIdError')
+    );
     FSnippetRepo.Delete(SnippetID);
 end;
 
 function TSnippetService.GetSnippetByID(SnippetID: Integer): TSnippetDTO;
 begin
-    if SnippetID <= 0 then raise ESnippetValidationException.Create('Некорректный ID сниппета');
+    if SnippetID <= 0 then raise ESnippetValidationException.Create(
+        TUIStateLoader.GetMessage('Snippet.InvalidIdError')
+    );
     Result := FSnippetRepo.GetById(SnippetID);
 end;
 
@@ -116,13 +138,17 @@ end;
 
 function TSnippetService.GetSnippetsByCategory(CategoryID, UserID: Integer): TArray<TSnippetDTO>;
 begin
-    if CategoryID <= 0 then raise ESnippetValidationException.Create('Некорректный ID категории');
+    if CategoryID <= 0 then raise ESnippetValidationException.Create(
+        TUIStateLoader.GetMessage('Category.InvalidIdError')
+    );
     Result := FSnippetRepo.GetSnippetByCategory(CategoryID, UserID);
 end;
 
 function TSnippetService.GetSnippetsByTag(TagID: Integer): TArray<TSnippetDTO>;
 begin
-    if TagID <= 0 then raise ESnippetValidationException.Create('Некорректный ID тега');
+    if TagID <= 0 then raise ESnippetValidationException.Create(
+        TUIStateLoader.GetMessage('Tag.InvalidIdError')
+    );
     Result := FSnippetRepo.GetSnippetsByTag(TagID);
 end;
 

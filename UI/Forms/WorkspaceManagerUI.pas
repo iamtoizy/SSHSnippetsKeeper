@@ -15,20 +15,20 @@ uses
     Vcl.Menus,
     User,
     Core.Interfaces,
-    UI.Interfaces
+    BaseFormUI
     ;
 
 type
-    TWorkspaceManagerForm = class(TForm)
+    TWorkspaceManagerForm = class(TBaseForm)
         pBottom: TPanel;
         bOK: TButton;
         bCancel: TButton;
         lvWorkspaces: TListView;
         MainMenu: TMainMenu;
-        N1: TMenuItem;
-        nAdd: TMenuItem;
-        nDelete: TMenuItem;
-        nRename: TMenuItem;
+        nWorkspaces: TMenuItem;
+        nWorkspaceAdd: TMenuItem;
+        nWorkspaceDelete: TMenuItem;
+        nWorkspaceRename: TMenuItem;
         procedure bOKClick(Sender: TObject);
         procedure bCancelClick(Sender: TObject);
         procedure lvWorkspacesEdited(Sender: TObject; Item: TListItem; var S: string);
@@ -37,12 +37,11 @@ type
         procedure FormShow(Sender: TObject);
         procedure lvWorkspacesDblClick(Sender: TObject);
         procedure lvWorkspacesResize(Sender: TObject);
-        procedure nAddClick(Sender: TObject);
-        procedure nDeleteClick(Sender: TObject);
-        procedure nRenameClick(Sender: TObject);
+        procedure nWorkspaceAddClick(Sender: TObject);
+        procedure nWorkspaceDeleteClick(Sender: TObject);
+        procedure nWorkspaceRenameClick(Sender: TObject);
     private
         FUserService: IUserService;
-        FErrorHandler: IUIErrorHandler;
 
         procedure RefreshWorkspaces;
         procedure DoAddWorkspace;
@@ -52,6 +51,7 @@ type
     public
         // Внедрение зависимости
         constructor Create(Owner: TComponent; UserService: IUserService); reintroduce;
+        procedure Initialize(AppContext: IAppContext);
     end;
 
 var
@@ -60,7 +60,8 @@ var
 implementation
 
 uses
-    Winapi.CommCtrl;
+    Winapi.CommCtrl,
+    UI.StateLoader;
 
 {$R *.dfm}
 
@@ -75,7 +76,6 @@ end;
 
 procedure TWorkspaceManagerForm.FormCreate(Sender: TObject);
 begin
-    FErrorHandler := TVCLErrorHandler.Create;
     lvWorkspaces.OwnerData := False;
     lvWorkspaces.ReadOnly := False; // Разрешаем редактирование
 end;
@@ -111,8 +111,10 @@ var
     Item: TListItem;
     NewID: Integer;
 begin
-    if not InputQuery('Новое пространство', 'Введите имя:', NewName) then
-        Exit;
+    if not InputQuery(
+        TUIStateLoader.GetMessage('WorkspaceManagerForm.NewWorkspaceCaption'),
+        TUIStateLoader.GetMessage('WorkspaceManagerForm.NewWorkspaceName'),
+        NewName) then Exit;
 
     NewName := Trim(NewName);
     if NewName = '' then
@@ -132,7 +134,7 @@ begin
         Item.MakeVisible(False);
     except
         on E: Exception do
-            FErrorHandler.ShowError('Ошибка добавления пространства: ' + E.Message);
+            MessagesHandler.ShowError(TUIStateLoader.GetMessage('WorkspaceManagerForm.AddError', [E.Message]));
     end;
 end;
 
@@ -151,10 +153,8 @@ begin
 
     if MessageBox(
         Application.Handle,
-        PChar(
-            Format('Удалить пространство "%s"?' + sLineBreak + 'Все вложенные сниппеты этого пространства будут удалены!',
-            [UserName])),
-        'Подтверждение',
+        PChar(TUIStateLoader.GetMessage('WorkspaceManagerForm.DeleteConfirm', [UserName])),
+        PChar(TUIStateLoader.GetMessage('Common.Confirmation')),
         MB_YESNO or MB_ICONWARNING) <> IDYES then Exit;
 
     try
@@ -163,7 +163,9 @@ begin
         Item.Delete;
     except
         on E: Exception do
-            FErrorHandler.ShowError('Ошибка удаления пространства: ' + E.Message);
+            MessagesHandler.ShowError(
+                TUIStateLoader.GetMessage('WorkspaceManagerForm.DeleteError', [E.Message])
+            );
     end;
 end;
 
@@ -171,7 +173,9 @@ procedure TWorkspaceManagerForm.DoRenameWorkspace;
 begin
     if lvWorkspaces.Selected = nil then
     begin
-        FErrorHandler.ShowInfo('Сначала выберите пространство.');
+        MessagesHandler.ShowInfo(
+            TUIStateLoader.GetMessage('WorkspaceManagerForm.SelectWorkspaceFirst')
+        );
         Exit;
     end;
     lvWorkspaces.Selected.EditCaption;
@@ -203,7 +207,9 @@ begin
     except
         on E: Exception do
         begin
-            FErrorHandler.ShowError('Ошибка переименования пространства: ' + E.Message);
+            MessagesHandler.ShowError(
+                TUIStateLoader.GetMessage('WorkspaceManagerForm.RenameError', [E.Message])
+            );
             S := OldName;
         end;
     end;
@@ -238,6 +244,11 @@ begin
     AdjustColumnWidth;
 end;
 
+procedure TWorkspaceManagerForm.Initialize(AppContext: IAppContext);
+begin
+    inherited Initialize(AppContext);
+end;
+
 procedure TWorkspaceManagerForm.lvWorkspacesDblClick(Sender: TObject);
 begin
     DoRenameWorkspace;
@@ -249,17 +260,17 @@ begin
     lvWorkspaces.Columns[0].Width := lvWorkspaces.ClientWidth - 30
 end;
 
-procedure TWorkspaceManagerForm.nAddClick(Sender: TObject);
+procedure TWorkspaceManagerForm.nWorkspaceAddClick(Sender: TObject);
 begin
     DoAddWorkspace;
 end;
 
-procedure TWorkspaceManagerForm.nDeleteClick(Sender: TObject);
+procedure TWorkspaceManagerForm.nWorkspaceDeleteClick(Sender: TObject);
 begin
     DoDeleteWorkspace;
 end;
 
-procedure TWorkspaceManagerForm.nRenameClick(Sender: TObject);
+procedure TWorkspaceManagerForm.nWorkspaceRenameClick(Sender: TObject);
 begin
     DoRenameWorkspace;
 end;

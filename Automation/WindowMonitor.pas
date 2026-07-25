@@ -57,6 +57,10 @@ procedure WinEventProc(hWinEventHook: THandle; eventType: DWORD; HWND: THandle; 
 
 implementation
 
+uses
+    UI.StateLoader
+    ;
+
 const
     PROCESS_QUERY_LIMITED_INFORMATION = $1000;
     MAX_HISTORY_SIZE = 50;  // Храним только последние 50 окон
@@ -394,7 +398,9 @@ begin
     FWinEventHook := SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND, 0, @WinEventProc, 0, 0, WINEVENT_OUTOFCONTEXT or WINEVENT_SKIPOWNPROCESS);
 
     if FWinEventHook = 0 then
-        raise Exception.Create('Не удалось установить WinEventHook. Ошибка: ' + SysErrorMessage(GetLastError));
+        raise Exception.Create(
+            TUIStateLoader.GetMessage('Common.WinEventHookError', [SysErrorMessage(GetLastError)])
+        );
 
     // Добавляем текущее окно в историю, если оно разрешено
     if IsProcessAllowed(GetExeNameFromHWND(GetForegroundWindow)) then

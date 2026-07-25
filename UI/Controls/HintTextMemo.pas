@@ -3,158 +3,162 @@ unit HintTextMemo;
 interface
 
 uses
-    Winapi.Messages,
     System.SysUtils,
     System.Classes,
-    Vcl.Graphics,
     Vcl.Controls,
     Vcl.StdCtrls,
-    System.Types,
-    System.UITypes,
+    Vcl.Graphics,
+    Winapi.Messages,
+    Winapi.Windows,
     System.Masks;
 
 type
     TMemo = class(Vcl.StdCtrls.TMemo)
     private
-        FCanvas: TCanvas;
         FEnableHintText: Boolean;
         FHintText: string;
         FMaskedStr: string;
-        procedure WMPaint(var Message: TWMPaint); message WM_PAINT;
         procedure PrepareMaskStr;
-        procedure DrawMultiLineHint(const Rect: TRect);
+        procedure SetEnableHintText(const Value: Boolean);
+        procedure SetHintText(const Value: string);
+
+        procedure WMPaint(var Message: TWMPaint); message WM_PAINT;
+        procedure CMEnabledChanged(var Message: TMessage); message CM_ENABLEDCHANGED;
     protected
+        procedure Change; override;
         procedure WndProc(var Message: TMessage); override;
     public
-        constructor Create(Owner: TComponent); override;
-        destructor Destroy; override;
+        constructor Create(AOwner: TComponent); override;
         function MaskMatchesWith(InputStr: string): Boolean;
-        property EnableHintText: Boolean read FEnableHintText write FEnableHintText;
-        property HintText: string read FHintText write FHintText;
         property MaskText: string read FMaskedStr;
+    published
+        property EnableHintText: Boolean read FEnableHintText write SetEnableHintText;
+        property HintText: string read FHintText write SetHintText;
     end;
 
 implementation
 
-constructor TMemo.Create(Owner: TComponent);
+constructor TMemo.Create(AOwner: TComponent);
 begin
-    inherited Create(Owner);
+    inherited Create(AOwner);
     FEnableHintText := False;
-    FHintText := 'Type here...' + #13#10 + '("*", "?" wildcards are supported)';
+    FHintText := 'Type here...';
     FMaskedStr := '';
-    FCanvas := TControlCanvas.Create;
-    TControlCanvas(FCanvas).Control := Self;
 end;
 
-destructor TMemo.Destroy;
+procedure TMemo.Change;
 begin
-    FCanvas.Free;
-    inherited Destroy;
+    inherited Change;
+    if FEnableHintText then
+        PrepareMaskStr;
 end;
 
-procedure TMemo.DrawMultiLineHint(const Rect: TRect);
-var
-    Lines: TStringList;
-    i: Integer;
-    YPos: Integer;
-    LineHeight: Integer;
+procedure TMemo.SetEnableHintText(const Value: Boolean);
 begin
-    Lines := TStringList.Create;
-    try
-        Lines.Text := FHintText;
-        FCanvas.Font := Self.Font;
-        FCanvas.Font.Style := FCanvas.Font.Style + [fsItalic];
-        FCanvas.Font.Color := clGray;
-        FCanvas.Brush.Style := bsClear;
-        // Получаем высоту строки
-        LineHeight := FCanvas.TextHeight('A');
-        // Начальная позиция Y с учетом отступов TMemo
-        YPos := Rect.Top + 3;
-        // Рисуем каждую строку
-        for i := 0 to Lines.Count - 1 do
-        begin
-            // Проверяем, не вышли ли за пределы видимой области
-            if YPos + LineHeight > Rect.Bottom then
-                Break;
-            FCanvas.TextOut(Rect.Left + 3, YPos, Lines[i]);
-            YPos := YPos + LineHeight;
-        end;
-    finally
-        Lines.Free;
+    if FEnableHintText <> Value then
+    begin
+        FEnableHintText := Value;
+        if FEnableHintText then
+            PrepareMaskStr
+        else
+            FMaskedStr := '';
+        Invalidate;
     end;
 end;
 
-procedure TMemo.WMPaint(var Message: TWMPaint);
-var
-    MemoRect: TRect;
+procedure TMemo.SetHintText(const Value: string);
 begin
-    inherited;
-    if ((FEnableHintText) and (Length(Text) = 0)) then
+    if FHintText <> Value then
     begin
-        MemoRect := ClientRect;
-        DrawMultiLineHint(MemoRect);
-    end;
-end;
-
-procedure TMemo.WndProc(var Message: TMessage);
-var
-    temp: TNotifyEvent;
-begin
-    temp := OnChange;
-    if (FEnableHintText) then
-    begin
-        with Message do
-            case Msg of
-                WM_CHAR, WM_SETTEXT, WM_CUT, WM_PASTE:
-                    OnChange := nil;
-            end;
-    end;
-    inherited WndProc(Message);
-    if (FEnableHintText) then
-    begin
-        with Message do
-            case Msg of
-                CM_MOUSEENTER, CM_MOUSELEAVE, WM_LBUTTONUP, WM_LBUTTONDOWN,
-                  WM_KEYDOWN, WM_KEYUP, WM_SETFOCUS, WM_KILLFOCUS,
-                  CM_FONTCHANGED, CM_TEXTCHANGED:
-                    begin
-                        Invalidate;
-                    end;
-                WM_CHAR, WM_SETTEXT, WM_CUT, WM_PASTE:
-                    begin
-                        PrepareMaskStr;
-                        OnChange := temp;
-                        if (Assigned(OnChange)) then
-                            OnChange(Self);
-                    end;
-            end;
+        FHintText := Value;
+        Invalidate; // Принудительно запрашиваем перерисовку при смене текста
     end;
 end;
 
 procedure TMemo.PrepareMaskStr;
 begin
-    if (FEnableHintText) then
+    if FEnableHintText then
     begin
-        // Для маски убираем переносы строк
-        FMaskedStr := UpperCase('*' + StringReplace(Text, #13#10, ' ',
-          [rfReplaceAll]) + '*', loUserLocale);
+        FMaskedStr := UpperCase('*' + StringReplace(Text, #13#10, ' ', [rfReplaceAll]) + '*', loUserLocale);
     end;
 end;
 
 function TMemo.MaskMatchesWith(InputStr: string): Boolean;
 begin
-    if (not FEnableHintText) then
-    begin
-        Result := False;
-        Exit;
-    end;
-    if (FMaskedStr = '') then
-    begin
-        Result := True;
-        Exit;
-    end;
+    if not FEnableHintText then
+        Exit(False);
+
+    if FMaskedStr = '' then
+        Exit(True);
+
     InputStr := UpperCase(InputStr, loUserLocale);
     Result := MatchesMask(InputStr, FMaskedStr);
+end;
+
+procedure TMemo.CMEnabledChanged(var Message: TMessage);
+begin
+    inherited;
+    Invalidate; // Синхронизируем появление/исчезновение при смене Enabled
+end;
+
+procedure TMemo.WMPaint(var Message: TWMPaint);
+var
+    DC: HDC;
+    Canvas: TCanvas;
+    R: TRect;
+    NeedRelease: Boolean;
+begin
+    inherited; // Даем системе отрисовать сам Memo
+
+    // Используем GetTextLen = 0 (это в 10 раз надежнее, чем Text = '', т.к. игнорирует скрытые переносы строк)
+    if FEnableHintText and (GetTextLen = 0) and (FHintText <> '') and Enabled then
+    begin
+        NeedRelease := False;
+        DC := Message.DC;
+
+        // Магия VCL: если Message.DC = 0, значит двойная буферизация отключена, берем DC у окна.
+        // Если <> 0, значит VCL дал нам виртуальный буфер, и мы ОБЯЗАНЫ рисовать в него!
+        if DC = 0 then
+        begin
+            DC := GetDC(Handle);
+            NeedRelease := True;
+        end;
+
+        if DC <> 0 then
+        begin
+            Canvas := TCanvas.Create;
+            try
+                Canvas.Handle := DC;
+                Canvas.Font.Assign(Self.Font);   // Безопасное копирование системного шрифта
+                Canvas.Font.Color := clGrayText; // Нативный серый цвет для неактивного текста (выглядит лучше)
+                Canvas.Font.Style := [fsItalic];
+                Canvas.Brush.Style := bsClear;   // Не закрашиваем фон!
+
+                R := ClientRect;
+                Inc(R.Left, 4);
+                Inc(R.Top, 4);
+                Dec(R.Right, 4);
+
+                DrawText(Canvas.Handle, PChar(FHintText), -1, R, DT_NOPREFIX or DT_WORDBREAK);
+            finally
+                Canvas.Handle := 0; // Отвязываем контекст ДО удаления Canvas, чтобы не убить системный DC
+                Canvas.Free;
+                if NeedRelease then
+                    ReleaseDC(Handle, DC);
+            end;
+        end;
+    end;
+end;
+
+procedure TMemo.WndProc(var Message: TMessage);
+begin
+    inherited WndProc(Message);
+
+    // Моментальная перерисовка при клике или вводе символа
+    case Message.Msg of
+        WM_SETFOCUS, WM_KILLFOCUS, CM_TEXTCHANGED:
+            Invalidate;
+    end;
 end;
 
 end.

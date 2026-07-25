@@ -14,7 +14,8 @@ uses
     Vcl.ExtCtrls,
     Vcl.Menus,
     System.Generics.Collections,
-    Core.Interfaces;
+    Core.Interfaces,
+    BaseFormUI;
 
 type
     TTagEditAction = (teaAdd, teaRename, teaDelete);
@@ -25,21 +26,21 @@ type
         NewName: string;     // Для Add/Rename
     end;
 
-    TTagEditorForm = class(TForm)
+    TTagEditorForm = class(TBaseForm)
         pBottom: TPanel;
         bOK: TButton;
         bCancel: TButton;
         lvTags: TListView;
         MainMenu: TMainMenu;
         nActions: TMenuItem;
-        nAdd: TMenuItem;
-        nDelete: TMenuItem;
-        nRename: TMenuItem;
+    nTagAdd: TMenuItem;
+    nTagDelete: TMenuItem;
+    nTagRename: TMenuItem;
         procedure bOKClick(Sender: TObject);
         procedure bCancelClick(Sender: TObject);
-        procedure nAddClick(Sender: TObject);
-        procedure nDeleteClick(Sender: TObject);
-        procedure nRenameClick(Sender: TObject);
+        procedure nTagAddClick(Sender: TObject);
+        procedure nTagDeleteClick(Sender: TObject);
+        procedure nTagRenameClick(Sender: TObject);
         procedure lvTagsEdited(Sender: TObject; Item: TListItem; var S: string);
         procedure FormCreate(Sender: TObject);
         procedure FormDestroy(Sender: TObject);
@@ -56,6 +57,7 @@ type
     public
         // Внедрение зависимости (Dependency Injection) через конструктор
         constructor Create(Owner: TComponent; TagService: ITagService); reintroduce;
+        procedure Initialize(AppContext: IAppContext);
     end;
 
 var
@@ -69,7 +71,8 @@ uses
     Tag,
     UIHelpers,
     System.UITypes,
-    Winapi.CommCtrl;
+    Winapi.CommCtrl,
+    UI.StateLoader;
 
 constructor TTagEditorForm.Create(Owner: TComponent; TagService: ITagService);
 begin
@@ -87,6 +90,11 @@ end;
 procedure TTagEditorForm.FormDestroy(Sender: TObject);
 begin
     FChanges.Free;
+end;
+
+procedure TTagEditorForm.Initialize(AppContext: IAppContext);
+begin
+    inherited Initialize(AppContext);
 end;
 
 procedure TTagEditorForm.RefreshTagList;
@@ -115,7 +123,10 @@ var
     NewName: string;
     Item: TListItem;
 begin
-    if InputQuery('Новый тег', 'Введите имя тега:', NewName) and (Trim(NewName) <> '') then
+    if InputQuery(
+        TUIStateLoader.GetMessage('TagEditorForm.InputQueryTitle'),
+        TUIStateLoader.GetMessage('TagEditorForm.InputQueryPrompt'),
+        NewName) and (Trim(NewName) <> '') then
     begin
         NewName := Trim(NewName);
 
@@ -141,9 +152,13 @@ begin
     if lvTags.SelCount = 0 then
         Exit;
 
-    Dlg := CreateMessageDialog(Format('Удалить выбранные теги (%d шт.)?', [lvTags.SelCount]), mtConfirmation, [mbYes, mbNo]);
+    // TODO: В отдельный класс, блять!
+    Dlg := CreateMessageDialog(
+        TUIStateLoader.GetMessage('TagEditorForm.DeleteConfirmFormat', [lvTags.SelCount]),
+        mtConfirmation, [mbYes, mbNo]
+    );
     try
-        Dlg.Caption := 'Подтверждение удаления';
+        Dlg.Caption := TUIStateLoader.GetMessage('TagEditorForm.DeleteConfirmTitle');
         if Dlg.ShowModal <> mrYes then
             Exit;
     finally
@@ -178,17 +193,17 @@ begin
         lvTags.Selected.EditCaption;
 end;
 
-procedure TTagEditorForm.nAddClick(Sender: TObject);
+procedure TTagEditorForm.nTagAddClick(Sender: TObject);
 begin
     DoAddTag;
 end;
 
-procedure TTagEditorForm.nDeleteClick(Sender: TObject);
+procedure TTagEditorForm.nTagDeleteClick(Sender: TObject);
 begin
     DoDeleteTags;
 end;
 
-procedure TTagEditorForm.nRenameClick(Sender: TObject);
+procedure TTagEditorForm.nTagRenameClick(Sender: TObject);
 begin
     DoRenameTag;
 end;
@@ -222,7 +237,7 @@ begin
         ModalResult := mrOk;
     except
         on E: Exception do
-            MessageDlg('Ошибка сохранения тегов: ' + E.Message, mtError, [mbOK], 0);
+            MessageDlg(TUIStateLoader.GetMessage('TagEditorForm.SaveErrorFormat', [E.Message]), mtError, [mbOK], 0);
     end;
 end;
 
@@ -237,7 +252,7 @@ var
     Change: TTagChange;
 begin
     if not Assigned(FTagService) then
-        raise Exception.Create('Сервис тегов не инициализирован!');
+        raise Exception.Create('Tag service is not initialized!');
 
     for Change in FChanges do
     begin

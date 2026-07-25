@@ -89,7 +89,8 @@ function RtlGenRandom(RandomBuffer: Pointer; RandomBufferLength: ULONG): BOOLEAN
 implementation
 
 uses
-    System.Hash;
+    System.Hash,
+    UI.StateLoader;
 
 function SecureRandom(Max: Integer): Integer;
 var
@@ -135,23 +136,23 @@ end;
 function TPasswordService.GetPresetDescription(Preset: TPasswordPreset): string;
 begin
     case Preset of
-        wpWebStandard:        Result := '[1] Обычный пароль для сайта (Web Safe)';
-        wpActiveDirectory:    Result := '[2] Active Directory (A-Z, a-z, 0-9, спецсимвол)';
-        wpStrictAlphaNumeric: Result := '[3] Только буквы и цифры (A-Z, a-z, 0-9)';
-        wpMacAddress:         Result := '[4] MAC-адрес (XX:XX:XX:XX:XX:XX)';
-        wpUUIDv4:             Result := '[5] UUID v4 (Случайный GUID)';
-        wpBase64Key:          Result := '[6] Base64 Ключ (JWT/API)';
-        wpBashSafe:           Result := '[7] Bash Safe (без $, !, `, \ и кавычек)';
-        wpDockerEnvSafe:      Result := '[8] Docker & .env Safe';
-        wpBitrixDb:           Result := '[9] Для БД Bitrix';
-        wpPinCode:            Result := '[0] Пин-код (Только цифры)';
-        wpCustom:             Result := '[C] Кастомные настройки...';
-        wpHexToken:           Result := '[H] Hex-токен (a-f, 0-9)';
-        wpUrlSafe:            Result := '[U] URL Safe (RFC 3986)';
-        wpOracleSafe:         Result := '[O] Oracle DB (только _$#, с буквы)';
-        wpNoLookAlikes:       Result := 'Без похожих символов (I, l, 1, O, 0)';
+        wpWebStandard:        Result := '[1] ' + TUIStateLoader.GetMessage('PasswordGenForm.Presets.WebStandard');
+        wpActiveDirectory:    Result := '[2] ' + TUIStateLoader.GetMessage('PasswordGenForm.Presets.ActiveDirectory');
+        wpStrictAlphaNumeric: Result := '[3] ' + TUIStateLoader.GetMessage('PasswordGenForm.Presets.StrictAlphaNumeric');
+        wpMacAddress:         Result := '[4] ' + TUIStateLoader.GetMessage('PasswordGenForm.Presets.MacAddress');
+        wpUUIDv4:             Result := '[5] ' + TUIStateLoader.GetMessage('PasswordGenForm.Presets.UUIDv4');
+        wpBase64Key:          Result := '[6] ' + TUIStateLoader.GetMessage('PasswordGenForm.Presets.Base64Key');
+        wpBashSafe:           Result := '[7] ' + TUIStateLoader.GetMessage('PasswordGenForm.Presets.BashSafe');
+        wpDockerEnvSafe:      Result := '[8] ' + TUIStateLoader.GetMessage('PasswordGenForm.Presets.DockerEnvSafe');
+        wpBitrixDb:           Result := '[9] ' + TUIStateLoader.GetMessage('PasswordGenForm.Presets.BitrixDb');
+        wpPinCode:            Result := '[0] ' + TUIStateLoader.GetMessage('PasswordGenForm.Presets.PinCode');
+        wpCustom:             Result := '[C] ' + TUIStateLoader.GetMessage('PasswordGenForm.Presets.Custom');
+        wpHexToken:           Result := '[H] ' + TUIStateLoader.GetMessage('PasswordGenForm.Presets.HexToken');
+        wpUrlSafe:            Result := '[U] ' + TUIStateLoader.GetMessage('PasswordGenForm.Presets.UrlSafe');
+        wpOracleSafe:         Result := '[O] ' + TUIStateLoader.GetMessage('PasswordGenForm.Presets.OracleSafe');
+        wpNoLookAlikes:       Result := TUIStateLoader.GetMessage('PasswordGenForm.Presets.NoLookAlikes');
     else
-        Result := 'Неизвестный шаблон';
+        Result := TUIStateLoader.GetMessage('PasswordGenForm.Presets.Unknown');
     end;
 end;
 

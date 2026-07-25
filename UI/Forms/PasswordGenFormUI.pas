@@ -18,7 +18,8 @@ uses
     PasswordService,
     Vcl.ComCtrls,
     Vcl.Buttons,
-    Vcl.Menus;
+    Vcl.Menus,
+    BaseFormUI;
 
 type
     // Структура для хранения настроек одного пресета
@@ -27,7 +28,7 @@ type
         Unique: Boolean;
     end;
 
-    TPasswordGenForm = class(TForm)
+    TPasswordGenForm = class(TBaseForm)
         seLength: TSpinEdit;
         lbLength: TLabel;
         lbEntropy: TLabel;
@@ -42,8 +43,8 @@ type
         tsHistory: TTabSheet;
         tsCustomSettings: TTabSheet;
         lvHistory: TListView;
-        cbLower: TCheckBox;
-        cbUpper: TCheckBox;
+    cbLowercase: TCheckBox;
+    cbUppercase: TCheckBox;
         cbNumbers: TCheckBox;
         cbSymbols: TCheckBox;
         edInclude: TEdit;
@@ -59,8 +60,8 @@ type
         mBulkResult: TMemo;
         bBulkGenerate: TButton;
         pmBulkGeneration: TPopupMenu;
-        N1: TMenuItem;
-        N2: TMenuItem;
+        nCopyToClipboard: TMenuItem;
+        nSaveToFile: TMenuItem;
         pbBulkProgress: TProgressBar;
         bExport: TButton;
         SaveDialog: TSaveDialog;
@@ -69,20 +70,21 @@ type
         procedure bIncludePresetsClick(Sender: TObject);
         procedure bGenerateClick(Sender: TObject);
         procedure bInsertAndCloseClick(Sender: TObject);
-        procedure cbLowerClick(Sender: TObject);
+        procedure cbLowercaseClick(Sender: TObject);
         procedure cbNumbersClick(Sender: TObject);
         procedure cbPresetsChange(Sender: TObject);
         procedure cbSymbolsClick(Sender: TObject);
-        procedure cbUpperClick(Sender: TObject);
+        procedure cbUppercaseClick(Sender: TObject);
         procedure edExcludeChange(Sender: TObject);
         procedure edIncludeChange(Sender: TObject);
         procedure edIncludeKeyPress(Sender: TObject; var Key: Char);
         procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
         procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
         procedure FormShortCut(var Msg: TWMKey; var Handled: Boolean);
+        procedure FormShow(Sender: TObject);
         procedure lvHistoryClick(Sender: TObject);
         procedure lvHistoryDblClick(Sender: TObject);
-        procedure N1Click(Sender: TObject);
+        procedure nCopyToClipboardClick(Sender: TObject);
         procedure pcHostChanging(Sender: TObject; var AllowChange: Boolean);
         procedure seLengthChange(Sender: TObject);
     private
@@ -101,8 +103,6 @@ type
         FCancellationToken: Boolean;
         FIsGenerating: Boolean;
         FCloseRequested: Boolean;
-        //
-        FErrorHandler: IUIErrorHandler;
         //
         procedure UpdateEntropyUI;
         procedure SendStringViaInput(const S: string);
@@ -124,8 +124,10 @@ type
         procedure CreateParams(var Params: TCreateParams); override;
     public
         // Классный метод для вызова формы из любой точки приложения (даже по глобальному хоткею)
-        class procedure ExecuteGlobal(Owner: TComponent; const PasswordService: IPasswordService);
+        class procedure ExecuteGlobal(Owner: TComponent; const PasswordService: IPasswordService; AppContext: IAppContext);
         constructor Create(Owner: TComponent; PasswordService: IPasswordService); reintroduce;
+        procedure Initialize(AppContext: IAppContext);
+        procedure ApplyLanguage; override;
     end;
 
 var
@@ -141,7 +143,8 @@ uses
     CommonHelpers,
     System.Threading,
     System.Math,
-    UI.Interfaces
+    UI.HoverHelpManager,
+    UI.StateLoader
     ;
 
 const
@@ -249,8 +252,6 @@ begin
     // Инициализируем поле ДО inherited, чтобы InitializeUI
     // (вызываемый из DFM/VCL) имел к нему доступ
     FPasswordService := PasswordService;
-    FErrorHandler := TVCLErrorHandler.Create;
-
     inherited Create(Owner);
     InitializeUI;
 end;
@@ -268,18 +269,19 @@ begin
     if seBulkCount.Value > 10000 then
     begin
         // Если паролей слишком много, предлагаем сразу писать в файл
-        if FErrorHandler.AskConfirmation(
-            'Отображение более 10 000 паролей на экране может привести к зависанию интерфейса. ' +
-            'Рекомендуется сгенерировать их напрямую в файл. ' + sLineBreak + sLineBreak +
-            'Продолжить?'
+        if FAppContext.ErrorHandler.AskConfirmation(
+            TUIStateLoader.GetMessage('PasswordGenForm.BulkLimitWarning'),
+            TUIStateLoader.GetMessage('Common.Warning'),
+            MB_YESNO or MB_ICONQUESTION
         ) then begin
+            SaveDialog.InitialDir := GetDefaultDataDir;
             SaveDialog.FileName := Format('Mass_Passwords_%s.txt', [FormatDateTime('yyyymmdd_hhnn', Now)]);
-            SaveDialog.Filter := 'Текстовые файлы (*.txt)|*.txt';
+            SaveDialog.Filter := '(*.txt)|*.txt';
 
             if SaveDialog.Execute then
             begin
                 mBulkResult.Clear;
-                mBulkResult.Lines.Add('Генерация идет напрямую в файл...');
+                mBulkResult.Lines.Add(TUIStateLoader.GetMessage('PasswordGenForm.BulkGenerationToFile'));
                 mBulkResult.Lines.Add(SaveDialog.FileName);
 
                 // Вызываем генерацию, передавая путь к файлу
@@ -324,7 +326,7 @@ begin
 
     SetControlsState(False);
     bBulkGenerate.Enabled := True;
-    if BulkGenerate then bBulkGenerate.Caption := 'Отмена';
+    if BulkGenerate then bBulkGenerate.Caption := TUIStateLoader.GetMessage('Common.Cancel');
 
     pbBulkProgress.Position := 0;
     pbBulkProgress.Max := Count;
@@ -409,7 +411,7 @@ begin
                             if BulkGenerate then
                             begin
                                 if IsDirectToFile then
-                                    ShowSimpleToast('Менеджер сниппетов', 'Успешно сохранено в файл')
+                                    ShowSimpleToast(TUIStateLoader.GetMessage('PasswordGenForm.BulkSaveSuccessToast'))
                             else
                             begin
                                 mBulkResult.Lines.BeginUpdate;
@@ -437,7 +439,7 @@ begin
                         end;
 
                         // ВОЗВРАЩАЕМ UI К ЖИЗНИ
-                        bBulkGenerate.Caption := 'Массовая генерация';
+                        bBulkGenerate.Caption := TUIStateLoader.GetMessage('PasswordGenForm.MassGenerationCaption');
                         SetControlsState(True);
                         FIsGenerating := False;
 
@@ -466,7 +468,8 @@ begin
     FActiveEditForPresets := edExclude; // Запоминаем, куда будем вставлять
 
     // Показываем меню ровно под нажатой кнопкой
-    Pt := bExcludePresets.ClientToScreen(Point(0, bExcludePresets.Height));
+    Pt := bExcludePresets.ClientToScreen(Point(bExcludePresets.Width, bExcludePresets.Height));
+    pmCharPresets.Alignment := paRight;
     pmCharPresets.Popup(Pt.X, Pt.Y);
 end;
 
@@ -482,7 +485,7 @@ begin
     pmCharPresets.Popup(Pt.X, Pt.Y);
 end;
 
-procedure TPasswordGenForm.cbLowerClick(Sender: TObject);
+procedure TPasswordGenForm.cbLowercaseClick(Sender: TObject);
 begin
     UpdateEntropyUI;
 end;
@@ -497,7 +500,7 @@ begin
     UpdateEntropyUI;
 end;
 
-procedure TPasswordGenForm.cbUpperClick(Sender: TObject);
+procedure TPasswordGenForm.cbUppercaseClick(Sender: TObject);
 begin
     UpdateEntropyUI;
 end;
@@ -519,6 +522,14 @@ begin
     begin
         Key := VISIBLE_SPACE;
     end;
+end;
+
+procedure TPasswordGenForm.Initialize(AppContext: IAppContext);
+begin
+    inherited Initialize(AppContext);
+
+    // Регистрация подсказок
+    RegisterHelp(lvHistory, hipBottomRight, 'Help.PasswordGenForm.lvHistory', hkCustomForm);
 end;
 
 procedure TPasswordGenForm.InitializeUI;
@@ -557,16 +568,16 @@ begin
     SetupPresetsMenu;
 
     // Начальные настройки для кастомной панели
-    cbLower.Checked := True;
-    cbUpper.Checked := True;
+    cbLowercase.Checked := True;
+    cbUppercase.Checked := True;
     cbNumbers.Checked := True;
     cbSymbols.Checked := True;
 
     // Адаптируем кнопку под контекст вызова
     if Assigned(Owner) then
-        bInsertAndClose.Caption := 'Скопировать и закрыть'
+        bInsertAndClose.Caption := TUIStateLoader.GetMessage('PasswordGenForm.CopyAndCloseBtn')
     else
-        bInsertAndClose.Caption := 'Вставить и закрыть';
+        bInsertAndClose.Caption := TUIStateLoader.GetMessage('PasswordGenForm.CopyAndCloseBtn');
 
     // Подменяем оконную процедуру поля ebPassword
     FOldEditWindowProc := ebPassword.WindowProc;
@@ -602,7 +613,7 @@ begin
     if Message.Msg = WM_COPY then
     begin
         // Если текст выделен мышью - берем выделенное.
-        // Если ничего не выделено - берем весь пароль (улучшенный UX!)
+        // Если ничего не выделено - берем весь пароль (улучшенный UX)
         if ebPassword.SelLength > 0 then
             TextToCopy := ebPassword.SelText
         else
@@ -629,7 +640,7 @@ begin
     end;
 end;
 
-class procedure TPasswordGenForm.ExecuteGlobal(Owner: TComponent; const PasswordService: IPasswordService);
+class procedure TPasswordGenForm.ExecuteGlobal(Owner: TComponent; const PasswordService: IPasswordService; AppContext: IAppContext);
 var
     TargetWnd: HWND;
     PasswordToType: string;
@@ -648,6 +659,7 @@ begin
     // Передаем исходный Owner (nil или MainForm)
     FCurrentInstance := TPasswordGenForm.Create(Owner, PasswordService);
     try
+        FCurrentInstance.Initialize(AppContext);
         TargetWnd := GetForegroundWindow;
 
         // Если форма независимая (Owner = nil), форсируем StayOnTop, чтобы она гарантированно
@@ -702,7 +714,7 @@ begin
         FCancellationToken := True;
         FCloseRequested := True;
 
-        Caption := 'Остановка генератора, ожидайте...';
+        Caption := TUIStateLoader.GetMessage('PasswordGenForm.StopGeneratorCaption');
         bBulkGenerate.Enabled := False;
     end
     else
@@ -723,8 +735,8 @@ end;
 
 function TPasswordGenForm.GetCustomSettingsFromUI: TCustomPasswordSettings;
 begin
-    Result.UseLower := cbLower.Checked;
-    Result.UseUpper := cbUpper.Checked;
+    Result.UseLower := cbLowercase.Checked;
+    Result.UseUpper := cbUppercase.Checked;
     Result.UseNumbers := cbNumbers.Checked;
     Result.UseSymbols := cbSymbols.Checked;
 
@@ -754,11 +766,13 @@ begin
     end;
 end;
 
-procedure TPasswordGenForm.N1Click(Sender: TObject);
+procedure TPasswordGenForm.nCopyToClipboardClick(Sender: TObject);
 begin
     if mBulkResult.Lines.Count = 0 then Exit;
     Clipboard.AsText := mBulkResult.Text;
-    ShowSimpleToast('Менеджер сниппетов', 'Сгенерированные пароли скопированы в буфер обмена.');
+    ShowSimpleToast(
+        TUIStateLoader.GetMessage('PasswordGenForm.HistoryCopyToast')
+    );
 end;
 
 procedure TPasswordGenForm.pcHostChanging(Sender: TObject; var AllowChange: Boolean);
@@ -896,8 +910,8 @@ begin
     cbUnique.Enabled := Enabled and not (FSelectedPreset in [wpMacAddress, wpUUIDv4]);
 
     // Настройки кастомного режима тоже лучше заморозить
-    cbLower.Enabled := Enabled;
-    cbUpper.Enabled := Enabled;
+    cbLowercase.Enabled := Enabled;
+    cbUppercase.Enabled := Enabled;
     cbNumbers.Enabled := Enabled;
     cbSymbols.Enabled := Enabled;
     edInclude.Enabled := Enabled;
@@ -917,15 +931,15 @@ procedure TPasswordGenForm.SetupPresetsMenu;
     end;
 begin
     pmCharPresets.Items.Clear;
-    AddItem('Похожие символы', 'Il1O0');
-    AddItem('Скобки', '[]{}()');
-    AddItem('Знаки препинания', '.,:;');
-    AddItem('Опасные для Bash/SQL', '$\`!&|<>');
-    AddItem('Кавычки', '''"');
-    AddItem('Пробел', VISIBLE_SPACE);
-    AddItem('Разделители URL / Веб', '&?=#%');
-    AddItem('Символы путей / JSON', '\/');
-    AddItem('Математические знаки', '+-*/%=^~');
+    AddItem(TUIStateLoader.GetMessage('PasswordGenForm.PresetSimilar'), 'Il1O0');
+    AddItem(TUIStateLoader.GetMessage('PasswordGenForm.PresetBrackets'), '[]{}()');
+    AddItem(TUIStateLoader.GetMessage('PasswordGenForm.PresetPunctuation'), '.,:;');
+    AddItem(TUIStateLoader.GetMessage('PasswordGenForm.PresetBashSQL'), '$\`!&|<>');
+    AddItem(TUIStateLoader.GetMessage('PasswordGenForm.PresetQuotes'), '''"');
+    AddItem(TUIStateLoader.GetMessage('PasswordGenForm.PresetSpace'), VISIBLE_SPACE);
+    AddItem(TUIStateLoader.GetMessage('PasswordGenForm.PresetURL'), '&?=#%');
+    AddItem(TUIStateLoader.GetMessage('PasswordGenForm.PresetPathJSON'), '\/');
+    AddItem(TUIStateLoader.GetMessage('PasswordGenForm.PresetMath'), '+-*/%=^~');
 end;
 
 procedure TPasswordGenForm.UpdateEntropyUI;
@@ -939,8 +953,8 @@ begin
 
     if FSelectedPreset = wpCustom then
     begin
-        Settings.UseLower := cbLower.Checked;
-        Settings.UseUpper := cbUpper.Checked;
+        Settings.UseLower := cbLowercase.Checked;
+        Settings.UseUpper := cbUppercase.Checked;
         Settings.UseNumbers := cbNumbers.Checked;
         Settings.UseSymbols := cbSymbols.Checked;
         Settings.IncludeChars := edInclude.Text;
@@ -954,7 +968,7 @@ begin
         PoolSize := FPasswordService.GetPoolSize(FSelectedPreset);
 
     Entropy := FPasswordService.CalculateEntropy(seLength.Value, PoolSize);
-    lbEntropyValue.Caption := Format('%.1f бит', [Entropy]);
+    lbEntropyValue.Caption := Format('%.1f bit', [Entropy]);
 end;
 
 procedure TPasswordGenForm.UpdateHistoryUI;
@@ -983,7 +997,7 @@ begin
             LI.SubItems.Add(VisiblePassword);
 
             LI.SubItems.Add(Item.PresetName);
-            LI.SubItems.Add(Format('%.0f бит', [Item.Entropy]));
+            LI.SubItems.Add(Format('%.0f bit', [Item.Entropy]));
         end;
     finally
         lvHistory.Items.EndUpdate;
@@ -1023,7 +1037,7 @@ begin
         TargetIndex := -1;
 
         // Msg.CharCode содержит Virtual Key Code физической клавиши.
-        // Физическая клавиша 'C' всегда возвращает Ord('C') (код 67),
+        // Физическая клавиша C всегда возвращает Ord('C') (код 67),
         // независимо от текущей раскладки Windows (русская или английская)!
         case Msg.CharCode of
             Ord('1'): TargetIndex := FindPresetIndex(wpWebStandard);
@@ -1051,6 +1065,31 @@ begin
             Handled := True; // Сообщаем VCL, что событие перехвачено и обработано
         end;
     end;
+end;
+
+procedure TPasswordGenForm.ApplyLanguage;
+var
+    Preset: TPasswordPreset;
+begin
+    inherited; // Переведет статические тексты кнопок и Label
+
+    // Обновляем список пресетов на лету!
+    cbPresets.Items.BeginUpdate;
+    try
+        cbPresets.Clear;
+        for Preset := Low(TPasswordPreset) to High(TPasswordPreset) do
+            cbPresets.Items.AddObject(FPasswordService.GetPresetDescription(Preset), TObject(Integer(Preset)));
+
+        // Возвращаем на место выбранный ранее элемент
+        cbPresets.ItemIndex := FindPresetIndex(FSelectedPreset);
+    finally
+        cbPresets.Items.EndUpdate;
+    end;
+end;
+
+procedure TPasswordGenForm.FormShow(Sender: TObject);
+begin
+    pcHost.ActivePage := tsHistory;
 end;
 
 end.

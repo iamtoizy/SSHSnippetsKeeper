@@ -22,10 +22,11 @@ uses
     Vcl.ExtCtrls,
     System.UITypes,
     TrackBarEx,
-    WindowHelper;
+    WindowHelper,
+    BaseFormUI;
 
 type
-    TQuickSearchForm = class(TForm)
+    TQuickSearchForm = class(TBaseForm)
         lvQuickResults: TListView;
         ebQuickSearch: TEdit;
         rbText: TRadioButton;
@@ -68,6 +69,7 @@ type
             UserID: Integer;
             CurrentHWND: HWND
         );
+        procedure Initialize(AppContext: IAppContext);
     end;
 
 var
@@ -76,7 +78,8 @@ var
 implementation
 
 uses
-    SnippetViewData;
+    SnippetViewData,
+    UI.StateLoader;
 
 {$R *.dfm}
 
@@ -520,6 +523,11 @@ begin
     InsertSelectedSnippet;
 end;
 
+procedure TQuickSearchForm.Initialize(AppContext: IAppContext);
+begin
+    inherited Initialize(AppContext);
+end;
+
 procedure TQuickSearchForm.InsertSelectedSnippet;
 var
     Item: TListItem;
@@ -555,7 +563,7 @@ begin
 
     Hide;
 
-    Runner := TSnippetRunner.Create(FUserID, FWindowHelper);
+    Runner := TSnippetRunner.Create(FUserID, FAppContext);
     try
         Runner.ExecuteSnippet(Snippet, False);
     finally
@@ -624,7 +632,7 @@ begin
     cbUser.Items.BeginUpdate;
     try
         cbUser.Clear;
-        cbUser.Items.AddObject('Все пространства', TObject(0));
+        cbUser.Items.AddObject(TUIStateLoader.GetMessage('Workspace.AllSpaces'), TObject(0));
         Users := FUserService.GetAllUsers;
         for User in Users do
             cbUser.Items.AddObject(User.Name, TObject(Integer(User.ID)));

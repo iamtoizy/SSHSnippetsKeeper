@@ -25,6 +25,10 @@ type
 
 implementation
 
+uses
+    UI.StateLoader
+    ;
+
 constructor TCategoryService.Create(CategoryRepo: ICategoryRepository);
 begin
     FCategoryRepo := CategoryRepo;
@@ -39,23 +43,31 @@ end;
 function TCategoryService.GetCategoryByID(CategoryID: Integer): TCategoryDTO;
 begin
     if CategoryID <= 0 then
-        raise Exception.Create('Некорректный ID категории');
+        raise Exception.Create(
+            TUIStateLoader.GetMessage('Category.InvalidIdError')
+        );
     Result := FCategoryRepo.GetByID(CategoryID);
 end;
 
 function TCategoryService.CreateCategory(const Category: TCategoryDTO): Integer;
 begin
     if Trim(Category.Name) = '' then
-        raise Exception.Create('Имя категории не может быть пустым');
+        raise Exception.Create(
+            TUIStateLoader.GetMessage('Category.EmptyNameError')
+        );
     Result := FCategoryRepo.AddCategory(Category.Name, Category.ParentID, Category.UserID);
 end;
 
 procedure TCategoryService.RenameCategory(CategoryID: Integer; const NewName: string);
 begin
     if CategoryID <= 0 then
-        raise Exception.Create('Некорректный ID категории');
+        raise Exception.Create(
+            TUIStateLoader.GetMessage('Category.InvalidIdError')
+        );
     if Trim(NewName) = '' then
-        raise Exception.Create('Имя категории не может быть пустым');
+        raise Exception.Create(
+            TUIStateLoader.GetMessage('Category.EmptyNameError')
+        );
 
     FCategoryRepo.UpdateName(CategoryID, NewName);
 end;
@@ -63,7 +75,9 @@ end;
 procedure TCategoryService.MoveCategory(CategoryID, NewParentID, Position: Integer);
 begin
     if CategoryID <= 0 then
-        raise Exception.Create('Некорректный ID категории');
+        raise Exception.Create(
+            TUIStateLoader.GetMessage('Category.EmptyNameError')
+        );
     // Проверка на циклические ссылки (перемещение родителя в ребенка) должна быть в репозитории или здесь
     FCategoryRepo.MoveCategory(CategoryID, NewParentID, Position);
 end;
@@ -71,7 +85,9 @@ end;
 procedure TCategoryService.DeleteCategory(CategoryID: Integer);
 begin
     if CategoryID <= 0 then
-        raise Exception.Create('Некорректный ID категории');
+        raise Exception.Create(
+            TUIStateLoader.GetMessage('Category.EmptyNameError')
+        );
     FCategoryRepo.DeleteCategory(CategoryID);
 end;
 

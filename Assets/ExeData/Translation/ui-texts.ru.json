@@ -1,0 +1,587 @@
+{
+  "MainForm": {
+    "Caption": "SSH Snippets Keeper",
+    "ebSearch": {
+      "TextHint": "Введи что-нибудь для поиска по базе данных..."
+    },
+    "mComment": {
+      "HintText": "Здесь будет комментарий к сниппету."
+    },
+    "mSnippet": {
+      "HintText": "Текст сниппета появится здесь."
+    },
+    "rbText": {
+      "Caption": "Текстовый поиск"
+    },
+    "rbFTS": {
+      "Caption": "FTS5 поиск"
+    },
+    "cbUser": {
+      "Hint": "Текущее пространство. Нажми ⚙ для управления пространствами."
+    },
+    "bManageWorkspaces": {
+      "Hint": "Позволяет визуально управлять пространствами."
+    },
+    "tvCategories": {},
+    "nFile": {
+      "Caption": "Файл"
+    },
+    "nCreateDatabase": {
+      "Caption": "Создать базу данных"
+    },
+    "nOpenDatabase": {
+      "Caption": "Открыть базу данных"
+    },
+    "nCloseDatabase": {
+      "Caption": "Закрыть базу данных"
+    },
+    "nExit": {
+      "Caption": "Выход"
+    },
+    "nDataManagament": {
+      "Caption": "Данные"
+    },
+    "nCategories": {
+      "Caption": "Категории"
+    },
+    "nSnippets": {
+      "Caption": "Сниппеты"
+    },
+    "nTags": {
+      "Caption": "Теги"
+    },
+    "nAddCategory": {
+      "Caption": "Добавить"
+    },
+    "nDeleteCategory": {
+      "Caption": "Удалить"
+    },
+    "nEditCategory": {
+      "Caption": "Редактировать"
+    },
+    "nAddSnippet": {
+      "Caption": "Добавить"
+    },
+    "nEditSnippet": {
+      "Caption": "Редактировать"
+    },
+    "nDeleteSnippet": {
+      "Caption": "Удалить"
+    },
+    "nAddTag": {
+      "Caption": "Добавить"
+    },
+    "nEditTag": {
+      "Caption": "Изменить"
+    },
+    "nDeleteTag": {
+      "Caption": "Удалить"
+    },
+    "nTerminals": {
+      "Caption": "Терминалы"
+    },
+    "nTools": {
+      "Caption": "Инструменты"
+    },
+    "nPasswordGenerator": {
+      "Caption": "Генератор паролей"
+    },
+    "nSearch": {
+      "Caption": "Поиск по базе данных"
+    }
+  },
+  "TagEditorForm": {
+    "Caption": "Редактор тегов",
+    "nActions": {"Caption": "Действия"},
+    "nTagAdd": {"Caption": "Добавить"},
+    "nTagDelete": {"Caption": "Удалить"},
+    "nTagRename": {"Caption": "Переименовать"},
+    "bOK": {"Caption": "ОК"},
+    "bCancel": {"Caption": "Отмена"}
+  },
+  "InputForm": {
+      "Caption": "!Ввод значения",
+      "bOK": { "Caption": "!ОК" },
+      "bCancel": { "Caption": "!Отмена" },
+      "lbPrompt": { "Caption": "!Введи значение:" }
+  },
+  "AddEditSnippetForm": {
+    "Caption": "SSH Snippets Keeper - Добавить/редактировать сниппет",
+    "ebTitle": {
+      "Text": ""
+    },
+    "mContent": {
+      "TextHint": "Код сниппета вводи здесь..."
+    },
+    "mComment": {
+      "TextHint": "Комментарий к сниппету вводи сюда...."
+    },
+    "bOK": {
+      "Caption": "ОК"
+    },
+    "bCancel": {
+      "Caption": "Отмена"
+    },
+    "nAI": {
+      "Caption": "ИИ-ассистент"
+    },
+    "nShowAIPrompt": {
+      "Caption": "Вызвать ИИ"
+    },
+    "nAISettings": {
+      "Caption": "Конфигурировать ИИ"
+    },
+    "lbCaption": {
+      "Caption": "Имя сниппета"
+    },
+    "lbAllTags": {
+      "Caption": "Доступные теги"
+    },
+    "lbSelectedTags": {
+      "Caption": "Выбранные теги"
+    },
+    "cbIgnoreSecurityChecks": {
+      "Caption": "Доверять этому сниппету (отключить проверку безопасности)"
+    },
+    "tsSnippet": {
+      "Caption": "Содержимое сниппета"
+    },
+    "tsMacros": {
+      "Caption": "Макросы"
+    },
+    "mInfo": {
+      "Text": "Тестовые макросы на текущий момент:\n{SLEEP N} - Задержка выполнения на N миллисекунд.\n{ENTER} - Отправка нажатия клавиши ENTER.\n{SENDKEY X} - Отправка символа X в целевое окно.\n{INPUT[ТИП:ЗНАЧЕНИЕ-ПО-УМОЛЧАНИЮ] ИМЯ} - Отобразить окно ввода текста с подстановкой в место расположения макроса. Примеры:\n  {INPUT Имя}\n  {INPUT[STRING:test string] Имя}\n  {INPUT[NUMBER:100] Размер}\n  {INPUT[FLOAT:3.14] Размер}\n  {INPUT[Hex:FF] Цвет}\n  {INPUT[Password] Пароль}\n  {INPUT[DATE:2026-01-31] Дата}\n  {INPUT[Confirm] Текст для пользователя} - Приостановить выполнение и ждать подтверждения от пользователя.\n\n..."
+    }
+  },
+  "AISettingsForm": {
+    "Caption": "Настройки ИИ",
+    "nFile": {
+      "Caption": "Файл"
+    },
+    "nSave": {
+      "Caption": "Сохранить"
+    },
+    "nProvider": {
+      "Caption": "Провайдер"
+    },
+    "nProviderCreate": {
+      "Caption": "Создать"
+    },
+    "nProviderDelete": {
+      "Caption": "Удалить"
+    },
+    "nProviderEdit": {
+      "Caption": "Изменить"
+    },
+    "nModel": {
+      "Caption": "Модель"
+    },
+    "nModelCreate": {
+      "Caption": "Создать"
+    },
+    "nModelDelete": {
+      "Caption": "Удалить"
+    },
+    "nModelEdit": {
+      "Caption": "Изменить"
+    },
+    "lbHubName": {
+      "Text": "Имя группы"
+    },
+    "lbHubURL": {
+      "Text": "URL группы"
+    },
+    "lbHubComment": {
+      "Text": "Комментарий"
+    },
+    "lbModelName": {
+      "Text": "Имя модели"
+    },
+    "lbAPIKey": {
+      "Text": "API-ключ"
+    },
+    "lbFolderID": {
+      "Text": "Каталог"
+    },
+    "lbModelPath": {
+      "Text": "Модель"
+    },
+    "lbSystemPrompt": {
+      "Text": "Системный промпт"
+    },
+    "lbAgentID": {
+      "Text": "ID Агента"
+    },
+    "lbTemperature": {
+      "Text": "Температура"
+    },
+    "lbMaxTokens": {
+      "Text": "Ограничение на токены"
+    }
+  },
+  "ChooseTerminalWindow": {
+    "Caption": "Выбор терминала"
+  },
+  "WorkspaceManagerForm": {
+    "Caption": "Управление пространствами",
+    "nWorkspaces": {
+      "Caption": "Пространства"
+    },
+    "nWorkspaceAdd": {
+      "Caption": "Добавить"
+    },
+    "nWorkspaceDelete": {
+      "Caption": "Удалить"
+    },
+    "nWorkspaceRename": {
+      "Caption": "Переименовать"
+    },
+    "bOK": {
+      "Caption": "ОК"
+    },
+    "bCancel": {
+      "Caption": "Отмена"
+    },
+    "lvWorkspaces": {
+      "Columns": {
+        "0": "Имя пространства"
+      }
+    }
+  },
+  "PasswordGenForm": {
+    "Caption": "Генератор паролей",
+    "lbLength": {
+      "Caption": "Длина пароля"
+    },
+    "lbEntropy": {
+      "Caption": "Энтропия"
+    },
+    "lbPresets": {
+      "Caption": "Шаблоны"
+    },
+    "cbUnique": {
+      "Caption": "Уникальные символы"
+    },
+    "bGenerate": {
+      "Caption": "Сгенерировать"
+    },
+    "tsHistory": {
+      "Caption": "История"
+    },
+    "tsCustomSettings": {
+      "Caption": "Дополнительно"
+    },
+    "tsBulkMode": {
+      "Caption": "Массовая генерация"
+    },
+    "lbBulkCount": {
+      "Caption": "Количество"
+    },
+    "bBulkGenerate": {
+      "Caption": "Сгенерировать"
+    },
+    "bExport": {
+      "Caption": "Экспорт"
+    },
+    "nCopyToClipboard": {
+      "Caption": "Копировать в буфер обмена"
+    },
+    "nSaveToFile": {
+      "Caption": "Сохранить в файл"
+    },
+    "cbLowercase": {
+      "Caption": "Нижний регистр"
+    },
+    "cbUppercase": {
+      "Caption": "Верхний регистр"
+    },
+    "cbNumbers": {
+      "Caption": "Цифры"
+    },
+    "cbSymbols": {
+      "Caption": "Спецсимволы"
+    },
+    "lbInclude": {
+      "Caption": "Включаемые символы"
+    },
+    "ldExclude": {
+      "Caption": "Исключаемые символы"
+    },
+    "lvHistory": {
+      "Columns": {
+        "0": "Дата",
+        "1": "Время",
+        "2": "Пароль",
+        "3": "Шаблон",
+        "4": "Энтропия"
+      }
+    }
+  },
+  "QuickSearchForm": {
+    "ebQuickSearch": {
+      "TextHint": "Введи что-нибудь..."
+    },
+    "rbText": {
+      "Caption": "Текстовый поиск"    
+    },
+    "rbFTS": {
+      "Caption": "FTS5 поиск"
+    }
+  },
+  "Messages": {
+    "Help": {
+      "MainForm": {
+        "tvCategories": {
+          "Title": "Список категорий",
+          "Main": "Древовидный список категорий в текущем пространстве. Если выбрано \"Все пространства\", то пространства отображаются как корневые категории, но добавлять в них сниппеты нельзя.<br><blockquote><b>Виртуальные категории</b> \"Недавние\" и \"Часто используемые\": в эти категории нельзя добавлять сниппеты вручную, только изменять и удалять.</blockquote>",
+          "Expanded": "<code>ALT+A</code> - Добавить категорию<br><code>ALT+E</code> - Редактировать категорию<br><code>ALT+D</code> - Удалить категорию"
+        },
+        "lvSnippets": {
+          "Title": "Список сниппетов",
+          "Main": "Плоский список сниппетов в выбранном пространстве.",
+          "Expanded": "<code>CTRL+A</code> - Добавить сниппет<br><code>CTRL+E</code> - Редактировать сниппет<br><code>CTRL+D</code> - Удалить сниппет"
+        },
+        "lvTags": {
+          "Title": "Список тегов",
+          "Main": "Отображает полный список всех тегов в базе данных. Для удобства теги, которые уже привязаны к выбранному сниппету, автоматически закрепляются в самом начале списка и подсвечиваются зелёным цветом.",
+          "Expanded": "💡 <b>Навигация и горячие клавиши:</b><br><b>Двойной клик</b> — мгновенно отфильтровать сниппеты по выбранному тегу.<br><br><code>CTRL+ALT+A</code> — добавить новый тег.<br><code>CTRL+ALT+E</code> — редактировать название тега.<br><code>CTRL+ALT+D</code> — удалить выбранный тег из базы."
+        },
+        "ebSearch": {
+          "Title": "Строка поиска",
+          "Main": "Строка поиска по базе данных сниппетов. Поиск осуществляется по заголовку, коду, комментариям и привязанным тегам.<br><blockquote><b>Умный полнотекстовый поиск (FTS5):</b<br>Движок автоматически ищет части слов внутри кода (например, запрос <code>List</code> найдет <code>TList</code>). Результаты автоматически сортируются: самые точные совпадения всегда будут сверху.<br><br><b>Специальные операторы:</b><br><br>• <code>\"Точная фраза\"</code> - поиск точного совпадения (в кавычках).<br>• <code>слово1 AND слово2</code> - сниппет должен содержать оба слова.<br>• <code>слово1 OR слово2</code> - сниппет содержит хотя бы одно из слов.<br>• <code>NOT слово</code> - исключить сниппеты с этим словом.<br><br>Поиск нечувствителен к регистру (буквы Е и Ё считаются одинаковыми).</blockquote>",
+          "Expanded": "В фокусе строки поиска печатай запрос, он будет применён автоматически.<br><br>Управление тегами (глобально):<br><code>CTRL+ALT+A</code> - Добавить тег<br><code>CTRL+ALT+E</code> - Редактировать тег<br><code>CTRL+ALT+D</code> - Удалить тег"
+        },
+        "FrequentlyUsed": "Часто используемые",
+        "Recent": "Недавние"
+      },
+      "AddEditSnippet": {
+        "mContent": {
+          "Title": "Текст сниппета",
+          "Main": "Основное поле для ввода кода сниппета. Поддерживает подсветку синтаксиса и автодополнение для Linux Shell/Bash. <blockquote>• <b>Макросы:</b> Встроенный движок позволяет запрашивать ввод аргументов у пользователя, вставлять паузы, ожидать подтверждения и многое другое. Полный синтаксис доступен на вкладке «Макросы».<br><br>• <b>Выполнение (Переносы строк):</b> Каждая новая строка интерпретируется терминалом как нажатие клавиши <code>ENTER</code> (отправка команды). Учитывай это при написании многострочных скриптов.<br><br>• <b>ИИ-ассистент:</b> Встроенная интеграция с Yandex AI Studio для генерации и рефакторинга кода. Рекомендуется настроить и использовать «Агентов» — они возвращают лаконичный, готовый к работе код без лишних текстовых рассуждений. Настроить ИИ можно через главное меню.<br><br>• <b>Защита данных:</b> Сниппеты автоматически проверяются на наличие конфиденциальной информации (пароли, API-ключи, SSH-токены, строки БД). При обнаружении угроз сохранение будет заблокировано, пока ты явно не отметишь чекбокс «Игнорировать проверки».</blockquote>",
+          "Expanded": "<code>CTRL+I</code> - Вызвать окно запроса к ИИ-ассистенту.<br><code>CTRL+ALT+I</code> - Вызвать окно настроек ИИ-Ассистента"
+        },
+        "mComment": {
+          "Title": "Комментарий к сниппету",
+          "Main": "Поле для заметок и пояснений к коду. Опиши, для чего нужен этот сниппет, какие параметры он принимает или на что стоит обратить особое внимание.<br><br>💡 <b>Совет:</b> Текст комментария активно индексируется внутренним поиском, поэтому подробное описание поможет тебе намного быстрее найти нужный скрипт в будущем.",
+          "Expanded": ""
+        },
+        "lvAllTags": {
+          "Title": "Список тегов",
+          "Main": "Выбери теги для сниппета. Их можно переносить двойным кликом мыши или просто перетаскивать (Drag & Drop) между списками. Поддерживается выделение нескольких тегов с помощью Ctrl или Shift.",
+          "Expanded": ""
+        }
+      },
+      "PasswordGenForm": {
+        "lvHistory": {
+          "Title": "История генераций",
+          "Main": "Здесь сохраняются все пароли, созданные за текущий сеанс работы. <blockquote>• <b>Предпросмотр:</b> Одиночный клик вернет выбранный пароль в основное поле ввода.<br><br>• <b>Быстрое применение:</b> Двойной клик применит пароль и сразу закроет окно. Если генератор был вызван глобальной горячей клавишей, пароль будет <b>автоматически напечатан</b> в вашем активном окне (терминале). В противном случае он просто скопируется в буфер обмена.</blockquote>",
+          "Expanded": "💡 <b>Горячие клавиши вызова генератора:</b><br><code>CTRL+G</code> — запуск из главного окна программы.<br><code>CTRL+ALT+G</code> — глобальный вызов из любого места системы поверх других окон."
+        }
+      }
+    },
+    "Common": {
+      "Confirmation": "Подтверждение",
+      "Error": "Ошибка",
+      "Warning": "Внимание",
+      "Information": "Информация",
+      "Yes": "Да",
+      "No": "Нет",
+      "OK": "ОК",
+      "Cancel": "Отмена",
+      "Help": "Справка",
+      "MoreInfo": "Подробнее",
+      "WinEventHookError": "Не удалось установить WinEventHook. Ошибка: %s",
+      "CopiedToClipboard": "Скопировано в буфер обмена."
+    },
+    "DB": {
+      "ConnectError": "Критическая ошибка!\nНе удалось подключиться к базе данных SQLite.\nПроверь путь к файлу.",
+      "OpenError": "Ошибка открытия базы данных: %s",
+      "CreateError": "Ошибка создания базы данных: %s",
+      "OpenedSuccess": "База данных SQLite открыта.",
+      "CreatedSuccess": "База данных SQLite создана.",
+      "NoConnectionError": "Ошибка: нет подключения к базе данных."
+    },
+    "Category": {
+      "DeleteConfirm": "Уверен, что хочешь удалить эту категорию?",
+      "DeleteSuccess": "Категория успешно удалена.",
+      "SelectPrompt": "Сначала выбери пространство или категорию.",
+      "VirtualFolderError": "Нельзя добавлять категории в виртуальные папки.",
+      "NewNamePrompt": "Введите имя:",
+      "NewDefaultName": "Новая категория",
+      "CreatedMsg": "Категория \"%s\" создана.",
+      "DeleteWithChildrenConfirm": "Удалить категорию \"%s\" и все её вложенные элементы?",
+      "DeleteMsg": "Категория \"%s\" удалена.",
+      "DeleteError": "Ошибка удаления категории: %s",
+      "CreateError": "Ошибка создания категории: %s",
+      "RenameError": "Ошибка переименования категории: %s",
+      "MoveError": "Ошибка перемещения категории: %s",
+      "SourceCategoryNotFound": "Исходная категория не найдена.",
+      "ParentCategoryNotFound": "Родительская категория не найдена.",
+      "MoveToDifferentSpaceError": "Нельзя переместить категорию в другое пространство.",
+      "CategoryNotFound": "Категория не найдена.",
+      "AccessDenied": "Ошибка доступа: Категория принадлежит другому пользователю",
+      "InvalidIdError": "Некорректный идентификатор категории.",
+      "EmptyNameError": "Имя категории не может быть пустым."
+    },
+    "Snippet": {
+      "TypeToWindowConfirm": "Ввести сниппет в окно: \"%s\"?",
+      "SelectPrompt": "Выбери конкретную категорию для добавления сниппета.",
+      "WorkspaceUndefined": "Не удалось определить пространство для сниппета (UserID=%d). Попробуй выбрать конкретное пространство в фильтре.",
+      "DeletedMsg": "Сниппет удалён.",
+      "DeleteConfirm": "Удалить сниппет \"%s\"?",
+      "DeleteError": "Ошибка удаления сниппета: %s",
+      "SaveError": "Ошибка сохранения сниппета: %s",
+      "NoComment": "Без комментария",
+      "CaptionEdit": "Редактирование сниппета",
+      "CaptionAdd": "Добавление сниппета",
+      "TitleEmptyError": "Введи заголовок сниппета.",
+      "NoContentError": "Текст сниппета пуст.",
+      "SQLExecutionError": "Ошибка выполнения SQL-запроса: %s",
+      "InvalidIdError": "Некорректный идентификатор сниппета."
+    },
+    "Tag": {
+      "NewPrompt": "Введите имя тега:",
+      "NewDefaultName": "Новый тег",
+      "AddedMsg": "Тег \"%s\" добавлен.",
+      "DeleteConfirm": "Удалить тег \"%s\"?",
+      "DeletedMsg": "Тег удалён.",
+      "AddError": "Ошибка добавления тега: %s",
+      "DeleteError": "Ошибка удаления тега: %s",
+      "RenameError": "Ошибка переименования тега: %s",
+      "RenamedMsg": "Тег переименован: \"%s\" → \"%s\"",
+      "FilterPrefix": "Фильтр по тегу: \"%s\"",
+      "FilterReset": "Фильтр сброшен.",
+      "InvalidIdError": "Некорректный идентификатор тега.",
+      "EmptyNameError": "Имя тега не может быть пустым.",
+      "DuplicateNameError": "Тег с именем \"%s\" уже существует."
+    },
+    "User": {
+      "InvalidIdError": "Некорректный идентификатор пользователя"
+    },
+    "Terminal": {
+      "ChoiceCaption": "Выбор целевого окна терминала",
+      "HistoryEmpty": "История пуста. Сначала активируйте окно терминала.",
+      "WindowsFound": "Найдено %d окон терминала. Выберите целевое окно:",
+      "Column.WindowTitle": "Заголовок окна",
+      "Column.ExeName": "Исполняемый файл",
+      "Column.ActivatedAt": "Время активности",
+      "WindowNoLongerExists": "Выбранное окно больше не существует."
+    },
+    "Workspace": {
+      "AllSpaces": "Все пространства",
+      "RenameError": "Для переименования пространства используй кнопку \"Управление пространствами\".",
+      "EmptyNameError": "Имя пространства не может быть пустым.",
+      "SystemSpaceError": "Это пространство нельзя удалить (системное)."
+    },
+    "Search": {
+      "BackgroundError": "Ошибка фонового поиска: %s"
+    },
+    "Security": {
+      "DenyReason": {
+        "PrivateSSHKey": "Приватный SSH/RSA ключ",
+        "GitHubToken": "Токен GitHub",
+        "AWSAccessKey": "Ключ AWS Access Key",
+        "GoogleCloudAPIKey": "Ключ Google Cloud / API",
+        "StripeSecretKey": "Секретный ключ Stripe",
+        "TelegramBotToken": "Токен Telegram Bot",
+        "JWTToken": "Токен JWT",
+        "SlackToken": "Токен Slack",
+        "BearerToken": "Авторизационный Bearer токен",
+        "URLConnectionString": "Учетные данные в URL (Connection String)",
+        "ExplicitPasswordKey": "Явное указание пароля/ключа",
+        "HashKey": "MD5/SHA хэш или Hex-ключ",
+        "HighEntropyString": "Высокоэнтропийная строка (возможно, хэш или токен): \"%s...\""
+      },
+      "SensitiveDataFound": "Обнаружены потенциально чувствительные данные:\n• %s\nНеобходимо проверить текст сниппета перед его отправкой в терминал.\n\nБерёшь ответственность на себя и хочешь продолжить отправку?"
+    },
+    "AI": {
+      "JSONError": "Не удалось извлечь ответ из JSON: %s",
+      "APIError": "Ошибка API (%d): %s"
+    },
+    "AddEditSnippet": {
+      "CloseConfirmText": "Обнаружены изменения, которые потеряются в случае закрытия этого окна.\n\nЗакрыть окно без сохранения изменений?",
+      "SecurityWarningText": "Активация этого параметра отключит автоматические проверки данного сниппета на безопасность, такие как:\n\n• Инфраструктурные ключи и API-токены\n• Веб-токены и заголовки авторизации\n• Пароли и строки подключения к БД\n• Приватная криптография (SSH/RSA)\n• Математический анализ энтропии (случайности строк)\n\nУверен, что хочешь добавить этот сниппет в исключения сканера?",
+      "SecurityDisabledStatus": "ℹ️ Проверки безопасности отключены пользователем.",
+      "SecuritySafeStatus": "✅ Текст проверен, угроз безопасности не обнаружено.",
+      "SecurityThreatStatus": "⚠ Угроза: %s (Сохранение заблокировано)",
+      "SecurityToastFound": "Найдено: %s",
+      "SecurityToastTitle": "⚠ Угроза безопасности",
+      "AutocompleteUpdated": "Файл автозаполнения обновлён. Содержимое будет перезагружено.",
+      "AIChooseModelError": "Выбери провайдера и модель ИИ!",
+      "AIErrorPrefix": "Ошибка: %s",
+      "EnterSnippetTextHere": "Здесь введи имя сниппета..."
+    },
+    "AISettingsForm": {
+      "AddHubPrompt": "Введите имя провайдера ИИ:",
+      "DeleteHubConfirm": "Удалить провайдера и ВСЕ его модели?",
+      "AddModelPrompt": "Новая модель/агент"
+    },
+    "PasswordGenForm": {
+      "BulkLimitWarning": "Отображение более 10 000 паролей на экране может привести к зависанию интерфейса. Рекомендуется сгенерировать их напрямую в файл.\n\nПродолжить?",
+      "BulkSaveSuccessToast": "Успешно сохранено в файл",
+      "HistoryCopyToast": "Сгенерированные пароли скопированы в буфер обмена.",
+      "BulkGenerationToFile": "Генерация идет напрямую в файл...",
+      "MassGenerationCaption": "Массовая генерация",
+      "CopyAndCloseBtn": "Скопировать и закрыть",
+      "InsertAndCloseBtn": "Вставить и закрыть",
+      "StopGeneratorCaption": "Остановка генератора, жди...",
+      "PresetSimilar": "Похожие символы",
+      "PresetBrackets": "Скобки",
+      "PresetPunctuation": "Пунктуационные знаки",
+      "PresetBashSQL": "Опасные для Bash/SQL",
+      "PresetQuotes": "Кавычки",
+      "PresetSpace": "Пробел",
+      "PresetURL": "Разделители URL / Веб",
+      "PresetPathJSON": "Символы путей / JSON",
+      "PresetMath": "Математические символы",
+      "Presets": {
+        "WebStandard": "Обычный пароль для сайта (Web Safe)",
+        "ActiveDirectory": "Active Directory (A-Z, a-z, 0-9, спецсимвол)",
+        "StrictAlphaNumeric": "Только буквы и цифры (A-Z, a-z, 0-9)",
+        "MacAddress": "MAC-адрес (XX:XX:XX:XX:XX:XX)",
+        "UUIDv4": "UUID v4 (Случайный GUID)",
+        "Base64Key": "Base64 Ключ (JWT/API)",
+        "BashSafe": "Bash Safe (без $, !, `, \\ и кавычек)",
+        "DockerEnvSafe": "Docker & .env Safe",
+        "BitrixDb": "Для БД Bitrix",
+        "PinCode": "Пин-код (Только цифры)",
+        "Custom": "Кастомные настройки...",
+        "HexToken": "Hex-токен (a-f, 0-9)",
+        "UrlSafe": "URL Safe (RFC 3986)",
+        "OracleSafe": "Oracle DB (только _$#, с буквы)",
+        "NoLookAlikes": "Без похожих символов (I, l, 1, O, 0)",
+        "Unknown": "Неизвестный шаблон"
+      }
+    },
+    "InputForm": {
+      "Prompt.String": "Введи текст",
+      "Prompt.Number": "Введи целое число",
+      "Prompt.Hex": "Введи HEX значение (например, FF или 0xFF)",
+      "Prompt.Float": "Введи вещественное число (например, 3.14)",
+      "Prompt.Password": "Введи пароль",
+      "Prompt.Date": "Введи дату (YYYY-MM-DD)",
+      
+      "Error.Number": "Ошибка: введи целое число",
+      "Error.Hex": "Ошибка: введи HEX значение (0-9, A-F)",
+      "Error.Float": "Ошибка: введи вещественное (например, 3.14)",
+      "Error.Date": "Ошибка: формат даты YYYY-MM-DD"
+    },
+    "TagEditorForm": {
+      "InputQueryTitle": "New Tag",
+      "InputQueryPrompt": "Введи имя тега:",
+      "DeleteConfirmFormat": "Удалить выбранные теги (%d шт.)?",
+      "DeleteConfirmTitle": "Подтверждение удаления",
+      "SaveErrorFormat": "Ошибка сохранения тегов: %s"
+    },
+    "WorkspaceManagerForm": {
+      "NewWorkspaceCaption": "Новое пространство",
+      "NewWorkspaceName": "Введите имя нового пространства:",
+      "AddError": "Ошибка добавления пространства: %s",
+      "DeleteConfirm": "Удалить выбранное пространство \"%s\"?\nВсе вложенные сниппеты этого пространства будут удалены!",
+      "DeleteError": "Ошибка удаления пространства: %s",
+      "RenameError": "Ошибка переименования пространства: %s",
+      "SelectWorkspaceFirst": "Сначала выбери пространство."
+    }
+
+  }
+}

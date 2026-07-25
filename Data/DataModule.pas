@@ -32,7 +32,8 @@ uses
     FireDAC.Comp.ScriptCommands,
     FireDAC.Stan.Util,
     FireDAC.Comp.DataSet,
-    GlobalHotkeyManager;
+    GlobalHotkeyManager,
+    Vcl.Controls;
 
 type
     TAppDatabase = class(TDataModule, IDatabaseManager)
@@ -59,6 +60,10 @@ var
     AppDatabase: TAppDatabase;
 
 implementation
+
+uses
+    UI.StateLoader
+    ;
 
 {$R *.dfm}
 
@@ -95,7 +100,9 @@ begin
         FDScript.ExecuteAll;
     except
         on E: Exception do
-            raise Exception.Create('Ошибка при выполнении SQL-скриптов: ' + E.Message);
+            raise Exception.Create(
+                TUIStateLoader.GetMessage('SQLExecutionError', [E.Message])
+            );
     end;
 
     FDConnection.ExecSQL('INSERT OR IGNORE INTO users (id, name) VALUES (1, ''Local User'');');

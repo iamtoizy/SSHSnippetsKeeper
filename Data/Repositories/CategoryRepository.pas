@@ -31,7 +31,8 @@ uses
     Winapi.Windows,
     System.SysUtils,
     FireDAC.Stan.Param,
-    Data.DB
+    Data.DB,
+    UI.StateLoader
     ;
 
 { TCategoryRepository }
@@ -158,7 +159,9 @@ begin
         QGetOwner.ParamByName('id').AsInteger := ID;
         QGetOwner.Open;
         if QGetOwner.Eof then
-            raise Exception.Create('»сходна€ категори€ не найдена');
+            raise Exception.Create(
+                TUIStateLoader.GetMessage('ParentCategoryNotFound')
+            );
         SourceUserID := QGetOwner.FieldByName('user_id').AsInteger;
     finally
         QGetOwner.Free;
@@ -173,7 +176,9 @@ begin
             QGetOwner.ParamByName('id').AsInteger := NewParentID;
             QGetOwner.Open;
             if QGetOwner.Eof then
-                raise Exception.Create(' атегори€-родитель не найдена');
+                raise Exception.Create(
+                    TUIStateLoader.GetMessage('ParentCategoryNotFound')
+                );
             TargetUserID := QGetOwner.FieldByName('user_id').AsInteger;
         finally
             QGetOwner.Free;
@@ -181,7 +186,9 @@ begin
 
         //  ритична€ проверка: пространства
         if SourceUserID <> TargetUserID then
-            raise Exception.Create('Ќельз€ переместить категорию в другое пространство');
+            raise Exception.Create(
+                TUIStateLoader.GetMessage('MoveToDifferentSpaceError')
+            );
     end
     else
     begin

@@ -29,13 +29,13 @@ uses
     Vcl.BaseImageCollection,
     Vcl.ImageCollection,
     Core.Interfaces,
-    UI.Interfaces,
     PasswordService,
     GlobalHotkeyManager,
     Settings,
     WindowHelper,
     Core.AppContext,
-    System.Threading
+    System.Threading,
+    UI.StateLoader, Vcl.Buttons
     ;
 
 type
@@ -43,31 +43,27 @@ type
 
     TMainForm = class(TBaseForm)
         MainMenu: TMainMenu;
-        File1: TMenuItem;
+        nFile: TMenuItem;
         nOpenDatabase: TMenuItem;
-        NCreateDatabase: TMenuItem;
+        nCreateDatabase: TMenuItem;
         OpenDialog: TOpenDialog;
         SaveDialog: TSaveDialog;
         pLeft: TPanel;
         splLeft: TSplitter;
         tvCategories: TTreeView;
-        pBottom: TPanel;
-        mComment: TMemo;
         sbBottom: TStatusBar;
         nTerminals: TMenuItem;
-        N1: TMenuItem;
+        nSnippets: TMenuItem;
         nAddSnippet: TMenuItem;
         nEditSnippet: TMenuItem;
         nCloseDatabase: TMenuItem;
         pTop: TPanel;
         ebSearch: TEdit;
-        Splitter1: TSplitter;
-        mSnippet: TMemo;
         Splitter2: TSplitter;
-        N2: TMenuItem;
+        nTags: TMenuItem;
         nAddTag: TMenuItem;
         nDeleteTag: TMenuItem;
-        nRenameTag: TMenuItem;
+        nEditTag: TMenuItem;
         icTags: TImageCollection;
         vilTags: TVirtualImageList;
         icSnippets: TImageCollection;
@@ -92,12 +88,16 @@ type
         rbFTS: TRadioButton;
         N3: TMenuItem;
         nSearch: TMenuItem;
-        N4: TMenuItem;
+        nTools: TMenuItem;
         nPasswordGenerator: TMenuItem;
+        tmrSearchTimer: TTimer;
+        nDataManagament: TMenuItem;
+        nExit: TMenuItem;
+        pmLanguage: TPopupMenu;
         procedure bManageWorkspacesClick(Sender: TObject);
         procedure cbUserChange(Sender: TObject);
         procedure nOpenDatabaseClick(Sender: TObject);
-        procedure NCreateDatabaseClick(Sender: TObject);
+        procedure nCreateDatabaseClick(Sender: TObject);
         procedure tvCategoriesChange(Sender: TObject; Node: TTreeNode);
         procedure lvSnippetsClick(Sender: TObject);
         procedure FormCreate(Sender: TObject);
@@ -114,20 +114,26 @@ type
         procedure tvCategoriesDragOver(Sender, Source: TObject; X, Y: Integer; State: TDragState; var Accept: Boolean);
         procedure tvCategoriesEdited(Sender: TObject; Node: TTreeNode; var S: string);
         procedure lvSnippetsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+        procedure lvTagsClick(Sender: TObject);
         procedure nTagEditorClick(Sender: TObject);
         procedure lvTagsDblClick(Sender: TObject);
         procedure lvTagsEdited(Sender: TObject; Item: TListItem; var S: string);
         procedure nAddCategoryClick(Sender: TObject);
         procedure nAddTagClick(Sender: TObject);
+        procedure nExitClick(Sender: TObject);
         procedure nCloseDatabaseClick(Sender: TObject);
         procedure nDeleteCategoryClick(Sender: TObject);
         procedure nDeleteSnippetClick(Sender: TObject);
         procedure nDeleteTagClick(Sender: TObject);
         procedure nEditCategoryClick(Sender: TObject);
         procedure nPasswordGeneratorClick(Sender: TObject);
-        procedure nRenameTagClick(Sender: TObject);
+        procedure nEditTagClick(Sender: TObject);
         procedure nSearchClick(Sender: TObject);
         procedure rbTextClick(Sender: TObject);
+        procedure sbBottomMouseDown(Sender: TObject; Button: TMouseButton; Shift:
+            TShiftState; X, Y: Integer);
+        procedure sbBottomResize(Sender: TObject);
+        procedure tmrSearchTimerTimer(Sender: TObject);
         procedure tvCategoriesClick(Sender: TObject);
         procedure tvCategoriesEndDrag(Sender, Target: TObject; X, Y: Integer);
     private
@@ -138,8 +144,6 @@ type
         FUserID: Integer;
         FFilterUserID: Integer;
         FIgnoreCategoryChange: Boolean;
-        FErrorHandler: IUIErrorHandler;
-        FAppContext: IAppContext;
         FSettingsManager: ISettingsManager;
         FWindowHelper: IWindowHelper;
         FDBManager: IDatabaseManager;
@@ -177,12 +181,13 @@ type
         function GetSelectedCategoryUserID: Integer;
         procedure RefreshCurrentSnippetList;
         procedure ReloadUI(PreserveCategoryID: Integer);
-        procedure ClearRightPanel;
         function GetWorkspaceUserID(Node: TTreeNode): Integer;
         procedure CloseDatabase;
         //
         procedure PerformSearchAsync(const Mask: string);
         procedure DisplaySearchResults(const Results: TArray<TSnippetDTO>);
+        procedure LoadAvailableLanguages;
+        procedure LanguageMenuItemClick(Sender: TObject);
     protected
         procedure WMActivate(var Msg: TWMActivate); message WM_ACTIVATE;
     public
@@ -221,32 +226,26 @@ uses
     SnippetRunner,
     QuickSearchFormUI,
     PasswordGenFormUI,
-    FireDAC.Comp.Client;
+    FireDAC.Comp.Client,
+    UI.HoverHelpManager;
 
 const
     PRESERVE_CATEGORY_EMPTY_ID = -999;
+    LANG_PANEL_INDEX = 1;
 
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
-    SetProp(Self.Handle, PChar(UNIQUE_APP_STR), 1);
+//    Winapi.Windows.DebugBreak;
 
-    FErrorHandler := TVCLErrorHandler.Create;
+    SetProp(Self.Handle, PChar(UNIQUE_APP_STR), 1);
 
     FUserID := 1;
     FIgnoreCategoryChange := False;
-    TStateMgr.Instance.FirstRun;
 
     FHotItemIndex := -1;
     FFilterByTagID := 0;
     FCurrentSnippetID := 0;
     FFilterUserID := 0;
-
-    ebSearch.EnableHintText := True;
-    ebSearch.HintText := 'Введи что-нибудь для поиска по базе данных...';
-    mSnippet.EnableHintText := True;
-    mSnippet.HintText := 'Текст сниппета будет здесь.';
-    mComment.EnableHintText := True;
-    mComment.HintText := 'Здесь будет комментарий к сниппету.';
 
     lvTags.OwnerData := False;
     lvSnippets.OwnerData := False;
@@ -268,63 +267,74 @@ end;
 procedure TMainForm.UpdateUI(const State: TBaseFormState);
 begin
     case State of
-        bfsDBConnected:
+        bfsDBConnected, bfsDBOpen:
             begin
                 nCloseDatabase.Enabled := True;
-                mSnippet.ReadOnly := False;
-                mComment.ReadOnly := False;
-                nAddTag.Enabled := True;
-                nDeleteTag.Enabled := True;
-                nRenameTag.Enabled := True;
                 nSearch.Enabled := True;
                 cbUser.Enabled := True;
                 ebSearch.Enabled := True;
                 bManageWorkspaces.Enabled := True;
                 rbText.Enabled := True;
                 rbFTS.Enabled := True;
-                UpdateMenuState;
+                tvCategories.Enabled := True;
+                lvSnippets.Enabled := True;
+
+                // ВАЖНО: При открытии БД сниппет еще не выбран.
+                UpdateUI(bfsSnippetDeselected);
             end;
-        bfsDBOpen:
-            begin
-                nCloseDatabase.Enabled := True;
-                mSnippet.ReadOnly := False;
-                mComment.ReadOnly := False;
-                nAddTag.Enabled := True;
-                nDeleteTag.Enabled := True;
-                nRenameTag.Enabled := True;
-                nSearch.Enabled := True;
-                cbUser.Enabled := True;
-                ebSearch.Enabled := True;
-                bManageWorkspaces.Enabled := True;
-                rbText.Enabled := True;
-                rbFTS.Enabled := True;
-                UpdateMenuState;
-            end;
+
         bfsDBDisconnected:
             begin
                 nCloseDatabase.Enabled := False;
-                nAddSnippet.Enabled := False;
-                nEditSnippet.Enabled := False;
-                nDeleteSnippet.Enabled := False;
-                mSnippet.ReadOnly := False;
-                mSnippet.Text := '';
-                mComment.ReadOnly := False;
-                mComment.Text := '';
-                lvSnippets.Items.Clear;
-                lvTags.Items.Clear;
-                tvCategories.Items.Clear;
-                nAddTag.Enabled := False;
-                nDeleteTag.Enabled := False;
-                nRenameTag.Enabled := False;
                 nSearch.Enabled := False;
-                nAddCategory.Enabled := False;
-                nDeleteCategory.Enabled := False;
-                nEditCategory.Enabled := False;
                 cbUser.Enabled := False;
                 ebSearch.Enabled := False;
                 bManageWorkspaces.Enabled := False;
                 rbText.Enabled := False;
                 rbFTS.Enabled := False;
+                tvCategories.Enabled := False;
+                lvSnippets.Enabled := False;
+
+                // Жестко отключаем все зависимые от контента меню
+                nAddCategory.Enabled := False;
+                nDeleteCategory.Enabled := False;
+                nEditCategory.Enabled := False;
+
+                nAddSnippet.Enabled := False;
+                nEditSnippet.Enabled := False;
+                nDeleteSnippet.Enabled := False;
+
+                nAddTag.Enabled := False;
+                nEditTag.Enabled := False;
+                nDeleteTag.Enabled := False;
+
+                // Очищаем списки
+                lvSnippets.Items.Clear;
+                lvTags.Items.Clear;
+                tvCategories.Items.BeginUpdate;
+                try
+                    tvCategories.Items.Clear;
+                finally
+                    tvCategories.Items.EndUpdate;
+                end;
+
+                UpdateUI(bfsSnippetDeselected);
+            end;
+
+        // Сниппет выбран
+        bfsSnippetSelected:
+            begin
+                UpdateMenuState; // Включит пункты "Изменить/Удалить сниппет"
+            end;
+
+        // Сниппет НЕ выбран
+        bfsSnippetDeselected:
+            begin
+                UpdateMenuState; // Отключит пункты "Изменить/Удалить сниппет"
+
+                // Сбрасываем теги
+                if Assigned(lvTags) and Assigned(FTagService) then
+                    TUIHelpers.FillTagListWithSelection(lvTags, FTagService.GetAllTags, []);
             end;
     end;
 end;
@@ -334,28 +344,31 @@ var
     Node: TTreeNode;
     IsVirtual, IsWorkspace: Boolean;
 begin
+    // Если база данных закрыта, элементы меню контролирует UpdateUI(bfsDBDisconnected)
+    if (not Assigned(FDBManager)) or (not FDBManager.IsConnected) then
+        Exit;
+
     Node := tvCategories.Selected;
     IsVirtual := IsVirtualCategory(Node);
     IsWorkspace := IsWorkspaceNode(Node);
 
+    // --- КАТЕГОРИИ ---
+    // Добавлять категории можно и в категорию, и в корень пространства (но не в вирт. папки)
     nAddCategory.Enabled := (Node <> nil) and not IsVirtual;
+    // Удалять и редактировать пространство через это меню нельзя (для этого есть WorkspaceManager)
     nDeleteCategory.Enabled := (Node <> nil) and not IsVirtual and not IsWorkspace;
     nEditCategory.Enabled := (Node <> nil) and not IsVirtual and not IsWorkspace;
+
+    // --- СНИППЕТЫ ---
+    // Сниппеты можно добавлять только в конкретные категории
     nAddSnippet.Enabled := (Node <> nil) and not IsVirtual and not IsWorkspace;
     nDeleteSnippet.Enabled := (lvSnippets.Selected <> nil);
     nEditSnippet.Enabled := (lvSnippets.Selected <> nil);
-end;
 
-procedure TMainForm.ClearRightPanel;
-var
-    AllTags: TArray<TTagDTO>;
-begin
-    mSnippet.Text := '';
-    mComment.Text := '';
-    FCurrentSnippetID := 0;
-
-    AllTags := FTagService.GetAllTags;
-    TUIHelpers.FillTagListWithSelection(lvTags, AllTags, []);
+    // --- ТЕГИ ---
+    nAddTag.Enabled := True; // Создать новый тег можно всегда
+    nDeleteTag.Enabled := (lvTags.Selected <> nil);
+    nEditTag.Enabled := (lvTags.Selected <> nil);
 end;
 
 procedure TMainForm.ReloadUI(PreserveCategoryID: Integer);
@@ -427,48 +440,35 @@ end;
 
 function TMainForm.GetWorkspaceUserID(Node: TTreeNode): Integer;
 var
-    WorkspaceName: string;
-    Users: TArray<TUserDTO>;
+    RootNode: TTreeNode;
     User: TUserDTO;
     Cat: TCategoryDTO;
-    CatID: Integer;
-    ParentNode: TTreeNode;
 begin
+    // 1. Если включен жесткий фильтр по пользователю
     if FFilterUserID > 0 then
         Exit(FFilterUserID);
 
-    if IsWorkspaceNode(Node) then
-    begin
-        WorkspaceName := Node.Text;
-        Users := FUserService.GetAllUsers;
-        for User in Users do
-            if SameText(User.Name, WorkspaceName) then
-                Exit(User.ID);
-    end;
+    if Node = nil then
+        Exit(FUserID); // Дефолт
 
-    if (Node <> nil) and not IsVirtualCategory(Node) and (Node.Data <> nil) then
+    // 2. Если это конкретная категория, просто берем её UserID из БД
+    if not IsVirtualCategory(Node) and (Node.Data <> nil) then
     begin
-        CatID := Integer(IntPtr(Node.Data));
-        Cat := FCategoryService.GetCategoryByID(CatID);
+        Cat := FCategoryService.GetCategoryByID(Integer(IntPtr(Node.Data)));
         if Cat.ID > 0 then
             Exit(Cat.UserID);
     end;
 
-    if Node <> nil then
+    // 3. Если это корень (Workspace), просто ищем его в закэшированном списке 1 раз
+    RootNode := Node;
+    while RootNode.Parent <> nil do
+        RootNode := RootNode.Parent;
+
+    if IsWorkspaceNode(RootNode) then
     begin
-        ParentNode := Node.Parent;
-        while ParentNode <> nil do
-        begin
-            if IsWorkspaceNode(ParentNode) then
-            begin
-                WorkspaceName := ParentNode.Text;
-                Users := FUserService.GetAllUsers;
-                for User in Users do
-                    if SameText(User.Name, WorkspaceName) then
-                        Exit(User.ID);
-            end;
-            ParentNode := ParentNode.Parent;
-        end;
+        for User in FUserService.GetAllUsers do
+            if SameText(User.Name, RootNode.Text) then
+                Exit(User.ID);
     end;
 
     Result := FUserID;
@@ -483,7 +483,6 @@ begin
 
     FFilterByTagID := 0;
     RefreshCurrentSnippetList;
-    ClearRightPanel;
     UpdateMenuState;
 end;
 
@@ -508,13 +507,13 @@ begin
 
     if Node = nil then
     begin
-        FErrorHandler.ShowError('Сначала выбери пространство или категорию.');
+        MessagesHandler.ShowError(TUIStateLoader.GetMessage('Category.SelectPrompt'));
         Exit;
     end;
 
     if IsVirtualCategory(Node) then
     begin
-        FErrorHandler.ShowError('Нельзя добавлять категории в виртуальные папки.');
+        MessagesHandler.ShowError(TUIStateLoader.GetMessage('Category.VirtualFolderError'));
         Exit;
     end;
 
@@ -524,7 +523,13 @@ begin
         ParentID := Integer(IntPtr(Node.Data));
 
     TargetUserID := GetWorkspaceUserID(Node);
-    NewCatName := Trim(InputBox('Новая категория', 'Введите имя:', 'Новая категория'));
+    NewCatName := Trim(
+        InputBox(
+            TUIStateLoader.GetMessage('Category.NewDefaultName'),
+            TUIStateLoader.GetMessage('Category.NewNamePrompt'),
+            TUIStateLoader.GetMessage('Category.NewDefaultName')
+        )
+    );
 
     if NewCatName = '' then
         Exit;
@@ -542,10 +547,12 @@ begin
         if (Node <> nil) and (Integer(IntPtr(Node.Data)) = NewCatID) then
             Node.EditText;
 
-        sbBottom.SimpleText := Format('Категория "%s" создана.', [NewCatName]);
+        sbBottom.Panels[0].Text := TUIStateLoader.GetMessage('Category.CreatedMsg', [NewCatName]);
     except
         on E: Exception do
-            FErrorHandler.ShowError('Ошибка создания категории: ' + E.Message);
+            MessagesHandler.ShowError(
+                TUIStateLoader.GetMessage('Category.CreateError', [E.Message])
+            );
     end;
 end;
 
@@ -560,16 +567,20 @@ begin
 
     Cat := FCategoryService.GetCategoryByID(Integer(IntPtr(Node.Data)));
 
-    if MessageBox(Handle, PChar(Format('Удалить категорию "%s" и все её вложенные элементы?', [Cat.Name])), 'Подтверждение', MB_YESNO or MB_ICONQUESTION) = IDYES then
-    begin
+    if MessagesHandler.AskConfirmation(
+        TUIStateLoader.GetMessage('Category.DeleteWithChildrenConfirm', [Cat.Name]),
+        TUIStateLoader.GetMessage('Common.Confirmation'),
+        MB_YESNO or MB_ICONQUESTION
+    ) then begin
         try
             FCategoryService.DeleteCategory(Cat.ID);
             ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
-            ClearRightPanel;
-            sbBottom.SimpleText := Format('Категория "%s" удалена.', [Cat.Name]);
+            sbBottom.SimpleText := TUIStateLoader.GetMessage('Category.DeleteMsg', [Cat.Name]);
         except
             on E: Exception do
-                FErrorHandler.ShowError('Ошибка удаления категории: ' + E.Message);
+                MessagesHandler.ShowError(
+                    TUIStateLoader.GetMessage('Category.DeleteError', [E.Message])
+                );
         end;
     end;
 end;
@@ -583,7 +594,9 @@ begin
         Exit;
 
     if IsWorkspaceNode(Node) then
-        FErrorHandler.ShowError('Для переименования пространства используй кнопку "Управление пространствами".')
+        MessagesHandler.ShowError(
+            TUIStateLoader.GetMessage('Workspace.RenameError')
+        )
     else if not IsVirtualCategory(Node) then
         Node.EditText;
 end;
@@ -613,7 +626,9 @@ begin
     except
         on E: Exception do
         begin
-            FErrorHandler.ShowError('Ошибка переименования: ' + E.Message);
+            MessagesHandler.ShowError(
+                TUIStateLoader.GetMessage('Category.RenameError', [E.Message])
+            );
             S := OldName;
         end;
     end;
@@ -639,7 +654,7 @@ begin
 
         if (htOnItem in HitTest) and (TargetNode <> nil) then
         begin
-            NewParentID := Integer(TargetNode.Data);
+            NewParentID := Integer(IntPtr(TargetNode.Data));
             Position := -1;
         end
         else if TargetNode <> nil then
@@ -647,7 +662,7 @@ begin
             if Y < TargetNode.DisplayRect(False).Top then
             begin
                 if TargetNode.Parent <> nil then
-                    NewParentID := Integer(TargetNode.Parent.Data)
+                    NewParentID := Integer(IntPtr(TargetNode.Parent.Data))
                 else
                     NewParentID := 0;
                 Position := TargetNode.Index;
@@ -675,7 +690,9 @@ begin
             ReloadUI(SourceID);
         except
             on E: Exception do
-                FErrorHandler.ShowError('Ошибка перемещения: ' + E.Message);
+                MessagesHandler.ShowError(
+                    TUIStateLoader.GetMessage('Category.MoveError', [E.Message])
+                );
         end;
     end;
 end;
@@ -719,8 +736,30 @@ begin
 end;
 
 procedure TMainForm.Initialize(AppContext: IAppContext);
+var
+    CurrentLang: string;
 begin
-    FAppContext := AppContext;
+    inherited Initialize(AppContext);
+
+    CurrentLang := FAppContext.SettingsManager.Data.CurrentLanguage;
+    if CurrentLang.IsEmpty then
+        CurrentLang := 'ru';
+
+    // 1. Загружаем JSON выбранного языка
+    TUIStateLoader.LoadLanguageFile(ResolvePath('Translation\ui-texts.' + CurrentLang + '.json'));
+
+    // 2. Строим меню языков в StatusBar
+    LoadAvailableLanguages;
+
+    // 3. Переводим элементы текущей формы
+    ApplyLanguage;
+
+    // Регистрация подсказок
+    RegisterHelp(tvCategories, hipTopRight, 'Help.MainForm.tvCategories', hkCustomForm);
+    RegisterHelp(lvSnippets, hipTopRight, 'Help.MainForm.lvSnippets', hkCustomForm);
+    RegisterHelp(lvTags, hipTopRight, 'Help.MainForm.lvTags', hkCustomForm);
+    RegisterHelp(ebSearch, hipTopRight, 'Help.MainForm.ebSearch', hkCustomForm);
+
     FDBManager := AppContext.DatabaseManager;
     FSnippetService := AppContext.SnippetService;
     FCategoryService := AppContext.CategoryService;
@@ -738,6 +777,8 @@ begin
     for var Item in FSettingsManager.Data.AllowedApplications do
         if Item.Enabled then
             WinMonitor.AddAllowedProcess(Item.ExeName.ToLower);
+
+    TStateMgr.Instance.FirstRun;
 
     WinMonitor.StartMonitoring;
 end;
@@ -760,12 +801,11 @@ begin
     Item := lvSnippets.Selected;
     if not Assigned(Item) then
     begin
-        ClearRightPanel;
-        UpdateUI(bfsDBConnected);
+        UpdateUI(bfsSnippetDeselected);
         Exit;
     end;
     FillUserInterfaceFromSnippet(ExtractSnippetByListItem(Item));
-    UpdateUI(bfsDBConnected);
+    UpdateUI(bfsSnippetSelected);
 end;
 
 procedure TMainForm.DoAddSnippet;
@@ -777,7 +817,9 @@ begin
 
     if (Node = nil) or IsVirtualCategory(Node) or IsWorkspaceNode(Node) then
     begin
-        FErrorHandler.ShowError('Выбери конкретную категорию для добавления сниппета.');
+        MessagesHandler.ShowError(
+            TUIStateLoader.GetMessage('Snippet.SelectPrompt')
+        );
         Exit;
     end;
 
@@ -786,12 +828,15 @@ begin
 
     if TargetUserID <= 0 then
     begin
-        FErrorHandler.ShowInfo(Format('Не удалось определить пространство для сниппета (UserID=%d). Попробуй выбрать конкретное пространство в фильтре.', [TargetUserID]));
+        MessagesHandler.ShowInfo(
+            TUIStateLoader.GetMessage('Snippet.WorkspaceUndefined', [TargetUserID])
+        );
         Exit;
     end;
 
-    AddEditSnippetForm := TAddEditSnippet.Create(Application, FAppContext);
+    AddEditSnippetForm := TAddEditSnippetForm.Create(Self, FAppContext);
     try
+        AddEditSnippetForm.Initialize(FAppContext);
         AddEditSnippetForm.CategoryID := CategoryID;
         AddEditSnippetForm.UserID := TargetUserID;
 
@@ -825,8 +870,9 @@ begin
         CategoryID := Snippet.CategoryID;
 
 
-    AddEditSnippetForm := TAddEditSnippet.Create(MainForm, FAppContext);
+    AddEditSnippetForm := TAddEditSnippetForm.Create(Self, FAppContext);
     try
+        AddEditSnippetForm.Initialize(FAppContext);
         AddEditSnippetForm.Snippet := Snippet;
         AddEditSnippetForm.CategoryID := CategoryID;
         AddEditSnippetForm.UserID := Snippet.UserID;
@@ -836,7 +882,7 @@ begin
         if AddEditSnippetForm.ShowModal = mrOk then
         begin
             if tvCategories.Selected <> nil then
-                ReloadUI(Integer(tvCategories.Selected.Data))
+                ReloadUI(Integer(IntPtr(tvCategories.Selected.Data)))
             else
                 ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
         end;
@@ -860,22 +906,26 @@ begin
     Snippet := ExtractSnippetByListItem(Item);
 
     // TODO: Вынести в IUIErrorHandler
-    if MessageBox(Handle, PChar(Format('Удалить сниппет "%s"?', [Snippet.Title])), 'Подтверждение', MB_YESNO or MB_ICONQUESTION) = IDYES then
-    begin
+    if MessagesHandler.AskConfirmation(
+        TUIStateLoader.GetMessage('Snippet.DeleteConfirm', [Snippet.Title]),
+        TUIStateLoader.GetMessage('Common.Confirmation'),
+        MB_YESNO or MB_ICONQUESTION or MB_DEFBUTTON2
+    ) then begin
         try
             FSnippetService.DeleteSnippet(Snippet.ID);
 
             if tvCategories.Selected <> nil then
-                SelectedCatID := Integer(tvCategories.Selected.Data)
+                SelectedCatID := Integer(IntPtr(tvCategories.Selected.Data))
             else
                 SelectedCatID := PRESERVE_CATEGORY_EMPTY_ID;
 
-            ClearRightPanel;
             ReloadUI(SelectedCatID);
-            sbBottom.SimpleText := 'Сниппет удалён.';
+            sbBottom.SimpleText := TUIStateLoader.GetMessage('Snippet.DeletedMsg');
         except
             on E: Exception do
-                FErrorHandler.ShowError('Ошибка удаления: ' + E.Message);
+                MessagesHandler.ShowError(
+                    TUIStateLoader.GetMessage('Snippet.DeleteError', [E.Message])
+                );
         end;
     end;
 end;
@@ -928,7 +978,7 @@ begin
     begin
         Data := TSnippetViewData(Item.Data);
         if (Data.Comment = '') then
-            Comment := 'Без комментария'
+            Comment := TUIStateLoader.GetMessage('Snippet.NoComment')
         else
             Comment := Data.Comment;
         InfoTip := Format('[%s] %s'#13#10'%s', [Data.ID.ToString, Data.Title, Comment]);
@@ -971,7 +1021,7 @@ begin
     if Item = nil then
         Exit;
 
-    Runner := TSnippetRunner.Create(FUserID, FWindowHelper);
+    Runner := TSnippetRunner.Create(FUserID, FAppContext);
     try
         Runner.ExecuteSnippet(ExtractSnippetByListItem(Item));
     finally
@@ -984,8 +1034,12 @@ var
     NewName: string;
     NewID: Integer;
 begin
-    if not InputQuery('Новый тег', 'Введите имя тега:', NewName) then
-        Exit;
+    if not InputQuery(
+        TUIStateLoader.GetMessage('Tag.NewDefaultName'),
+        TUIStateLoader.GetMessage('Tag.NewPrompt'),
+        NewName
+    ) then Exit;
+
     NewName := Trim(NewName);
     if NewName = '' then
         Exit;
@@ -1001,10 +1055,12 @@ begin
             Selected := True;
             MakeVisible(False);
         end;
-        sbBottom.SimpleText := Format('Тег "%s" добавлен.', [NewName]);
+        sbBottom.SimpleText := TUIStateLoader.GetMessage('Tag.AddedMsg', [NewName]);
     except
         on E: Exception do
-            FErrorHandler.ShowError('Ошибка добавления тега: ' + E.Message);
+            MessagesHandler.ShowError(
+                TUIStateLoader.GetMessage('Tag.AddError', [E.Message])
+            );
     end;
 end;
 
@@ -1017,9 +1073,12 @@ begin
     if Item = nil then
         Exit;
 
-    TagID := Integer(Item.Data);
-    if MessageBox(Handle, PChar(Format('Удалить тег "%s"?', [Item.Caption])), 'Подтверждение', MB_YESNO or MB_ICONQUESTION) <> IDYES then
-        Exit;
+    TagID := Integer(IntPtr(Item.Data));
+    if MessagesHandler.AskConfirmation(
+        TUIStateLoader.GetMessage('Tag.DeleteConfirm', [Item.Caption]),
+        TUIStateLoader.GetMessage('Common.Confirmation'),
+        MB_YESNO or MB_ICONQUESTION or MB_DEFBUTTON2
+    ) then Exit;
 
     try
         FTagService.DeleteTag(TagID);
@@ -1031,10 +1090,12 @@ begin
         if FCurrentSnippetID > 0 then
             TUIHelpers.FillTagListWithSelection(lvTags, FTagService.GetAllTags, FTagService.GetSnippetTags(FCurrentSnippetID));
 
-        sbBottom.SimpleText := 'Тег удалён.';
+        sbBottom.SimpleText := TUIStateLoader.GetMessage('Tag.DeletedMsg');
     except
         on E: Exception do
-            FErrorHandler.ShowError('Ошибка удаления тега: ' + E.Message);
+            MessagesHandler.ShowError(
+                TUIStateLoader.GetMessage('Tag.DeleteError', [E.Message])
+            );
     end;
 end;
 
@@ -1060,11 +1121,13 @@ begin
     try
         TagID := Integer(Item.Data);
         FTagService.RenameTag(TagID, S);
-        sbBottom.SimpleText := Format('Тег переименован: "%s" → "%s"', [OldName, S]);
+        sbBottom.SimpleText := TUIStateLoader.GetMessage('Tag.RenamedMsg', [OldName, S]);
     except
         on E: Exception do
         begin
-            FErrorHandler.ShowError('Ошибка переименования тега: ' + E.Message);
+            MessagesHandler.ShowError(
+                TUIStateLoader.GetMessage('Tag.RenameError', [E.Message])
+            );
             S := OldName;
         end;
     end;
@@ -1078,17 +1141,17 @@ begin
     if Item = nil then
         Exit;
 
-    if FFilterByTagID = Integer(Item.Data) then
+    if FFilterByTagID = Integer(IntPtr(Item.Data)) then
         ClearTagFilter
     else
-        ApplyTagFilter(Integer(Item.Data), Item.Caption);
+        ApplyTagFilter(Integer(IntPtr(Item.Data)), Item.Caption);
 end;
 
 procedure TMainForm.ApplyTagFilter(TagID: Integer; const TagName: string);
 begin
     FFilterByTagID := TagID;
     FillSnippetListView(FSnippetService.GetSnippetsByTag(TagID));
-    sbBottom.SimpleText := Format('Фильтр по тегу: "%s"', [TagName]);
+    sbBottom.SimpleText := TUIStateLoader.GetMessage('Tag.FilterPrefix', [TagName]);
 end;
 
 procedure TMainForm.ClearTagFilter;
@@ -1098,17 +1161,19 @@ begin
         tvCategoriesChange(tvCategories, tvCategories.Selected)
     else
         lvSnippets.Items.Clear;
-    sbBottom.SimpleText := 'Фильтр сброшен.';
+    sbBottom.SimpleText := TUIStateLoader.GetMessage('Tag.FilterReset');
 end;
 
 procedure TMainForm.ebSearchChange(Sender: TObject);
 begin
-    PerformSearchAsync(ebSearch.Text);
+    tmrSearchTimer.Enabled := False;
+    tmrSearchTimer.Enabled := True;
 end;
 
 procedure TMainForm.nOpenDatabaseClick(Sender: TObject);
 begin
-    OpenDialog.FileName := System.IOUtils.TPath.GetDirectoryName(Application.ExeName) + '\snippets.sqlite';
+    OpenDialog.InitialDir := GetDefaultDataDir;
+    OpenDialog.FileName := 'snippets.sqlite';
     if OpenDialog.Execute(Handle) then
     begin
         try
@@ -1117,34 +1182,32 @@ begin
 
             LoadUsersToComboBox;  // Сначала загружаем выпадающий список
             cbUserChange(cbUser); // Вызываем OnChange, что инициирует ReloadUI с правильным ID
-            ClearRightPanel;      // Сбрасываем старые данные на панелях
 
-            ShowSimpleToast('Менеджер сниппетов', 'База данных SQLite открыта.');
+            ShowSimpleToast(TUIStateLoader.GetMessage('DB.OpenedSuccess'));
         except
             on E: Exception do
-                FErrorHandler.ShowError('Ошибка открытия базы данных: ' + E.Message);
+                MessagesHandler.ShowError(TUIStateLoader.GetMessage('DB.OpenError', [E.Message]));
         end;
     end;
 end;
 
-procedure TMainForm.NCreateDatabaseClick(Sender: TObject);
+procedure TMainForm.nCreateDatabaseClick(Sender: TObject);
 begin
-    SaveDialog.FileName := System.IOUtils.TPath.GetDirectoryName(Application.ExeName) + '\snippets.sqlite';
+    SaveDialog.InitialDir := GetDefaultDataDir;
+    SaveDialog.FileName := 'snippets.sqlite';
     if SaveDialog.Execute(Handle) then
     begin
-        Application.RestoreTopMosts;
         try
             FDBManager.CreateDatabase(SaveDialog.FileName);
             TStateMgr.Instance.CreateDatabase;
 
             LoadUsersToComboBox;  // Сначала выпадающий список
             cbUserChange(cbUser); // Применяем и перерисовываем дерево (ReloadUI)
-            ClearRightPanel;      // Очищаем старые артефакты
 
-            ShowSimpleToast('Менеджер сниппетов', 'База данных SQLite создана.');
+            ShowSimpleToast(TUIStateLoader.GetMessage('DB.CreatedSuccess'));
         except
             on E: Exception do
-                FErrorHandler.ShowError('Ошибка создания базы данных: ' + E.Message);
+                MessagesHandler.ShowError(TUIStateLoader.GetMessage('DB.CreateError', [E.Message]));
         end;
     end;
 end;
@@ -1176,6 +1239,143 @@ begin
     ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
 end;
 
+procedure TMainForm.LanguageMenuItemClick(Sender: TObject);
+var
+    MI: TMenuItem;
+    LangCode: string;
+    I, SelectedSnippetID, SelectedTagID: Integer;
+    LocForm: ILocalizable;
+    SelectedCatID: Integer;
+begin
+    MI := Sender as TMenuItem;
+    LangCode := MI.Hint;
+    MI.Checked := True;
+
+    // 1. Обновляем надпись в StatusBar
+    sbBottom.Panels[LANG_PANEL_INDEX].Text := '🌐 ' + UpperCase(LangCode);
+
+    // 2. Сохраняем выбор в настройки
+    FAppContext.SettingsManager.CurrentLanguage := LangCode;
+    FAppContext.SettingsManager.Save;
+
+    // 3. Загружаем новый JSON-файл в память
+    TUIStateLoader.LoadLanguageFile(ResolvePath('Translation\ui-texts.' + LangCode + '.json'));
+
+    // 4. Переводим все открытые окна
+    for I := 0 to Screen.FormCount - 1 do
+    begin
+        if Supports(Screen.Forms[I], ILocalizable, LocForm) then
+            LocForm.ApplyLanguage;
+    end;
+
+    // --- 5. СОХРАНЕНИЕ ТЕКУЩЕГО СОСТОЯНИЯ ---
+    SelectedCatID := PRESERVE_CATEGORY_EMPTY_ID;
+    SelectedSnippetID := 0;
+    SelectedTagID := 0;
+
+    if tvCategories.Selected <> nil then
+        SelectedCatID := Integer(IntPtr(tvCategories.Selected.Data));
+
+    if lvSnippets.Selected <> nil then
+        SelectedSnippetID := ExtractSnippetByListItem(lvSnippets.Selected).ID;
+
+    if lvTags.Selected <> nil then
+        SelectedTagID := Integer(IntPtr(lvTags.Selected.Data));
+
+    // Блокируем перерисовку всех списков для мгновенного визуального обновления
+    tvCategories.Items.BeginUpdate;
+    lvSnippets.Items.BeginUpdate;
+    lvTags.Items.BeginUpdate;
+    try
+        // --- 6. ПЕРЕЗАГРУЗКА ИЕРАРХИИ ---
+        ReloadUI(SelectedCatID);
+
+        // --- 7. ВОССТАНОВЛЕНИЕ ВЫДЕЛЕНИЯ СНИППЕТА ---
+        if SelectedSnippetID > 0 then
+        begin
+            for I := 0 to lvSnippets.Items.Count - 1 do
+            begin
+                if TSnippetViewData(lvSnippets.Items[I].Data).ID = SelectedSnippetID then
+                begin
+                    lvSnippets.Selected := lvSnippets.Items[I];
+                    lvSnippets.ItemFocused := lvSnippets.Items[I];
+                    lvSnippets.Items[I].MakeVisible(False);
+
+                    // Имитируем клик. Это обновит нижнюю панель и ПЕРЕСТРОИТ lvTags!
+                    lvSnippetsClick(lvSnippets);
+                    Break;
+                end;
+            end;
+        end;
+
+        // --- 8. ВОССТАНОВЛЕНИЕ ВЫДЕЛЕНИЯ ТЕГА ---
+        // (Обязательно делать это после lvSnippetsClick, так как теги пересоздались)
+        if SelectedTagID > 0 then
+        begin
+            for I := 0 to lvTags.Items.Count - 1 do
+            begin
+                if Integer(IntPtr(lvTags.Items[I].Data)) = SelectedTagID then
+                begin
+                    lvTags.Selected := lvTags.Items[I];
+                    lvTags.ItemFocused := lvTags.Items[I];
+                    lvTags.Items[I].MakeVisible(False);
+                    Break;
+                end;
+            end;
+        end;
+
+    finally
+        // Возвращаем отрисовку
+        tvCategories.Items.EndUpdate;
+        lvSnippets.Items.EndUpdate;
+        lvTags.Items.EndUpdate;
+    end;
+end;
+
+procedure TMainForm.LoadAvailableLanguages;
+var
+    Files: TArray<string>;
+    FileName, LangCode, TranslationsDir, CurrentLang: string;
+    MI: TMenuItem;
+begin
+    TranslationsDir := ResolvePath('Translation', True);
+    if not TDirectory.Exists(TranslationsDir) then Exit;
+
+    Files := TDirectory.GetFiles(TranslationsDir, 'ui-texts.*.json');
+    
+    pmLanguage.Items.Clear;
+
+    if Assigned(FAppContext) then
+        CurrentLang := FAppContext.SettingsManager.Data.CurrentLanguage
+    else
+        CurrentLang := 'ru';
+
+    for FileName in Files do
+    begin
+        // Извлекаем код языка: ui-texts.en.json -> en
+        LangCode := ExtractFileName(FileName);
+        LangCode := StringReplace(LangCode, 'ui-texts.', '', [rfIgnoreCase]);
+        LangCode := StringReplace(LangCode, '.json', '', [rfIgnoreCase]);
+
+        // Создаем пункт меню
+        MI := TMenuItem.Create(pmLanguage);
+        MI.Caption := UpperCase(LangCode); // 'RU', 'EN'
+        MI.Hint := LangCode;
+        MI.RadioItem := True;
+        MI.GroupIndex := 1;
+        MI.OnClick := LanguageMenuItemClick;
+
+        pmLanguage.Items.Add(MI);
+
+        // Отмечаем галочкой текущий язык без вызова MI.Click (избегаем рекурсии)
+        if SameText(LangCode, CurrentLang) then
+        begin
+            MI.Checked := True;
+            sbBottom.Panels[LANG_PANEL_INDEX].Text := '🌐 ' + UpperCase(LangCode);
+        end;
+    end;
+end;
+
 procedure TMainForm.LoadUsersToComboBox;
 var
     Users: TArray<TUserDTO>;
@@ -1184,7 +1384,7 @@ begin
     cbUser.Items.BeginUpdate;
     try
         cbUser.Clear;
-        cbUser.Items.AddObject('Все пространства', TObject(0));
+        cbUser.Items.AddObject(TUIStateLoader.GetMessage('Workspace.AllSpaces'), TObject(0));
         Users := FUserService.GetAllUsers;
         for User in Users do
             cbUser.Items.AddObject(User.Name, TObject(Integer(User.ID)));
@@ -1198,11 +1398,11 @@ procedure TMainForm.bManageWorkspacesClick(Sender: TObject);
 begin
     with TWorkspaceManagerForm.Create(Self, FUserService) do
     try
+        Initialize(FAppContext);
         if ShowModal = mrOk then
         begin
             LoadUsersToComboBox;  // Перезагружает список пространств и ставит ItemIndex := 0
             cbUserChange(cbUser); // Явно вызываем OnChange. Он обновит FFilterUserID и вызовет ReloadUI
-            ClearRightPanel;      // Очищаем сниппеты, т.к. активное пространство могло быть удалено
         end;
     finally
         Free;
@@ -1211,7 +1411,7 @@ end;
 
 function TMainForm.ExtractSnippetByListItem(Item: TListItem): TSnippetDTO;
 begin
-    if not Assigned(Item) then
+    if not Assigned(Item) or not Assigned(Item.Data) then
         Exit(Default(TSnippetDTO));
     Result := FSnippetService.GetSnippetByID(TSnippetViewData(Item.Data).ID);
 end;
@@ -1228,9 +1428,6 @@ begin
     if User.ID > 0 then
         sbBottom.SimpleText := Format('[%d] %s (ID: %d) CID: %d', [Snippet.ID, User.Name, Snippet.UserID, Snippet.CategoryID]);
 
-    mSnippet.Text := Snippet.Content;
-    mComment.Text := Snippet.Comment;
-
     // Отрисовка тегов через TUIHelpers
     AllTags := FTagService.GetAllTags;
     SnippetTags := FTagService.GetSnippetTags(Snippet.ID);
@@ -1245,6 +1442,11 @@ end;
 function TMainForm.IsWorkspaceNode(Node: TTreeNode): Boolean;
 begin
     Result := Assigned(Node) and (Node.Data = nil) and not IsVirtualCategory(Node);
+end;
+
+procedure TMainForm.lvTagsClick(Sender: TObject);
+begin
+    UpdateMenuState;
 end;
 
 procedure TMainForm.nAddSnippetClick(Sender: TObject);
@@ -1282,6 +1484,11 @@ begin
     DoAddTag;
 end;
 
+procedure TMainForm.nExitClick(Sender: TObject);
+begin
+    MainForm.Close;
+end;
+
 procedure TMainForm.nDeleteTagClick(Sender: TObject);
 begin
     DoDeleteTag;
@@ -1289,10 +1496,10 @@ end;
 
 procedure TMainForm.nPasswordGeneratorClick(Sender: TObject);
 begin
-    TPasswordGenForm.ExecuteGlobal(Application, FPasswordService);
+    TPasswordGenForm.ExecuteGlobal(Application, FPasswordService, FAppContext);
 end;
 
-procedure TMainForm.nRenameTagClick(Sender: TObject);
+procedure TMainForm.nEditTagClick(Sender: TObject);
 begin
     DoRenameTag;
 end;
@@ -1321,22 +1528,18 @@ var
 begin
     SearchStr := Trim(Mask);
 
-    // Отменяем старую задачу в любом случае (даже если в строке 1 символ)
     if Assigned(FSearchTask) then
         FSearchTask.Cancel;
 
-    // Если строка пустая - возвращаем пользователю обычный список его категории
     if SearchStr.IsEmpty then
     begin
-        RefreshCurrentSnippetList; // Восстанавливаем список
+        RefreshCurrentSnippetList;
         Exit;
     end;
 
-    // Ждем минимум 3 символа для старта тяжелого запроса
     if SearchStr.Length < 3 then
         Exit;
 
-    // Захватываем параметры UI для передачи в фон
     TaskUserID := FFilterUserID;
     IsFTS := rbFTS.Checked;
 
@@ -1348,38 +1551,37 @@ begin
             Results: TArray<TSnippetDTO>;
         begin
             try
-                // Создаем изолированный сервис
                 BgService := FAppContext.CreateIsolatedSnippetService(BgConnection);
                 try
-                    // Проверяем, не успел ли пользователь ввести новую букву
                     if TTask.CurrentTask.Status = TTaskStatus.Canceled then Exit;
 
-                    // Выполняем поиск
                     Results := BgService.SearchSnippets(SearchStr, IsFTS, TaskUserID);
 
                     if TTask.CurrentTask.Status = TTaskStatus.Canceled then Exit;
 
-                    // Синхронизируем с главным потоком
                     TThread.Queue(nil,
                         procedure
                         begin
-                            DisplaySearchResults(Results);
+                            // Проверяем, актуален ли еще этот поиск
+                            if SameText(Trim(ebSearch.Text), SearchStr) then
+                                DisplaySearchResults(Results);
                         end
                     );
                 finally
-                    // Обязательно освобождаем коннект БД
                     if Assigned(BgConnection) then
                         BgConnection.Free;
                 end;
             except
                 on E: Exception do
                 begin
-                    // ЕСЛИ В ФОНЕ ПРОИЗОШЛА ОШИБКА БД, МЫ ДОЛЖНЫ ЭТО УВИДЕТЬ!
                     var ErrMsg := E.Message;
                     TThread.Queue(nil,
                         procedure
                         begin
-                            FErrorHandler.ShowError('Ошибка фонового поиска: ' + ErrMsg);
+                            if SameText(Trim(ebSearch.Text), SearchStr) then
+                                MessagesHandler.ShowError(
+                                    TUIStateLoader.GetMessage('Search.BackgroundError', [ErrMsg])
+                                );
                         end
                     );
                 end;
@@ -1391,6 +1593,51 @@ end;
 procedure TMainForm.rbTextClick(Sender: TObject);
 begin
     ebSearchChange(Sender);
+end;
+
+procedure TMainForm.sbBottomMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+    I: Integer;
+    R: TRect;
+    Pt: TPoint;
+begin
+    // Реагируем только на клик левой кнопкой мыши
+    if Button <> mbLeft then
+        Exit;
+
+    // Проходим по всем панелям StatusBar
+    for I := 0 to sbBottom.Panels.Count - 1 do
+    begin
+        // Запрашиваем у Windows границы (Rect) панели с индексом I
+        SendMessage(sbBottom.Handle, SB_GETRECT, I, NativeInt(@R));
+
+        // Проверяем, попали ли координаты клика (X, Y) внутрь прямоугольника этой панели
+        if PtInRect(R, Point(X, Y)) then
+        begin
+            // Если кликнули по панели с языком (LANG_PANEL_INDEX)
+            if I = LANG_PANEL_INDEX then
+            begin
+                // Переводим верхний левый угол панели в экранные координаты
+                Pt := sbBottom.ClientToScreen(Point(R.Left, R.Top));
+
+                // Показываем всплывающее меню со списками языков
+                pmLanguage.Popup(Pt.X, Pt.Y);
+            end;
+
+            Break; // Нашли нужную панель - выходим из цикла
+        end;
+    end;
+end;
+
+procedure TMainForm.sbBottomResize(Sender: TObject);
+begin
+    sbBottom.Panels[0].Width := sbBottom.ClientWidth - sbBottom.Panels[1].Width;
+end;
+
+procedure TMainForm.tmrSearchTimerTimer(Sender: TObject);
+begin
+    tmrSearchTimer.Enabled := False; // Останавливаем таймер
+    PerformSearchAsync(ebSearch.Text); // Запускаем тяжелый поиск 1 раз
 end;
 
 procedure TMainForm.WMActivate(var Msg: TWMActivate);

@@ -1,0 +1,585 @@
+{
+  "MainForm": {
+    "Caption": "SSH Snippets Keeper",
+    "ebSearch": {
+      "TextHint": "Type something to search the database..."
+    },
+    "mComment": {
+      "HintText": "Snippet comment will appear here."
+    },
+    "mSnippet": {
+      "HintText": "Snippet text will appear here."
+    },
+    "rbText": {
+      "Caption": "Simple Search"
+    },
+    "rbFTS": {
+      "Caption": "FTS5 Search"
+    },
+    "cbUser": {
+      "Hint": "Current workspace. Click ⚙ to manage workspaces."
+    },
+    "bManageWorkspaces": {
+      "Hint": "Allows you to visually manage workspaces."
+    },
+    "tvCategories": {},
+    "nFile": {
+      "Caption": "File"
+    },
+    "nCreateDatabase": {
+      "Caption": "Create database"
+    },
+    "nOpenDatabase": {
+      "Caption": "Open database"
+    },
+    "nCloseDatabase": {
+      "Caption": "Close database"
+    },
+    "nExit": {
+      "Caption": "Exit"
+    },
+    "nDataManagament": {
+      "Caption": "Data"
+    },
+    "nCategories": {
+      "Caption": "Categories"
+    },
+    "nSnippets": {
+      "Caption": "Snippets"
+    },
+    "nTags": {
+      "Caption": "Tags"
+    },
+    "nAddCategory": {
+      "Caption": "Add"
+    },
+    "nDeleteCategory": {
+      "Caption": "Delete"
+    },
+    "nEditCategory": {
+      "Caption": "Edit"
+    },
+    "nAddSnippet": {
+      "Caption": "Add"
+    },
+    "nEditSnippet": {
+      "Caption": "Edit"
+    },
+    "nDeleteSnippet": {
+      "Caption": "Delete"
+    },
+    "nAddTag": {
+      "Caption": "Add"
+    },
+    "nEditTag": {
+      "Caption": "Edit"
+    },
+    "nDeleteTag": {
+      "Caption": "Delete"
+    },
+    "nTerminals": {
+      "Caption": "Terminals"
+    },
+    "nTools": {
+      "Caption": "Tools"
+    },
+    "nPasswordGenerator": {
+      "Caption": "Password Generator"
+    },
+    "nSearch": {
+      "Caption": "Database Search"
+    }
+  },
+  "TagEditorForm": {
+    "Caption": "Tag Editor",
+    "nActions": { "Caption": "Actions" },
+    "nTagAdd": { "Caption": "Add" },
+    "nTagDelete": { "Caption": "Delete" },
+    "nTagRename": { "Caption": "Rename" },
+    "bOK": { "Caption": "OK" },
+    "bCancel": { "Caption": "Cancel" }
+  },
+  "InputForm": {
+      "Caption": "Input Value",
+      "bOK": { "Caption": "OK" },
+      "bCancel": { "Caption": "Cancel" },
+      "lbPrompt": { "Caption": "Enter value:" }
+  },
+    "AddEditSnippetForm": {
+    "Caption": "SSH Snippets Keeper - Add/Edit Snippet",
+    "ebTitle": {
+      "Text": ""
+    },
+    "mContent": {
+      "TextHint": "Enter snippet code here..."
+    },
+    "mComment": {
+      "TextHint": "Enter snippet comment here..."
+    },
+    "bOK": {
+      "Caption": "OK"
+    },
+    "bCancel": {
+      "Caption": "Cancel"
+    },
+    "nAI": {
+      "Caption": "AI Assistant"
+    },
+    "nShowAIPrompt": {
+      "Caption": "Call AI"
+    },
+    "nAISettings": {
+      "Caption": "Configure AI"
+    },
+    "lbCaption": {
+      "Caption": "Snippet name"
+    },
+    "lbAllTags": {
+      "Caption": "Available tags"
+    },
+    "lbSelectedTags": {
+      "Caption": "Selected tags"
+    },
+    "cbIgnoreSecurityChecks": {
+      "Caption": "Trust this snippet (disable security check)"
+    },
+    "tsSnippet": {
+      "Caption": "Snippet content"
+    },
+    "tsMacros": {
+      "Caption": "Macros"
+    },
+    "mInfo": {
+      "Text": "Current test macros:\n{SLEEP N} - Delay execution by N milliseconds.\n{ENTER} - Send ENTER key press.\n{SENDKEY X} - Send character X to the target window.\n{INPUT[TYPE:DEFAULT_VALUE] NAME} - Show a text input dialog and replace macro with input. Examples:\n  {INPUT Name}\n  {INPUT[STRING:test string] Name}\n  {INPUT[NUMBER:100] Size}\n  {INPUT[FLOAT:3.14] Size}\n  {INPUT[Hex:FF] Color}\n  {INPUT[Password] Password}\n  {INPUT[DATE:2026-01-31] Date}\n  {INPUT[Confirm] Text for user} - Pause execution and wait for user confirmation.\n\n..."
+    }
+  },
+  "AISettingsForm": {
+    "Caption": "AI Settings",
+    "nFile": {
+      "Caption": "File"
+    },
+    "nSave": {
+      "Caption": "Save"
+    },
+    "nProvider": {
+      "Caption": "Provider"
+    },
+    "nProviderCreate": {
+      "Caption": "Create"
+    },
+    "nProviderDelete": {
+      "Caption": "Delete"
+    },
+    "nProviderEdit": {
+      "Caption": "Edit"
+    },
+    "nModel": {
+      "Caption": "Model"
+    },
+    "nModelCreate": {
+      "Caption": "Create"
+    },
+    "nModelDelete": {
+      "Caption": "Delete"
+    },
+    "nModelEdit": {
+      "Caption": "Edit"
+    },
+    "lbHubName": {
+      "Text": "Hub Name"
+    },
+    "lbHubURL": {
+      "Text": "Hub URL"
+    },
+    "lbHubComment": {
+      "Text": "Comment"
+    },
+    "lbModelName": {
+      "Text": "Model Name"
+    },
+    "lbAPIKey": {
+      "Text": "API Key"
+    },
+    "lbFolderID": {
+      "Text": "Folder ID"
+    },
+    "lbModelPath": {
+      "Text": "Model Path"
+    },
+    "lbSystemPrompt": {
+      "Text": "System Prompt"
+    },
+    "lbAgentID": {
+      "Text": "Agent ID"
+    },
+    "lbTemperature": {
+      "Text": "Temperature"
+    },
+    "lbMaxTokens": {
+      "Text": "Max Tokens"
+    }
+  },
+  "ChooseTerminalWindow": {
+    "Caption": "Choose Terminal"
+  },
+  "WorkspaceManagerForm": {
+    "Caption": "Workspace Management",
+    "nWorkspaces": {
+      "Caption": "Workspaces"
+    },
+    "nWorkspaceAdd": {
+      "Caption": "Add"
+    },
+    "nWorkspaceDelete": {
+      "Caption": "Delete"
+    },
+    "nWorkspaceRename": {
+      "Caption": "Rename"
+    },
+    "bOK": {
+      "Caption": "OK"
+    },
+    "bCancel": {
+      "Caption": "Cancel"
+    },
+    "lvWorkspaces": {
+      "Columns": {
+        "0": "Workspace Name"
+      }
+    }
+  },
+  "PasswordGenForm": {
+    "Caption": "Password Generator",
+    "lbLength": {
+      "Caption": "Length"
+    },
+    "lbEntropy": {
+      "Caption": "Entropy"
+    },
+    "lbPresets": {
+      "Caption": "Presets"
+    },
+    "cbUnique": {
+      "Caption": "Unique Characters"
+    },
+    "bGenerate": {
+      "Caption": "Generate"
+    },
+    "tsHistory": {
+      "Caption": "History"
+    },
+    "tsCustomSettings": {
+      "Caption": "Custom"
+    },
+    "tsBulkMode": {
+      "Caption": "Bulk Generation"
+    },
+    "lbBulkCount": {
+      "Caption": "Count"
+    },
+    "bBulkGenerate": {
+      "Caption": "Generate"
+    },
+    "bExport": {
+      "Caption": "Export"
+    },
+    "nCopyToClipboard": {
+      "Caption": "Copy to Clipboard"
+    },
+    "nSaveToFile": {
+      "Caption": "Save to File"
+    },
+    "cbLowercase": {
+      "Caption": "Lowercase"
+    },
+    "cbUppercase": {
+      "Caption": "Uppercase"
+    },
+    "cbNumbers": {
+      "Caption": "Numbers"
+    },
+    "cbSymbols": {
+      "Caption": "Symbols"
+    },
+    "lbInclude": {
+      "Caption": "Include Characters"
+    },
+    "ldExclude": {
+      "Caption": "Exclude Characters"
+    },
+    "lvHistory": {
+      "Columns": {
+        "0": "Date",
+        "1": "Time",
+        "2": "Password",
+        "3": "Preset",
+        "4": "Entropy"
+      }
+    }
+  },
+  "QuickSearchForm": {
+    "ebQuickSearch": {
+      "TextHint": "Type something..."
+    },
+    "rbText": {
+      "Caption": "Simple Search"
+    },
+    "rbFTS": {
+      "Caption": "FTS5 Search"
+    }
+  },
+  "Messages": {
+    "Help": {
+      "MainForm": {
+        "tvCategories": {
+          "Title": "Category List",
+          "Main": "Tree list of categories in the current workspace. If \"All Workspaces\" is selected, workspaces are displayed as root categories, but snippets cannot be added to them.<br><blockquote><b>Virtual categories</b> \"Recent\" and \"Frequently used\": snippets cannot be added manually to these categories, only modified or deleted.</blockquote>",
+          "Expanded": "<code>ALT+A</code> - Add category<br><code>ALT+E</code> - Edit category<br><code>ALT+D</code> - Delete category"
+        },
+        "lvSnippets": {
+          "Title": "Snippet List",
+          "Main": "Flat list of snippets in the selected workspace.",
+          "Expanded": "<code>CTRL+A</code> - Add snippet<br><code>CTRL+E</code> - Edit snippet<br><code>CTRL+D</code> - Delete snippet"
+        },
+        "lvTags": {
+          "Title": "Tag List",
+          "Main": "Displays a complete list of all tags in the database. For convenience, tags already assigned to the selected snippet are automatically pinned at the top of the list and highlighted in green.",
+          "Expanded": "💡 <b>Navigation and Hotkeys:</b><br><b>Double-click</b> — instantly filter snippets by the selected tag.<br><br><code>CTRL+ALT+A</code> — add a new tag.<br><code>CTRL+ALT+E</code> — edit tag name.<br><code>CTRL+ALT+D</code> — delete the selected tag from the database."
+        },
+        "ebSearch": {
+          "Title": "Search Bar",
+          "Main": "Database snippet search bar. Search is performed by title, code, comments, and assigned tags.<br><blockquote><b>Smart Full-Text Search (FTS5):</b><br>The engine automatically searches for parts of words inside the code (e.g., query <code>List</code> will find <code>TList</code>). Results are automatically sorted: the most relevant matches will always be at the top.<br><br><b>Special Operators:</b><br><br>• <code>\"Exact phrase\"</code> - search for an exact match (in quotes).<br>• <code>word1 AND word2</code> - snippet must contain both words.<br>• <code>word1 OR word2</code> - snippet contains at least one of the words.<br>• <code>NOT word</code> - exclude snippets with this word.<br><br>Search is case-insensitive.</blockquote>",
+          "Expanded": "Type a query while the search bar is focused, and it will be applied automatically.<br><br>Tag Management (Global):<br><code>CTRL+ALT+A</code> - Add tag<br><code>CTRL+ALT+E</code> - Edit tag<br><code>CTRL+ALT+D</code> - Delete tag"
+        },
+        "FrequentlyUsed": "Frequently Used",
+        "Recent": "Recent"
+      },
+      "AddEditSnippet": {
+        "mContent": {
+          "Title": "Snippet Text",
+          "Main": "Main input field for snippet code. Supports syntax highlighting and auto-completion for Linux Shell/Bash. <blockquote>• <b>Macros:</b> The built-in engine allows prompting the user for arguments, inserting pauses, awaiting confirmation, and more. Full syntax is available on the «Macros» tab.<br><br>• <b>Execution (Line breaks):</b> Each new line is interpreted by the terminal as an <code>ENTER</code> key press (sending a command). Keep this in mind when writing multi-line scripts.<br><br>• <b>AI Assistant:</b> Built-in integration with Yandex AI Studio for code generation and refactoring. It is recommended to set up and use «Agents» — they return concise, ready-to-use code without unnecessary reasoning. You can configure AI via the main menu.<br><br>• <b>Data Protection:</b> Snippets are automatically checked for sensitive information (passwords, API keys, SSH tokens, DB connection strings). If threats are detected, saving will be blocked until you explicitly check the «Ignore checks» checkbox.</blockquote>",
+          "Expanded": "<code>CTRL+I</code> - Open AI Assistant prompt window.<br><code>CTRL+ALT+I</code> - Open AI Settings window."
+        },
+        "mComment": {
+          "Title": "Snippet Comment",
+          "Main": "Field for notes and explanations about the code. Describe what this snippet is for, what parameters it accepts, or what to pay special attention to.<br><br>💡 <b>Tip:</b> Comment text is actively indexed by the internal search, so a detailed description will help you find the necessary script much faster in the future.",
+          "Expanded": ""
+        },
+        "lvAllTags": {
+          "Title": "Tag List",
+          "Main": "Select tags for the snippet. You can move them by double-clicking or simply dragging and dropping (Drag & Drop) between the lists. Multiple tag selection is supported using Ctrl or Shift.",
+          "Expanded": ""
+        }
+      },
+      "PasswordGenForm": {
+        "lvHistory": {
+          "Title": "Generation History",
+          "Main": "All passwords created during the current session are saved here. <blockquote>• <b>Preview:</b> A single click will return the selected password to the main input field.<br><br>• <b>Quick Apply:</b> A double click will apply the password and immediately close the window. If the generator was called via a global hotkey, the password will be <b>automatically typed</b> into your active window (e.g., terminal). Otherwise, it will simply be copied to the clipboard.</blockquote>",
+          "Expanded": "💡 <b>Generator Hotkeys:</b><br><code>CTRL+G</code> — launch from the main program window.<br><code>CTRL+ALT+G</code> — global launch from anywhere in the system on top of other windows."
+        }
+      }
+    },
+    "Common": {
+      "Confirmation": "Confirmation",
+      "Error": "Error",
+      "Warning": "Warning",
+      "Information": "Information",
+      "Yes": "Yes",
+      "No": "No",
+      "OK": "OK",
+      "Cancel": "Cancel",
+      "Help": "Help",
+      "MoreInfo": "More Info",
+      "WinEventHookError": "Failed to set up WinEventHook. Error: %s",
+      "CopiedToClipboard": "Copied to clipboard."
+    },
+    "DB": {
+      "ConnectError": "Critical Error!\nFailed to connect to the SQLite database.\nCheck the file path.",
+      "OpenError": "Error opening database: %s",
+      "CreateError": "Error creating database: %s",
+      "OpenedSuccess": "SQLite database opened.",
+      "CreatedSuccess": "SQLite database created.",
+      "SQLExecutionError": "Error executing SQL query: %s",
+      "NoConnectionError": "Error: No connection to the database."
+    },
+    "Category": {
+      "DeleteConfirm": "Are you sure you want to delete this category?",
+      "DeleteSuccess": "Category successfully deleted.",
+      "SelectPrompt": "First, select a workspace or category.",
+      "VirtualFolderError": "Cannot add categories to virtual folders.",
+      "NewNamePrompt": "Enter name:",
+      "NewDefaultName": "New Category",
+      "CreatedMsg": "Category \"%s\" created.",
+      "DeleteWithChildrenConfirm": "Delete category \"%s\" and all its nested items?",
+      "DeleteMsg": "Category \"%s\" deleted.",
+      "DeleteError": "Error deleting category: %s",
+      "CreateError": "Error creating category: %s",
+      "RenameError": "Error renaming category: %s",
+      "MoveError": "Error moving category: %s",
+      "SourceCategoryNotFound": "Source category not found.",
+      "ParentCategoryNotFound": "Parent category not found.",
+      "MoveToDifferentSpaceError": "Cannot move category to a different workspace.",
+      "CategoryNotFound": "Category not found.",
+      "AccessDenied": "Access denied: Category belongs to another user.",
+      "InvalidIdError": "Invalid identifier for the category.",
+      "EmptyNameError": "Имя категории не может быть пустым."
+    },
+    "Snippet": {
+      "TypeToWindowConfirm": "Enter the snippet in the window: \"%s\"?",
+      "SelectPrompt": "Select a specific category to add a snippet.",
+      "WorkspaceUndefined": "Failed to determine the workspace for the snippet (UserID=%d). Try selecting a specific workspace in the filter.",
+      "DeletedMsg": "Snippet deleted.",
+      "DeleteConfirm": "Delete snippet \"%s\"?",
+      "DeleteError": "Error deleting snippet: %s",
+      "SaveError": "Error saving snippet: %s",
+      "NoComment": "No comment",
+      "CaptionEdit": "Edit Snippet",
+      "CaptionAdd": "Add Snippet",
+      "TitleEmptyError": "Enter snippet title.",
+      "NoContentError": "Snippet text is empty.",
+      "InvalidIdError": "Invalid identifier for the snippet."
+    },
+    "Tag": {
+      "NewPrompt": "Enter tag name:",
+      "NewDefaultName": "New Tag",
+      "AddedMsg": "Tag \"%s\" added.",
+      "DeleteConfirm": "Delete tag \"%s\"?",
+      "DeletedMsg": "Tag deleted.",
+      "AddError": "Error adding tag: %s",
+      "DeleteError": "Error deleting tag: %s",
+      "RenameError": "Error renaming tag: %s",
+      "RenamedMsg": "Tag renamed: \"%s\" → \"%s\"",
+      "FilterPrefix": "Filter by tag: \"%s\"",
+      "FilterReset": "Filter reset.",
+      "InvalidIdError": "Invalid identifier for the tag.",
+      "EmptyNameError": "Tag name cannot be empty.",
+      "DuplicateNameError": "Tag with name \"%s\" already exists."
+    },
+    "User": {
+      "InvalidIdError": "Invalid user identifier"
+    },
+    "Terminal": {
+      "ChoiceCaption": "Select Target Terminal Window",
+      "HistoryEmpty": "History is empty. First, activate a terminal window.",
+      "WindowsFound": "Found %d terminal windows. Select target window:",
+      "Column.WindowTitle": "Window Title",
+      "Column.ExeName": "Executable File",
+      "Column.ActivatedAt": "Activity Time",
+      "WindowNoLongerExists": "The selected window no longer exists."
+    },
+    "Workspace": {
+      "AllSpaces": "All Workspaces",
+      "RenameError": "To rename a workspace, use the \"Workspace Management\" button.",
+      "EmptyNameError": "Workspace name cannot be empty.",
+      "SystemSpaceError": "This workspace cannot be deleted (it is a system space)."
+    },
+    "Search": {
+      "BackgroundError": "Background search error: %s"
+    },
+    "Security": {
+      "DenyReason": {
+        "PrivateSSHKey": "Private SSH/RSA key",
+        "GitHubToken": "GitHub token",
+        "AWSAccessKey": "AWS Access Key",
+        "GoogleCloudAPIKey": "Google Cloud / API key",
+        "StripeSecretKey": "Stripe secret key",
+        "TelegramBotToken": "Telegram Bot token",
+        "JWTToken": "JWT token",
+        "SlackToken": "Slack token",
+        "BearerToken": "Authorization Bearer token",
+        "URLConnectionString": "Credentials in URL (Connection string)",
+        "ExplicitPasswordKey": "Explicit password or key",
+        "HashKey": "MD5/SHA hash or Hex key",
+        "HighEntropyString": "High entropy string (possibly a hash or token): \"%s...\""
+      },
+      "SensitiveDataFound": "Sensitive data found:\n• %s\nPlease review the snippet text before sending it to the terminal.\n\nDo you want to proceed with the submission?"
+    },
+    "AI": {
+      "JSONError": "Failed to extract response from JSON: %s",
+      "APIError": "API Error (%d): %s"
+    },
+    "AddEditSnippet": {
+      "CloseConfirmText": "Changes detected that will be lost if you close this window.\n\nClose window without saving changes?",
+      "SecurityWarningText": "Activating this option will disable automatic security checks for this snippet, such as:\n\n• Infrastructure keys and API tokens\n• Web tokens and authorization headers\n• Passwords and DB connection strings\n• Private cryptography (SSH/RSA)\n• Mathematical entropy analysis (string randomness)\n\nAre you sure you want to add this snippet to the scanner exceptions?",
+      "SecurityDisabledStatus": "ℹ️ Security checks disabled by user.",
+      "SecuritySafeStatus": "✅ Text checked, no security threats detected.",
+      "SecurityThreatStatus": "⚠ Threat: %s (Saving blocked)",
+      "SecurityToastFound": "Found: %s",
+      "SecurityToastTitle": "⚠ Security Threat",
+      "AutocompleteUpdated": "Autocomplete file updated. Content will be reloaded.",
+      "AIChooseModelError": "Select an AI provider and model!",
+      "AIErrorPrefix": "Error: %s",
+      "EnterSnippetTextHere": "Enter snippet name here..."
+    },
+    "AISettingsForm": {
+      "AddHubPrompt": "Enter AI provider name:",
+      "DeleteHubConfirm": "Delete provider and ALL its models?",
+      "AddModelPrompt": "New Model/Agent"
+    },
+    "PasswordGenForm": {
+      "BulkLimitWarning": "Displaying more than 10,000 passwords on the screen may cause the interface to freeze. It is recommended to generate them directly to a file.\n\nContinue?",
+      "BulkSaveSuccessToast": "Successfully saved to file",
+      "HistoryCopyToast": "Generated passwords copied to clipboard.",
+      "BulkGenerationToFile": "Generation is writing directly to file...",
+      "MassGenerationCaption": "Mass Generation",
+      "CopyAndCloseBtn": "Copy and Close",
+      "InsertAndCloseBtn": "Insert and Close",
+      "StopGeneratorCaption": "Stopping generator, please wait...",
+      "PresetSimilar": "Similar Characters",
+      "PresetBrackets": "Brackets",
+      "PresetPunctuation": "Punctuation Marks",
+      "PresetBashSQL": "Unsafe for Bash/SQL",
+      "PresetQuotes": "Quotes",
+      "PresetSpace": "Space",
+      "PresetURL": "URL / Web Separators",
+      "PresetPathJSON": "Path / JSON Characters",
+      "PresetMath": "Mathematical Symbols",
+      "Presets": {
+        "WebStandard": "Standard Web Password (Web Safe)",
+        "ActiveDirectory": "Active Directory (A-Z, a-z, 0-9, symbol)",
+        "StrictAlphaNumeric": "Letters and numbers only (A-Z, a-z, 0-9)",
+        "MacAddress": "MAC Address (XX:XX:XX:XX:XX:XX)",
+        "UUIDv4": "UUID v4 (Random GUID)",
+        "Base64Key": "Base64 Key (JWT/API)",
+        "BashSafe": "Bash Safe (no $, !, `, \\ or quotes)",
+        "DockerEnvSafe": "Docker & .env Safe",
+        "BitrixDb": "For Bitrix DB",
+        "PinCode": "PIN Code (Numbers only)",
+        "Custom": "Custom settings...",
+        "HexToken": "Hex token (a-f, 0-9)",
+        "UrlSafe": "URL Safe (RFC 3986)",
+        "OracleSafe": "Oracle DB (starts with letter, _$# only)",
+        "NoLookAlikes": "No look-alikes (I, l, 1, O, 0)",
+        "Unknown": "Unknown preset"
+      }
+    },
+    "InputForm": {
+      "Prompt.String": "Enter text",
+      "Prompt.Number": "Enter an integer",
+      "Prompt.Hex": "Enter HEX value (e.g., FF or 0xFF)",
+      "Prompt.Float": "Enter a float number (e.g., 3.14)",
+      "Prompt.Password": "Enter password",
+      "Prompt.Date": "Enter date (YYYY-MM-DD)",
+      "Error.Number": "Error: enter an integer",
+      "Error.Hex": "Error: enter a HEX value (0-9, A-F)",
+      "Error.Float": "Error: enter a float (e.g., 3.14)",
+      "Error.Date": "Error: date format must be YYYY-MM-DD"
+    },
+    "TagEditorForm": {
+      "InputQueryTitle": "New Tag",
+      "InputQueryPrompt": "Enter tag name:",
+      "DeleteConfirmFormat": "Delete selected tags (%d items)?",
+      "DeleteConfirmTitle": "Confirm Deletion",
+      "SaveErrorFormat": "Error saving tags: %s"
+    },
+    "WorkspaceManagerForm": {
+      "NewWorkspaceCaption": "New Workspace",
+      "NewWorkspaceName": "Enter new workspace name:",
+      "AddError": "Error adding workspace: %s",
+      "DeleteConfirm": "Delete selected workspace \"%s\"?\nAll nested snippets in this workspace will be deleted!",
+      "DeleteError": "Error deleting workspace: %s",
+      "RenameError": "Error renaming workspace: %s",
+      "SelectWorkspaceFirst": "First, select a workspace."
+    }
+  }
+}

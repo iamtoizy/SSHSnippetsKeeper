@@ -14,6 +14,19 @@ uses
 
 type
     // Domain Models настроек
+    THelpButton = record
+        HoverDelay: Integer;
+        FadeDuration: Integer;
+    end;
+
+    THelp = record
+        HelpButton: THelpButton;
+    end;
+
+    TUISettings = record
+        Help: THelp;
+    end;
+
     TWindowsNode = record
         Name: string;
         WinClass: string;
@@ -54,10 +67,12 @@ type
     end;
 
     TAppSettings = record // Можно переименовать в TAppSettings, чтобы отвязаться от слова JSON
+        UISettings: TUISettings;
         AllowedWindows: TArrayRecord<TWindowsNode>;
         WindowHelper: TWindowHelperNode;
         AllowedApplications: TArrayRecord<TAllowedApplicationsItem>;
         AISettings: TArrayRecord<TAIHub>;
+        CurrentLanguage: string;
     end;
 
     // Интерфейс менеджера
@@ -65,6 +80,8 @@ type
         ['{A1B2C3D4-E5F6-47A8-9B0C-1D2E3F4A5B6C}']
         function GetSettings: TAppSettings;
         procedure SetSettings(const Value: TAppSettings);
+        function GetCurrentLanguage: string;
+        procedure SetCurrentLanguage(const Value: string);
         function GetBashAutocomplete: TStringList;
 
         procedure Load;
@@ -72,6 +89,7 @@ type
 
         property Data: TAppSettings read GetSettings write SetSettings;
         property BashAutocomplete: TStringList read GetBashAutocomplete;
+        property CurrentLanguage: string read GetCurrentLanguage write SetCurrentLanguage;
     end;
 
     // Репозитории
@@ -191,13 +209,13 @@ type
         function GetConnectionString: string;
     end;
 
-    IUIErrorHandler = interface
+    IUIMessagesHandler = interface
         ['{0A3EC5A3-E39D-41C5-8661-42F22294031C}']
         procedure ShowError(const Message: string);
         procedure ShowInfo(const Message: string);
         procedure ShowWarning(const Message: string);
-        function AskConfirmation(const Message: string): Boolean;
-        function AskWarning(const Message: string): Boolean;
+        function AskConfirmation(const Message, Title: string; Flags: Cardinal = MB_YESNO or MB_ICONQUESTION): Boolean;
+        function AskWarning(const Message, Title: string): Boolean;
     end;
 
     TPasswordPreset = (
@@ -291,6 +309,7 @@ type
         function GetPasswordService: IPasswordService;
         function GetSettingsManager: ISettingsManager;
         function GetWindowHelper: IWindowHelper;
+        function GetErrorHandler: IUIMessagesHandler;
         // Фабрика для фоновых потоков. Возвращает готовый сервис и ссылку на коннект для его очистки.
         function CreateIsolatedSnippetService(out ABackgroundConnection: TComponent): ISnippetService;
 
@@ -302,6 +321,12 @@ type
         property PasswordService: IPasswordService read GetPasswordService;
         property SettingsManager: ISettingsManager read GetSettingsManager;
         property WindowHelper: IWindowHelper read GetWindowHelper;
+        property ErrorHandler: IUIMessagesHandler read GetErrorHandler;
+    end;
+
+    ILocalizable = interface
+        ['{FDFCEAF6-9467-40DA-BB8F-D31C3ABFB8F5}']
+        procedure ApplyLanguage;
     end;
 
 implementation

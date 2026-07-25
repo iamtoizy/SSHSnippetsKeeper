@@ -27,13 +27,13 @@ uses
     Core.Interfaces,
     SynEditMiscClasses,
     SynEditHighlighter,
-    UI.Interfaces,
     Vcl.WinXCtrls,
     System.Threading,
     AIService,
     SynHighlighterMarkdown,
     Vcl.Menus,
-    Settings;
+    Settings,
+    BaseFormUI;
 
 type
     TOriginalSnippet = record
@@ -43,12 +43,12 @@ type
         Tags: string;
     end;
 
-    TAddEditSnippet = class(TForm)
+    TAddEditSnippetForm = class(TBaseForm)
         pLeft: TPanel;
         lbCaption: TLabel;
         ebTitle: TEdit;
-        lbTag: TLabel;
-        Label1: TLabel;
+        lbAllTags: TLabel;
+        lbSelectedTags: TLabel;
         lvSelectedTags: TListView;
         pBottom: TPanel;
         bOK: TButton;
@@ -60,7 +60,7 @@ type
         tmrReloadCommands: TTimer;
         SynMarkdownSyn: TSynMarkdownSyn;
         MainMenu: TMainMenu;
-        AI1: TMenuItem;
+        nAI: TMenuItem;
         nShowAIPrompt: TMenuItem;
         nAISettings: TMenuItem;
         cbIgnoreSecurityChecks: TCheckBox;
@@ -78,7 +78,7 @@ type
         pbLoading: TProgressBar;
         mAIPrompt: TSynEdit;
         mComment: TSynEdit;
-        tsHelp: TTabSheet;
+        tsMacros: TTabSheet;
         mInfo: TMemo;
         spTopLeft: TSplitter;
         mContent: TSynEdit;
@@ -124,7 +124,6 @@ type
         FBlockEnter: Boolean;
         FCurrentHighlighter: TCustomBashSyn;
         FCompletionEngine: TBashCompletionEngine;
-        FErrorHandler: IUIErrorHandler;
         FAIService: IAIService;
         FSettingsManager: ISettingsManager;
 
@@ -137,17 +136,18 @@ type
         procedure PopulateModels(HubIndex: Integer);
         procedure UpdateSecurityStatusUI(IsSafe: Boolean; const Reason: string);
     public
-        procedure Prepare(IsEditMode: Boolean; const ASnippet: TSnippetDTO; ACatID, AUserID: Integer);
+        procedure Prepare(IsEditMode: Boolean; const Snippet: TSnippetDTO; CatID, UserID: Integer);
 
         property Snippet: TSnippetDTO read FSnippet write FSnippet;
         property CategoryID: Integer read FCategoryID write FCategoryID;
         property UserID: Integer read FUserID write FUserID;
 
         constructor Create(Owner: TComponent; AppContext: IAppContext); reintroduce;
+        procedure Initialize(AppContext: IAppContext);
     end;
 
 var
-    AddEditSnippetForm: TAddEditSnippet;
+    AddEditSnippetForm: TAddEditSnippetForm;
 
 implementation
 
@@ -165,11 +165,13 @@ uses
     AISettingsFormUI,
     SecurityScanner,
     System.IOUtils,
-    Winapi.ActiveX;
+    Winapi.ActiveX,
+    UI.HoverHelpManager,
+    UI.StateLoader;
 
 {$R *.dfm}
 
-constructor TAddEditSnippet.Create(Owner: TComponent; AppContext: IAppContext);
+constructor TAddEditSnippetForm.Create(Owner: TComponent; AppContext: IAppContext);
 begin
     // Инициализируем зависимости до вызова inherited
     FSnippetService := AppContext.SnippetService;
@@ -184,24 +186,24 @@ begin
 
     // Создаем движок автокомплита
     FCompletionEngine := TBashCompletionEngine.Create(FBasicCommands);
-    FCompletionEngine.LoadFromJsonFile(TPath.Combine(TPath.GetDirectoryName(ParamStr(0)), 'extra-commands.json'));
+    FCompletionEngine.LoadFromJsonFile(ResolvePath('extra-commands.json'));
 
-    // Сразу применяем подсветку синтаксиса до показа формы (не ждем таймер!)
+    // Сразу применяем подсветку синтаксиса до показа формы (не ждем таймер)
     SetSyntax;
 end;
 
-procedure TAddEditSnippet.bAISettingsClick(Sender: TObject);
+procedure TAddEditSnippetForm.bAISettingsClick(Sender: TObject);
 begin
     // Вызываем модальную форму редактора структуры ИИ
-    if TAISettingsForm.Execute(FSettingsManager) then
+    if TAISettingsForm.Execute(FAppContext) then
     begin
-        // Если пользователь сохранил настройки — обновляем выпадающие списки
-        // на форме редактирования сниппета, чтобы новые модели сразу появились!
+        // Если пользователь сохранил настройки - обновляем выпадающие списки
+        // на форме редактирования сниппета, чтобы новые модели сразу появились
         PopulateHubs;
     end;
 end;
 
-procedure TAddEditSnippet.FormDestroy(Sender: TObject);
+procedure TAddEditSnippetForm.FormDestroy(Sender: TObject);
 begin
     // ИСПРАВЛЕНИЕ УТЕЧКИ TSynDropTarget:
     // Принудительно отключаем OLE Drag&Drop до того, как уничтожатся Handle окон.
@@ -216,12 +218,24 @@ begin
         FCompletionEngine.Free;
 end;
 
-function TAddEditSnippet.IsAutocompleteVisible: Boolean;
+procedure TAddEditSnippetForm.Initialize(AppContext: IAppContext);
+begin
+    inherited Initialize(AppContext);
+//    FAppContext := AppContext;
+
+    // Регистрация подсказок
+    RegisterHelp(mContent, hipTopRight, 'Help.AddEditSnippet.mContent', hkCustomForm);
+    RegisterHelp(mComment, hipTopRight, 'Help.AddEditSnippet.mComment', hkCustomForm);
+    RegisterHelp(lvAllTags, hipTopRight, 'Help.AddEditSnippet.lvAllTags', hkCustomForm);
+    RegisterHelp(lvSelectedTags, hipTopRight, 'Help.AddEditSnippet.lvAllTags', hkCustomForm);
+end;
+
+function TAddEditSnippetForm.IsAutocompleteVisible: Boolean;
 begin
     Result := Assigned(SynCompletionProposal.Form) and SynCompletionProposal.Form.Visible;
 end;
 
-function TAddEditSnippet.IsSnippetChanged: Boolean;
+function TAddEditSnippetForm.IsSnippetChanged: Boolean;
 var
     TagsStr: string;
     I: Integer;
@@ -237,19 +251,19 @@ begin
         (TagsStr <> FOriginalSnippet.Tags);
 end;
 
-procedure TAddEditSnippet.bCancelClick(Sender: TObject);
+procedure TAddEditSnippetForm.bCancelClick(Sender: TObject);
 begin
     if FIsEditMode and
         IsSnippetChanged and
         (Application.MessageBox(
-            'Обнаружены изменения, которые потеряются в случае закрытия этого окна.' + sLineBreak + sLineBreak +
-            'Закрыть окно без сохранения изменений?', 'Внимание', MB_YESNO) = IDNO
-        ) then Exit;
+            PChar(TUIStateLoader.GetMessage('AddEditSnippet.CloseConfirmText')),
+            PChar(TUIStateLoader.GetMessage('Common.Warning')),
+            MB_YESNO) = IDNO ) then Exit;
 
     ModalResult := mrCancel;
 end;
 
-procedure TAddEditSnippet.bOKClick(Sender: TObject);
+procedure TAddEditSnippetForm.bOKClick(Sender: TObject);
 var
     Snippet: TSnippetDTO;
     TagIDs: TList<Integer>;
@@ -259,7 +273,7 @@ var
 begin
     if Trim(ebTitle.Text) = '' then
     begin
-        FErrorHandler.ShowInfo('Введи заголовок сниппета.');
+        MessagesHandler.ShowInfo(TUIStateLoader.GetMessage('Snippet.TitleEmptyError'));
         ModalResult := mrNone;
         Exit;
     end;
@@ -310,13 +324,13 @@ begin
     except
         on E: Exception do
         begin
-            FErrorHandler.ShowError('Ошибка сохранения сниппета: ' + E.Message);
+            MessagesHandler.ShowError(TUIStateLoader.GetMessage('Snippet.SaveError', [E.Message]));
             ModalResult := mrNone;
         end;
     end;
 end;
 
-procedure TAddEditSnippet.cbAIHubChange(Sender: TObject);
+procedure TAddEditSnippetForm.cbAIHubChange(Sender: TObject);
 var
     SelectedHubIndex: Integer;
 begin
@@ -328,7 +342,7 @@ begin
     PopulateModels(SelectedHubIndex);
 end;
 
-procedure TAddEditSnippet.cbAIModelChange(Sender: TObject);
+procedure TAddEditSnippetForm.cbAIModelChange(Sender: TObject);
 var
     HubIdx, ModIdx: Integer;
     SelectedAI: TAIItem;
@@ -348,26 +362,17 @@ begin
     //   [SelectedAI.Params.MaxOutputTokens, SelectedAI.Params.Temperature]);
 end;
 
-procedure TAddEditSnippet.cbIgnoreSecurityChecksClick(Sender: TObject);
-var
-    WarningMsg: string;
+procedure TAddEditSnippetForm.cbIgnoreSecurityChecksClick(Sender: TObject);
 begin
     // Если пользователь снимает галочку, нам подтверждение не нужно — просто выходим
     if not cbIgnoreSecurityChecks.Checked then
         Exit;
 
-    WarningMsg :=
-        'Активация этого параметра отключит автоматические проверки данного сниппета на безопасность, такие как:' + sLineBreak + sLineBreak +
-        '• Инфраструктурные ключи и API-токены' + sLineBreak +
-        '• Веб-токены и заголовки авторизации' + sLineBreak +
-        '• Пароли и строки подключения к БД' + sLineBreak +
-        '• Приватная криптография (SSH/RSA)' + sLineBreak +
-        '• Математический анализ энтропии (случайности строк)' + sLineBreak + sLineBreak  +
-        'Уверен, что хочешь добавить этот сниппет в исключения сканера?';
-
     // Если пользователь выбрал "Нет" (отказался):
-    if not FErrorHandler.AskWarning(WarningMsg) then
-    begin
+    if not MessagesHandler.AskWarning(
+        TUIStateLoader.GetMessage('AddEditSnippet.SecurityWarningText'),
+        TUIStateLoader.GetMessage('Common.Warning')
+    ) then begin
         // Возвращаем состояние компонента назад без вызова зацикливания
         cbIgnoreSecurityChecks.Checked := False;
     end else begin
@@ -378,7 +383,7 @@ begin
     tmrSecurityScanTimer(nil);
 end;
 
-procedure TAddEditSnippet.PopulateHubs;
+procedure TAddEditSnippetForm.PopulateHubs;
 var
     I: Integer;
 begin
@@ -402,13 +407,13 @@ begin
     end;
 end;
 
-procedure TAddEditSnippet.ebCategorySearchChange(Sender: TObject);
+procedure TAddEditSnippetForm.ebCategorySearchChange(Sender: TObject);
 begin
     if (Length((Sender as TEdit).Text) < 3) then
         Exit;
 end;
 
-procedure TAddEditSnippet.ExecuteAICommand;
+procedure TAddEditSnippetForm.ExecuteAICommand;
 var
     Instruction, CodeContext: string;
     IsSelection: Boolean;
@@ -420,7 +425,7 @@ begin
 
     if (cbAIHub.ItemIndex < 0) or (cbAIModel.ItemIndex < 0) then
     begin
-        ShowMessage('Выберите провайдера и модель ИИ!');
+        MessagesHandler.ShowError(TUIStateLoader.GetMessage('AddEditSnippet.AIChooseModelError'));
         Exit;
     end;
 
@@ -475,7 +480,7 @@ begin
                     pAIOverlay.Visible := False;
 
                     if ErrorMsg <> '' then
-                        ShowMessage('Ошибка: ' + ErrorMsg)
+                        TUIStateLoader.GetMessage('Common.GeneralError', [ErrorMsg])
                     else
                     begin
                         mContent.BeginUpdate;
@@ -504,19 +509,18 @@ begin
         end).Start;
 end;
 
-procedure TAddEditSnippet.FormClose(Sender: TObject; var Action: TCloseAction);
+procedure TAddEditSnippetForm.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
     // Сигнализируем фоновому потоку, что форма закрывается и UI трогать нельзя
     FIsAICanceled := True;
 end;
 
-procedure TAddEditSnippet.FormCreate(Sender: TObject);
+procedure TAddEditSnippetForm.FormCreate(Sender: TObject);
 begin
     FFirstShow := True;
-    FErrorHandler := TVCLErrorHandler.Create;
 
     ebTitle.EnableHintText := True;
-    ebTitle.HintText := 'Здесь введи имя сниппета...';
+    ebTitle.HintText := TUIStateLoader.GetMessage('AddEditSnippet.EnterSnippetTextHere');
 
     FIsEditMode := False;
     FSnippet := Default(TSnippetDTO);
@@ -527,27 +531,24 @@ begin
     SynCompletionProposal.Options := SynCompletionProposal.Options + [scoUseInsertList];
 end;
 
-procedure TAddEditSnippet.FormShow(Sender: TObject);
+procedure TAddEditSnippetForm.FormShow(Sender: TObject);
 begin
     // Вся тяжелая работа уже выполнена в памяти
     tmrReloadCommands.Enabled := True;
     ebTitle.SetFocus;
 end;
 
-function TAddEditSnippet.GetSnippet: TSnippetDTO;
+function TAddEditSnippetForm.GetSnippet: TSnippetDTO;
 begin
     Result := FSnippet;
 end;
 
-procedure TAddEditSnippet.Loaded;
+procedure TAddEditSnippetForm.Loaded;
 begin
     inherited;
-
-//    FCompletionEngine := TBashCompletionEngine.Create(FBasicCommands);
-//    FCompletionEngine.LoadFromJsonFile(TPath.Combine(TPath.GetDirectoryName(ParamStr(0)), 'extra-commands.json'));
 end;
 
-procedure TAddEditSnippet.lvAllTagsDblClick(Sender: TObject);
+procedure TAddEditSnippetForm.lvAllTagsDblClick(Sender: TObject);
 var
     SrcLV, DstLV: TListView;
     Item, NewItem: TListItem;
@@ -576,7 +577,7 @@ begin
     end;
 end;
 
-procedure TAddEditSnippet.lvAllTagsDragDrop(Sender, Source: TObject; X, Y: Integer);
+procedure TAddEditSnippetForm.lvAllTagsDragDrop(Sender, Source: TObject; X, Y: Integer);
 var
     SrcLV, DstLV: TListView;
     Item, NewItem: TListItem;
@@ -603,7 +604,10 @@ begin
                 NewItem := DstLV.Items.Add;
                 NewItem.Caption := Item.Caption;
                 NewItem.Data := Item.Data;
-                NewItem.StateIndex := Item.StateIndex;
+                if DstLV = lvSelectedTags then
+                    NewItem.StateIndex := 1
+                else
+                    NewItem.StateIndex := 0;
             end;
 
             for i := ItemsToMove.Count - 1 downto 0 do
@@ -617,14 +621,14 @@ begin
     end;
 end;
 
-procedure TAddEditSnippet.lvAllTagsDragOver(Sender, Source: TObject; X, Y: Integer; State: TDragState; var Accept: Boolean);
+procedure TAddEditSnippetForm.lvAllTagsDragOver(Sender, Source: TObject; X, Y: Integer; State: TDragState; var Accept: Boolean);
 begin
     Accept := (Source = lvAllTags) or (Source = lvSelectedTags);
     if Sender = Source then
         Accept := False;
 end;
 
-procedure TAddEditSnippet.lvAllTagsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TAddEditSnippetForm.lvAllTagsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
     LV: TListView;
     Item: TListItem;
@@ -646,7 +650,7 @@ begin
     end;
 end;
 
-procedure TAddEditSnippet.mAIPromptKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+procedure TAddEditSnippetForm.mAIPromptKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
     if Key = VK_ESCAPE then
     begin
@@ -661,7 +665,7 @@ begin
     end;
 end;
 
-procedure TAddEditSnippet.mContentChange(Sender: TObject);
+procedure TAddEditSnippetForm.mContentChange(Sender: TObject);
 begin
     // Сбрасываем таймер при каждом изменении текста.
     // Сканер сработает только когда пользователь остановится на 400 мс.
@@ -669,7 +673,7 @@ begin
     tmrSecurityScan.Enabled := True;
 end;
 
-procedure TAddEditSnippet.mContentKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+procedure TAddEditSnippetForm.mContentKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
     if (Key = VK_RETURN) and IsAutocompleteVisible then
     begin
@@ -678,7 +682,7 @@ begin
     end;
 end;
 
-procedure TAddEditSnippet.mContentProcessCommand(Sender: TObject; var Command: TSynEditorCommand; var Char: WideChar; Data: Pointer);
+procedure TAddEditSnippetForm.mContentProcessCommand(Sender: TObject; var Command: TSynEditorCommand; var Char: WideChar; Data: Pointer);
 begin
     if FBlockEnter then
     begin
@@ -700,17 +704,17 @@ begin
     end;
 end;
 
-procedure TAddEditSnippet.nAISettingsClick(Sender: TObject);
+procedure TAddEditSnippetForm.nAISettingsClick(Sender: TObject);
 begin
     bAISettingsClick(bAISettings);
 end;
 
-procedure TAddEditSnippet.nShowAIPromptClick(Sender: TObject);
+procedure TAddEditSnippetForm.nShowAIPromptClick(Sender: TObject);
 begin
     ShowAIOverlay;
 end;
 
-procedure TAddEditSnippet.PopulateModels(HubIndex: Integer);
+procedure TAddEditSnippetForm.PopulateModels(HubIndex: Integer);
 var
     I: Integer;
 begin
@@ -729,7 +733,7 @@ begin
         cbAIModel.ItemIndex := 0;
 end;
 
-procedure TAddEditSnippet.Prepare(IsEditMode: Boolean; const ASnippet: TSnippetDTO; ACatID, AUserID: Integer);
+procedure TAddEditSnippetForm.Prepare(IsEditMode: Boolean; const Snippet: TSnippetDTO; CatID, UserID: Integer);
 var
     i: Integer;
     SnippetTags: TArray<TTagDTO>;
@@ -738,9 +742,9 @@ var
 begin
     // 1. Принимаем входящие данные
     FIsEditMode := IsEditMode;
-    FSnippet := ASnippet;
-    FCategoryID := ACatID;
-    FUserID := AUserID;
+    FSnippet := Snippet;
+    FCategoryID := CatID;
+    FUserID := UserID;
 
     FIsAICanceled := False;
 
@@ -749,7 +753,7 @@ begin
     TSynThemeAdapter.ApplyTheme(mComment);
     TSynThemeAdapter.ApplyTheme(mAIPrompt);
 
-    // 3. Заполняем комбобоксы ДО показа (Никаких белых вспышек!)
+    // 3. Заполняем комбобоксы ДО показа (Никаких белых вспышек)
     PopulateHubs;
 
     // 4. Заполняем теги и списки
@@ -765,7 +769,7 @@ begin
 
         if FIsEditMode then
         begin
-            Caption := 'Редактирование сниппета';
+            Caption := TUIStateLoader.GetMessage('Snippet.CaptionEdit');
 
             FOriginalSnippet.Title := FSnippet.Title;
             FOriginalSnippet.Content := FSnippet.Content;
@@ -788,7 +792,7 @@ begin
                             var Item := lvSelectedTags.Items.Add;
                             Item.Caption := Tag.Name;
                             Item.Data := Pointer(Integer(Tag.ID));
-                            Item.StateIndex := 0;
+                            Item.StateIndex := 1;
                             lvAllTags.Items.Delete(i);
 
                             FOriginalSnippet.Tags := FOriginalSnippet.Tags + ';' + Tag.Name;
@@ -800,7 +804,7 @@ begin
         end
         else
         begin
-            Caption := 'Добавление сниппета';
+            Caption := TUIStateLoader.GetMessage('Snippet.CaptionAdd');
             FOriginalSnippet.Title := '';
             FOriginalSnippet.Content := '';
             FOriginalSnippet.Comment := '';
@@ -816,7 +820,7 @@ begin
     end;
 end;
 
-procedure TAddEditSnippet.SetSyntax;
+procedure TAddEditSnippetForm.SetSyntax;
 begin
     if Assigned(FCurrentHighlighter) then
         FreeAndNil(FCurrentHighlighter);
@@ -830,13 +834,9 @@ begin
         FCompletionEngine.ExportKeywords(FCurrentHighlighter.ExtraKeywords);
 
     mContent.Highlighter := FCurrentHighlighter;
-
-//    TSynThemeAdapter.ApplyTheme(mContent);
-//    TSynThemeAdapter.ApplyTheme(mComment);
-//    TSynThemeAdapter.ApplyTheme(mAIPrompt);
 end;
 
-procedure TAddEditSnippet.ShowAIOverlay;
+procedure TAddEditSnippetForm.ShowAIOverlay;
 begin
     // Устанавливаем стиль прогресс-бара для красоты
     pbLoading.Style := pbstMarquee;
@@ -849,7 +849,7 @@ begin
     mAIPrompt.SetFocus;
 end;
 
-procedure TAddEditSnippet.SynCompletionProposalExecute(Kind: SynCompletionType; Sender: TObject; var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
+procedure TAddEditSnippetForm.SynCompletionProposalExecute(Kind: SynCompletionType; Sender: TObject; var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
 var
     LineText: string;
 begin
@@ -857,16 +857,16 @@ begin
     FCompletionEngine.FillProposals(LineText, SynCompletionProposal.ItemList, SynCompletionProposal.InsertList, CanExecute);
 end;
 
-procedure TAddEditSnippet.tmrReloadCommandsTimer(Sender: TObject);
+procedure TAddEditSnippetForm.tmrReloadCommandsTimer(Sender: TObject);
 begin
     if FCompletionEngine.CheckForUpdates then
     begin
-        ShowSimpleToast('Новая конфигурация', 'Файл автозаполнения обновлён. Содержимое будет перезагружено.');
+        ShowSimpleToast(TUIStateLoader.GetMessage('AddEditSnippet.AutocompleteUpdated'));
         SetSyntax;
     end;
 end;
 
-procedure TAddEditSnippet.tmrSecurityScanTimer(Sender: TObject);
+procedure TAddEditSnippetForm.tmrSecurityScanTimer(Sender: TObject);
 var
     Security: ISecurityScanner;
     WarningReason: string;
@@ -882,26 +882,29 @@ begin
     UpdateSecurityStatusUI(IsSafe, WarningReason);
 end;
 
-procedure TAddEditSnippet.UpdateSecurityStatusUI(IsSafe: Boolean; const Reason: string);
+procedure TAddEditSnippetForm.UpdateSecurityStatusUI(IsSafe: Boolean; const Reason: string);
 begin
     // Если стоит галочка "Игнорировать", то UI всегда разрешает сохранение
     if cbIgnoreSecurityChecks.Checked then
     begin
-        sbBottom.SimpleText := 'ℹ️ Проверки безопасности отключены пользователем.';
+        sbBottom.SimpleText := TUIStateLoader.GetMessage('AddEditSnippet.SecurityDisabledStatus');
         bOK.Enabled := True;
         Exit;
     end;
 
     if IsSafe then
     begin
-        sbBottom.SimpleText := '✅ Текст проверен, угроз безопасности не обнаружено.';
+        sbBottom.SimpleText := TUIStateLoader.GetMessage('AddEditSnippet.SecuritySafeStatus');
         bOK.Enabled := True;
     end
     else
     begin
         // Найдена угроза, а исключение не настроено
-        sbBottom.SimpleText := '⚠ Угроза: ' + Reason + ' (Сохранение заблокировано)';
-        ShowSimpleToast('⚠ Угроза безопасности', 'Найдено: ' + Reason);
+        sbBottom.SimpleText := TUIStateLoader.GetMessage('AddEditSnippet.SecurityThreatStatus', [Reason]);
+        ShowSimpleToast(
+            TUIStateLoader.GetMessage('AddEditSnippet.SecurityToastFound', [Reason]),
+            TUIStateLoader.GetMessage('AddEditSnippet.SecurityToastTitle')
+        );
         // Блокируем кнопку сохранения.
         bOK.Enabled := False;
     end;

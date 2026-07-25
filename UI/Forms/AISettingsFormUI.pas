@@ -16,7 +16,8 @@ uses
     Vcl.ComCtrls,
     Vcl.ExtCtrls,
     Vcl.StdCtrls,
-    Core.Interfaces;
+    Core.Interfaces,
+    BaseFormUI;
 
 type
     // Указатели типов для хранения в свойстве Data узлов TreeView
@@ -30,20 +31,20 @@ type
         ModelIndex: Integer; // Равен -1, если это сам Хаб
     end;
 
-    TAISettingsForm = class(TForm)
+    TAISettingsForm = class(TBaseForm)
         pnlLeft: TPanel;
         spLeft: TSplitter;
         pnlClient: TPanel;
         tvAIStructure: TTreeView;
         MainMenu: TMainMenu;
-        N1: TMenuItem;
-        N2: TMenuItem;
-        N3: TMenuItem;
-        N4: TMenuItem;
-        N5: TMenuItem;
-        N6: TMenuItem;
-        N7: TMenuItem;
-        N8: TMenuItem;
+    nProvider: TMenuItem;
+    nProviderCreate: TMenuItem;
+    nProviderDelete: TMenuItem;
+    nProviderEdit: TMenuItem;
+    nModel: TMenuItem;
+    nModelCreate: TMenuItem;
+    nModelDelete: TMenuItem;
+    nModelEdit: TMenuItem;
         pcDetails: TPageControl;
         tsHub: TTabSheet;
         tsModel: TTabSheet;
@@ -67,15 +68,15 @@ type
         lbTemperature: TLabel;
         lbMaxTokens: TLabel;
         lbSystemPrompt: TLabel;
-        N9: TMenuItem;
-        N10: TMenuItem;
+    nFile: TMenuItem;
+    nSave: TMenuItem;
         ebModelPath: TEdit;
         lbModelPath: TLabel;
         procedure FormDestroy(Sender: TObject);
-        procedure N10Click(Sender: TObject);
-        procedure N2Click(Sender: TObject);
-        procedure N3Click(Sender: TObject);
-        procedure N6Click(Sender: TObject);
+        procedure nSaveClick(Sender: TObject);
+        procedure nProviderCreateClick(Sender: TObject);
+        procedure nProviderDeleteClick(Sender: TObject);
+        procedure nModelCreateClick(Sender: TObject);
         procedure tvAIStructureChange(Sender: TObject; Node: TTreeNode);
     private
         FLocalSettings: TAppSettings; // Локальная копия для работы без порчи основного конфига до сохранения
@@ -85,7 +86,8 @@ type
         procedure SaveCurrentEditorData;
         function CreateNodeData(AType: TNodeType; AHub, AModel: Integer): PNodeData;
     public
-        class function Execute(SettingsManager: ISettingsManager): Boolean;
+        class function Execute(AppContext: IAppContext): Boolean;
+        procedure Initialize(AppContext: IAppContext);
     end;
 
 var
@@ -94,7 +96,8 @@ var
 implementation
 
 uses
-    System.IOUtils;
+    System.IOUtils,
+    UI.StateLoader;
 
 {$R *.dfm}
 
@@ -127,14 +130,15 @@ begin
     Result^.ModelIndex := AModel;
 end;
 
-class function TAISettingsForm.Execute(SettingsManager: ISettingsManager): Boolean;
+class function TAISettingsForm.Execute(AppContext: IAppContext): Boolean;
 var
     Form: TAISettingsForm;
 begin
     Form := TAISettingsForm.Create(Application);
     try
-        Form.FSettingsManager := SettingsManager;
-        Form.FLocalSettings := SettingsManager.Data;
+        Form.Initialize(AppContext);
+        Form.FSettingsManager := AppContext.SettingsManager;
+        Form.FLocalSettings := AppContext.SettingsManager.Data;
         Form.pcDetails.ActivePageIndex := 0;
         Form.LoadStructureToTree;
         Result := Form.ShowModal = mrOk;
@@ -171,7 +175,7 @@ begin
     end;
 end;
 
-procedure TAISettingsForm.N10Click(Sender: TObject);
+procedure TAISettingsForm.nSaveClick(Sender: TObject);
 begin
     SaveCurrentEditorData; // Сохраняем то, что открыто в редакторе прямо сейчас
 
@@ -184,14 +188,14 @@ begin
     ModalResult := mrOk;
 end;
 
-procedure TAISettingsForm.N2Click(Sender: TObject);
+procedure TAISettingsForm.nProviderCreateClick(Sender: TObject);
 var
     NewHub: TAIHub;
 begin
     SaveCurrentEditorData; // Сохраняем старое
 
     NewHub := Default(TAIHub);
-    NewHub.Name := 'Новый провайдер ИИ';
+    NewHub.Name := TUIStateLoader.GetMessage('AISettingsForm.AddHubPrompt');
     FLocalSettings.AISettings.Add(NewHub);
 
     LoadStructureToTree;
@@ -199,7 +203,7 @@ begin
     tvAIStructure.Items[tvAIStructure.Items.Count - 1].Selected := True;
 end;
 
-procedure TAISettingsForm.N3Click(Sender: TObject);
+procedure TAISettingsForm.nProviderDeleteClick(Sender: TObject);
 var
     ActiveNode: TTreeNode;
     Data: PNodeData;
@@ -212,7 +216,11 @@ begin
 
     if Data^.NodeType = ntHub then
     begin
-        if Application.MessageBox('Удалить провайдера и ВСЕ его модели?', 'Внимание', MB_YESNO or MB_ICONWARNING) = IDYES then
+        // TODO: Удалить нахой и заменить на соответсвтующий вызов спец. класса!
+        if Application.MessageBox(
+            PChar(TUIStateLoader.GetMessage('AISettingsForm.DeleteHubConfirm')),
+            PChar(TUIStateLoader.GetMessage('Common.DeleteHubConfirm')),
+            MB_YESNO or MB_ICONWARNING) = IDYES then
             FLocalSettings.AISettings.Delete(Data^.HubIndex);
     end
     else
@@ -223,7 +231,7 @@ begin
     LoadStructureToTree;
 end;
 
-procedure TAISettingsForm.N6Click(Sender: TObject);
+procedure TAISettingsForm.nModelCreateClick(Sender: TObject);
 var
     ActiveNode: TTreeNode;
     Data: PNodeData;
@@ -239,7 +247,7 @@ begin
     HubIdx := Data^.HubIndex; // Добавляем модель в хаб, на котором (или внутри которого) стоим
 
     NewModel := Default(TAIItem);
-    NewModel.Name := 'Новая модель/Агент';
+    NewModel.Name := TUIStateLoader.GetMessage('AISettingsForm.AddModelPrompt');
     NewModel.Params.Temperature := 0.3;
     NewModel.Params.MaxOutputTokens := 1024;
 
@@ -323,6 +331,12 @@ begin
         mSystemPrompt.Text := ModelItem.Params.Content;
     end;
 end;
+
+procedure TAISettingsForm.Initialize(AppContext: IAppContext);
+begin
+    inherited Initialize(AppContext);
+end;
+
 
 end.
 

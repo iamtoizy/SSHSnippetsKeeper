@@ -488,28 +488,36 @@ var
     SafeMask, SQL: string;
 begin
     Result := [];
-    SafeMask := SanitizeFTS5(Mask);
+
+    // Безопасность FTS:
+    // Экранируем двойные кавычки внутри строки, чтобы парсер SQLite не сломался.
+    // Если твоя функция SanitizeFTS5 делает что-то важное - можешь оставить её,
+    // но для FTS5 самое главное - правильно обернуть запрос в двойные кавычки ниже.
+    SafeMask := Mask.Trim.Replace('"', '""', [rfReplaceAll]);
 
     if SafeMask = '' then Exit;
 
     List := TList<TSnippetDTO>.Create;
     Query := CreateQuery;
     try
-        // Формируем динамический SQL в зависимости от UserID
-        SQL := 'SELECT s.id, s.user_id, s.title, s.content, s.category_id, s.created_at, s.updated_at, snippet_fts.rank ' +
-               'FROM snippet_fts ' +
-               'JOIN snippets s ON s.rowid = snippet_fts.rowid ' +
+        // SQL ЗАПРОС: Берем s.* чтобы автоматически подцепить ВСЕ поля сниппета
+        SQL := 'SELECT s.*, fts.rank ' +
+               'FROM snippets s ' +
+               'JOIN snippet_fts fts ON s.id = fts.rowid ' +
                'WHERE snippet_fts MATCH :term ';
 
         if UserID > 0 then
             SQL := SQL + ' AND s.user_id = :uid ';
 
-        // ВАЖНО: FTS5 rank возвращает отрицательные значения (алгоритм BM25).
-        // Чем больше минус (меньше число), тем выше релевантность. Поэтому используем ASC.
-        SQL := SQL + 'ORDER BY rank ASC';
+        // Алгоритм BM25: чем больше минус, тем выше релевантность (самые точные - сверху)
+        SQL := SQL + 'ORDER BY fts.rank ASC';
 
         Query.SQL.Text := SQL;
-        Query.ParamByName('term').AsString := SafeMask + '*';
+
+        // Передача параметра:
+        // Обязательно оборачиваем в двойные кавычки. Это заставит SQLite искать точную фразу
+        // и не падать, если юзер введет знаки минуса, скобки или звездочки (например: "my-var*").
+        Query.ParamByName('term').AsString := '"' + SafeMask + '"';
 
         if UserID > 0 then
             Query.ParamByName('uid').AsInteger := UserID;
@@ -524,12 +532,22 @@ begin
             Snip.Content := Query.FieldByName('content').AsString;
             Snip.CategoryID := Query.FieldByName('category_id').AsInteger;
             Snip.CreatedAt := Query.FieldByName('created_at').AsLargeInt;
-            Snip.UpdatedAt := Query.FieldByName('updated_at').AsLargeInt;
-            Snip.Tags := [];
+
+            // Обработка NULL: updated_at может быть NULL в базе
+            if not Query.FieldByName('updated_at').IsNull then
+                Snip.UpdatedAt := Query.FieldByName('updated_at').AsLargeInt
+            else
+                Snip.UpdatedAt := 0;
+
+            Snip.Comment := Query.FieldByName('comment').AsString;
+            Snip.IsSecurityCheckIgnored := Query.FieldByName('is_security_ignored').AsInteger > 0;
+
+            Snip.Tags := []; // Теги подтягиваются отдельно
 
             List.Add(Snip);
             Query.Next;
         end;
+
         Result := List.ToArray;
     finally
         Query.Free;

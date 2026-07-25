@@ -30,6 +30,9 @@ type
 
 implementation
 
+uses
+    UI.StateLoader;
+
 { TUIHelpers }
 
 class procedure TUIHelpers.FillTagList(ListView: TListView; const Tags: TArray<TTagDTO>);
@@ -187,13 +190,21 @@ begin
         TreeView.Items.Clear;
 
         // 1. Виртуальные узлы
-        Node := TreeView.Items.AddObjectFirst(nil, 'Часто используемые', Pointer(IntPtr(-1)));
+        Node := TreeView.Items.AddObjectFirst(
+            nil,
+            TUIStateLoader.GetMessage('Help.MainForm.FrequentlyUsed'),
+            Pointer(IntPtr(-1))
+        );
         Node.ImageIndex := 1;
         Node.SelectedIndex := 1;
         if SelectID = -1 then
             Node.Selected := True;
 
-        Node := TreeView.Items.AddObjectFirst(nil, 'Недавние', Pointer(IntPtr(-2)));
+        Node := TreeView.Items.AddObjectFirst(
+            nil,
+            TUIStateLoader.GetMessage('Help.MainForm.Recent'),
+            Pointer(IntPtr(-2))
+        );
         Node.ImageIndex := 2;
         Node.SelectedIndex := 2;
         if SelectID = -2 then

@@ -62,33 +62,30 @@ object QuickSearchForm: TQuickSearchForm
   object ebQuickSearch: TEdit
     Left = 1
     Top = 1
-    Width = 296
+    Width = 184
     Height = 23
     Anchors = [akLeft, akTop, akRight]
     TabOrder = 0
     OnChange = ebQuickSearchChange
-    ExplicitWidth = 297
   end
   object rbFTS: TRadioButton
-    Left = 393
+    Left = 327
     Top = 4
-    Width = 42
+    Width = 108
     Height = 17
     Anchors = [akTop, akRight]
     Caption = 'FTS'
     TabOrder = 3
-    ExplicitLeft = 394
   end
   object rbText: TRadioButton
-    Left = 304
+    Left = 196
     Top = 4
-    Width = 83
+    Width = 125
     Height = 17
     Anchors = [akTop, akRight]
     Caption = #1058#1077#1082#1089#1090#1086#1074#1099#1081
     Checked = True
     TabOrder = 4
     TabStop = True
-    ExplicitLeft = 305
   end
 end

@@ -3,34 +3,30 @@ unit HintTextEdit;
 interface
 
 uses
-    Winapi.Messages,
     System.SysUtils,
     System.Classes,
-    Vcl.Graphics,
     Vcl.Controls,
     Vcl.StdCtrls,
-    System.Types,
-    System.UITypes,
     System.Masks;
 
 type
     TEdit = class(Vcl.StdCtrls.TEdit)
     private
-        FCanvas: TCanvas;
         FEnableHintText: Boolean;
-        FHintText: string;
         FMaskedStr: string;
-        procedure WMPaint(var Message: TWMPaint); message WM_PAINT;
-
         procedure PrepareMaskStr;
+        procedure SetEnableHintText(const Value: Boolean);
+        function GetHintText: string;
+        procedure SetHintText(const Value: string);
     protected
-        procedure WndProc(var Message: TMessage); override;
+        // Переопределяем встроенный метод Change вместо страшных хуков в WndProc
+        procedure Change; override;
+    published
+        property EnableHintText: Boolean read FEnableHintText write SetEnableHintText;
+        property HintText: string read GetHintText write SetHintText;
     public
         constructor Create(AOwner: TComponent); override;
-        destructor Destroy; override;
         function MaskMatchesWith(InputStr: string): Boolean;
-        property EnableHintText: Boolean read FEnableHintText write FEnableHintText;
-        property HintText: string read FHintText write FHintText;
         property MaskText: string read FMaskedStr;
     end;
 
@@ -40,93 +36,51 @@ constructor TEdit.Create(AOwner: TComponent);
 begin
     inherited Create(AOwner);
     FEnableHintText := False;
-    FHintText := 'Type here... ("*", "?" wildcards are supported)';
     FMaskedStr := '';
-    FCanvas := TControlCanvas.Create;
-    TControlCanvas(FCanvas).Control := Self;
+    // Используем встроенное свойство VCL для отображения подсказок (Cue Banner API)
+    Self.TextHint := 'Type here... ("*", "?" wildcards are supported)';
 end;
 
-destructor TEdit.Destroy;
+procedure TEdit.Change;
 begin
-    FCanvas.Free;
-    inherited Destroy;
+    inherited Change; // Вызывает стандартный OnChange (безопасно)
+    if FEnableHintText then
+        PrepareMaskStr;
 end;
 
-procedure TEdit.WMPaint(var Message: TWMPaint);
-var
-    EditRect: TRect;
+procedure TEdit.SetEnableHintText(const Value: Boolean);
 begin
-    inherited;
-    if ((FEnableHintText) and (Length(Text) = 0)) then
-    begin
-        EditRect := ClientRect;
-        FCanvas.Font := Self.Font;
-        FCanvas.Font.Style := FCanvas.Font.Style + [fsItalic];
-        FCanvas.Font.Color := clGray;
-        FCanvas.Brush.Style := bsClear;
-        FCanvas.TextOut(0, 0, FHintText);
-    end;
+    FEnableHintText := Value;
+    if FEnableHintText then
+        PrepareMaskStr
+    else
+        FMaskedStr := '';
 end;
 
-procedure TEdit.WndProc(var Message: TMessage);
-var
-    temp: TNotifyEvent;
+function TEdit.GetHintText: string;
 begin
-    temp := OnChange;
-    if (FEnableHintText) then
-    begin
+    Result := Self.TextHint; // Читаем из нативного свойства
+end;
 
-        with Message do
-            case Msg of
-                WM_CHAR, WM_SETTEXT, WM_CUT, WM_PASTE:
-                    OnChange := nil;
-            end;
-    end;
-
-    inherited WndProc(Message);
-
-    if (FEnableHintText) then
-    begin
-        with Message do
-            case Msg of
-                CM_MOUSEENTER, CM_MOUSELEAVE, WM_LBUTTONUP, WM_LBUTTONDOWN,
-                  WM_KEYDOWN, WM_KEYUP, WM_SETFOCUS, WM_KILLFOCUS,
-                  CM_FONTCHANGED, CM_TEXTCHANGED:
-                    begin
-                        // FOnChangeEx(Self);
-                        Invalidate;
-                    end;
-                WM_CHAR, WM_SETTEXT, WM_CUT, WM_PASTE:
-                    begin
-                        PrepareMaskStr;
-                        OnChange := temp;
-                        if (Assigned(OnChange)) then
-                            OnChange(Self);
-                    end;
-            end; // case
-    end;
+procedure TEdit.SetHintText(const Value: string);
+begin
+    Self.TextHint := Value; // Пишем в нативное свойство
 end;
 
 procedure TEdit.PrepareMaskStr;
 begin
-    if (FEnableHintText) then
-    begin
+    if FEnableHintText then
         FMaskedStr := UpperCase('*' + Text + '*', loUserLocale);
-    end;
 end;
 
 function TEdit.MaskMatchesWith(InputStr: string): Boolean;
 begin
-    if (not FEnableHintText) then
-    begin
-        Result := False;
-        Exit;
-    end;
-    if (FMaskedStr = '') then
-    begin
-        Result := True;
-        Exit;
-    end;
+    if not FEnableHintText then
+        Exit(False);
+
+    if FMaskedStr = '' then
+        Exit(True);
+
     InputStr := UpperCase(InputStr, loUserLocale);
     Result := MatchesMask(InputStr, FMaskedStr);
 end;

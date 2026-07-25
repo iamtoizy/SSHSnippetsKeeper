@@ -16,6 +16,7 @@ object PasswordGenForm: TPasswordGenForm
   OnCloseQuery = FormCloseQuery
   OnKeyDown = FormKeyDown
   OnShortCut = FormShortCut
+  OnShow = FormShow
   TextHeight = 15
   object lbLength: TLabel
     Left = 8
@@ -108,7 +109,7 @@ object PasswordGenForm: TPasswordGenForm
     Top = 114
     Width = 505
     Height = 237
-    ActivePage = tsHistory
+    ActivePage = tsCustomSettings
     TabOrder = 6
     OnChanging = pcHostChanging
     object tsHistory: TTabSheet
@@ -126,18 +127,22 @@ object PasswordGenForm: TPasswordGenForm
           end
           item
             Caption = #1042#1088#1077#1084#1103
+            Tag = 1
             Width = 70
           end
           item
             Caption = #1055#1072#1088#1086#1083#1100
+            Tag = 2
             Width = 150
           end
           item
             Caption = #1064#1072#1073#1083#1086#1085
+            Tag = 3
             Width = 120
           end
           item
             Caption = #1069#1085#1090#1088#1086#1087#1080#1103
+            Tag = 4
             Width = 80
           end>
         ReadOnly = True
@@ -182,7 +187,7 @@ object PasswordGenForm: TPasswordGenForm
         Caption = '+'
         OnClick = bExcludePresetsClick
       end
-      object cbLower: TCheckBox
+      object cbLowercase: TCheckBox
         Left = 8
         Top = 16
         Width = 141
@@ -191,9 +196,9 @@ object PasswordGenForm: TPasswordGenForm
         Checked = True
         State = cbChecked
         TabOrder = 0
-        OnClick = cbLowerClick
+        OnClick = cbLowercaseClick
       end
-      object cbUpper: TCheckBox
+      object cbUppercase: TCheckBox
         Left = 8
         Top = 39
         Width = 121
@@ -202,7 +207,7 @@ object PasswordGenForm: TPasswordGenForm
         Checked = True
         State = cbChecked
         TabOrder = 1
-        OnClick = cbUpperClick
+        OnClick = cbUppercaseClick
       end
       object cbNumbers: TCheckBox
         Left = 8
@@ -256,7 +261,7 @@ object PasswordGenForm: TPasswordGenForm
         Caption = #1050#1086#1083#1080#1095#1077#1089#1090#1074#1086':'
       end
       object seBulkCount: TSpinEdit
-        Left = 112
+        Left = 145
         Top = 3
         Width = 105
         Height = 24
@@ -316,11 +321,11 @@ object PasswordGenForm: TPasswordGenForm
   object pmBulkGeneration: TPopupMenu
     Left = 272
     Top = 8
-    object N1: TMenuItem
+    object nCopyToClipboard: TMenuItem
       Caption = #1057#1082#1086#1087#1080#1088#1086#1074#1072#1090#1100' '#1074' '#1073#1091#1092#1077#1088
-      OnClick = N1Click
+      OnClick = nCopyToClipboardClick
     end
-    object N2: TMenuItem
+    object nSaveToFile: TMenuItem
       Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1074' '#1092#1072#1081#1083
     end
   end

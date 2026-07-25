@@ -34,6 +34,10 @@ type
 
 implementation
 
+uses
+    UI.StateLoader
+    ;
+
 { TSecurityScanner }
 
 constructor TSecurityScanner.Create;
@@ -55,25 +59,49 @@ procedure TSecurityScanner.InitializePatterns;
 
 begin
     // --- Инфраструктурные ключи ---
-    AddPattern('Приватный SSH/RSA ключ', '-----BEGIN (RSA|OPENSSH|DSA|EC|PGP)?\s*PRIVATE KEY-----');
-    AddPattern('Токен GitHub', '(ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{36}');
-    AddPattern('Ключ AWS Access Key', 'AKIA[0-9A-Z]{16}');
-    AddPattern('Ключ Google Cloud / API', 'AIza[0-9A-Za-z\-_]{35}');
-    AddPattern('Секретный ключ Stripe', 'sk_(live|test)_[0-9a-zA-Z]{24}');
-    AddPattern('Токен Telegram Bot', '[0-9]{9,10}:[a-zA-Z0-9_-]{35}');
+    AddPattern(
+        TUIStateLoader.GetMessage('Security.DenyReason.PrivateSSHKey'),
+        '-----BEGIN (RSA|OPENSSH|DSA|EC|PGP)?\s*PRIVATE KEY-----');
+    AddPattern(
+        TUIStateLoader.GetMessage('Security.DenyReason.GitHubToken'),
+        '(ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{36}');
+    AddPattern(
+        TUIStateLoader.GetMessage('Security.DenyReason.AWSAccessKey'),
+        'AKIA[0-9A-Z]{16}');
+    AddPattern(
+        TUIStateLoader.GetMessage('Security.DenyReason.GoogleCloudAPIKey'),
+        'AIza[0-9A-Za-z\-_]{35}');
+    AddPattern(
+        TUIStateLoader.GetMessage('Security.DenyReason.StripeSecretKey'),
+        'sk_(live|test)_[0-9a-zA-Z]{24}');
+    AddPattern(
+        TUIStateLoader.GetMessage('Security.DenyReason.TelegramBotToken'),
+        '[0-9]{9,10}:[a-zA-Z0-9_-]{35}');
 
     // --- Веб-токены и авторизация ---
-    AddPattern('Токен JWT', 'eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}');
-    AddPattern('Токен Slack', 'xox[baprs]-[0-9a-zA-Z]{10,48}');
-    AddPattern('Авторизационный Bearer токен', 'bearer\s+[A-Za-z0-9_\-\.\+]{15,}');
+    AddPattern(
+        TUIStateLoader.GetMessage('Security.DenyReason.JWTToken'),
+        'eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}');
+    AddPattern(
+        TUIStateLoader.GetMessage('Security.DenyReason.SlackToken'),
+        'xox[baprs]-[0-9a-zA-Z]{10,48}');
+    AddPattern(
+        TUIStateLoader.GetMessage('Security.DenyReason.BearerToken'),
+        'bearer\s+[A-Za-z0-9_\-\.\+]{15,}');
 
     // --- Пароли и строки подключения ---
-    AddPattern('Учетные данные в URL (Connection String)', '(https?|ftp|postgres|mysql|mongodb(\+srv)?):\/\/[^\s:@]+:[^\s:@]+@[^\s\/]+');
-    AddPattern('Явное указание пароля/ключа', '(password|passwd|secret|api[_-]?key|token|auth)\s*[:=]\s*[''"]?[A-Za-z0-9$_\-\.\+]{8,}[''"]?');
+    AddPattern(
+        TUIStateLoader.GetMessage('Security.DenyReason.URLConnectionString'),
+        '(https?|ftp|postgres|mysql|mongodb(\+srv)?):\/\/[^\s:@]+:[^\s:@]+@[^\s\/]+');
+    AddPattern(
+        TUIStateLoader.GetMessage('Security.DenyReason.ExplicitPasswordKey'),
+        '(password|passwd|secret|api[_-]?key|token|auth)\s*[:=]\s*[''"]?[A-Za-z0-9$_\-\.\+]{8,}[''"]?');
 
     // --- Криптография (которую не ловит энтропия из-за малого алфавита) ---
     // Ловит 32-64 символьные HEX-строки, но игнорирует стандартные UUID с дефисами (8-4-4-4-12)
-    AddPattern('MD5/SHA хэш или Hex-ключ', '\b([A-Fa-f0-9]{32}|[A-Fa-f0-9]{40}|[A-Fa-f0-9]{64})\b');
+    AddPattern(
+        TUIStateLoader.GetMessage('Security.DenyReason.HashKey'),
+        '\b([A-Fa-f0-9]{32}|[A-Fa-f0-9]{40}|[A-Fa-f0-9]{64})\b');
 end;
 
 function TSecurityScanner.HasSensitiveData(const Text: string; out Reason: string): Boolean;
@@ -130,7 +158,7 @@ begin
                 // Энтропия > 4.5 характерна для Base64 и сложных сгенерированных строк
                 if Entropy > 4.5 then
                 begin
-                    Reason := Format('Высокоэнтропийная строка (возможно, хэш или токен): "%s..."', [Copy(WordStr, 1, 10)]);
+                    Reason := TUIStateLoader.GetMessage('Security.DenyReason.HighEntropyString', [Copy(WordStr, 1, 10)]);
                     Exit(True);
                 end;
             end;

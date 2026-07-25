@@ -27,6 +27,7 @@ type
         FPasswordService: IPasswordService;
         FSettingsManager: ISettingsManager;
         FWindowHelper: IWindowHelper;
+        FErrorHandler: IUIMessagesHandler;
 
         function GetDatabaseManager: IDatabaseManager;
         function GetSnippetService: ISnippetService;
@@ -36,13 +37,15 @@ type
         function GetPasswordService: IPasswordService;
         function GetSettingsManager: ISettingsManager;
         function GetWindowHelper: IWindowHelper;
+        function GetErrorHandler: IUIMessagesHandler;
     public
         // В конструктор передаем уже готовые сервисы
         constructor Create(
             DatabaseManager: IDatabaseManager;
             DBConnection: TFDConnection;
             SettingsManager: ISettingsManager;
-            WindowHelper: IWindowHelper
+            WindowHelper: IWindowHelper;
+            ErrorHandler: IUIMessagesHandler
         );
         destructor Destroy; override;
         property DatabaseManager: IDatabaseManager read GetDatabaseManager;
@@ -53,6 +56,7 @@ type
         property PasswordService: IPasswordService read GetPasswordService;
         property SettingsManager: ISettingsManager read GetSettingsManager;
         property WindowHelper: IWindowHelper read GetWindowHelper;
+        property ErrorHandler: IUIMessagesHandler read GetErrorHandler;
 
         function CreateIsolatedSnippetService(out BackgroundConnection: TComponent): ISnippetService;
     end;
@@ -65,7 +69,8 @@ constructor TAppContext.Create(
     DatabaseManager: IDatabaseManager;
     DBConnection: TFDConnection;
     SettingsManager: ISettingsManager;
-    WindowHelper: IWindowHelper
+    WindowHelper: IWindowHelper;
+    ErrorHandler: IUIMessagesHandler
 );
 var
     SnippetRepo: ISnippetRepository;
@@ -78,6 +83,7 @@ begin
     FDatabaseManager := DatabaseManager;
     FSettingsManager := SettingsManager;
     FWindowHelper := WindowHelper;
+    ErrorHandler := ErrorHandler;
 
     // 1. Создаем репозитории
     SnippetRepo := TSnippetRepository.Create(DBConnection);
@@ -150,6 +156,11 @@ end;
 function TAppContext.GetDatabaseManager: IDatabaseManager;
 begin
     Result := FDatabaseManager;
+end;
+
+function TAppContext.GetErrorHandler: IUIMessagesHandler;
+begin
+    Result := FErrorHandler;
 end;
 
 function TAppContext.GetPasswordService: IPasswordService;

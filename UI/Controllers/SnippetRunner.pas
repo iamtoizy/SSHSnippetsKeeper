@@ -12,7 +12,6 @@ uses
     WindowMonitor,
     MacroEngine,
     MacroInputTypes,
-    UI.Interfaces,
     Core.Interfaces,
     SecurityScanner
     ;
@@ -21,13 +20,12 @@ type
     TSnippetRunner = class
     private
         FUserID: Integer;
-        FErrorHandler: IUIErrorHandler;
-        FWindowHelper: IWindowHelper;
+        FAppContext: IAppContext;
         function SelectTargetWindow(out TargetWindow: TWindowMonitorInfo): Boolean;
         function BuildMacroContext(SnippetID: Integer; TargetHWND: HWND): TMacroContext;
     public
         class var IsExecuting: Boolean;
-        constructor Create(UserID: Integer; WindowHelper: IWindowHelper);
+        constructor Create(UserID: Integer; AppContext: IAppContext);
         procedure ExecuteSnippet(const Snippet: TSnippetDTO; RequireConfirmation: Boolean = True);
     end;
 
@@ -35,16 +33,16 @@ implementation
 
 uses
     ChooseTerminalWindowUI,
-    InputFormUI
+    InputFormUI,
+    UI.StateLoader
     ;
 
 { Реализация TSnippetRunner }
 
-constructor TSnippetRunner.Create(UserID: Integer; WindowHelper: IWindowHelper);
+constructor TSnippetRunner.Create(UserID: Integer; AppContext: IAppContext);
 begin
     FUserID := UserID;
-    FWindowHelper := WindowHelper;
-    FErrorHandler := TVCLErrorHandler.Create;
+    FAppContext := AppContext;
 end;
 
 function TSnippetRunner.SelectTargetWindow(out TargetWindow: TWindowMonitorInfo): Boolean;
@@ -53,7 +51,9 @@ begin
     if not WinMonitor.CanAutoType then
     begin
         MessageBeep(MB_ICONHAND);
-        FErrorHandler.ShowInfo('Не найдено разрешённых окон терминала в истории.');
+        FAppContext.ErrorHandler.ShowInfo(
+            TUIStateLoader.GetMessage('Terminal.HistoryEmpty')
+        );
         Exit;
     end;
 
@@ -66,6 +66,7 @@ begin
     begin
         with TChooseTerminalWindow.Create(nil) do
         try
+            Initialize(FAppContext);
             if ShowModal = mrOk then
             begin
                 TargetWindow := SelectedWindow;
@@ -82,7 +83,7 @@ var
     Context: TMacroContext;
 begin
     Context := TMacroContext.Create;
-    Context.Executor := FWindowHelper;
+    Context.Executor := FAppContext.WindowHelper;
     Context.UserCancelled := False;
     Context.SnippetID := SnippetID;
     Context.UserID := FUserID;
@@ -94,7 +95,7 @@ begin
             Result := ''; // Здесь Result - это возвращаемая строка для OnInput
 
             // Обращаемся к переменной Context из внешней области видимости
-            if ShowInputForm(Prompt, Context.CurrentDefaultValue, Context.CurrentInputType, Result) then
+            if ShowInputForm(Prompt, Context.CurrentDefaultValue, Context.CurrentInputType, FAppContext, Result) then
                 Context.UserCancelled := False
             else
             begin
@@ -127,7 +128,9 @@ var
 begin
     if Trim(Snippet.Content).IsEmpty then
     begin
-        FErrorHandler.ShowInfo('Текст сниппета пуст.');
+        FAppContext.ErrorHandler.ShowInfo(
+            TUIStateLoader.GetMessage('Snippet.NoContentError')
+        );
         Exit;
     end;
 
@@ -138,14 +141,13 @@ begin
         if Security.HasSensitiveData(Snippet.Content, WarningReason) then
         begin
             WarningMsg :=
-                'Обнаружены потенциально чувствительные данные:' + sLineBreak +
-                '• ' + WarningReason + sLineBreak + sLineBreak +
-                'Необходимо проверить текст сниппета перед его отправкой в терминал.' + sLineBreak + sLineBreak +
-                'Берёшь ответственность на себя и хочешь продолжить отправку?';
+                TUIStateLoader.GetMessage('Snippet.SensitiveDataFound', [WarningReason]);
 
             // Если пользователь нажал "Нет" - прерываем.
-            if not FErrorHandler.AskWarning(WarningMsg) then
-                Exit;
+            if not FAppContext.ErrorHandler.AskWarning(
+                WarningMsg,
+                TUIStateLoader.GetMessage('Common.Warning')
+            ) then Exit;
         end;
     end;
 
@@ -155,15 +157,20 @@ begin
 
     if not IsWindow(TargetWindow.HWND) then
     begin
-        FErrorHandler.ShowInfo('Выбранное окно больше не существует.');
+        FAppContext.ErrorHandler.ShowInfo(
+            TUIStateLoader.GetMessage('Terminal.WindowNoLongerExists')
+        );
         Exit;
     end;
 
     if RequireConfirmation then
     begin
         // Используем наш обычный диалог подтверждения
-        if not FErrorHandler.AskConfirmation(Format('Ввести сниппет в окно: "%s"?', [TargetWindow.WindowTitle])) then
-            Exit;
+        if not FAppContext.ErrorHandler.AskConfirmation(
+            TUIStateLoader.GetMessage('', [TargetWindow.WindowTitle]),
+            TUIStateLoader.GetMessage('Common.Warning', [TargetWindow.WindowTitle]),
+            MB_YESNO or MB_ICONQUESTION
+        ) then Exit;
     end;
 
     // Выполнение макроса
@@ -177,8 +184,8 @@ begin
             Context := BuildMacroContext(Snippet.ID, TargetWindow.HWND);
             SetForegroundWindow(TargetWindow.HWND);
             Sleep(50);
-            FWindowHelper.SetTargetWindow(TargetWindow.HWND);
-            FWindowHelper.TypeTextIntoWindowWithContext(Snippet.Content, Context);
+            FAppContext.WindowHelper.SetTargetWindow(TargetWindow.HWND);
+            FAppContext.WindowHelper.TypeTextIntoWindowWithContext(Snippet.Content, Context);
         finally
         end;
     finally

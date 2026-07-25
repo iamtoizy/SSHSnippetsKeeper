@@ -8,22 +8,23 @@ uses
     Vcl.Controls,
     Vcl.Forms,
     Vcl.ComCtrls,
-    WindowMonitor;
+    WindowMonitor,
+    BaseFormUI,
+    Core.Interfaces;
 
 type
-    TChooseTerminalWindow = class(TForm)
+    TChooseTerminalWindow = class(TBaseForm)
         lvTerminalList: TListView;
         sbBottom: TStatusBar;
         procedure lvTerminalListDblClick(Sender: TObject);
         procedure FormShow(Sender: TObject);
         procedure FormCreate(Sender: TObject);
     private
-        { Private declarations }
         FSelectedWindow: TWindowMonitorInfo;
         FWindows: TArray<TWindowMonitorInfo>;
         procedure PopulateList;
     public
-        { Public declarations }
+        procedure Initialize(AppContext: IAppContext);
         property SelectedWindow: TWindowMonitorInfo read FSelectedWindow;
     end;
 
@@ -31,6 +32,10 @@ var
     ChooseTerminalWindow: TChooseTerminalWindow;
 
 implementation
+
+uses
+    UI.StateLoader
+    ;
 
 {$R *.dfm}
 
@@ -47,6 +52,12 @@ begin
         lvTerminalList.ItemIndex := 0;
         lvTerminalList.SetFocus;
     end;
+end;
+
+procedure TChooseTerminalWindow.Initialize(AppContext: IAppContext);
+begin
+    inherited;
+    FAppContext := AppContext;
 end;
 
 procedure TChooseTerminalWindow.lvTerminalListDblClick(Sender: TObject);
@@ -73,11 +84,11 @@ begin
 
     if Length(FWindows) = 0 then
     begin
-        sbBottom.SimpleText := 'История пуста. Сначала активируйте окно терминала.';
+        sbBottom.SimpleText := TUIStateLoader.GetMessage('Terminal.HistoryEmpty');
         Exit;
     end;
 
-    sbBottom.SimpleText := Format('Найдено %d окон терминала. Выберите целевое окно:', [Length(FWindows)]);
+    sbBottom.SimpleText := TUIStateLoader.GetMessage('Terminal.WindowsFound', [Length(FWindows)]);
 
     // Заполняем список (от новых к старым)
     for I := Length(FWindows) - 1 downto 0 do

@@ -15,7 +15,6 @@ type
     private
         FSettings: TAppSettings;
         FBashAutocomplete: TStringList;
-        FErrorHandler: IUIErrorHandler;
 
         function GetSettingsPath: string;
         function GetBashPath: string;
@@ -24,12 +23,16 @@ type
         function GetSettings: TAppSettings;
         procedure SetSettings(const Value: TAppSettings);
         function GetBashAutocomplete: TStringList;
+        function GetCurrentLanguage: string;
+        procedure SetCurrentLanguage(const Value: string);
     public
         constructor Create;
         destructor Destroy; override;
 
         procedure Load;
         procedure Save;
+
+        property CurrentLanguage: string read GetCurrentLanguage write SetCurrentLanguage;
     end;
 
 implementation
@@ -39,7 +42,8 @@ uses
     JSONSerializer,
     System.IOUtils,
     Winapi.Windows,
-    UI.Interfaces;
+    UI.Services.MessagesHandler,
+    CommonHelpers;
 
 { TSettingsManager }
 
@@ -48,7 +52,6 @@ begin
     inherited Create;
     FBashAutocomplete := TStringList.Create;
     ApplyDefaults; // Сразу ставим дефолты на случай, если файла еще нет
-    FErrorHandler := TVCLErrorHandler.Create;
 end;
 
 destructor TSettingsManager.Destroy;
@@ -57,15 +60,19 @@ begin
     inherited;
 end;
 
-// Безопасное получение пути рядом с exe-файлом!
 function TSettingsManager.GetSettingsPath: string;
 begin
-    Result := TPath.Combine(TPath.GetDirectoryName(ParamStr(0)), 'settings.json');
+    Result := ResolvePath('settings.json');
 end;
 
 function TSettingsManager.GetBashPath: string;
 begin
-    Result := TPath.Combine(TPath.GetDirectoryName(ParamStr(0)), 'bash-autocomplete.txt');
+    Result := ResolvePath('bash-autocomplete.txt');
+end;
+
+function TSettingsManager.GetCurrentLanguage: string;
+begin
+    Result := FSettings.CurrentLanguage;
 end;
 
 // Установка значений по умолчанию
@@ -80,27 +87,34 @@ end;
 procedure TSettingsManager.Load;
 var
     JsonString: string;
+    Path: string;
 begin
-    // 1. Загрузка Bash-скриптов
-    if TFile.Exists(GetBashPath) then
+    Path := GetBashPath;
+    // Загрузка Bash-скриптов
+    if TFile.Exists(Path) then
     try
-        FBashAutocomplete.LoadFromFile(GetBashPath, TEncoding.UTF8);
+        FBashAutocomplete.LoadFromFile(Path, TEncoding.UTF8);
     except
         // Игнорируем ошибку чтения, просто список будет пуст
     end;
 
-    // 2. Загрузка JSON настроек
-    if not TFile.Exists(GetSettingsPath) then
+    // Загрузка JSON настроек
+    Path := GetSettingsPath;
+    if not TFile.Exists(Path) then
     begin
         Save; // Если файла нет, сразу создаем его с дефолтными значениями
         Exit;
     end;
 
     try
-        JsonString := TFile.ReadAllText(GetSettingsPath, TEncoding.UTF8);
+        JsonString := TFile.ReadAllText(Path, TEncoding.UTF8);
         FSettings := DSON.fromJson<TAppSettings>(JsonString);
 
-        // Проверка: если парсер загрузил нули (ключи отсутствовали в json), восстанавливаем дефолты
+        // Восстанавливаем дефолты, если необходимо
+        if FSettings.UISettings.Help.HelpButton.HoverDelay <= 0 then
+            FSettings.UISettings.Help.HelpButton.HoverDelay := 350;
+        if FSettings.UISettings.Help.HelpButton.FadeDuration <= 0 then
+            FSettings.UISettings.Help.HelpButton.FadeDuration := 200;
         if FSettings.WindowHelper.ActivationDelay <= 0 then
             FSettings.WindowHelper.ActivationDelay := 100;
         if FSettings.WindowHelper.SetFocusDelay <= 0 then
@@ -111,8 +125,8 @@ begin
     except
         on E: Exception do
         begin
-            // Если ИТ-шник сломал JSON руками, мы не даем программе упасть.
-            // Мы применяем безопасные дефолты.
+            // Если чел сломал JSON руками, не даем программе упасть.
+            // Применяем безопасные дефолты.
             ApplyDefaults;
             // В идеале тут залогировать ошибку или показать MessageDlg
         end;
@@ -137,6 +151,11 @@ end;
 function TSettingsManager.GetSettings: TAppSettings;
 begin
     Result := FSettings;
+end;
+
+procedure TSettingsManager.SetCurrentLanguage(const Value: string);
+begin
+    FSettings.CurrentLanguage := Value;
 end;
 
 procedure TSettingsManager.SetSettings(const Value: TAppSettings);

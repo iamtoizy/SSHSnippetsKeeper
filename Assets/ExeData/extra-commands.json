@@ -1,0 +1,335 @@
+{
+  "docker": {
+    "insert": "docker ",
+    "children": {
+      "ps": {
+        "insert": "ps ",
+        "children": {
+          "-a": { "insert": "-a " },
+          "-q": { "insert": "-q " },
+          "--format": { "insert": "--format \"table {{.ID}}\\t{{.Names}}\\t{{.Status}}\" " }
+        }
+      },
+      "run": {
+        "insert": "run ",
+        "children": {
+          "-d": { "insert": "-d " },
+          "-it": { "insert": "-it " },
+          "--rm": { "insert": "--rm " },
+          "--name": { "insert": "--name " },
+          "-p": { "insert": "-p " },
+          "-v": { "insert": "-v " }
+        }
+      },
+      "exec": {
+        "insert": "exec -it ",
+        "children": {
+          "bash": { "insert": "bash " },
+          "sh": { "insert": "sh " }
+        }
+      },
+      "logs": {
+        "insert": "logs ",
+        "children": {
+          "-f": { "insert": "-f " },
+          "--tail": { "insert": "--tail 100 " },
+          "-t": { "insert": "-t " }
+        }
+      },
+      "build": {
+        "insert": "build ",
+        "children": {
+          "-t": { "insert": "-t " },
+          "--no-cache": { "insert": "--no-cache " }
+        }
+      },
+      "images": { "insert": "images " },
+      "rm": { "insert": "rm -f " },
+      "rmi": { "insert": "rmi -f " },
+      "network": {
+        "insert": "network ",
+        "children": {
+          "ls": { "insert": "ls " },
+          "create": { "insert": "create " },
+          "inspect": { "insert": "inspect " }
+        }
+      },
+      "volume": {
+        "insert": "volume ",
+        "children": {
+          "ls": { "insert": "ls " },
+          "create": { "insert": "create " }
+        }
+      },
+      "compose": {
+        "insert": "compose ",
+        "children": {
+          "up": {
+            "insert": "up ",
+            "children": {
+              "-d": { "insert": "-d " },
+              "--build": { "insert": "--build " }
+            }
+          },
+          "down": {
+            "insert": "down ",
+            "children": {
+              "-v": { "insert": "-v " }
+            }
+          },
+          "logs": {
+            "insert": "logs ",
+            "children": {
+              "-f": { "insert": "-f " }
+            }
+          },
+          "ps": { "insert": "ps " },
+          "pull": { "insert": "pull " },
+          "restart": { "insert": "restart " }
+        }
+      }
+    }
+  },
+  "docker-compose": {
+    "insert": "docker-compose ",
+    "children": {
+      "up": { "insert": "up -d " },
+      "down": { "insert": "down " },
+      "logs": { "insert": "logs -f " },
+      "restart": { "insert": "restart " }
+    }
+  },
+  "kubectl": {
+    "insert": "kubectl ",
+    "children": {
+      "get": {
+        "insert": "get ",
+        "children": {
+          "pods": { "insert": "pods " },
+          "nodes": { "insert": "nodes " },
+          "svc": { "insert": "svc " },
+          "deployments": { "insert": "deployments " },
+          "ingress": { "insert": "ingress " },
+          "all": { "insert": "all " },
+          "-n": { "insert": "-n " },
+          "-A": { "insert": "-A " },
+          "-o": {
+            "insert": "-o ",
+            "children": {
+              "yaml": { "insert": "yaml " },
+              "json": { "insert": "json " },
+              "wide": { "insert": "wide " }
+            }
+          }
+        }
+      },
+      "describe": {
+        "insert": "describe ",
+        "children": {
+          "pod": { "insert": "pod " },
+          "node": { "insert": "node " },
+          "svc": { "insert": "svc " },
+          "deployment": { "insert": "deployment " }
+        }
+      },
+      "apply": {
+        "insert": "apply ",
+        "children": {
+          "-f": { "insert": "-f " },
+          "-k": { "insert": "-k " }
+        }
+      },
+      "delete": {
+        "insert": "delete ",
+        "children": {
+          "-f": { "insert": "-f " },
+          "pod": { "insert": "pod " },
+          "deployment": { "insert": "deployment " }
+        }
+      },
+      "logs": {
+        "insert": "logs ",
+        "children": {
+          "-f": { "insert": "-f " },
+          "--tail": { "insert": "--tail=100 " },
+          "-p": { "insert": "-p " },
+          "-c": { "insert": "-c " }
+        }
+      },
+      "exec": {
+        "insert": "exec -it ",
+        "children": {
+          "--": { "insert": "-- bash " }
+        }
+      },
+      "port-forward": {
+        "insert": "port-forward ",
+        "children": {
+          "svc/": { "insert": "svc/" },
+          "pod/": { "insert": "pod/" }
+        }
+      },
+      "rollout": {
+        "insert": "rollout ",
+        "children": {
+          "restart": { "insert": "restart deployment/" },
+          "status": { "insert": "status deployment/" },
+          "undo": { "insert": "undo deployment/" }
+        }
+      }
+    }
+  },
+  "systemctl": {
+    "insert": "systemctl ",
+    "children": {
+      "status": { "insert": "status " },
+      "start": { "insert": "start " },
+      "stop": { "insert": "stop " },
+      "restart": { "insert": "restart " },
+      "enable": {
+        "insert": "enable ",
+        "children": {
+          "--now": { "insert": "--now " }
+        }
+      },
+      "disable": { "insert": "disable " },
+      "daemon-reload": { "insert": "daemon-reload " }
+    }
+  },
+  "journalctl": {
+    "insert": "journalctl ",
+    "children": {
+      "-u": { "insert": "-u " },
+      "-f": { "insert": "-f " },
+      "-xe": { "insert": "-xe " },
+      "--since": {
+        "insert": "--since ",
+        "children": {
+          "\"1 hour ago\"": { "insert": "\"1 hour ago\" " },
+          "\"today\"": { "insert": "\"today\" " }
+        }
+      }
+    }
+  },
+  "apt": {
+    "insert": "apt ",
+    "children": {
+      "update": { "insert": "update " },
+      "upgrade": {
+        "insert": "upgrade ",
+        "children": {
+          "-y": { "insert": "-y " }
+        }
+      },
+      "install": {
+        "insert": "install ",
+        "children": {
+          "-y": { "insert": "-y " }
+        }
+      },
+      "remove": { "insert": "remove " },
+      "purge": { "insert": "purge " },
+      "search": { "insert": "search " },
+      "autoremove": { "insert": "autoremove -y " }
+    }
+  },
+  "git": {
+    "insert": "git ",
+    "children": {
+      "clone": { "insert": "clone " },
+      "status": { "insert": "status " },
+      "add": {
+        "insert": "add ",
+        "children": {
+          ".": { "insert": ". " },
+          "-p": { "insert": "-p " }
+        }
+      },
+      "commit": {
+        "insert": "commit ",
+        "children": {
+          "-m": { "insert": "-m \"\" " },
+          "--amend": { "insert": "--amend " }
+        }
+      },
+      "push": {
+        "insert": "push ",
+        "children": {
+          "-u": { "insert": "-u origin " },
+          "--force": { "insert": "--force " }
+        }
+      },
+      "pull": {
+        "insert": "pull ",
+        "children": {
+          "--rebase": { "insert": "--rebase " }
+        }
+      },
+      "checkout": {
+        "insert": "checkout ",
+        "children": {
+          "-b": { "insert": "-b " }
+        }
+      },
+      "branch": {
+        "insert": "branch ",
+        "children": {
+          "-a": { "insert": "-a " },
+          "-d": { "insert": "-d " }
+        }
+      },
+      "log": {
+        "insert": "log ",
+        "children": {
+          "--oneline": { "insert": "--oneline " },
+          "--graph": { "insert": "--graph --oneline --all " }
+        }
+      }
+    }
+  },
+  "ip": {
+    "insert": "ip ",
+    "children": {
+      "a": { "insert": "a " },
+      "addr": { "insert": "addr " },
+      "link": {
+        "insert": "link ",
+        "children": {
+          "show": { "insert": "show " },
+          "set": { "insert": "set " }
+        }
+      },
+      "route": {
+        "insert": "route ",
+        "children": {
+          "show": { "insert": "show " },
+          "add": { "insert": "add " }
+        }
+      }
+    }
+  },
+  "tarr": {
+    "insert": "tarr ",
+    "children": {
+      "-czvf": { "insert": "-czvf archive.tar.gz " },
+      "-xzvf": { "insert": "-xzvf " },
+      "-cvf": { "insert": "-cvf archive.tar " },
+      "-xvf": { "insert": "-xvf " }
+    }
+  },
+  "chmod": {
+    "insert": "chmod ",
+    "children": {
+      "+x": { "insert": "+x " },
+      "-R": { "insert": "-R " },
+      "755": { "insert": "755 " },
+      "777": { "insert": "777 " }
+    }
+  },
+  "chown": {
+    "insert": "chown ",
+    "children": {
+      "-R": { "insert": "-R " }
+    }
+  }
+}
