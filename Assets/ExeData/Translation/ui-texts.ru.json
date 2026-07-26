@@ -712,6 +712,7 @@
       "MemoryClearConfirm": "Удалить все пароли из памяти?",
       "MemoryCleared": "Память паролей очищена.",
       "ClipboardCleared": "Буфер обмена безопасно очищен.",
+      "PasswordCopied": "Пароль скопирован. Буфер будет очищен через 15 сек.",
       "Presets": {
         "WebStandard": "Обычный пароль для сайта (Web Safe)",
         "ActiveDirectory": "Active Directory (A-Z, a-z, 0-9, спецсимвол)",

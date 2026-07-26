@@ -712,6 +712,7 @@
       "MemoryClearConfirm": "Delete all passwords from memory?",
       "MemoryCleared": "Password memory cleared.",
       "ClipboardCleared": "Clipboard cleared.",
+      "PasswordCopied": "Password copied. Clipboard will be cleared in 15 seconds.",
       "Presets": {
         "WebStandard": "Standard Web Password (Web Safe)",
         "ActiveDirectory": "Active Directory (A-Z, a-z, 0-9, symbol)",
