@@ -3,7 +3,7 @@ object PasswordGenForm: TPasswordGenForm
   Top = 0
   BorderStyle = bsDialog
   Caption = #1043#1077#1085#1077#1088#1072#1090#1086#1088' '#1087#1072#1088#1086#1083#1077#1081
-  ClientHeight = 353
+  ClientHeight = 369
   ClientWidth = 521
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -14,6 +14,8 @@ object PasswordGenForm: TPasswordGenForm
   FormStyle = fsStayOnTop
   Position = poScreenCenter
   OnCloseQuery = FormCloseQuery
+  OnDestroy = FormDestroy
+  OnHide = FormHide
   OnKeyDown = FormKeyDown
   OnShortCut = FormShortCut
   OnShow = FormShow
@@ -109,17 +111,17 @@ object PasswordGenForm: TPasswordGenForm
     Top = 114
     Width = 505
     Height = 237
-    ActivePage = tsBulkMode
+    ActivePage = tsHistory
     TabOrder = 6
     OnChanging = pcHostChanging
     object tsHistory: TTabSheet
       Caption = #1048#1089#1090#1086#1088#1080#1103
       object lvHistory: TListView
         Left = 0
-        Top = 0
+        Top = 24
         Width = 497
-        Height = 207
-        Align = alClient
+        Height = 183
+        Align = alBottom
         Columns = <
           item
             Caption = #1044#1072#1090#1072
@@ -151,6 +153,15 @@ object PasswordGenForm: TPasswordGenForm
         ViewStyle = vsReport
         OnClick = lvHistoryClick
         OnDblClick = lvHistoryDblClick
+      end
+      object bClearHistory: TButton
+        Left = 472
+        Top = -1
+        Width = 25
+        Height = 25
+        Caption = #9842
+        TabOrder = 1
+        OnClick = bClearHistoryClick
       end
     end
     object tsCustomSettings: TTabSheet
@@ -314,6 +325,20 @@ object PasswordGenForm: TPasswordGenForm
       end
     end
   end
+  object sbBottom: TStatusBar
+    Left = 0
+    Top = 350
+    Width = 521
+    Height = 19
+    Panels = <
+      item
+        Width = 50
+      end
+      item
+        Width = 100
+      end>
+    OnResize = sbBottomResize
+  end
   object pmCharPresets: TPopupMenu
     Left = 376
     Top = 8
@@ -332,6 +357,12 @@ object PasswordGenForm: TPasswordGenForm
   object SaveDialog: TSaveDialog
     Filter = 'TEXT|*.txt|ALL|*.*'
     Left = 456
+    Top = 8
+  end
+  object tmrClipboard: TTimer
+    Enabled = False
+    OnTimer = tmrClipboardTimer
+    Left = 200
     Top = 8
   end
 end

@@ -140,6 +140,8 @@ ReportMemoryLeaksOnShutdown := True;
     WindowHelper := TWindowHelper.Create(SettingsManager);
     ErrorHandler := TUIMessagesHandler.Create;
 
+
+
     Application.Initialize;
     Application.MainFormOnTaskbar := True;
     TStyleManager.TrySetStyle('Glow');
@@ -148,7 +150,7 @@ ReportMemoryLeaksOnShutdown := True;
   Application.CreateForm(TMainForm, MainForm);
   Application.CreateForm(TQuickSearchForm, QuickSearchForm);
   Application.CreateForm(TCustomHelpForm, CustomHelpForm);
-  //
+    //-----------------------------------
     AppContext := TAppContext.Create(
         AppDatabase,               // Реализует IDatabaseManager
         AppDatabase.FDConnection,  // Ссылка на компонент подключения
@@ -156,8 +158,8 @@ ReportMemoryLeaksOnShutdown := True;
         WindowHelper,              //
         ErrorHandler               //
     );
+    //-----------------------------------
     QuickSearchForm.Initialize(AppContext);
-    //
     MainForm.Initialize(AppContext);
     MainForm.Show;
     Application.CreateForm(TInputForm, InputForm);

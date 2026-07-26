@@ -2,12 +2,29 @@ unit CommonHelpers;
 
 interface
 
+uses
+    Vcl.ComCtrls,
+    Vcl.StdCtrls,
+    Vcl.Clipbrd,
+    Winapi.Windows
+    ;
+
 { Показать тост-уведомление }
 procedure ShowSimpleToast(const Text: string; const Title: string = '');
 { Поиск конкретного файла конфигурации или БД (Для TUIStateLoader и SQLite) }
 function ResolvePath(const PathName: string; IsDirectory: Boolean = False): string;
 { Получение базовой папки для диалогов открытия/сохранения }
 function GetDefaultDataDir: string;
+{ Безопасное удаление содержимого TListView }
+procedure WipeListViewPasswords(ListView: TListView);
+{ Безопасное удаление содержимого TCustomEdit }
+procedure WipeVCLControlText(Control: TCustomEdit);
+{ Затирание блока памяти нулями }
+procedure SecureZeroMemory(Ptr: Pointer; Size: NativeUInt);
+{ Безопасное копирование в буфер обмена }
+procedure CopyToClipboardSecure(const Text: string);
+{ Безопасное уничтожение локальных строк в RAM }
+procedure WipeString(var S: string);
 
 implementation
 
@@ -98,6 +115,92 @@ begin
         Result := DevPath
     else
         Result := ExePath; // Если папки нет, возвращаем директорию с .exe
+end;
+
+procedure WipeListViewPasswords(ListView: TListView);
+var
+    I: Integer;
+    S: string;
+    P: Pointer;
+begin
+    if not Assigned(ListView) then Exit;
+
+    // Пробегаемся по всем строкам таблицы
+    for I := 0 to ListView.Items.Count - 1 do
+    begin
+        // Пароль хранится во второй колонке (индекс 1)
+        if ListView.Items[I].SubItems.Count > 1 then
+        begin
+            // Получаем прямую ссылку на блок памяти со строкой
+            S := ListView.Items[I].SubItems[1];
+            if S <> '' then
+            begin
+                // Берем прямой указатель на первый символ
+                P := PChar(S);
+                // Физически затираем байты в куче (heap) нулями.
+                // Поскольку мы обращаемся по указателю, мы "ломаем" строку
+                // прямо внутри самой структуры TListView!
+                SecureZeroMemory(P, Length(S) * SizeOf(Char));
+            end;
+        end;
+    end;
+
+    // Теперь, когда в памяти таблицы лежат только нули, можно безопасно
+    // отдать эти блоки обратно системе
+    ListView.Items.Clear;
+end;
+
+procedure WipeVCLControlText(Control: TCustomEdit);
+begin
+    if not Assigned(Control) or (Control.Text = '') then Exit;
+    // Физически перезаписываем участок памяти контрола нулями,
+    // прежде чем освободить строку
+    Control.Text := StringOfChar('0', Control.GetTextLen);
+    Control.Text := '';
+end;
+
+procedure SecureZeroMemory(Ptr: Pointer; Size: NativeUInt);
+begin
+    // Не стоит ли затирать рандомными данными?
+    if (Ptr <> nil) and (Size > 0) then
+        FillChar(Ptr^, Size, 0);
+end;
+
+procedure CopyToClipboardSecure(const Text: string);
+var
+    ExcludeFormat: UINT;
+    MemBlock: HGLOBAL;
+begin
+    // 1. Регистрируем спец. формат Windows 10/11 для пропуска истории буфера обмена (Win+V)
+    // Любой нормальный менеджер буфера обмена (и сама ОС) проигнорирует этот текст
+    ExcludeFormat := RegisterClipboardFormat('ExcludeClipboardContentFromMonitor');
+
+    Vcl.Clipbrd.Clipboard.Open;
+    try
+        Vcl.Clipbrd.Clipboard.AsText := Text;
+
+        // Говорим системе не вести лог этого копирования
+        if ExcludeFormat <> 0 then
+        begin
+            MemBlock := GlobalAlloc(GMEM_MOVEABLE or GMEM_ZEROINIT, 1);
+            if MemBlock <> 0 then
+                SetClipboardData(ExcludeFormat, MemBlock);
+        end;
+    finally
+        Vcl.Clipbrd.Clipboard.Close;
+    end;
+end;
+
+procedure WipeString(var S: string);
+begin
+    // StringRefCount возвращает -1 для строковых констант (литералов в коде).
+    // Попытка затереть константу вызовет краш (Access Violation).
+    if (S <> '') and (StringRefCount(S) > 0) then
+    begin
+        // Физически затираем оригинальный блок памяти нулями
+        SecureZeroMemory(PChar(S), Length(S) * SizeOf(Char));
+    end;
+    S := ''; // Обнуляем указатель
 end;
 
 initialization

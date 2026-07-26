@@ -579,7 +579,7 @@ begin
         try
             FCategoryService.DeleteCategory(Cat.ID);
             ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
-            sbBottom.SimpleText := TUIStateLoader.GetMessage('Category.DeleteMsg', [Cat.Name]);
+            sbBottom.Panels[0].Text := TUIStateLoader.GetMessage('Category.DeleteMsg', [Cat.Name]);
         except
             on E: Exception do
                 MessagesHandler.ShowError(
@@ -924,7 +924,7 @@ begin
                 SelectedCatID := PRESERVE_CATEGORY_EMPTY_ID;
 
             ReloadUI(SelectedCatID);
-            sbBottom.SimpleText := TUIStateLoader.GetMessage('Snippet.DeletedMsg');
+            sbBottom.Panels[0].Text := TUIStateLoader.GetMessage('Snippet.DeletedMsg');
         except
             on E: Exception do
                 MessagesHandler.ShowError(
@@ -1059,7 +1059,7 @@ begin
             Selected := True;
             MakeVisible(False);
         end;
-        sbBottom.SimpleText := TUIStateLoader.GetMessage('Tag.AddedMsg', [NewName]);
+        sbBottom.Panels[0].Text:= TUIStateLoader.GetMessage('Tag.AddedMsg', [NewName]);
     except
         on E: Exception do
             MessagesHandler.ShowError(
@@ -1094,7 +1094,7 @@ begin
         if FCurrentSnippetID > 0 then
             TUIHelpers.FillTagListWithSelection(lvTags, FTagService.GetAllTags, FTagService.GetSnippetTags(FCurrentSnippetID));
 
-        sbBottom.SimpleText := TUIStateLoader.GetMessage('Tag.DeletedMsg');
+        sbBottom.Panels[0].Text := TUIStateLoader.GetMessage('Tag.DeletedMsg');
     except
         on E: Exception do
             MessagesHandler.ShowError(
@@ -1125,7 +1125,7 @@ begin
     try
         TagID := Integer(Item.Data);
         FTagService.RenameTag(TagID, S);
-        sbBottom.SimpleText := TUIStateLoader.GetMessage('Tag.RenamedMsg', [OldName, S]);
+        sbBottom.Panels[0].Text := TUIStateLoader.GetMessage('Tag.RenamedMsg', [OldName, S]);
     except
         on E: Exception do
         begin
@@ -1155,7 +1155,7 @@ procedure TMainForm.ApplyTagFilter(TagID: Integer; const TagName: string);
 begin
     FFilterByTagID := TagID;
     FillSnippetListView(FSnippetService.GetSnippetsByTag(TagID));
-    sbBottom.SimpleText := TUIStateLoader.GetMessage('Tag.FilterPrefix', [TagName]);
+    sbBottom.Panels[0].Text := TUIStateLoader.GetMessage('Tag.FilterPrefix', [TagName]);
 end;
 
 procedure TMainForm.ClearTagFilter;
@@ -1165,7 +1165,7 @@ begin
         tvCategoriesChange(tvCategories, tvCategories.Selected)
     else
         lvSnippets.Items.Clear;
-    sbBottom.SimpleText := TUIStateLoader.GetMessage('Tag.FilterReset');
+    sbBottom.Panels[0].Text := TUIStateLoader.GetMessage('Tag.FilterReset');
 end;
 
 procedure TMainForm.ebSearchChange(Sender: TObject);
@@ -1434,7 +1434,7 @@ begin
     // Получаем пользователя
     User := FUserService.GetUserByID(Snippet.UserID);
     if User.ID > 0 then
-        sbBottom.SimpleText := Format('[%d] %s (ID: %d) CID: %d', [Snippet.ID, User.Name, Snippet.UserID, Snippet.CategoryID]);
+        sbBottom.Panels[0].Text := Format('[%d] %s (ID: %d) CID: %d', [Snippet.ID, User.Name, Snippet.UserID, Snippet.CategoryID]);
 
     // Отрисовка тегов через TUIHelpers
     AllTags := FTagService.GetAllTags;

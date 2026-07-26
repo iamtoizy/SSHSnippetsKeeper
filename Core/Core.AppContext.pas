@@ -83,7 +83,7 @@ begin
     FDatabaseManager := DatabaseManager;
     FSettingsManager := SettingsManager;
     FWindowHelper := WindowHelper;
-    ErrorHandler := ErrorHandler;
+    FErrorHandler := ErrorHandler;
 
     // 1. Создаем репозитории
     SnippetRepo := TSnippetRepository.Create(DBConnection);

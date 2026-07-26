@@ -486,7 +486,8 @@
       "Help": "Help",
       "MoreInfo": "More Info",
       "WinEventHookError": "Failed to set up WinEventHook. Error: %s",
-      "CopiedToClipboard": "Copied to clipboard."
+      "CopiedToClipboard": "Copied to clipboard.",
+      "Security": "Безопасность"
     },
     "DB": {
       "ConnectError": "Critical Error!\nFailed to connect to the SQLite database.\nCheck the file path.",
@@ -696,7 +697,7 @@
       "HistoryCopyToast": "Generated passwords copied to clipboard.",
       "BulkGenerationToFile": "Generation is writing directly to file...",
       "MassGenerationCaption": "Mass Generation",
-      "CopyAndCloseBtn": "Copy and Close",
+      "CopyBtn": "Copy",
       "InsertAndCloseBtn": "Insert and Close",
       "StopGeneratorCaption": "Stopping generator, please wait...",
       "PresetSimilar": "Similar Characters",
@@ -708,6 +709,9 @@
       "PresetURL": "URL / Web Separators",
       "PresetPathJSON": "Path / JSON Characters",
       "PresetMath": "Mathematical Symbols",
+      "MemoryClearConfirm": "Delete all passwords from memory?",
+      "MemoryCleared": "Password memory cleared.",
+      "ClipboardCleared": "Clipboard cleared.",
       "Presets": {
         "WebStandard": "Standard Web Password (Web Safe)",
         "ActiveDirectory": "Active Directory (A-Z, a-z, 0-9, symbol)",
