@@ -88,6 +88,9 @@
     },
     "nSearch": {
       "Caption": "Database Search"
+    },
+    "nCronGenerator": {
+      "Caption": "Cron Generator"
     }
   },
   "TagEditorForm": {
@@ -328,6 +331,90 @@
       "Caption": "FTS5 Search"
     }
   },
+  "CronGenForm": {
+    "Caption": "Cron Generator and Parser",
+    "lbTitle": {
+      "Caption": "Cron expression:"
+    },
+    "bCopy": {
+      "Caption": "Copy"
+    },
+    "tsMinutes": {
+      "Caption": "Minutes"
+    },
+    "tsHours": {
+      "Caption": "Hours"
+    },
+    "tsDaysOfMonth": {
+      "Caption": "Days of month"
+    },
+    "tsMonths": {
+      "Caption": "Months"
+    },
+    "tsDaysOfWeek": {
+      "Caption": "Days of week"
+    },
+    "rbMinEvery": {
+      "Caption": "Every minute (*)"
+    },
+    "rbMinStep": {
+      "Caption": "Step (every):"
+    },
+    "rbMinRange": {
+      "Caption": "Range from:"
+    },
+    "rbMinSpec": {
+      "Caption": "Specify exact values:"
+    },
+    "rbHourEvery": {
+      "Caption": "Every hour (*)"
+    },
+    "rbHourStep": {
+      "Caption": "Step (every):"
+    },
+    "rbHourRange": {
+      "Caption": "Range from:"
+    },
+    "rbHourSpec": {
+      "Caption": "Specify exact values:"
+    },
+    "rbDomEvery": {
+      "Caption": "Every day (*)"
+    },
+    "rbDomStep": {
+      "Caption": "Step (every):"
+    },
+    "rbDomRange": {
+      "Caption": "Range from:"
+    },
+    "rbDomSpec": {
+      "Caption": "Specify exact values:"
+    },
+    "rbMonEvery": {
+      "Caption": "Every month (*)"
+    },
+    "rbMonStep": {
+      "Caption": "Step (every):"
+    },
+    "rbMonRange": {
+      "Caption": "Range from:"
+    },
+    "rbMonSpec": {
+      "Caption": "Specify exact values:"
+    },
+    "rbDowEvery": {
+      "Caption": "Any day of week (*)"
+    },
+    "rbDowStep": {
+      "Caption": "Step (every):"
+    },
+    "rbDowRange": {
+      "Caption": "Range from:"
+    },
+    "rbDowSpec": {
+      "Caption": "Specify exact values:"
+    }
+  },
   "Messages": {
     "Help": {
       "MainForm": {
@@ -377,9 +464,17 @@
           "Main": "All passwords created during the current session are saved here. <blockquote>• <b>Preview:</b> A single click will return the selected password to the main input field.<br><br>• <b>Quick Apply:</b> A double click will apply the password and immediately close the window. If the generator was called via a global hotkey, the password will be <b>automatically typed</b> into your active window (e.g., terminal). Otherwise, it will simply be copied to the clipboard.</blockquote>",
           "Expanded": "💡 <b>Generator Hotkeys:</b><br><code>CTRL+G</code> — launch from the main program window.<br><code>CTRL+ALT+G</code> — global launch from anywhere in the system on top of other windows."
         }
+      },
+      "CronGenForm": {
+        "CheckListBox": {
+          "Title": "Exact values (Smart selection)",
+          "Main": "Click on the desired values to select them. You can click on the checkbox or directly on the text for convenience.",
+          "Expanded": "<b>Advanced selection:</b><br><br>• <b>Brush (Drag‑to‑Check):</b> Click on a value, hold down the left mouse button and drag the cursor over adjacent items to quickly select (or deselect) an entire group.<br><br>• <b>Keyboard shortcuts (hold while clicking):</b><br>&nbsp;&nbsp;<b>Ctrl + Click</b> — forcibly <b>check</b> items.<br>&nbsp;&nbsp;<b>Shift + Click</b> — forcibly <b>uncheck</b> items.<br>&nbsp;&nbsp;<b>Alt + Click</b> — <b>toggle</b> (invert) the current selection state of an item."
+        }
       }
     },
     "Common": {
+      "NotificationDefaultCaption": "SSH Snippets Keeper",
       "Confirmation": "Confirmation",
       "Error": "Error",
       "Warning": "Warning",
@@ -498,6 +593,85 @@
       "JSONError": "Failed to extract response from JSON: %s",
       "APIError": "API Error (%d): %s"
     },
+    "Cron": {
+      "Error-5Elements": "Error: Cron expression must consist of exactly 5 elements.",
+      "EveryStep": "Every %d %s",
+      "Range": "%s - %s",
+      "Range-Base": "%s - %s",
+
+      "Prefix-Minutes": "Minutes: %s",
+      "Prefix-Hours": "Hours: %s",
+      "Prefix-DaysOfMonth": "Days of month: %s",
+      "Prefix-Months": "Months: %s",
+      "Prefix-DaysOfWeek": "Days of week: %s",
+
+      "Every-Minutes": "Every minute",
+      "Every-Hours": "Every hour",
+      "Every-DaysOfMonth": "Every day of the month",
+      "Every-Months": "Every month",
+      "Every-DaysOfWeek": "Any day of the week",
+
+      "Dow-WorkDays": "Monday through Friday",
+      "Dow-Weekends": "on weekends",
+
+      "Word-Minute-1": "minute",
+      "Word-Minute-2": "minutes",
+      "Word-Minute-5": "minutes",
+      "Word-Hour-1": "hour",
+      "Word-Hour-2": "hours",
+      "Word-Hour-5": "hours",
+      "Word-Day-1": "day",
+      "Word-Day-2": "days",
+      "Word-Day-5": "days",
+      "Word-Month-1": "month",
+      "Word-Month-2": "months",
+      "Word-Month-5": "months",
+      "Word-Dow-1": "day of the week",
+      "Word-Dow-2": "days of the week",
+      "Word-Dow-5": "days of the week",
+
+      "Month-Prep-1": "in January",
+      "Month-Prep-2": "in February",
+      "Month-Prep-3": "in March",
+      "Month-Prep-4": "in April",
+      "Month-Prep-5": "in May",
+      "Month-Prep-6": "in June",
+      "Month-Prep-7": "in July",
+      "Month-Prep-8": "in August",
+      "Month-Prep-9": "in September",
+      "Month-Prep-10": "in October",
+      "Month-Prep-11": "in November",
+      "Month-Prep-12": "in December",
+
+      "Dow-Prep-0": "on Sunday",
+      "Dow-Prep-1": "on Monday",
+      "Dow-Prep-2": "on Tuesday",
+      "Dow-Prep-3": "on Wednesday",
+      "Dow-Prep-4": "on Thursday",
+      "Dow-Prep-5": "on Friday",
+      "Dow-Prep-6": "on Saturday",
+
+      "Month-1": "January",
+      "Month-2": "February",
+      "Month-3": "March",
+      "Month-4": "April",
+      "Month-5": "May",
+      "Month-6": "June",
+      "Month-7": "July",
+      "Month-8": "August",
+      "Month-9": "September",
+      "Month-10": "October",
+      "Month-11": "November",
+      "Month-12": "December",
+
+      "Dow-0": "Sunday",
+      "Dow-1": "Monday",
+      "Dow-2": "Tuesday",
+      "Dow-3": "Wednesday",
+      "Dow-4": "Thursday",
+      "Dow-5": "Friday",
+      "Dow-6": "Saturday"
+    },
     "AddEditSnippet": {
       "CloseConfirmText": "Changes detected that will be lost if you close this window.\n\nClose window without saving changes?",
       "SecurityWarningText": "Activating this option will disable automatic security checks for this snippet, such as:\n\n• Infrastructure keys and API tokens\n• Web tokens and authorization headers\n• Passwords and DB connection strings\n• Private cryptography (SSH/RSA)\n• Mathematical entropy analysis (string randomness)\n\nAre you sure you want to add this snippet to the scanner exceptions?",
@@ -580,6 +754,9 @@
       "DeleteError": "Error deleting workspace: %s",
       "RenameError": "Error renaming workspace: %s",
       "SelectWorkspaceFirst": "First, select a workspace."
+    },
+    "CronGenForm": {
+      "CopiedToClipboardToast": "Cron job text copied to clipboard."
     }
   }
 }

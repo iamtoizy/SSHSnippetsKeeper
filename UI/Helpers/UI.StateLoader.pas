@@ -281,6 +281,7 @@ begin
         begin
             // Ошибка: такого токена вообще нет в этом объекте
             Result := Format(ERR_INVALID_STRUCTURE, [Tokens[I], MessageKey]);
+            ShowMessage(Result);
             Exit;
         end;
     end;

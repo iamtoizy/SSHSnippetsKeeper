@@ -14,7 +14,8 @@ implementation
 uses
     System.Notification,
     System.SysUtils,
-    System.IOUtils;
+    System.IOUtils,
+    UI.StateLoader;
 
 var
     NotificationCenter: TNotificationCenter;
@@ -30,7 +31,7 @@ begin
         try
             Notification.Name := 'SnippetNotification';
             if (Title.IsEmpty) then
-                Notification.Title := 'Менеджер сниппетов'
+                Notification.Title := TUIStateLoader.GetMessage('Common.NotificationDefaultCaption')
             else
                 Notification.Title := Title;
             Notification.AlertBody := Text;

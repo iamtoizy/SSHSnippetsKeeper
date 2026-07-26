@@ -76,7 +76,9 @@ uses
   UI.StateLoader in 'UI\Helpers\UI.StateLoader.pas',
   UI.HoverHelpManager in 'UI\Helpers\UI.HoverHelpManager.pas',
   CustomHelpFormUI in 'UI\Forms\CustomHelpFormUI.pas' {CustomHelpForm},
-  UI.Services.MessagesHandler in 'UI\Services\UI.Services.MessagesHandler.pas';
+  UI.Services.MessagesHandler in 'UI\Services\UI.Services.MessagesHandler.pas',
+  CronService in 'Core\Services\CronService.pas',
+  CronGenFormUI in 'UI\Forms\CronGenFormUI.pas' {CronGenForm};
 
 {$R *.res}
 

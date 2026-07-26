@@ -356,6 +356,11 @@ object MainForm: TMainForm
         ShortCut = 16454
         OnClick = nSearchClick
       end
+      object nCronGenerator: TMenuItem
+        Caption = 'Cron '#1075#1077#1085#1077#1088#1072#1090#1086#1088
+        ShortCut = 49219
+        OnClick = nCronGeneratorClick
+      end
     end
   end
   object OpenDialog: TOpenDialog

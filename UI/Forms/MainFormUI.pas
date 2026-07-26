@@ -35,7 +35,8 @@ uses
     WindowHelper,
     Core.AppContext,
     System.Threading,
-    UI.StateLoader, Vcl.Buttons
+    UI.StateLoader,
+    Vcl.Buttons
     ;
 
 type
@@ -94,6 +95,7 @@ type
         nDataManagament: TMenuItem;
         nExit: TMenuItem;
         pmLanguage: TPopupMenu;
+    nCronGenerator: TMenuItem;
         procedure bManageWorkspacesClick(Sender: TObject);
         procedure cbUserChange(Sender: TObject);
         procedure nOpenDatabaseClick(Sender: TObject);
@@ -122,6 +124,7 @@ type
         procedure nAddTagClick(Sender: TObject);
         procedure nExitClick(Sender: TObject);
         procedure nCloseDatabaseClick(Sender: TObject);
+        procedure nCronGeneratorClick(Sender: TObject);
         procedure nDeleteCategoryClick(Sender: TObject);
         procedure nDeleteSnippetClick(Sender: TObject);
         procedure nDeleteTagClick(Sender: TObject);
@@ -227,7 +230,8 @@ uses
     QuickSearchFormUI,
     PasswordGenFormUI,
     FireDAC.Comp.Client,
-    UI.HoverHelpManager;
+    UI.HoverHelpManager,
+    CronGenFormUI;
 
 const
     PRESERVE_CATEGORY_EMPTY_ID = -999;
@@ -745,13 +749,13 @@ begin
     if CurrentLang.IsEmpty then
         CurrentLang := 'ru';
 
-    // 1. Загружаем JSON выбранного языка
+    // Загружаем JSON выбранного языка
     TUIStateLoader.LoadLanguageFile(ResolvePath('Translation\ui-texts.' + CurrentLang + '.json'));
 
-    // 2. Строим меню языков в StatusBar
+    // Строим меню языков в StatusBar
     LoadAvailableLanguages;
 
-    // 3. Переводим элементы текущей формы
+    // Переводим элементы текущей формы
     ApplyLanguage;
 
     // Регистрация подсказок
@@ -760,14 +764,14 @@ begin
     RegisterHelp(lvTags, hipTopRight, 'Help.MainForm.lvTags', hkCustomForm);
     RegisterHelp(ebSearch, hipTopRight, 'Help.MainForm.ebSearch', hkCustomForm);
 
-    FDBManager := AppContext.DatabaseManager;
-    FSnippetService := AppContext.SnippetService;
+    FDBManager       := AppContext.DatabaseManager;
+    FSnippetService  := AppContext.SnippetService;
     FCategoryService := AppContext.CategoryService;
-    FTagService := AppContext.TagService;
-    FUserService := AppContext.UserService;
+    FTagService      := AppContext.TagService;
+    FUserService     := AppContext.UserService;
     FPasswordService := AppContext.PasswordService;
     FSettingsManager := AppContext.SettingsManager;
-    FWindowHelper := AppContext.WindowHelper;
+    FWindowHelper    := AppContext.WindowHelper;
 
     FHotkeyMgr := TGlobalHotkeyManager.Create(
         AppContext
@@ -1268,7 +1272,7 @@ begin
             LocForm.ApplyLanguage;
     end;
 
-    // --- 5. СОХРАНЕНИЕ ТЕКУЩЕГО СОСТОЯНИЯ ---
+    // --- Сохранение текущего состояния ---
     SelectedCatID := PRESERVE_CATEGORY_EMPTY_ID;
     SelectedSnippetID := 0;
     SelectedTagID := 0;
@@ -1282,53 +1286,57 @@ begin
     if lvTags.Selected <> nil then
         SelectedTagID := Integer(IntPtr(lvTags.Selected.Data));
 
-    // Блокируем перерисовку всех списков для мгновенного визуального обновления
-    tvCategories.Items.BeginUpdate;
-    lvSnippets.Items.BeginUpdate;
-    lvTags.Items.BeginUpdate;
-    try
-        // --- 6. ПЕРЕЗАГРУЗКА ИЕРАРХИИ ---
-        ReloadUI(SelectedCatID);
+    // Только если база данных подключена
+    if FAppContext.DatabaseManager.IsConnected then
+    begin
+        // Блокируем перерисовку всех списков для мгновенного визуального обновления
+        tvCategories.Items.BeginUpdate;
+        lvSnippets.Items.BeginUpdate;
+        lvTags.Items.BeginUpdate;
+        try
+            // ---Перезагрузка иерархии ---
+            ReloadUI(SelectedCatID);
 
-        // --- 7. ВОССТАНОВЛЕНИЕ ВЫДЕЛЕНИЯ СНИППЕТА ---
-        if SelectedSnippetID > 0 then
-        begin
-            for I := 0 to lvSnippets.Items.Count - 1 do
+            // --- Восстановление выделения сниппета ---
+            if SelectedSnippetID > 0 then
             begin
-                if TSnippetViewData(lvSnippets.Items[I].Data).ID = SelectedSnippetID then
+                for I := 0 to lvSnippets.Items.Count - 1 do
                 begin
-                    lvSnippets.Selected := lvSnippets.Items[I];
-                    lvSnippets.ItemFocused := lvSnippets.Items[I];
-                    lvSnippets.Items[I].MakeVisible(False);
+                    if TSnippetViewData(lvSnippets.Items[I].Data).ID = SelectedSnippetID then
+                    begin
+                        lvSnippets.Selected := lvSnippets.Items[I];
+                        lvSnippets.ItemFocused := lvSnippets.Items[I];
+                        lvSnippets.Items[I].MakeVisible(False);
 
-                    // Имитируем клик. Это обновит нижнюю панель и ПЕРЕСТРОИТ lvTags!
-                    lvSnippetsClick(lvSnippets);
-                    Break;
+                        // Имитируем клик. Это обновит нижнюю панель и ПЕРЕСТРОИТ lvTags!
+                        lvSnippetsClick(lvSnippets);
+                        Break;
+                    end;
                 end;
             end;
-        end;
 
-        // --- 8. ВОССТАНОВЛЕНИЕ ВЫДЕЛЕНИЯ ТЕГА ---
-        // (Обязательно делать это после lvSnippetsClick, так как теги пересоздались)
-        if SelectedTagID > 0 then
-        begin
-            for I := 0 to lvTags.Items.Count - 1 do
+            // --- Восстановление выделения тега ---
+            // (Обязательно делать это после lvSnippetsClick, так как теги пересоздались)
+            if SelectedTagID > 0 then
             begin
-                if Integer(IntPtr(lvTags.Items[I].Data)) = SelectedTagID then
+                for I := 0 to lvTags.Items.Count - 1 do
                 begin
-                    lvTags.Selected := lvTags.Items[I];
-                    lvTags.ItemFocused := lvTags.Items[I];
-                    lvTags.Items[I].MakeVisible(False);
-                    Break;
+                    if Integer(IntPtr(lvTags.Items[I].Data)) = SelectedTagID then
+                    begin
+                        lvTags.Selected := lvTags.Items[I];
+                        lvTags.ItemFocused := lvTags.Items[I];
+                        lvTags.Items[I].MakeVisible(False);
+                        Break;
+                    end;
                 end;
             end;
-        end;
 
-    finally
-        // Возвращаем отрисовку
-        tvCategories.Items.EndUpdate;
-        lvSnippets.Items.EndUpdate;
-        lvTags.Items.EndUpdate;
+        finally
+            // Возвращаем отрисовку
+            tvCategories.Items.EndUpdate;
+            lvSnippets.Items.EndUpdate;
+            lvTags.Items.EndUpdate;
+        end;
     end;
 end;
 
@@ -1482,6 +1490,11 @@ end;
 procedure TMainForm.nAddTagClick(Sender: TObject);
 begin
     DoAddTag;
+end;
+
+procedure TMainForm.nCronGeneratorClick(Sender: TObject);
+begin
+    TCronGenForm.Execute(Application, FAppContext);
 end;
 
 procedure TMainForm.nExitClick(Sender: TObject);

@@ -1,0 +1,143 @@
+﻿{
+    "UISettings": {
+        "Help": {
+            "HelpButton": {
+                "HoverDelay": 1500,
+                "FadeDuration": 500
+            }
+        }
+    },
+    "AllowedWindows": {
+        "Items": [
+            {
+                "Name": "XShell",
+                "WinClass": "AfxFrameOrView140u"
+            },
+            {
+                "Name": "MobaXTerm",
+                "WinClass": "CMoTTY"
+            }
+        ]
+    },
+    "WindowHelper": {
+        "ActivationDelay": 100,
+        "SetFocusDelay": 50,
+        "KeyPressInterval": 10
+    },
+    "AllowedApplications": {
+        "Items": [
+            {
+                "ExeName": "mobaxterm.exe",
+                "Enabled": true
+            },
+            {
+                "ExeName": "xshell.exe",
+                "Enabled": true
+            },
+            {
+                "ExeName": "putty.exe",
+                "Enabled": true
+            },
+            {
+                "ExeName": "tabby.exe",
+                "Enabled": true
+            },
+            {
+                "ExeName": "kitty.exe",
+                "Enabled": true
+            },
+            {
+                "ExeName": "securecrt.exe",
+                "Enabled": true
+            }
+        ]
+    },
+    "AISettings": {
+        "Items": [
+            {
+                "Name": "Yandex AIStudio [Agents]",
+                "URL": "https:\/\/aistudio.yandex.ru\/platform\/folders\/",
+                "Comment": "Платформа для создания AI-решений и агентов",
+                "Items": {
+                    "Items": [
+                        {
+                            "Name": "Qwen3.6-35B (1024 токена)",
+                            "APIKey": "Paste-your-API-key-here",
+                            "Folder": "Paste-your-folder-id-here",
+                            "Model": "",
+                            "Agent": "Paste-your-agent-id-here",
+                            "Params": {
+                                "Temperature": 0.3,
+                                "MaxOutputTokens": 1024,
+                                "Content": "Твоя роль - инструмент выполнения кода. ОТВЕЧАЙ ТОЛЬКО ЧИСТЫМ КОДОМ. ЗАПРЕЩЕНО: писать объяснения, вступления, заключения, markdown-теги ```bash, ```delphi или другие. ВЫДАВАЙ ТОЛЬКО СИМВОЛЫ КОДА. Если пользователь просит команду - выдай только эту команду.ПРИМЕР ТВОЕГО ОТВЕТА (всегда в таком формате): ls -la \/var\/www\/html systemctl restart nginx Никакого текста вокруг, только код. Команда должна умещаться в одну строку, если пользователь не попросил иначе.",
+                                "ReasoningEffort": "none"
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "Name": "Yandex AIStudio [LLM]",
+                "URL": "https:\/\/aistudio.yandex.ru\/platform\/folders\/",
+                "Comment": "Платформа для создания AI-решений и агентов",
+                "Items": {
+                    "Items": [
+                        {
+                            "Name": "YandexGPT 5 Lite (1024 токена)",
+                            "APIKey": "Paste-your-API-key-here",
+                            "Folder": "Paste-your-folder-id-here",
+                            "Model": "yandexgpt-5-lite\/latest",
+                            "Agent": "Paste-your-agent-id-here",
+                            "Params": {
+                                "Temperature": 0.3,
+                                "MaxOutputTokens": 1024,
+                                "Content": "Твоя роль - инструмент выполнения кода. ОТВЕЧАЙ ТОЛЬКО ЧИСТЫМ КОДОМ. ЗАПРЕЩЕНО: писать объяснения, вступления, заключения, markdown-теги ```bash, ```delphi или другие. ВЫДАВАЙ ТОЛЬКО СИМВОЛЫ КОДА. Если пользователь просит команду - выдай только эту команду.ПРИМЕР ТВОЕГО ОТВЕТА (всегда в таком формате): ls -la \/var\/www\/html systemctl restart nginx Никакого текста вокруг, только код. Команда должна умещаться в одну строку, если пользователь не попросил иначе.",
+                                "ReasoningEffort": "none"
+                            }
+                        },
+                        {
+                            "Name": "YandexGPT 5 Lite (32к токенов)",
+                            "APIKey": "Paste-your-API-key-here",
+                            "Folder": "Paste-your-folder-id-here",
+                            "Model": "yandexgpt-5-lite\/latest",
+                            "Agent": "Paste-your-agent-id-here",
+                            "Params": {
+                                "Temperature": 0.3,
+                                "MaxOutputTokens": 32768,
+                                "Content": "Твоя роль - инструмент выполнения кода. ОТВЕЧАЙ ТОЛЬКО ЧИСТЫМ КОДОМ. ЗАПРЕЩЕНО: писать объяснения, вступления, заключения, markdown-теги ```bash, ```delphi или другие. ВЫДАВАЙ ТОЛЬКО СИМВОЛЫ КОДА. Если пользователь просит команду - выдай только эту команду.ПРИМЕР ТВОЕГО ОТВЕТА (всегда в таком формате): ls -la \/var\/www\/html systemctl restart nginx Никакого текста вокруг, только код. Команда должна умещаться в одну строку, если пользователь не попросил иначе.",
+                                "ReasoningEffort": "none"
+                            }
+                        },
+                        {
+                            "Name": "DeepSeek V4 Flash (1024 токена)",
+                            "APIKey": "Paste-your-API-key-here",
+                            "Folder": "Paste-your-folder-id-here",
+                            "Model": "deepseek-v4-flash\/latest",
+                            "Agent": "Paste-your-agent-id-here",
+                            "Params": {
+                                "Temperature": 0.3,
+                                "MaxOutputTokens": 1024,
+                                "Content": "Твоя роль - инструмент выполнения кода. ОТВЕЧАЙ ТОЛЬКО ЧИСТЫМ КОДОМ. ЗАПРЕЩЕНО: писать объяснения, вступления, заключения, markdown-теги ```bash, ```delphi или другие. ВЫДАВАЙ ТОЛЬКО СИМВОЛЫ КОДА. Если пользователь просит команду - выдай только эту команду.ПРИМЕР ТВОЕГО ОТВЕТА (всегда в таком формате): ls -la \/var\/www\/html systemctl restart nginx Никакого текста вокруг, только код. Команда должна умещаться в одну строку, если пользователь не попросил иначе.",
+                                "ReasoningEffort": "none"
+                            }
+                        },
+                        {
+                            "Name": "AliceAI LLM Flash (1024 токена)",
+                            "APIKey": "Paste-your-API-key-here",
+                            "Folder": "Paste-your-folder-id-here",
+                            "Model": "aliceai-llm-flash\/latest",
+                            "Agent": "Paste-your-agent-id-here",
+                            "Params": {
+                                "Temperature": 0.3,
+                                "MaxOutputTokens": 1024,
+                                "Content": "Твоя роль - инструмент выполнения кода. ОТВЕЧАЙ ТОЛЬКО ЧИСТЫМ КОДОМ. ЗАПРЕЩЕНО: писать объяснения, вступления, заключения, markdown-теги ```bash, ```delphi или другие. ВЫДАВАЙ ТОЛЬКО СИМВОЛЫ КОДА. Если пользователь просит команду - выдай только эту команду.ПРИМЕР ТВОЕГО ОТВЕТА (всегда в таком формате): ls -la \/var\/www\/html systemctl restart nginx Никакого текста вокруг, только код. Команда должна умещаться в одну строку, если пользователь не попросил иначе.",
+                                "ReasoningEffort": "none"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "CurrentLanguage": "ru"
+}

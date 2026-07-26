@@ -109,7 +109,7 @@ object PasswordGenForm: TPasswordGenForm
     Top = 114
     Width = 505
     Height = 237
-    ActivePage = tsCustomSettings
+    ActivePage = tsBulkMode
     TabOrder = 6
     OnChanging = pcHostChanging
     object tsHistory: TTabSheet

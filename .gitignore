@@ -74,9 +74,10 @@ modules/
 # by Toizy
 #
 Binary/
-# SQLite временные файлы — НЕ коммитим
+# SQLite временные файлы - НЕ коммитим
 *.sqlite-wal
 *.sqlite-shm
 *.sqlite-journal
 *.sqlite
 .idea/
+settings.json

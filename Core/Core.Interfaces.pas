@@ -327,6 +327,34 @@ type
         procedure ApplyLanguage;
     end;
 
+    // Настройки для визуального конструктора Cron
+    TCronSettings = record
+        MinuteMode: (cmEveryMinute, cmIntervalMinute, cmCustomMinute);
+        MinuteInterval: Integer; // Для */N
+        MinuteCustom: string;    // Ручной ввод "0,15,30,45"
+
+        HourMode: (cmEveryHour, cmIntervalHour, cmCustomHour);
+        HourInterval: Integer;   // Для */N
+        HourCustom: string;      // Ручной ввод "2,4"
+
+        DayOfMonthMode: (cmEveryDay, cmCustomDayOfMonth);
+        DayOfMonthCustom: string;
+
+        MonthMode: (cmEveryMonth, cmCustomMonth);
+        MonthCustom: string;
+
+        DayOfWeekMode: (cmEveryDayOfWeek, cmWorkDays, cmWeekends, cmCustomDayOfWeek);
+        DayOfWeekCustom: string;
+    end;
+
+    ICronService = interface
+        ['{B1FE59DC-482B-4C01-9C73-02E6DF3F9E59}']
+        // Преобразует строку cron в правильный русский текст с учетом склонений
+        function ExpressionToHumanText(const Expression: string): string;
+        // Проверяет валидность структуры cron (5 компонентов)
+        function ValidateExpression(const Expression: string; out ErrorMsg: string): Boolean;
+    end;
+
 implementation
 
 end.
