@@ -234,7 +234,7 @@ begin
 
         // Безопасно удаляем пароль с экрана
         WipeVCLControlText(ebPassword);
-        ShowSimpleToast(TUIStateLoader.GetMessage('ClipboardCleared.MemoryCleared'));
+        ShowSimpleToast(TUIStateLoader.GetMessage('PasswordGenForm.MemoryCleared'));
     end;
 end;
 
@@ -255,7 +255,7 @@ begin
                 CleanText := StringReplace(TextToCopy, VISIBLE_SPACE, ' ', [rfReplaceAll]);
                 CopyToClipboardSecure(CleanText);
                 StartClipboardTimer(CleanText);
-                ShowSimpleToast('Пароль скопирован. Буфер будет очищен через 15 сек.');
+                ShowSimpleToast(TUIStateLoader.GetMessage('PasswordGenForm.MemoryCleared'));
             end;
         finally
             // БЕЗОПАСНО УНИЧТОЖАЕМ СЛЕДЫ
