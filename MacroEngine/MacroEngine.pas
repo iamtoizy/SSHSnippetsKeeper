@@ -3,10 +3,10 @@
 interface
 
 uses
-    System.SysUtils,
+    MacroInputTypes,
     System.Generics.Collections,
     System.RegularExpressions,
-    MacroInputTypes
+    System.SysUtils
     ;
 
 const

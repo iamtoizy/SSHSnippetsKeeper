@@ -1,11 +1,11 @@
-unit UITreeViewSearchHelper;
+unit UI.TreeViewSearchHelper;
 
 interface
 
 uses
-    Vcl.ComCtrls,
     System.Generics.Collections,
-    System.Masks;
+    Vcl.ComCtrls
+    ;
 
 type
     TTreeSearchHelper = class
@@ -14,7 +14,7 @@ type
         FAllNodes: TList<TTreeNode>;
         FMatchedIndices: TList<Integer>;
         FLastMask: string;
-        procedure CollectAllNodes(ANode: TTreeNode);
+        procedure CollectAllNodes(Node: TTreeNode);
         procedure BuildMatchList(const Mask: string);
         function GetCurrentHighlightIndex: Integer;
     public
@@ -34,7 +34,9 @@ type
 implementation
 
 uses
-    System.SysUtils;
+    System.Masks,
+    System.SysUtils
+    ;
 
 { TTreeSearchHelper }
 
@@ -53,18 +55,18 @@ begin
     inherited;
 end;
 
-procedure TTreeSearchHelper.CollectAllNodes(ANode: TTreeNode);
+procedure TTreeSearchHelper.CollectAllNodes(Node: TTreeNode);
 var
     Child: TTreeNode;
 begin
-    if ANode = nil then
+    if Node = nil then
         Exit;
-    FAllNodes.Add(ANode);
-    Child := ANode.GetFirstChild;
+    FAllNodes.Add(Node);
+    Child := Node.GetFirstChild;
     while Child <> nil do
     begin
         CollectAllNodes(Child);
-        Child := ANode.GetNextChild(Child);
+        Child := Node.GetNextChild(Child);
     end;
 end;
 

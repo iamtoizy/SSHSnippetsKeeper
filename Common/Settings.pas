@@ -3,11 +3,9 @@
 interface
 
 uses
-    System.Classes,
-    System.JSON,
-    System.Generics.Collections,
-    ArrayHelper,
-    Core.Interfaces;
+    Core.Interfaces,
+    System.Classes
+    ;
 
 type
     // Реализация менеджера
@@ -38,12 +36,12 @@ type
 implementation
 
 uses
-    System.SysUtils,
+    CommonHelpers,
     JSONSerializer,
     System.IOUtils,
-    Winapi.Windows,
-    UI.Services.MessagesHandler,
-    CommonHelpers;
+    System.JSON,
+    System.SysUtils
+    ;
 
 { TSettingsManager }
 

@@ -3,12 +3,10 @@ unit TagRepository;
 interface
 
 uses
-    System.SysUtils,
-    System.Generics.Collections,
-    Tag,
-    System.Variants,
+    Core.Interfaces,
     RepositoryBase,
-    Core.Interfaces;
+    Tag
+    ;
 
 type
     TTagRepository = class(TRepositoryBase, ITagRepository)
@@ -38,9 +36,13 @@ type
 implementation
 
 uses
-    FireDAC.Stan.Param,
     FireDAC.Comp.Client,
-    System.Classes;
+    FireDAC.Stan.Param,
+    System.Classes,
+    System.Generics.Collections,
+    System.SysUtils,
+    System.Variants
+    ;
 
 function TTagRepository.InternalLoadTags(const SQL: string; const Params: array of Variant): TArray<TTagDTO>;
 var

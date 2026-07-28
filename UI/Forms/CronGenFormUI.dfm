@@ -37,7 +37,7 @@ object CronGenForm: TCronGenForm
       Font.Style = [fsBold]
       ParentFont = False
     end
-    object edtCronExpression: TEdit
+    object ebCronExpression: TEdit
       Left = 4
       Top = 21
       Width = 500
@@ -50,7 +50,7 @@ object CronGenForm: TCronGenForm
       Font.Style = []
       ParentFont = False
       TabOrder = 0
-      OnChange = edtCronExpressionChange
+      OnChange = ebCronExpressionChange
     end
     object bCopy: TButton
       Left = 510
@@ -243,7 +243,6 @@ object CronGenForm: TCronGenForm
         ItemHeight = 18
         TabOrder = 7
         OnClick = OnBuilderControlChange
-        ExplicitHeight = 167
       end
     end
     object tsDaysOfMonth: TTabSheet
@@ -326,7 +325,6 @@ object CronGenForm: TCronGenForm
         ItemHeight = 18
         TabOrder = 7
         OnClick = OnBuilderControlChange
-        ExplicitHeight = 167
       end
     end
     object tsMonths: TTabSheet
@@ -491,7 +489,6 @@ object CronGenForm: TCronGenForm
         ItemHeight = 18
         TabOrder = 7
         OnClick = OnBuilderControlChange
-        ExplicitHeight = 167
       end
     end
   end

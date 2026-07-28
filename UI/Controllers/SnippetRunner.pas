@@ -3,17 +3,11 @@ unit SnippetRunner;
 interface
 
 uses
-    System.SysUtils,
-    Vcl.Forms,
-    Vcl.Controls,
-    Vcl.Dialogs,
-    Winapi.Windows,
-    Snippet,
-    WindowMonitor,
-    MacroEngine,
-    MacroInputTypes,
     Core.Interfaces,
-    SecurityScanner
+    MacroInputTypes,
+    Snippet,
+    Winapi.Windows,
+    WindowMonitor
     ;
 
 type
@@ -34,7 +28,10 @@ implementation
 uses
     ChooseTerminalWindowUI,
     InputFormUI,
-    UI.StateLoader
+    SecurityScanner,
+    System.SysUtils,
+    UI.StateLoader,
+    Vcl.Controls
     ;
 
 { Реализация TSnippetRunner }
@@ -51,7 +48,7 @@ begin
     if not WinMonitor.CanAutoType then
     begin
         MessageBeep(MB_ICONHAND);
-        FAppContext.ErrorHandler.ShowInfo(
+        FAppContext.MessagesHandler.ShowInfo(
             TUIStateLoader.GetMessage('Terminal.HistoryEmpty')
         );
         Exit;
@@ -128,7 +125,7 @@ var
 begin
     if Trim(Snippet.Content).IsEmpty then
     begin
-        FAppContext.ErrorHandler.ShowInfo(
+        FAppContext.MessagesHandler.ShowInfo(
             TUIStateLoader.GetMessage('Snippet.NoContentError')
         );
         Exit;
@@ -144,7 +141,7 @@ begin
                 TUIStateLoader.GetMessage('Snippet.SensitiveDataFound', [WarningReason]);
 
             // Если пользователь нажал "Нет" - прерываем.
-            if not FAppContext.ErrorHandler.AskWarning(
+            if not FAppContext.MessagesHandler.AskWarning(
                 WarningMsg,
                 TUIStateLoader.GetMessage('Common.Warning')
             ) then Exit;
@@ -157,7 +154,7 @@ begin
 
     if not IsWindow(TargetWindow.HWND) then
     begin
-        FAppContext.ErrorHandler.ShowInfo(
+        FAppContext.MessagesHandler.ShowInfo(
             TUIStateLoader.GetMessage('Terminal.WindowNoLongerExists')
         );
         Exit;
@@ -166,7 +163,7 @@ begin
     if RequireConfirmation then
     begin
         // Используем наш обычный диалог подтверждения
-        if not FAppContext.ErrorHandler.AskConfirmation(
+        if not FAppContext.MessagesHandler.AskConfirmation(
             TUIStateLoader.GetMessage('', [TargetWindow.WindowTitle]),
             TUIStateLoader.GetMessage('Common.Warning', [TargetWindow.WindowTitle]),
             MB_YESNO or MB_ICONQUESTION

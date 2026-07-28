@@ -3,14 +3,13 @@ unit ChooseTerminalWindowUI;
 interface
 
 uses
-    System.SysUtils,
-    System.Classes,
-    Vcl.Controls,
-    Vcl.Forms,
-    Vcl.ComCtrls,
-    WindowMonitor,
     BaseFormUI,
-    Core.Interfaces;
+    Core.Interfaces,
+    System.Classes,
+    Vcl.ComCtrls,
+    Vcl.Controls,
+    WindowMonitor
+    ;
 
 type
     TChooseTerminalWindow = class(TBaseForm)
@@ -34,6 +33,7 @@ var
 implementation
 
 uses
+    System.SysUtils,
     UI.StateLoader
     ;
 

@@ -3,12 +3,11 @@ unit WindowHelper;
 interface
 
 uses
-    Winapi.Windows,
-    System.SysUtils,
+    Core.Interfaces,
     MacroEngine,
-    MacroThread,
     MacroInputTypes,
-    Core.Interfaces
+    MacroThread,
+    Winapi.Windows
     ;
 
 type
@@ -50,7 +49,9 @@ type
 implementation
 
 uses
-    System.Classes;
+    System.Classes,
+    System.SysUtils
+    ;
 
 { TWindowHelper }
 

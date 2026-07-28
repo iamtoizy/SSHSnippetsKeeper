@@ -3,14 +3,11 @@ unit HintTextMemo;
 interface
 
 uses
-    System.SysUtils,
     System.Classes,
     Vcl.Controls,
     Vcl.StdCtrls,
-    Vcl.Graphics,
-    Winapi.Messages,
-    Winapi.Windows,
-    System.Masks;
+    Winapi.Messages
+    ;
 
 type
     TMemo = class(Vcl.StdCtrls.TMemo)
@@ -37,6 +34,13 @@ type
     end;
 
 implementation
+
+uses
+    System.Masks,
+    System.SysUtils,
+    Vcl.Graphics,
+    Winapi.Windows
+    ;
 
 constructor TMemo.Create(AOwner: TComponent);
 begin

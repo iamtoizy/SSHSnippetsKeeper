@@ -3,12 +3,11 @@ unit PasswordService;
 interface
 
 uses
-    System.Math,
-    System.SysUtils,
     Core.Interfaces,
-    System.Generics.Collections,
-    Winapi.Windows,
-    System.SyncObjs;
+    System.SyncObjs,
+    System.SysUtils,
+    Winapi.Windows
+    ;
 
 const
     // Константы для Windows DPAPI (RAM Encryption)
@@ -30,6 +29,7 @@ type
         CreatedAt: TDateTime;
     end;
 
+    // Буфер для хранения паролей с автоудалением старых
     TPasswordHistoryBuffer = class
     private
         FItems: TArray<TEncryptedHistoryItem>;
@@ -102,9 +102,12 @@ type
 implementation
 
 uses
+    CommonHelpers,
+    System.Generics.Collections,
     System.Hash,
-    UI.StateLoader,
-    CommonHelpers;
+    System.Math,
+    UI.StateLoader
+    ;
 
 function SecureRandom(Max: Integer): Integer;
 var

@@ -3,12 +3,13 @@
 interface
 
 uses
-    System.Generics.Collections,
-    Snippet,
-    Tag,
+    Core.Interfaces,
     FireDAC.Comp.Client,
     RepositoryBase,
-    Core.Interfaces;
+    Snippet,
+    System.Generics.Collections,
+    Tag
+    ;
 
 type
     TSnippetRepository = class(TRepositoryBase, ISnippetRepository)
@@ -37,11 +38,12 @@ type
 implementation
 
 uses
-    System.SysUtils,
-    System.Classes,
-    System.Variants,
+    Data.DB,
     FireDAC.Stan.Param,
-    Data.DB;
+    System.Classes,
+    System.SysUtils,
+    System.Variants
+    ;
 
 const
     SQL_GET_ALL_SNIPPETS_BASE = 'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at FROM snippets';

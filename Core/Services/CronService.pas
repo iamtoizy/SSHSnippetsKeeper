@@ -3,11 +3,8 @@
 interface
 
 uses
-    System.SysUtils,
-    System.Classes,
-    System.StrUtils,
-    System.Math,
-    Core.Interfaces;
+    Core.Interfaces
+    ;
 
 type
     TCronService = class(TInterfacedObject, ICronService)
@@ -33,8 +30,9 @@ type
 implementation
 
 uses
-    System.Character,
-    UI.StateLoader;
+    UI.StateLoader,
+    System.SysUtils
+    ;
 
 { TCronService }
 

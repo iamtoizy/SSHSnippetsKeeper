@@ -3,12 +3,12 @@ unit CategoryRepository;
 interface
 
 uses
-    System.Generics.Collections,
     Category,
-    Snippet,
+    Core.Interfaces,
     FireDAC.Comp.Client,
     RepositoryBase,
-    Core.Interfaces;
+    Snippet
+    ;
 
 type
     TCategoryRepository = class(TRepositoryBase, ICategoryRepository)
@@ -28,11 +28,12 @@ type
 implementation
 
 uses
-    Winapi.Windows,
-    System.SysUtils,
-    FireDAC.Stan.Param,
     Data.DB,
-    UI.StateLoader
+    FireDAC.Stan.Param,
+    System.Generics.Collections,
+    System.SysUtils,
+    UI.StateLoader,
+    Winapi.Windows
     ;
 
 { TCategoryRepository }

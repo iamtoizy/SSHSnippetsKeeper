@@ -3,7 +3,6 @@ unit AppStateManager;
 interface
 
 uses
-    Vcl.Forms,
     BaseFormUI
     ;
 
@@ -30,6 +29,10 @@ type
     end;
 
 implementation
+
+uses
+    Vcl.Forms
+    ;
 
 var
     _StateMgrInstance: TStateMgr = nil; // Синглтон

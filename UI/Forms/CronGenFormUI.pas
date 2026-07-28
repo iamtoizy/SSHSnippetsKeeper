@@ -3,29 +3,23 @@ unit CronGenFormUI;
 interface
 
 uses
-    Winapi.Windows,
-    Winapi.Messages,
-    System.SysUtils,
-    System.Variants,
-    System.Classes,
-    System.Types,
-    Vcl.Graphics,
-    Vcl.Controls,
-    Vcl.Forms,
-    Vcl.Dialogs,
-    Vcl.StdCtrls,
-    Vcl.ExtCtrls,
-    Vcl.ComCtrls,
-    Vcl.CheckLst,
     BaseFormUI,
     Core.Interfaces,
-    CronService;
+    System.Classes,
+    System.Types,
+    Vcl.CheckLst,
+    Vcl.ComCtrls,
+    Vcl.Controls,
+    Vcl.ExtCtrls,
+    Vcl.Forms,
+    Vcl.StdCtrls
+    ;
 
 type
     TCronGenForm = class(TBaseForm)
         pnlTop: TPanel;
         lbTitle: TLabel;
-        edtCronExpression: TEdit;
+        ebCronExpression: TEdit;
         bCopy: TButton;
         pgcBuilder: TPageControl;
 
@@ -85,10 +79,10 @@ type
         rbDowSpec: TRadioButton;
         clbDow: TCheckListBox;
         mHumanText: TMemo;
-    clbMon: TCheckListBox;
+        clbMon: TCheckListBox;
 
         procedure FormCreate(Sender: TObject);
-        procedure edtCronExpressionChange(Sender: TObject);
+        procedure ebCronExpressionChange(Sender: TObject);
         procedure OnBuilderControlChange(Sender: TObject);
         procedure bCopyClick(Sender: TObject);
         procedure FormShow(Sender: TObject);
@@ -130,11 +124,14 @@ var
 implementation
 
 uses
-    Vcl.Clipbrd,
-    System.StrUtils,
-    UI.StateLoader,
     CommonHelpers,
-    UI.HoverHelpManager;
+    CronService,
+    System.SysUtils,
+    UI.HoverHelpManager,
+    UI.StateLoader,
+    Vcl.Clipbrd,
+    Vcl.Graphics
+    ;
 
 {$R *.dfm}
 
@@ -487,7 +484,7 @@ begin
     ParsePartToUI(Parts[3], rbMonEvery,  rbMonStep,  rbMonRange,  rbMonSpec,  cboMonStep,  cboMonRange1,  cboMonRange2,  clbMon,  1);
     ParsePartToUI(Parts[4], rbDowEvery,  rbDowStep,  rbDowRange,  rbDowSpec,  cboDowStep,  cboDowRange1,  cboDowRange2,  clbDow,  0, 7);
 
-    edtCronExpression.Text := Expression;
+    ebCronExpression.Text := Expression;
 end;
 
 procedure TCronGenForm.BuildCronFromUI;
@@ -496,7 +493,7 @@ begin
 
     FUpdatingUI := True;
     try
-        edtCronExpression.Text := Format('%s %s %s %s %s', [
+        ebCronExpression.Text := Format('%s %s %s %s %s', [
             BuildPart(rbMinEvery,  rbMinStep,  rbMinRange,  rbMinSpec,  cboMinStep,  cboMinRange1,  cboMinRange2,  clbMin,  0),
             BuildPart(rbHourEvery, rbHourStep, rbHourRange, rbHourSpec, cboHourStep, cboHourRange1, cboHourRange2, clbHour, 0),
             BuildPart(rbDomEvery,  rbDomStep,  rbDomRange,  rbDomSpec,  cboDomStep,  cboDomRange1,  cboDomRange2,  clbDom,  1),
@@ -510,13 +507,13 @@ begin
     end;
 end;
 
-procedure TCronGenForm.edtCronExpressionChange(Sender: TObject);
+procedure TCronGenForm.ebCronExpressionChange(Sender: TObject);
 begin
     if FUpdatingUI then Exit;
 
     FUpdatingUI := True;
     try
-        ParseCronToUI(edtCronExpression.Text);
+        ParseCronToUI(ebCronExpression.Text);
         UpdateCronUI;
         UpdateHumanTranslation;
     finally
@@ -527,12 +524,12 @@ end;
 
 procedure TCronGenForm.UpdateHumanTranslation;
 begin
-    mHumanText.Text := FCronService.ExpressionToHumanText(edtCronExpression.Text);
+    mHumanText.Text := FCronService.ExpressionToHumanText(ebCronExpression.Text);
 end;
 
 procedure TCronGenForm.bCopyClick(Sender: TObject);
 begin
-    Clipboard.AsText := edtCronExpression.Text;
+    Clipboard.AsText := ebCronExpression.Text;
     ShowSimpleToast(TUIStateLoader.GetMessage('CronGenForm.CopiedToClipboardToast'));
 end;
 

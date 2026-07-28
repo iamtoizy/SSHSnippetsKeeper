@@ -204,6 +204,7 @@ object MainForm: TMainForm
       HotTrack = True
       HotTrackStyles = [htHandPoint, htUnderlineHot]
       TileOptions.SubLineCount = 2
+      Items.ItemData = {050000000000000000}
       ReadOnly = True
       ParentFont = False
       ParentShowHint = False
@@ -234,6 +235,7 @@ object MainForm: TMainForm
         Columns = <>
         HideSelection = False
         TileOptions.SubLineCount = 2
+        Items.ItemData = {050000000000000000}
         MultiSelect = True
         StateImages = vilTags
         TabOrder = 0
@@ -345,21 +347,26 @@ object MainForm: TMainForm
     end
     object nTools: TMenuItem
       Caption = #1048#1085#1089#1090#1088#1091#1084#1077#1085#1090#1099
-      object nPasswordGenerator: TMenuItem
-        Caption = #1043#1077#1085#1077#1088#1072#1090#1086#1088' '#1087#1072#1088#1086#1083#1077#1081
-        ShortCut = 16455
-        OnClick = nPasswordGeneratorClick
-      end
       object nSearch: TMenuItem
         Caption = #1055#1086#1083#1085#1086#1090#1077#1082#1089#1090#1086#1074#1099#1081' '#1087#1086#1080#1089#1082
         Enabled = False
         ShortCut = 16454
         OnClick = nSearchClick
       end
+      object nPasswordGenerator: TMenuItem
+        Caption = #1043#1077#1085#1077#1088#1072#1090#1086#1088' '#1087#1072#1088#1086#1083#1077#1081
+        ShortCut = 24647
+        OnClick = nPasswordGeneratorClick
+      end
       object nCronGenerator: TMenuItem
         Caption = 'Cron '#1075#1077#1085#1077#1088#1072#1090#1086#1088
-        ShortCut = 49219
+        ShortCut = 24643
         OnClick = nCronGeneratorClick
+      end
+      object nEpochConverter: TMenuItem
+        Caption = #1050#1086#1085#1074#1077#1088#1090#1077#1088' '#1101#1087#1086#1093
+        ShortCut = 24645
+        OnClick = nEpochConverterClick
       end
     end
   end

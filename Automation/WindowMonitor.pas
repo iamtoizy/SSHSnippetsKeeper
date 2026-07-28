@@ -3,9 +3,9 @@ unit WindowMonitor;
 interface
 
 uses
-    Winapi.Windows,
-    System.SysUtils,
-    ArrayHelper;
+    ArrayHelper,
+    Winapi.Windows
+    ;
 
 type
     TWindowMonitorInfo = record
@@ -58,6 +58,7 @@ procedure WinEventProc(hWinEventHook: THandle; eventType: DWORD; HWND: THandle; 
 implementation
 
 uses
+    System.SysUtils,
     UI.StateLoader
     ;
 

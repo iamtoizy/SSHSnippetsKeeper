@@ -3,15 +3,11 @@ unit SynThemeAdapter;
 interface
 
 uses
-    System.SysUtils,
+    SynEdit,
     System.Classes,
     Vcl.Graphics,
-    Vcl.Themes,
-    Vcl.Forms,
-    Winapi.Windows,
-    Winapi.Messages,
-    SynEdit,
-    SynEditHighlighter;
+    Winapi.Messages
+    ;
 
 type
     // Глобальный класс-перехватчик.
@@ -46,6 +42,14 @@ type
     end;
 
 implementation
+
+uses
+    SynEditHighlighter,
+    System.SysUtils,
+    Vcl.Forms,
+    Vcl.Themes,
+    Winapi.Windows
+    ;
 
 { TSynThemeAdapter }
 

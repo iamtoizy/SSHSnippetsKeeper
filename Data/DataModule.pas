@@ -3,16 +3,18 @@
 interface
 
 uses
-    Winapi.Windows,
-    System.SysUtils,
-    System.Classes,
-    FireDAC.Comp.Client,
-    FireDAC.Stan.Intf,
-    FireDAC.Phys.SQLite,
-    FireDAC.Comp.UI,
-    Data.DB,
-    FireDAC.Comp.Script,
     Core.Interfaces,
+    Data.DB,
+    FireDAC.Comp.Client,
+    FireDAC.Comp.DataSet,
+    FireDAC.Comp.Script,
+    FireDAC.Comp.UI,
+    FireDAC.Phys,
+    FireDAC.Phys.SQLite,
+    FireDAC.Stan.Intf,
+    System.Classes,
+    System.SysUtils,
+    Winapi.Windows,
     FireDAC.Stan.Option,
     FireDAC.Stan.Param,
     FireDAC.Stan.Error,
@@ -23,17 +25,13 @@ uses
     FireDAC.DApt,
     FireDAC.UI.Intf,
     FireDAC.Stan.Def,
-    FireDAC.Phys,
     FireDAC.Stan.Pool,
     FireDAC.Phys.SQLiteDef,
     FireDAC.Stan.ExprFuncs,
     FireDAC.VCLUI.Wait,
     FireDAC.Phys.SQLiteWrapper.Stat,
     FireDAC.Comp.ScriptCommands,
-    FireDAC.Stan.Util,
-    FireDAC.Comp.DataSet,
-    GlobalHotkeyManager,
-    Vcl.Controls;
+    FireDAC.Stan.Util;
 
 type
     TAppDatabase = class(TDataModule, IDatabaseManager)

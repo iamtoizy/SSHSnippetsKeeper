@@ -3,9 +3,10 @@ unit CustomBashSyn;
 interface
 
 uses
-    System.Classes,
+    SynEditHighlighter,
     SynHighlighterUNIXShellScript,
-    SynEditHighlighter;
+    System.Classes
+    ;
 
 type
   // Наш умный хайлайтер с поддержкой динамического словаря

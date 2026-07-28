@@ -39,8 +39,8 @@ uses
   HintTextMemo in 'UI\Controls\HintTextMemo.pas',
   BaseFormUI in 'UI\Forms\BaseFormUI.pas',
   AppStateManager in 'UI\Services\AppStateManager.pas',
-  UIHelpers in 'UI\Helpers\UIHelpers.pas',
-  UITreeViewSearchHelper in 'UI\Helpers\UITreeViewSearchHelper.pas',
+  UI.Helpers in 'UI\Helpers\UI.Helpers.pas',
+  UI.TreeViewSearchHelper in 'UI\Helpers\UI.TreeViewSearchHelper.pas',
   SnippetViewData in 'UI\ViewModels\SnippetViewData.pas',
   MacroActions in 'MacroEngine\MacroActions.pas',
   MacroThread in 'MacroEngine\MacroThread.pas',
@@ -66,8 +66,8 @@ uses
   QuickSearchFormUI in 'UI\Forms\QuickSearchFormUI.pas' {QuickSearchForm},
   GlobalHotkeyManager in 'UI\Controllers\GlobalHotkeyManager.pas',
   TrackBarEx in 'UI\Controls\TrackBarEx.pas',
-  AIService in 'UI\Services\AIService.pas',
-  AITextCleaner in 'UI\Services\AITextCleaner.pas',
+  AI.Service in 'UI\Services\AI.Service.pas',
+  AI.TextCleaner in 'UI\Services\AI.TextCleaner.pas',
   AISettingsFormUI in 'UI\Forms\AISettingsFormUI.pas' {AISettingsForm},
   SecurityScanner in 'Core\Services\SecurityScanner.pas',
   PasswordService in 'Core\Services\PasswordService.pas',
@@ -78,7 +78,9 @@ uses
   CustomHelpFormUI in 'UI\Forms\CustomHelpFormUI.pas' {CustomHelpForm},
   UI.Services.MessagesHandler in 'UI\Services\UI.Services.MessagesHandler.pas',
   CronService in 'Core\Services\CronService.pas',
-  CronGenFormUI in 'UI\Forms\CronGenFormUI.pas' {CronGenForm};
+  CronGenFormUI in 'UI\Forms\CronGenFormUI.pas' {CronGenForm},
+  EpochService in 'Core\Services\EpochService.pas',
+  EpochConverterFormUI in 'UI\Forms\EpochConverterFormUI.pas' {EpochConverterForm};
 
 {$R *.res}
 
@@ -150,7 +152,7 @@ ReportMemoryLeaksOnShutdown := True;
   Application.CreateForm(TMainForm, MainForm);
   Application.CreateForm(TQuickSearchForm, QuickSearchForm);
   Application.CreateForm(TCustomHelpForm, CustomHelpForm);
-    //-----------------------------------
+  //-----------------------------------
     AppContext := TAppContext.Create(
         AppDatabase,               // Реализует IDatabaseManager
         AppDatabase.FDConnection,  // Ссылка на компонент подключения

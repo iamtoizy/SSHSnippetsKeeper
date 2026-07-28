@@ -3,10 +3,9 @@
 interface
 
 uses
+    MacroInputTypes,
     System.Classes,
-    System.SysUtils,
-    System.SyncObjs,
-    MacroInputTypes
+    System.SysUtils
     ;
 
 type
@@ -27,8 +26,9 @@ type
 implementation
 
 uses
-    Winapi.Windows,
-    System.StrUtils
+    System.StrUtils,
+    System.SyncObjs,
+    Winapi.Windows
     ;
 
 constructor TMacroThread.Create(const Actions: TArray<IScriptAction>; Context: TMacroContext; OnRecordRun: TProc<Integer, Integer> = nil);

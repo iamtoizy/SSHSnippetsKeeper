@@ -3,19 +3,14 @@ unit WorkspaceManagerUI;
 interface
 
 uses
-    Winapi.Windows,
-    System.SysUtils,
+    BaseFormUI,
+    Core.Interfaces,
     System.Classes,
-    Vcl.Controls,
-    Vcl.Forms,
-    Vcl.Dialogs,
     Vcl.ComCtrls,
-    Vcl.StdCtrls,
+    Vcl.Controls,
     Vcl.ExtCtrls,
     Vcl.Menus,
-    User,
-    Core.Interfaces,
-    BaseFormUI
+    Vcl.StdCtrls
     ;
 
 type
@@ -60,8 +55,14 @@ var
 implementation
 
 uses
+    System.SysUtils,
+    UI.StateLoader,
+    User,
+    Vcl.Dialogs,
+    Vcl.Forms,
     Winapi.CommCtrl,
-    UI.StateLoader;
+    Winapi.Windows
+    ;
 
 {$R *.dfm}
 

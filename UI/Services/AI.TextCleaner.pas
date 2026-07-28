@@ -1,14 +1,6 @@
-unit AITextCleaner;
+unit AI.TextCleaner;
 
 interface
-
-uses
-    System.SysUtils,
-    System.Classes,
-    System.JSON,
-    System.Net.HttpClient,
-    System.Net.URLClient,
-    System.RegularExpressions;
 
 type
     TAITextCleaner = class
@@ -19,6 +11,12 @@ type
     end;
 
 implementation
+
+uses
+    System.Classes,
+    System.RegularExpressions,
+    System.SysUtils
+    ;
 
 { TAITextCleaner }
 

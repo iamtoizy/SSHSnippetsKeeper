@@ -3,7 +3,9 @@ unit Snippet;
 interface
 
 uses
-    Tag, Category;
+    Category,
+    Tag
+    ;
 
 type
     TSnippetDTO = record

@@ -3,21 +3,17 @@ unit AISettingsFormUI;
 interface
 
 uses
-    Winapi.Windows,
-    Winapi.Messages,
-    System.SysUtils,
-    System.Variants,
-    System.Classes,
-    Vcl.Graphics,
-    Vcl.Controls,
-    Vcl.Forms,
-    Vcl.Dialogs,
-    Vcl.Menus,
-    Vcl.ComCtrls,
-    Vcl.ExtCtrls,
-    Vcl.StdCtrls,
+    BaseFormUI,
     Core.Interfaces,
-    BaseFormUI;
+    System.Classes,
+    Vcl.ComCtrls,
+    Vcl.Controls,
+    Vcl.ExtCtrls,
+    Vcl.Forms,
+    Vcl.Menus,
+    Vcl.StdCtrls,
+    Winapi.Windows
+    ;
 
 type
     // ”казатели типов дл€ хранени€ в свойстве Data узлов TreeView
@@ -37,14 +33,14 @@ type
         pnlClient: TPanel;
         tvAIStructure: TTreeView;
         MainMenu: TMainMenu;
-    nProvider: TMenuItem;
-    nProviderCreate: TMenuItem;
-    nProviderDelete: TMenuItem;
-    nProviderEdit: TMenuItem;
-    nModel: TMenuItem;
-    nModelCreate: TMenuItem;
-    nModelDelete: TMenuItem;
-    nModelEdit: TMenuItem;
+        nProvider: TMenuItem;
+        nProviderCreate: TMenuItem;
+        nProviderDelete: TMenuItem;
+        nProviderEdit: TMenuItem;
+        nModel: TMenuItem;
+        nModelCreate: TMenuItem;
+        nModelDelete: TMenuItem;
+        nModelEdit: TMenuItem;
         pcDetails: TPageControl;
         tsHub: TTabSheet;
         tsModel: TTabSheet;
@@ -68,8 +64,8 @@ type
         lbTemperature: TLabel;
         lbMaxTokens: TLabel;
         lbSystemPrompt: TLabel;
-    nFile: TMenuItem;
-    nSave: TMenuItem;
+        nFile: TMenuItem;
+        nSave: TMenuItem;
         ebModelPath: TEdit;
         lbModelPath: TLabel;
         procedure FormDestroy(Sender: TObject);
@@ -96,8 +92,9 @@ var
 implementation
 
 uses
-    System.IOUtils,
-    UI.StateLoader;
+    System.SysUtils,
+    UI.StateLoader
+    ;
 
 {$R *.dfm}
 
@@ -182,7 +179,7 @@ begin
     // ѕереносим изменени€ из локальной структуры в глобальную
     FSettingsManager.Data := FLocalSettings;
 
-    // «аписываем обновленный пуленепробиваемый JSON на диск
+    // «аписываем обновленный JSON на диск
     FSettingsManager.Save;
 
     ModalResult := mrOk;
@@ -215,18 +212,14 @@ begin
     Data := PNodeData(ActiveNode.Data);
 
     if Data^.NodeType = ntHub then
-    begin
-        // TODO: ”далить нахой и заменить на соответсвтующий вызов спец. класса!
-        if Application.MessageBox(
-            PChar(TUIStateLoader.GetMessage('AISettingsForm.DeleteHubConfirm')),
-            PChar(TUIStateLoader.GetMessage('Common.DeleteHubConfirm')),
-            MB_YESNO or MB_ICONWARNING) = IDYES then
-            FLocalSettings.AISettings.Delete(Data^.HubIndex);
-    end
+        if MessagesHandler.AskConfirmation(
+            TUIStateLoader.GetMessage('AISettingsForm.DeleteHubConfirm'),
+            TUIStateLoader.GetMessage('Common.DeleteHubConfirm'),
+            MB_YESNO or MB_ICONWARNING)
+        then
+            FLocalSettings.AISettings.Delete(Data^.HubIndex)
     else
-    begin
         FLocalSettings.AISettings[Data^.HubIndex].Items.Delete(Data^.ModelIndex);
-    end;
 
     LoadStructureToTree;
 end;

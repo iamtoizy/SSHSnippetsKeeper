@@ -3,26 +3,23 @@ unit TagEditorUI;
 interface
 
 uses
-    Winapi.Windows,
-    System.SysUtils,
+    BaseFormUI,
+    Core.Interfaces,
     System.Classes,
-    Vcl.Controls,
-    Vcl.Forms,
-    Vcl.Dialogs,
+    System.Generics.Collections,
     Vcl.ComCtrls,
-    Vcl.StdCtrls,
+    Vcl.Controls,
     Vcl.ExtCtrls,
     Vcl.Menus,
-    System.Generics.Collections,
-    Core.Interfaces,
-    BaseFormUI;
+    Vcl.StdCtrls
+    ;
 
 type
     TTagEditAction = (teaAdd, teaRename, teaDelete);
 
     TTagChange = record
         Action: TTagEditAction;
-        TagID: Integer;   // Äëÿ Rename/Delete
+        TagID: Integer;      // Äëÿ Rename/Delete
         NewName: string;     // Äëÿ Add/Rename
     end;
 
@@ -33,9 +30,9 @@ type
         lvTags: TListView;
         MainMenu: TMainMenu;
         nActions: TMenuItem;
-    nTagAdd: TMenuItem;
-    nTagDelete: TMenuItem;
-    nTagRename: TMenuItem;
+        nTagAdd: TMenuItem;
+        nTagDelete: TMenuItem;
+        nTagRename: TMenuItem;
         procedure bOKClick(Sender: TObject);
         procedure bCancelClick(Sender: TObject);
         procedure nTagAddClick(Sender: TObject);
@@ -68,11 +65,16 @@ implementation
 {$R *.dfm}
 
 uses
-    Tag,
-    UIHelpers,
+    System.SysUtils,
     System.UITypes,
+    Tag,
+    UI.Helpers,
+    UI.StateLoader,
+    Vcl.Dialogs,
+    Vcl.Forms,
     Winapi.CommCtrl,
-    UI.StateLoader;
+    Winapi.Windows
+    ;
 
 constructor TTagEditorForm.Create(Owner: TComponent; TagService: ITagService);
 begin

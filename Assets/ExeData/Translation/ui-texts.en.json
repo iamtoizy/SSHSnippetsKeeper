@@ -4,12 +4,6 @@
     "ebSearch": {
       "TextHint": "Type something to search the database..."
     },
-    "mComment": {
-      "HintText": "Snippet comment will appear here."
-    },
-    "mSnippet": {
-      "HintText": "Snippet text will appear here."
-    },
     "rbText": {
       "Caption": "Simple Search"
     },
@@ -91,6 +85,9 @@
     },
     "nCronGenerator": {
       "Caption": "Cron Generator"
+    },
+    "nEpochConverter": {
+      "Caption": "Epoch converter"
     }
   },
   "TagEditorForm": {
@@ -108,7 +105,7 @@
       "bCancel": { "Caption": "Cancel" },
       "lbPrompt": { "Caption": "Enter value:" }
   },
-    "AddEditSnippetForm": {
+  "AddEditSnippetForm": {
     "Caption": "SSH Snippets Keeper - Add/Edit Snippet",
     "ebTitle": {
       "Text": ""
@@ -415,6 +412,73 @@
       "Caption": "Specify exact values:"
     }
   },
+  "EpochConverterForm": {
+    "Caption": "Epoch Converter",
+    "gbParse": {
+      "Caption": "Source text/log"
+    },
+    "lvParsed": {
+      "Columns": {
+        "0": "Timestamp",
+        "1": "Local time",
+        "2": "Relative"
+      }
+    },
+    "mEpoch": {
+      "Text": ""
+    },
+    "bNow": {
+      "Caption": "Now"
+    },
+    "ebISO": {
+      "Caption": ""
+    },
+    "ebLocal": {
+      "Caption": ""
+    },
+    "ebSourceTime": {
+      "Caption": ""
+    },
+    "ebUTC": {
+      "Caption": ""
+    },
+    "lbISO": {
+      "Caption": "ISO"
+    },
+    "lbDetectedFormat": {
+      "Caption": ""
+    },
+    "lbLocal": {
+      "Caption": "Local"
+    },
+    "lbRelative": {
+      "Caption": ""
+    },
+    "lbSourceTime": {
+      "Caption": "Source"
+    },
+    "lbUTC": {
+      "Caption": "UTC"
+    },
+    "nCut": {
+      "Caption": "Cut"
+    },
+    "nCopy": {
+      "Caption": "Local"
+    },
+    "nPaste": {
+      "Caption": "Paste"
+    },
+    "nSelectAll": {
+      "Caption": "Select All"
+    },
+    "nToggleBookmark": {
+      "Caption": "Toggle Bookmark"
+    },
+    "nBookmarks": {
+      "Caption": "Go to Bookmark"
+    }
+  },
   "Messages": {
     "Help": {
       "MainForm": {
@@ -435,7 +499,7 @@
         },
         "ebSearch": {
           "Title": "Search Bar",
-          "Main": "Database snippet search bar. Search is performed by title, code, comments, and assigned tags.<br><blockquote><b>Smart Full-Text Search (FTS5):</b><br>The engine automatically searches for parts of words inside the code (e.g., query <code>List</code> will find <code>TList</code>). Results are automatically sorted: the most relevant matches will always be at the top.<br><br><b>Special Operators:</b><br><br>• <code>\"Exact phrase\"</code> - search for an exact match (in quotes).<br>• <code>word1 AND word2</code> - snippet must contain both words.<br>• <code>word1 OR word2</code> - snippet contains at least one of the words.<br>• <code>NOT word</code> - exclude snippets with this word.<br><br>Search is case-insensitive.</blockquote>",
+          "Main": "Database snippet search bar. Search is performed by title, code, comments, and assigned tags.<br><blockquote><b>Smart Full-Text Search (FTS5):</b><br>The engine automatically searches for parts of words inside the code (e.g., query <code>List</code> will find <code>TList</code>). Results are automatically sorted: the most relevant matches will always be at the top.<br><br><b>Special Operators:</b><ul><li><code>\"Exact phrase\"</code> - search for an exact match (in quotes).</li><li><code>word1 AND word2</code> - snippet must contain both words.</li><li><code>word1 OR word2</code> - snippet contains at least one of the words.</li><li><code>NOT word</code> - exclude snippets with this word.</li></ul>Search is case-insensitive.</blockquote>",
           "Expanded": "Type a query while the search bar is focused, and it will be applied automatically.<br><br>Tag Management (Global):<br><code>CTRL+ALT+A</code> - Add tag<br><code>CTRL+ALT+E</code> - Edit tag<br><code>CTRL+ALT+D</code> - Delete tag"
         },
         "FrequentlyUsed": "Frequently Used",
@@ -444,7 +508,7 @@
       "AddEditSnippet": {
         "mContent": {
           "Title": "Snippet Text",
-          "Main": "Main input field for snippet code. Supports syntax highlighting and auto-completion for Linux Shell/Bash. <blockquote>• <b>Macros:</b> The built-in engine allows prompting the user for arguments, inserting pauses, awaiting confirmation, and more. Full syntax is available on the «Macros» tab.<br><br>• <b>Execution (Line breaks):</b> Each new line is interpreted by the terminal as an <code>ENTER</code> key press (sending a command). Keep this in mind when writing multi-line scripts.<br><br>• <b>AI Assistant:</b> Built-in integration with Yandex AI Studio for code generation and refactoring. It is recommended to set up and use «Agents» — they return concise, ready-to-use code without unnecessary reasoning. You can configure AI via the main menu.<br><br>• <b>Data Protection:</b> Snippets are automatically checked for sensitive information (passwords, API keys, SSH tokens, DB connection strings). If threats are detected, saving will be blocked until you explicitly check the «Ignore checks» checkbox.</blockquote>",
+          "Main": "Main input field for snippet code. Supports syntax highlighting and auto-completion for Linux Shell/Bash. <blockquote><ul><li><b>Macros:</b> The built-in engine allows prompting the user for arguments, inserting pauses, awaiting confirmation, and more. Full syntax is available on the «Macros» tab.</li><li><b>Execution (Line breaks):</b> Each new line is interpreted by the terminal as an <code>ENTER</code> key press (sending a command). Keep this in mind when writing multi-line scripts.</li><li><b>AI Assistant:</b> Built-in integration with Yandex AI Studio for code generation and refactoring. It is recommended to set up and use «Agents» — they return concise, ready-to-use code without unnecessary reasoning. You can configure AI via the main menu.</li><li><b>Data Protection:</b> Snippets are automatically checked for sensitive information (passwords, API keys, SSH tokens, DB connection strings). If threats are detected, saving will be blocked until you explicitly check the «Ignore checks» checkbox.</li></ul></blockquote>",
           "Expanded": "<code>CTRL+I</code> - Open AI Assistant prompt window.<br><code>CTRL+ALT+I</code> - Open AI Settings window."
         },
         "mComment": {
@@ -461,7 +525,7 @@
       "PasswordGenForm": {
         "lvHistory": {
           "Title": "Generation History",
-          "Main": "All passwords created during the current session are saved here. <blockquote>• <b>Preview:</b> A single click will return the selected password to the main input field.<br><br>• <b>Quick Apply:</b> A double click will apply the password and immediately close the window. If the generator was called via a global hotkey, the password will be <b>automatically typed</b> into your active window (e.g., terminal). Otherwise, it will simply be copied to the clipboard.</blockquote>",
+          "Main": "All passwords created during the current session are saved here. <blockquote><ul><li><b>Preview:</b> A single click will return the selected password to the main input field.</li><li><b>Quick Apply:</b> A double click will apply the password and immediately close the window. If the generator was called via a global hotkey, the password will be <b>automatically typed</b> into your active window (e.g., terminal). Otherwise, it will simply be copied to the clipboard.</li></ul></blockquote>",
           "Expanded": "💡 <b>Generator Hotkeys:</b><br><code>CTRL+G</code> — launch from the main program window.<br><code>CTRL+ALT+G</code> — global launch from anywhere in the system on top of other windows."
         }
       },
@@ -469,7 +533,19 @@
         "CheckListBox": {
           "Title": "Exact values (Smart selection)",
           "Main": "Click on the desired values to select them. You can click on the checkbox or directly on the text for convenience.",
-          "Expanded": "<b>Advanced selection:</b><br><br>• <b>Brush (Drag‑to‑Check):</b> Click on a value, hold down the left mouse button and drag the cursor over adjacent items to quickly select (or deselect) an entire group.<br><br>• <b>Keyboard shortcuts (hold while clicking):</b><br>&nbsp;&nbsp;<b>Ctrl + Click</b> — forcibly <b>check</b> items.<br>&nbsp;&nbsp;<b>Shift + Click</b> — forcibly <b>uncheck</b> items.<br>&nbsp;&nbsp;<b>Alt + Click</b> — <b>toggle</b> (invert) the current selection state of an item."
+          "Expanded": "<b>Advanced selection:</b><ul><li><b>Brush (Drag‑to‑Check):</b> Click on a value, hold down the left mouse button and drag the cursor over adjacent items to quickly select (or deselect) an entire group.</li><li><b>Keyboard shortcuts (hold while clicking):</b><ul><li><code>Ctrl + Click</code> — forcibly <b>check</b> items.</li><li><code>Shift + Click</code> — forcibly <b>uncheck</b> items.</li><li><code>Alt + Click</code> — <b>toggle</b> (invert) the current selection state of an item.</li></ul></li></ul>"
+        }
+      },
+      "EpochConverterForm": {
+        "mEpoch": {
+          "Title": "Log and Text Analyzer",
+          "Main": "Paste any text, JSON, or system log here. The program will automatically find all timestamps (Unix Epoch) and standard dates.",
+          "Expanded": "💡 <b>Smart recognition of Unix Time (seconds, milliseconds, and microseconds) is supported</b>, as well as dates in ISO 8601, Apache/Nginx, Syslog, and local time formats.<br><br>All found matches are highlighted: light blue markers indicate background timestamps, bright yellow marks the active timestamp selected in the list.<br><br><b>Bookmark system for navigation:</b><ul><li><code>Ctrl+B</code> (or context menu item) — create or delete a bookmark on the current line.</li><li><code>Alt+0..9</code> — hotkeys to set numbered bookmarks.</li><li><code>Ctrl+0..9</code> — instantly jump to the corresponding bookmark.</li></ul>Right-click brings up a context menu with a 'Go to Bookmark' submenu, showing a dynamic list of all active bookmarks with line numbers and text previews."
+        },
+        "lvParsed": {
+          "Title": "List of Found Dates",
+          "Main": "Chronological list of all timestamps extracted from your text, with instant conversion to local time.",
+          "Expanded": "The 'Relative' column displays live time (e.g., '3 hours ago' or 'in 5 min'), which updates every second.<br>Clicking any row in the list instantly scrolls the text (log) to the corresponding line, highlights it with a yellow marker, and synchronizes the calendar for further work."
         }
       }
     },
@@ -487,7 +563,8 @@
       "MoreInfo": "More Info",
       "WinEventHookError": "Failed to set up WinEventHook. Error: %s",
       "CopiedToClipboard": "Copied to clipboard.",
-      "Security": "Безопасность"
+      "Security": "Security",
+      "Additional": "ADDITIONAL:"
     },
     "DB": {
       "ConnectError": "Critical Error!\nFailed to connect to the SQLite database.\nCheck the file path.",
@@ -518,7 +595,7 @@
       "CategoryNotFound": "Category not found.",
       "AccessDenied": "Access denied: Category belongs to another user.",
       "InvalidIdError": "Invalid identifier for the category.",
-      "EmptyNameError": "Имя категории не может быть пустым."
+      "EmptyNameError": "Category name cannot be empty."
     },
     "Snippet": {
       "TypeToWindowConfirm": "Enter the snippet in the window: \"%s\"?",
@@ -593,6 +670,23 @@
     "AI": {
       "JSONError": "Failed to extract response from JSON: %s",
       "APIError": "API Error (%d): %s"
+    },
+    "Epoch": {
+      "Seconds": "sec",
+      "Minutes": "min",
+      "Hours": "h",
+      "Days": "d",
+      "Ago": "After %d %s",
+      "After": "%d %s ago",
+      "JustNow": "just now",
+      "Format-seconds": "Format: Seconds (Classic/Linux)",
+      "Format-milliseconds": "Format: Milliseconds (Java/JS/ELK)",
+      "Format-microseconds": "Format: Microseconds (Python/Influx)",
+      "Format-non-standard": "Format: Non standard",
+      "EmptryString": "␣",
+      "NoActiveBookmarks": "(No active bookmarks)",
+      "CreateBookmark": "Add bookmark",
+      "DeleteBookmark": "Delete bookmark"
     },
     "Cron": {
       "Error-5Elements": "Error: Cron expression must consist of exactly 5 elements.",

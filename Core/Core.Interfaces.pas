@@ -3,13 +3,13 @@ unit Core.Interfaces;
 interface
 
 uses
-    Snippet,
-    Tag,
-    Category,
-    User,
-    System.Classes,
     ArrayHelper,
+    Category,
     MacroInputTypes,
+    Snippet,
+    System.Classes,
+    Tag,
+    User,
     Winapi.Windows;
 
 type
@@ -296,30 +296,33 @@ type
         function GetWindowInfo: TWindowHelperInfo;
     end;
 
-    // Контейнер всех глобальных сервисов приложения
-    IAppContext = interface
-        ['{05B6A3A0-F265-4DF3-85A1-BF260B30957F}']
-        function GetDatabaseManager: IDatabaseManager;
-        function GetSnippetService: ISnippetService;
-        function GetCategoryService: ICategoryService;
-        function GetTagService: ITagService;
-        function GetUserService: IUserService;
-        function GetPasswordService: IPasswordService;
-        function GetSettingsManager: ISettingsManager;
-        function GetWindowHelper: IWindowHelper;
-        function GetErrorHandler: IUIMessagesHandler;
-        // Фабрика для фоновых потоков. Возвращает готовый сервис и ссылку на коннект для его очистки.
-        function CreateIsolatedSnippetService(out ABackgroundConnection: TComponent): ISnippetService;
+    // Структура для хранения найденного в логах таймстемпа
+    TEpochMatch = record
+        RawText: string;     // Сама строка (например, '1698245312')
+        FormatName: string;  // Название распознанного формата
+        UnixSeconds: Int64;  // Нормализованные секунды
+        LineIdx: Integer;    // Строка (1-based, идеально для SynEdit)
+        CharIdx: Integer;    // Позиция символа в строке (1-based)
+        PosLength: Integer;  // Длина таймстемпа
+    end;
 
-        property DatabaseManager: IDatabaseManager read GetDatabaseManager;
-        property SnippetService: ISnippetService read GetSnippetService;
-        property CategoryService: ICategoryService read GetCategoryService;
-        property TagService: ITagService read GetTagService;
-        property UserService: IUserService read GetUserService;
-        property PasswordService: IPasswordService read GetPasswordService;
-        property SettingsManager: ISettingsManager read GetSettingsManager;
-        property WindowHelper: IWindowHelper read GetWindowHelper;
-        property ErrorHandler: IUIMessagesHandler read GetErrorHandler;
+    IEpochService = interface
+        ['{395A784D-32ED-4C3E-A395-22BE4A89D2C2}']
+        // Умный парсинг (поддерживает секунды, миллисекунды и извлечение из текста)
+        function ParseToUnixSeconds(const Input: string; out UnixSeconds: Int64): Boolean;
+
+        // Конвертация Unix -> DateTime
+        function UnixToLocal(const UnixSeconds: Int64): TDateTime;
+        function UnixToUTC(const UnixSeconds: Int64): TDateTime;
+
+        // Конвертация DateTime -> Unix
+        function LocalToUnix(const LocalTime: TDateTime): Int64;
+        function UTCToUnix(const UTCTime: TDateTime): Int64;
+
+        // Форматирование
+        function FormatISO8601(const ADateTime: TDateTime): string;
+        function GetRelativeTimeHumanized(const ADateTime: TDateTime): string;
+        function ExtractAllTimestamps(const Lines: TStrings): TArray<TEpochMatch>;
     end;
 
     ILocalizable = interface
@@ -353,6 +356,35 @@ type
         function ExpressionToHumanText(const Expression: string): string;
         // Проверяет валидность структуры cron (5 компонентов)
         function ValidateExpression(const Expression: string; out ErrorMsg: string): Boolean;
+    end;
+
+    // Контейнер всех глобальных сервисов приложения
+    IAppContext = interface
+        ['{05B6A3A0-F265-4DF3-85A1-BF260B30957F}']
+        function GetDatabaseManager: IDatabaseManager;
+        function GetSnippetService: ISnippetService;
+        function GetCategoryService: ICategoryService;
+        function GetTagService: ITagService;
+        function GetUserService: IUserService;
+        function GetPasswordService: IPasswordService;
+        function GetSettingsManager: ISettingsManager;
+        function GetWindowHelper: IWindowHelper;
+        function GetErrorHandler: IUIMessagesHandler;
+        function GetEpochService: IEpochService;
+
+        // Фабрика для фоновых потоков. Возвращает готовый сервис и ссылку на коннект для его очистки.
+        function CreateIsolatedSnippetService(out ABackgroundConnection: TComponent): ISnippetService;
+
+        property DatabaseManager: IDatabaseManager read GetDatabaseManager;
+        property SnippetService: ISnippetService read GetSnippetService;
+        property CategoryService: ICategoryService read GetCategoryService;
+        property TagService: ITagService read GetTagService;
+        property UserService: IUserService read GetUserService;
+        property PasswordService: IPasswordService read GetPasswordService;
+        property SettingsManager: ISettingsManager read GetSettingsManager;
+        property WindowHelper: IWindowHelper read GetWindowHelper;
+        property MessagesHandler: IUIMessagesHandler read GetErrorHandler;  // TODO Переименовать!
+        property EpochService: IEpochService read GetEpochService;
     end;
 
 implementation

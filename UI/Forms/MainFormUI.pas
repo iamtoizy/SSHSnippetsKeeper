@@ -3,40 +3,30 @@
 interface
 
 uses
-    Winapi.Windows,
-    Winapi.Messages,
-    System.SysUtils,
-    System.Classes,
-    Vcl.Controls,
-    Vcl.Forms,
-    Vcl.Dialogs,
-    Vcl.Menus,
-    System.IOUtils,
-    Vcl.ComCtrls,
-    Vcl.ExtCtrls,
-    System.DateUtils,
-    System.Math,
     BaseFormUI,
-    System.Generics.Collections,
-    Snippet,
-    System.ImageList,
-    Vcl.ImgList,
-    Vcl.StdCtrls,
-    MacroEngine,
-    HintTextEdit,
-    HintTextMemo,
-    Vcl.VirtualImageList,
-    Vcl.BaseImageCollection,
-    Vcl.ImageCollection,
     Core.Interfaces,
-    PasswordService,
     GlobalHotkeyManager,
-    Settings,
-    WindowHelper,
-    Core.AppContext,
+    Snippet,
+    System.Classes,
+    System.DateUtils,
+    System.Generics.Collections,
+    System.IOUtils,
+    System.ImageList,
+    System.SysUtils,
     System.Threading,
-    UI.StateLoader,
-    Vcl.Buttons
+    Vcl.BaseImageCollection,
+    Vcl.ComCtrls,
+    Vcl.Controls,
+    Vcl.Dialogs,
+    Vcl.ExtCtrls,
+    Vcl.Forms,
+    Vcl.ImageCollection,
+    Vcl.ImgList,
+    Vcl.Menus,
+    Vcl.StdCtrls,
+    Vcl.VirtualImageList,
+    Winapi.Messages,
+    Winapi.Windows
     ;
 
 type
@@ -95,7 +85,8 @@ type
         nDataManagament: TMenuItem;
         nExit: TMenuItem;
         pmLanguage: TPopupMenu;
-    nCronGenerator: TMenuItem;
+        nCronGenerator: TMenuItem;
+        nEpochConverter: TMenuItem;
         procedure bManageWorkspacesClick(Sender: TObject);
         procedure cbUserChange(Sender: TObject);
         procedure nOpenDatabaseClick(Sender: TObject);
@@ -131,6 +122,7 @@ type
         procedure nEditCategoryClick(Sender: TObject);
         procedure nPasswordGeneratorClick(Sender: TObject);
         procedure nEditTagClick(Sender: TObject);
+        procedure nEpochConverterClick(Sender: TObject);
         procedure nSearchClick(Sender: TObject);
         procedure rbTextClick(Sender: TObject);
         procedure sbBottomMouseDown(Sender: TObject; Button: TMouseButton; Shift:
@@ -207,31 +199,31 @@ implementation
 {$R *.dfm}
 
 uses
-    System.UITypes,
-    Winapi.CommCtrl,
-    System.Types,
-    ArrayHelper,
-    TagEditorUI,
-    User,
-    Tag,
-    Category,
     AddEditSnippetUI,
     AppStateManager,
-    UIHelpers,
-    SnippetViewData,
-    WindowMonitor,
-    ChooseTerminalWindowUI,
-    MacroInputTypes,
-    InputFormUI,
-    WorkspaceManagerUI,
-    CommonHelpers,
+    ArrayHelper,
+    Category,
     CommonConsts,
-    SnippetRunner,
-    QuickSearchFormUI,
+    CommonHelpers,
+    CronGenFormUI,
+    EpochConverterFormUI,
+    MacroInputTypes,
     PasswordGenFormUI,
-    FireDAC.Comp.Client,
+    QuickSearchFormUI,
+    SnippetRunner,
+    SnippetViewData,
+    System.Math,
+    System.Types,
+    System.UITypes,
+    Tag,
+    TagEditorUI,
+    UI.Helpers,
     UI.HoverHelpManager,
-    CronGenFormUI;
+    UI.StateLoader,
+    User,
+    Winapi.CommCtrl,
+    WindowMonitor,
+    WorkspaceManagerUI;
 
 const
     PRESERVE_CATEGORY_EMPTY_ID = -999;
@@ -743,7 +735,7 @@ procedure TMainForm.Initialize(AppContext: IAppContext);
 var
     CurrentLang: string;
 begin
-    inherited Initialize(AppContext);
+    FAppContext := AppContext;
 
     CurrentLang := FAppContext.SettingsManager.Data.CurrentLanguage;
     if CurrentLang.IsEmpty then
@@ -755,8 +747,7 @@ begin
     // Строим меню языков в StatusBar
     LoadAvailableLanguages;
 
-    // Переводим элементы текущей формы
-    ApplyLanguage;
+    inherited Initialize(AppContext);
 
     // Регистрация подсказок
     RegisterHelp(tvCategories, hipTopRight, 'Help.MainForm.tvCategories', hkCustomForm);
@@ -1255,24 +1246,24 @@ begin
     LangCode := MI.Hint;
     MI.Checked := True;
 
-    // 1. Обновляем надпись в StatusBar
+    // Обновляем надпись в StatusBar
     sbBottom.Panels[LANG_PANEL_INDEX].Text := '🌐 ' + UpperCase(LangCode);
 
-    // 2. Сохраняем выбор в настройки
+    // Сохраняем выбор в настройки
     FAppContext.SettingsManager.CurrentLanguage := LangCode;
     FAppContext.SettingsManager.Save;
 
-    // 3. Загружаем новый JSON-файл в память
+    // Загружаем новый JSON-файл в память
     TUIStateLoader.LoadLanguageFile(ResolvePath('Translation\ui-texts.' + LangCode + '.json'));
 
-    // 4. Переводим все открытые окна
+    // Переводим все открытые окна
     for I := 0 to Screen.FormCount - 1 do
     begin
         if Supports(Screen.Forms[I], ILocalizable, LocForm) then
             LocForm.ApplyLanguage;
     end;
 
-    // --- Сохранение текущего состояния ---
+    // Сохранение текущего состояния
     SelectedCatID := PRESERVE_CATEGORY_EMPTY_ID;
     SelectedSnippetID := 0;
     SelectedTagID := 0;
@@ -1294,10 +1285,10 @@ begin
         lvSnippets.Items.BeginUpdate;
         lvTags.Items.BeginUpdate;
         try
-            // ---Перезагрузка иерархии ---
+            // Перезагрузка иерархии
             ReloadUI(SelectedCatID);
 
-            // --- Восстановление выделения сниппета ---
+            // Восстановление выделения сниппета
             if SelectedSnippetID > 0 then
             begin
                 for I := 0 to lvSnippets.Items.Count - 1 do
@@ -1308,14 +1299,14 @@ begin
                         lvSnippets.ItemFocused := lvSnippets.Items[I];
                         lvSnippets.Items[I].MakeVisible(False);
 
-                        // Имитируем клик. Это обновит нижнюю панель и ПЕРЕСТРОИТ lvTags!
+                        // Имитируем клик. Это обновит нижнюю панель и ПЕРЕСТРОИТ lvTags.
                         lvSnippetsClick(lvSnippets);
                         Break;
                     end;
                 end;
             end;
 
-            // --- Восстановление выделения тега ---
+            // Восстановление выделения тега.
             // (Обязательно делать это после lvSnippetsClick, так как теги пересоздались)
             if SelectedTagID > 0 then
             begin
@@ -1409,8 +1400,8 @@ begin
         Initialize(FAppContext);
         if ShowModal = mrOk then
         begin
-            LoadUsersToComboBox;  // Перезагружает список пространств и ставит ItemIndex := 0
-            cbUserChange(cbUser); // Явно вызываем OnChange. Он обновит FFilterUserID и вызовет ReloadUI
+            LoadUsersToComboBox;  // Перезагружает список пространств и ставит ItemIndex := 0.
+            cbUserChange(cbUser); // Явно вызываем OnChange. Он обновит FFilterUserID и вызовет ReloadUI.
         end;
     finally
         Free;
@@ -1515,6 +1506,11 @@ end;
 procedure TMainForm.nEditTagClick(Sender: TObject);
 begin
     DoRenameTag;
+end;
+
+procedure TMainForm.nEpochConverterClick(Sender: TObject);
+begin
+    TEpochConverterForm.ExecuteGlobal(Self, FAppContext);
 end;
 
 procedure TMainForm.nSearchClick(Sender: TObject);

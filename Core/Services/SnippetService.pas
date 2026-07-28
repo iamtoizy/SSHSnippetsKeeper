@@ -3,9 +3,10 @@ unit SnippetService;
 interface
 
 uses
-    System.SysUtils,
+    Core.Interfaces,
     Snippet,
-    Core.Interfaces;
+    System.SysUtils
+    ;
 
 type
     // Доменные исключения

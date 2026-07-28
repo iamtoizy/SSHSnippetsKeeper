@@ -3,32 +3,38 @@ unit BaseFormUI;
 interface
 
 uses
-    Winapi.Messages,
-    System.Classes,
-    Vcl.Forms,
-    Vcl.Controls,
-    UI.HoverHelpManager,
     Core.Interfaces,
     CustomHelpFormUI,
-    Core.AppContext;
+    System.Classes,
+    UI.HoverHelpManager,
+    Vcl.Controls,
+    Vcl.Forms
+    ;
 
 type
-    TBaseFormState = (bfsDBConnected, bfsDBDisconnected, bfsDBOpen, bfsSnippetSelected, bfsSnippetDeselected);
+    TBaseFormState = (
+        bfsDBConnected,
+        bfsDBDisconnected,
+        bfsDBOpen,
+        bfsSnippetSelected,
+        bfsSnippetDeselected
+    );
 
     TBaseForm = class(TForm, ILocalizable)
     private
         FHelpManager: TUIHoverHelpManager;
         FCustomHelpForm: TCustomHelpForm;
         procedure DoShowHelp(Target: TControl; const HelpKey: string; HelpKind: THelpKind);
-    function GetErrorHandler: IUIMessagesHandler;
+        function GetMessagesHandler: IUIMessagesHandler;
     protected
         FAppContext: IAppContext;
         // Хук для дочерних классов. Виртуальный, но пустой по умолчанию.
         // Дочерний класс переопределяет его, ЕСЛИ ему нужно что-то инициализировать у себя.
+        // TODO Использовать в дочерних DoInitialize
         procedure DoInitialize; virtual;
         procedure DoShow; override;
         procedure RegisterHelp(Control: TControl; Position: THelpIconPosition; const HelpKey: string; HelpKind: THelpKind = hkCustomForm);
-        property MessagesHandler: IUIMessagesHandler read GetErrorHandler;
+        property MessagesHandler: IUIMessagesHandler read GetMessagesHandler;
     public
         constructor Create(Owner: TComponent); override;
         destructor Destroy; override;
@@ -40,14 +46,14 @@ type
 implementation
 
 uses
-    Vcl.Dialogs,
-    UI.StateLoader,
     System.SysUtils,
-    CommonHelpers;
+    UI.StateLoader,
+    Vcl.Dialogs
+    ;
 
 procedure TBaseForm.ApplyLanguage;
 begin
-    // Автоматически прогоняем все стандартные компоненты через ваш StateLoader
+    // Автоматически прогоняем все стандартные компоненты через StateLoader
     TUIStateLoader.ApplyTranslations(Self);
 end;
 
@@ -72,7 +78,7 @@ end;
 
 procedure TBaseForm.DoInitialize;
 begin
-    // По умолчанию пусто — базовой форме нечего добавлять
+    // По умолчанию пусто - базовому классу нечего добавлять
 end;
 
 procedure TBaseForm.DoShow;
@@ -129,9 +135,9 @@ begin
     end;
 end;
 
-function TBaseForm.GetErrorHandler: IUIMessagesHandler;
+function TBaseForm.GetMessagesHandler: IUIMessagesHandler;
 begin
-    Result := FAppContext.ErrorHandler;
+    Result := FAppContext.MessagesHandler;
 end;
 
 procedure TBaseForm.Initialize(AppContext: IAppContext);

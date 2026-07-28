@@ -3,9 +3,8 @@ unit ProcessProfile;
 interface
 
 uses
-    System.SysUtils,
-    System.Generics.Collections,
-    System.RegularExpressions;
+    System.Generics.Collections
+    ;
 
 type
     TProcessProfile = class
@@ -45,6 +44,11 @@ var
     ProfileManager: TProfileManager;
 
 implementation
+
+uses
+    System.RegularExpressions,
+    System.SysUtils
+    ;
 
 { TProcessProfile }
 

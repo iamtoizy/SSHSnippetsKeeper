@@ -3,11 +3,9 @@ unit HintTextEdit;
 interface
 
 uses
-    System.SysUtils,
     System.Classes,
-    Vcl.Controls,
-    Vcl.StdCtrls,
-    System.Masks;
+    Vcl.StdCtrls
+    ;
 
 type
     TEdit = class(Vcl.StdCtrls.TEdit)
@@ -19,22 +17,27 @@ type
         function GetHintText: string;
         procedure SetHintText(const Value: string);
     protected
-        // Переопределяем встроенный метод Change вместо страшных хуков в WndProc
+        // Переопределяем встроенный метод Change вместо хуков в WndProc
         procedure Change; override;
     published
         property EnableHintText: Boolean read FEnableHintText write SetEnableHintText;
         property HintText: string read GetHintText write SetHintText;
     public
-        constructor Create(AOwner: TComponent); override;
+        constructor Create(Owner: TComponent); override;
         function MaskMatchesWith(InputStr: string): Boolean;
         property MaskText: string read FMaskedStr;
     end;
 
 implementation
 
-constructor TEdit.Create(AOwner: TComponent);
+uses
+    System.Masks,
+    System.SysUtils
+    ;
+
+constructor TEdit.Create(Owner: TComponent);
 begin
-    inherited Create(AOwner);
+    inherited Create(Owner);
     FEnableHintText := False;
     FMaskedStr := '';
     // Используем встроенное свойство VCL для отображения подсказок (Cue Banner API)

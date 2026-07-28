@@ -3,37 +3,30 @@
 interface
 
 uses
-    Winapi.Windows,
-    Winapi.Messages,
-    System.SysUtils,
-    System.Classes,
-    Snippet,
-    Vcl.Controls,
-    Vcl.Forms,
-    Vcl.Dialogs,
-    Vcl.StdCtrls,
-    Vcl.ComCtrls,
-    HintTextEdit,
-    HintTextMemo,
-    Vcl.ExtCtrls,
-    SynEdit,
-    SynThemeAdapter,
-    SynHighlighterUNIXShellScript,
-    SynEditRegexSearch,
-    SynCompletionProposal,
-    SynEditTypes,
-    CustomBashSyn,
+    AI.Service,
+    BaseFormUI,
     BashCompletionEngine,
     Core.Interfaces,
-    SynEditMiscClasses,
+    CustomBashSyn,
+    Snippet,
+    SynCompletionProposal,
+    SynEdit,
     SynEditHighlighter,
-    Vcl.WinXCtrls,
-    System.Threading,
-    AIService,
+    SynEditMiscClasses,
+    SynEditRegexSearch,
+    SynEditTypes,
     SynHighlighterMarkdown,
+    SynHighlighterUNIXShellScript,
+    System.Classes,
+    Vcl.ComCtrls,
+    Vcl.Controls,
+    Vcl.ExtCtrls,
+    Vcl.Forms,
     Vcl.Menus,
-    Settings,
-    BaseFormUI;
+    Vcl.StdCtrls,
+    // Подцепляем последним:
+    HintTextEdit
+    ;
 
 type
     TOriginalSnippet = record
@@ -152,22 +145,23 @@ var
 implementation
 
 uses
-    UIHelpers,
-    System.Generics.Collections,
-    System.DateUtils,
-    MainFormUI,
-    Tag,
-    SynEditKeyCmds,
-    CommonHelpers,
-    AITextCleaner,
-    Vcl.Graphics,
-    Vcl.Styles,
+    AI.TextCleaner,
     AISettingsFormUI,
+    CommonHelpers,
+    MainFormUI,
     SecurityScanner,
-    System.IOUtils,
-    Winapi.ActiveX,
+    SynEditKeyCmds,
+    SynThemeAdapter,
+    System.DateUtils,
+    System.Generics.Collections,
+    System.SysUtils,
+    Tag,
+    UI.Helpers,
     UI.HoverHelpManager,
-    UI.StateLoader;
+    UI.StateLoader,
+    Winapi.ActiveX,
+    Winapi.Windows
+    ;
 
 {$R *.dfm}
 
@@ -221,7 +215,6 @@ end;
 procedure TAddEditSnippetForm.Initialize(AppContext: IAppContext);
 begin
     inherited Initialize(AppContext);
-//    FAppContext := AppContext;
 
     // Регистрация подсказок
     RegisterHelp(mContent, hipTopRight, 'Help.AddEditSnippet.mContent', hkCustomForm);

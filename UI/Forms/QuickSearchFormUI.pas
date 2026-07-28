@@ -3,27 +3,18 @@ unit QuickSearchFormUI;
 interface
 
 uses
-    Winapi.Windows,
-    Winapi.Messages,
-    System.SysUtils,
-    System.Variants,
-    System.Classes,
-    Vcl.Graphics,
-    Vcl.Controls,
-    Vcl.Forms,
-    Vcl.Dialogs,
-    Vcl.StdCtrls,
+    BaseFormUI,
     Core.Interfaces,
-    Snippet,
-    SnippetRunner,
-    User,
-    UserService,
+    System.Classes,
+    System.SysUtils,
     Vcl.ComCtrls,
+    Vcl.Controls,
     Vcl.ExtCtrls,
-    System.UITypes,
-    TrackBarEx,
-    WindowHelper,
-    BaseFormUI;
+    Vcl.Forms,
+    Vcl.StdCtrls,
+    Winapi.Messages,
+    Winapi.Windows
+    ;
 
 type
     TQuickSearchForm = class(TBaseForm)
@@ -78,8 +69,13 @@ var
 implementation
 
 uses
+    Snippet,
+    SnippetRunner,
     SnippetViewData,
-    UI.StateLoader;
+    System.UITypes,
+    UI.StateLoader,
+    User
+    ;
 
 {$R *.dfm}
 

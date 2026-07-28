@@ -3,8 +3,9 @@ unit UI.StateLoader;
 interface
 
 uses
-    Vcl.Forms,
-    System.Classes;
+    System.Classes,
+    Vcl.Forms
+    ;
 
 type
     TUIStateLoader = class
@@ -25,10 +26,10 @@ type
 implementation
 
 uses
-    System.JSON,
     System.IOUtils,
-    System.TypInfo,
+    System.JSON,
     System.SysUtils,
+    System.TypInfo,
     Vcl.ComCtrls,
     Vcl.Dialogs;
 
@@ -97,10 +98,14 @@ begin
             begin
                 CompObj := TJSONObject(PropPair.JsonValue);
                 Comp := Form.FindComponent(PropPair.JsonString.Value); // Быстрый поиск компонента по имени
+                {$IFDEF DEBUG}
+                if not Assigned(Comp) then
+                    raise Exception.Create('Компонент не найден на форме: ' + PropPair.JsonString.Value);
+                {$ENDIF}
 
                 if Assigned(Comp) then
                 begin
-                    // --- ОБРАБОТКА КОЛОНОК TListView ЧЕРЕЗ TAG ---
+                    // Обработка колонок TListView через tag
                     if (Comp is TListView) and (CompObj.GetValue('Columns') is TJSONObject) then
                     begin
                         var ColObj := TJSONObject(CompObj.GetValue('Columns'));
@@ -109,28 +114,21 @@ begin
                         begin
                             var ColTag: Integer;
                             if TryStrToInt(ColPair.JsonString.Value, ColTag) then
-                            begin
                                 for var I := 0 to LV.Columns.Count - 1 do
-                                begin
                                     if LV.Columns[I].Tag = ColTag then
                                     begin
                                         LV.Columns[I].Caption := ColPair.JsonValue.Value;
                                         Break;
                                     end;
-                                end;
-                            end;
                         end;
                     end;
                     // ---------------------------------------------
-
                     // Применяем стандартные свойства (Caption, TextHint и т.д.) к компоненту
                     for CompPropPair in CompObj do
                     begin
                         if CompPropPair.JsonString.Value <> 'Columns' then // Игнорируем узел колонок
-                        begin
                             if IsPublishedProp(Comp, CompPropPair.JsonString.Value) then
-                                SetPropValue(Comp, CompPropPair.JsonString.Value, CompPropPair.JsonValue.Value);
-                        end;
+                                SetPropValue(Comp, CompPropPair.JsonString.Value, CompPropPair.JsonValue.Value)
                     end;
                 end;
             end;

@@ -3,21 +3,17 @@ unit UI.HoverHelpManager;
 interface
 
 uses
-    System.SysUtils,
-    System.Classes,
-    System.Types,
-    System.Generics.Collections,
-    System.Math,
-    Winapi.Windows,
-    Winapi.Messages,
-    Vcl.Controls,
-    Vcl.Forms,
-    Vcl.Buttons,
-    Vcl.Graphics,
-    Vcl.ExtCtrls,
-    System.Diagnostics,
     Core.Interfaces,
-    Settings;
+    System.Classes,
+    System.Diagnostics,
+    System.Generics.Collections,
+    Vcl.Buttons,
+    Vcl.Controls,
+    Vcl.ExtCtrls,
+    Vcl.Forms,
+    Winapi.Messages,
+    Winapi.Windows
+    ;
 
 type
     THelpIconPosition = (hipTopLeft, hipTopRight, hipLeftCenter, hipRightCenter, hipBottomLeft, hipBottomRight);
@@ -32,7 +28,7 @@ type
 
     TOnShowHelpEvent = procedure(Target: TControl; const HelpKey: string; HelpKind: THelpKind) of object;
 
-    // --- ПЛАВАЮЩЕЕ ОКНО СО СТАНДАРТНОЙ КНОПКОЙ ---
+    // Плавающее окно с кнопкой
     THelpPopupWindow = class(TForm)
     private
         FButton: TSpeedButton;
@@ -47,37 +43,33 @@ type
         property OnClickEvent: TNotifyEvent read FOnClickEvent write FOnClickEvent;
     end;
 
-    // --- МЕНЕДЖЕР ---
+    // Менеджер
     TUIHoverHelpManager = class(TComponent)
     private
         FRegistered: TDictionary<TControl, THelpSetup>;
         FTimer: TTimer;
         FSharedButton: THelpPopupWindow;
         FLastWnd: HWND;             // Кэш дескриптора окна
-
         FStopwatch: TStopwatch;     // Для высокоточного отсчета времени
         FLastMousePt: TPoint;       // Для кэширования позиции мыши
         FLastHoveredCtrl: TControl; // Кэш найденного контрола
-
-        FCurrentTarget: TControl;
+        FCurrentTarget: TControl;   // Текущий контрол под курсором
         FOnShowHelp: TOnShowHelpEvent;
         FSettings: TUISettings;
-
         FHelpState: THelpState;
         FWaitStartTick: Int64;
         FFadeStartTick: Int64;
-
         FOldWndProc: TWndMethod;
+
         procedure HookTarget(Target: TControl);
         procedure UnhookTarget;
         procedure TargetWndProc(var Message: TMessage);
-
         procedure OnTimerTick(Sender: TObject);
         procedure OnPopupButtonClick(Sender: TObject);
         procedure UpdateButtonPosition(Target: TControl; Pos: THelpIconPosition);
         procedure HideButton;
     protected
-        procedure Notification(AComponent: TComponent; Operation: TOperation); override;
+        procedure Notification(Component: TComponent; Operation: TOperation); override;
     public
         constructor Create(Owner: TComponent); override;
         destructor Destroy; override;
@@ -91,13 +83,15 @@ type
 
 implementation
 
+uses
+    System.Types,
+    Vcl.Graphics;
+
 const
     BTN_WIDTH = 20;
     BTN_HEIGHT = 20;
 
-// =========================================================================
-// РЕАЛИЗАЦИЯ THelpPopupWindow
-// =========================================================================
+{ THelpPopupWindow }
 
 constructor THelpPopupWindow.CreateNew(AOwner: TComponent; Dummy: Integer = 0);
 begin
@@ -105,21 +99,17 @@ begin
     BorderStyle := bsNone;
     Width := BTN_WIDTH;
     Height := BTN_HEIGHT;
-    Color := clWindow; // Чтобы края кнопки сливались с фоном текстовых полей
-//    DoubleBuffered := True;
-
-    // Включаем нативную прозрачность формы!
+    Color := clWindow;
     AlphaBlend := True;
     AlphaBlendValue := 0;
 
-    // Создаем твою любимую кнопку
     FButton := TSpeedButton.Create(Self);
     FButton.Parent := Self;
     FButton.Align := alClient;
     FButton.Caption := '?';
     FButton.Font.Style := [fsBold];
-    FButton.Font.Color := $00D77800; // Твой фирменный цвет
-    FButton.Flat := False;           // Как ты и хотел
+    FButton.Font.Color := $00D77800;
+    FButton.Flat := False;
     FButton.Cursor := crHandPoint;
     FButton.OnClick := OnButtonClick;
 end;
@@ -140,7 +130,7 @@ begin
     inherited;
     // Создаем регион (маску) со скругленными углами и применяем его к окну.
     // Ширина/Высота берутся от самой формы (20х20).
-    // Последние два параметра (4, 4) — это радиус закругления в пикселях.
+    // Последние два параметра (4, 4) - это радиус закругления в пикселях.
     Rgn := CreateRoundRectRgn(0, 0, Width, Height, 4, 4);
 
     // Передаем регион системе. Важно: удалять (DeleteObject) этот регион не нужно,
@@ -159,9 +149,7 @@ begin
         FOnClickEvent(Self);
 end;
 
-// =========================================================================
-// РЕАЛИЗАЦИЯ МЕНЕДЖЕРА
-// =========================================================================
+{ TUIHoverHelpManager }
 
 procedure TUIHoverHelpManager.Configure(Settings: TUISettings);
 begin
@@ -208,21 +196,21 @@ begin
     end;
 end;
 
-procedure TUIHoverHelpManager.Notification(AComponent: TComponent; Operation: TOperation);
+procedure TUIHoverHelpManager.Notification(Component: TComponent; Operation: TOperation);
 begin
-    inherited Notification(AComponent, Operation);
+    inherited Notification(Component, Operation);
 
     // Если какой-то компонент, за которым мы следим, физически уничтожается
     if Operation = opRemove then
     begin
         // 1. Очищаем мертвый кэш
-        if AComponent = FLastHoveredCtrl then
+        if Component = FLastHoveredCtrl then
             FLastHoveredCtrl := nil;
 
         // 2. Если удаляется наш текущий таргет (например, окно закрыли без WM_DESTROY)
-        if AComponent = FCurrentTarget then
+        if Component = FCurrentTarget then
         begin
-            FOldWndProc := nil; // Не пытаемся восстановить хук на умирающем объекте!
+            FOldWndProc := nil; // Не пытаемся восстановить хук на умирающем объекте
             FCurrentTarget := nil;
             FHelpState := hsHidden;
             if Assigned(FSharedButton) and FSharedButton.HandleAllocated then
@@ -230,8 +218,8 @@ begin
         end;
 
         // 3. Удаляем из регистрации
-        if AComponent is TControl then
-            FRegistered.Remove(TControl(AComponent));
+        if Component is TControl then
+            FRegistered.Remove(TControl(Component));
     end;
 end;
 
@@ -298,10 +286,10 @@ begin
         // Сохраняем таргет, так как HideButton полностью сбросит состояние менеджера
         CachedTarget := FCurrentTarget;
 
-        // Мгновенно прячем кнопку. Она не должна маячить поверх диалога!
+        // Мгновенно прячем кнопку. Она не должна маячить поверх диалога.
         HideButton;
 
-        // Безопасно вызываем вашу кастомную форму со спасенным таргетом
+        // Безопасно вызываем кастомную форму с сохранённым таргетом
         if Assigned(FOnShowHelp) then
             FOnShowHelp(CachedTarget, Setup.HelpKey, Setup.HelpKind);
     end;
@@ -330,14 +318,11 @@ begin
     if (not Assigned(Owner)) or (csDestroying in Owner.ComponentState) then Exit;
 
     Pt := Mouse.CursorPos;
-    Wnd := WindowFromPoint(Pt); // Моментальная API-функция
+    Wnd := WindowFromPoint(Pt);
     CurrentTime := FStopwatch.ElapsedMilliseconds;
 
-    // === БЕЗОПАСНАЯ ОПТИМИЗАЦИЯ ===
     if (Pt.X = FLastMousePt.X) and (Pt.Y = FLastMousePt.Y) and (Wnd = FLastWnd) then
-    begin
-        HoveredCtrl := FLastHoveredCtrl; // Берем из кэша
-    end
+        HoveredCtrl := FLastHoveredCtrl // Берем из кэша
     else
     begin
         FLastMousePt := Pt;
@@ -357,7 +342,7 @@ begin
             end;
         end;
 
-        // Если мы навели на новый контрол, переключаем подписку FreeNotification
+        // Если мы навелись на новый контрол, переключаем подписку FreeNotification
         if HoveredCtrl <> FLastHoveredCtrl then
         begin
             if Assigned(FLastHoveredCtrl) then
@@ -369,7 +354,6 @@ begin
                 FLastHoveredCtrl.FreeNotification(Self);
         end;
     end;
-    // ===============================================================
 
     if Assigned(HoveredCtrl) and FRegistered.TryGetValue(HoveredCtrl, Setup) and HoveredCtrl.Enabled then
     begin
@@ -415,7 +399,6 @@ begin
                         end
                         else
                         begin
-                            // Благодаря TStopwatch, Elapsed будет расти плавно, без ступенек
                             var Progress := Elapsed / AnimDuration;
                             FSharedButton.AlphaBlendValue := Round(255 * Sin(Progress * (Pi / 2)));
                         end;
@@ -449,9 +432,7 @@ begin
         hipBottomRight: Pt := Point(TargetW - BTN_WIDTH - OFFSET_X, TargetH - BTN_HEIGHT - OFFSET_Y);
     end;
 
-    // Конвертируем локальные координаты в экранные
     Pt := Target.ClientToScreen(Pt);
-
     FSharedButton.Left := Pt.X;
     FSharedButton.Top := Pt.Y;
 end;

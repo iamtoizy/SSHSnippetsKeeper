@@ -3,9 +3,10 @@ unit UserService;
 interface
 
 uses
+    Core.Interfaces,
     System.SysUtils,
-    User,
-    Core.Interfaces;
+    User
+    ;
 
 type
     TUserService = class(TInterfacedObject, IUserService)

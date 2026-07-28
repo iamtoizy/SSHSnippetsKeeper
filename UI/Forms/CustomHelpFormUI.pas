@@ -3,21 +3,16 @@ unit CustomHelpFormUI;
 interface
 
 uses
-    Winapi.Windows,
-    Winapi.Messages,
-    System.SysUtils,
-    System.Variants,
-    System.Classes,
-    Vcl.Graphics,
-    Vcl.Controls,
-    Vcl.Forms,
-    Vcl.Dialogs,
-    Vcl.StdCtrls,
-    Vcl.Themes,
+    HtmlGlobals,
     HTMLUn2,
     HtmlView,
-    HtmlGlobals,
-    Vcl.ExtCtrls;
+    System.Classes,
+    Vcl.Controls,
+    Vcl.Forms,
+    Vcl.Graphics,
+    Vcl.StdCtrls,
+    Winapi.Windows
+    ;
 
 type
     TCustomHelpForm = class(TForm)
@@ -40,10 +35,12 @@ var
 implementation
 
 uses
-    Vcl.Clipbrd,
     CommonHelpers,
     System.RegularExpressions,
-    UI.StateLoader
+    System.SysUtils,
+    UI.StateLoader,
+    Vcl.Clipbrd,
+    Vcl.Themes
     ;
 
 {$R *.dfm}
@@ -56,8 +53,7 @@ begin
     HtmlViewer.DefBackground := StyleServices.GetSystemColor(clBtnFace);
     // Запрещаем компоненту получать фокус при случайном нажатии клавиши TAB
     HtmlViewer.TabStop := False;
-
-    // --- СОЗДАЕМ ГРОМООТВОД ДЛЯ ФОКУСА ---
+    // Создаем громоотвод для фокуса
     FFocusCatcher := TButton.Create(Self);
     FFocusCatcher.Parent := Self;
     // Прячем кнопку далеко за пределами экрана (в координатах -1000)
@@ -88,7 +84,7 @@ end;
 procedure TCustomHelpForm.FormShow(Sender: TObject);
 begin
     // При появлении формы, VCL захочет кому-то отдать фокус.
-    // Мы жестко перенаправляем этот удар на невидимую кнопку
+    // Жёстко перенаправляем этот удар на невидимую кнопку.
     ActiveControl := FFocusCatcher;
 end;
 
@@ -102,18 +98,18 @@ begin
     VclText := ColorToHtmlHex(StyleServices.GetSystemColor(clWindowText));
     VclAccent := ColorToHtmlHex(StyleServices.GetSystemColor(clHighlight));
 
-    // --- НАСТРОЙКА КОНТРАСТА ЗАГОВОРОВ И БЛОКОВ ПОД ТЕМЫ ---
+    // Настройка контраста заговоров и блоков под темы
     if StyleServices.IsSystemStyle then
     begin
         // СВЕТЛАЯ ТЕМА
-        VclAccent := '#005A9E';  // Красивый глубокий синий (хорошо виден на светлом фоне)
+        VclAccent := '#005A9E';  // Глубокий синий
         VclPreBg := '#F3F4F6';   // Светло-серый фон для кода
         VclBorder := '#D1D5DB';  // Контрастная серая граница
     end
     else
     begin
         // ТЁМНАЯ ТЕМА
-        VclAccent := '#56B6C2';  // Приятный пастельный бирюзовый (отлично читается в темноте)
+        VclAccent := '#56B6C2';  // Пастельный бирюзовый
         VclPreBg := '#252526';   // Глубокий темно-серый фон для кода
         VclBorder := '#3F3F46';  // Серая граница
     end;
@@ -128,13 +124,20 @@ begin
 
     if ExpandedText <> '' then
     begin
-        // Если текст многострочный, оборачиваем в <pre> для сохранения форматирования
-        BodyContent := BodyContent + '<pre>' + ExpandedText + '</pre>';
+        // Оборачиваем в контейнер и добавляем автоматический подзаголовок "ДОПОЛНИТЕЛЬНО"
+        BodyContent := BodyContent +
+            '<div class="help-expanded">' +
+            '<div style="color: ' + VclAccent + '; font-weight: bold; font-size: 8.5pt; margin-bottom: 8px;">' +
+            TUIStateLoader.GetMessage('Common.Additional') +
+            '</div>' +
+            ExpandedText +
+            '</div>';
     end;
 
+    // Автоматическое превращение <code>text</code> в кликабельные кнопки копирования
     BodyContent := TRegEx.Replace(
         BodyContent, '<code>(.*?)</code>',
-        '<a href="copy:$1" class="copy-cmd" title="Click to copy"><code class="copyable">$1</code></a>'
+        '<a href="copy:$1" class="copy-cmd" title="Кликните, чтобы скопировать"><code class="copyable">$1</code></a>'
     );
 
     // Собираем финальный HTML, внедряя контент CSS-шаблон
@@ -159,19 +162,19 @@ begin
     '    border-bottom: 1px solid ' + BorderColor + ';' +
     '  }' +
     '  p { margin-top: 0; margin-bottom: 12px; text-align: left; }' +
-
-    // --- ИСПРАВЛЕННЫЙ БЛОК PRE С АВТОПЕРЕНОСОМ ---
+    '  .help-expanded {' +
+    '    margin-top: 20px; padding-top: 12px;' +         // Отступы сверху
+    '    border-top: 1px dashed ' + BorderColor + ';' +  // Пунктирная линия-разделитель
+    '    font-size: 9.5pt;' +                            // Шрифт чуть меньше основного (Main = 10pt)
+    '  }' +
     '  pre {' +
     '    background-color: ' + PreBgColor + '; color: ' + TxtColor + ';' +
     '    padding: 12px; border-radius: 4px; border: 1px solid ' + BorderColor + ';' +
     '    font-family: "Consolas", "Courier New", monospace; font-size: 10pt;' +
     '    margin-top: 10px; margin-bottom: 10px; line-height: 1.4;' +
-    '    white-space: pre-wrap;' +       // <--- Магия CSS: сохраняет пробелы, но переносит строки!
-    '    word-wrap: break-word;' +       // <--- Дополнительно: разбивает длинные монолитные слова/токены
+    '    white-space: pre-wrap;' +       // CSS: сохраняет пробелы, но переносит строки
+    '    word-wrap: break-word;' +       // Дополнительно: разбивает длинные монолитные слова/токены
     '  }' +
-    // ----------------------------------------------
-
-    // ... ваш остальной CSS-код без изменений (a.copy-cmd, code.copyable, blockquote и т.д.) ...
     '  a.copy-cmd, a.copy-cmd:link, a.copy-cmd:visited, a.copy-cmd:active, a.copy-cmd:focus {' +
     '    text-decoration: none;' +
     '    color: ' + TxtColor + ';' +
@@ -209,12 +212,10 @@ begin
         // На случай, если движок заменит пробелы на веб-формат
         TextToCopy := TextToCopy.Replace('%20', ' ');
 
-        // Кладем в буфер обмена Windows
         Clipboard.AsText := TextToCopy;
-        Handled := True; // Говорим компоненту, что клик успешно обработан
+        Handled := True;
 
-        // Даем пользователю понять, что копирование прошло успешно (системный звук)
-        // Можно заменить на ShowSimpleToast
+        // Даем пользователю понять, что копирование прошло успешно
         MessageBeep(MB_OK);
         ShowSimpleToast(TUIStateLoader.GetMessage('Common.CopiedToClipboard'));
 

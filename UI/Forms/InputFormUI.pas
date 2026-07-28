@@ -3,17 +3,16 @@
 interface
 
 uses
-    System.SysUtils,
-    System.Classes,
-    Vcl.Controls,
-    Vcl.Forms,
-    Vcl.StdCtrls,
-    Vcl.ExtCtrls,
-    Vcl.ComCtrls,
-    MacroInputTypes,
     BaseFormUI,
     Core.Interfaces,
-    Core.AppContext;
+    MacroInputTypes,
+    System.Classes,
+    Vcl.ComCtrls,
+    Vcl.Controls,
+    Vcl.ExtCtrls,
+    Vcl.Forms,
+    Vcl.StdCtrls
+    ;
 
 type
     TInputForm = class(TBaseForm)
@@ -48,6 +47,7 @@ var
 implementation
 
 uses
+    System.SysUtils,
     UI.StateLoader
     ;
 

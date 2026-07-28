@@ -4,9 +4,8 @@ interface
 
 uses
     System.SysUtils,
-    System.RegularExpressions,
-    System.Math,
-    System.Character;
+    System.RegularExpressions
+    ;
 
 type
     ISecurityScanner = interface
@@ -35,8 +34,9 @@ type
 implementation
 
 uses
-    UI.StateLoader,
-    System.Generics.Collections
+    System.Generics.Collections,
+    System.Math,
+    UI.StateLoader
     ;
 
 { TSecurityScanner }

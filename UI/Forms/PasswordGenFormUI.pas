@@ -3,25 +3,21 @@
 interface
 
 uses
-    Winapi.Windows,
-    Winapi.Messages,
-    System.SysUtils,
-    System.Variants,
-    System.Classes,
-    Vcl.Graphics,
-    Vcl.Controls,
-    Vcl.Forms,
-    Vcl.Dialogs,
-    Vcl.StdCtrls,
-    Vcl.Samples.Spin,
-    Core.Interfaces,
-    PasswordService,
-    Vcl.ComCtrls,
-    Vcl.Buttons,
-    Vcl.ExtCtrls,
-    Vcl.Menus,
     BaseFormUI,
-    System.Hash;
+    Core.Interfaces,
+    System.Classes,
+    Vcl.Buttons,
+    Vcl.ComCtrls,
+    Vcl.Controls,
+    Vcl.Dialogs,
+    Vcl.ExtCtrls,
+    Vcl.Forms,
+    Vcl.Menus,
+    Vcl.Samples.Spin,
+    Vcl.StdCtrls,
+    Winapi.Messages,
+    Winapi.Windows
+    ;
 
 type
     TPresetState = record
@@ -115,8 +111,6 @@ type
         FCancellationToken: Boolean;
         FIsGenerating: Boolean;
         FCloseRequested: Boolean;
-
-        // Для KeePass таймера
         FClipboardCountdown: Integer;
         FLastCopiedText: string;
 
@@ -153,15 +147,17 @@ var
 implementation
 
 uses
-    Winapi.CommCtrl,
+    CommonHelpers,
+    System.Hash,
+    System.SysUtils,
+    System.Threading,
     System.Types,
     System.UITypes,
-    CommonHelpers,
-    Vcl.Clipbrd,
-    System.Threading,
-    System.Math,
     UI.HoverHelpManager,
-    UI.StateLoader, Settings;
+    UI.StateLoader,
+    Vcl.Clipbrd,
+    Winapi.CommCtrl
+    ;
 
 const
     VISIBLE_SPACE = Char($2423);
@@ -955,7 +951,8 @@ begin
 end;
 
 procedure TPasswordGenForm.ApplyLanguage;
-var Preset: TPasswordPreset;
+var
+    Preset: TPasswordPreset;
 begin
     inherited;
     cbPresets.Items.BeginUpdate;
@@ -980,7 +977,7 @@ begin
 
     if seBulkCount.Value > 10000 then
     begin
-        if FAppContext.ErrorHandler.AskConfirmation(
+        if FAppContext.MessagesHandler.AskConfirmation(
             TUIStateLoader.GetMessage('PasswordGenForm.BulkLimitWarning'),
             TUIStateLoader.GetMessage('Common.Warning'),
             MB_YESNO or MB_ICONQUESTION
@@ -1007,7 +1004,7 @@ end;
 
 procedure TPasswordGenForm.bClearHistoryClick(Sender: TObject);
 begin
-    if FAppContext.ErrorHandler.AskConfirmation(
+    if FAppContext.MessagesHandler.AskConfirmation(
         TUIStateLoader.GetMessage('PasswordGenForm.MemoryClearConfirm'),
         TUIStateLoader.GetMessage('Common.Security'),
         MB_YESNO or MB_ICONQUESTION
@@ -1048,9 +1045,6 @@ begin
     pcHost.ActivePage := tsHistory;
 end;
 
-// =========================================================================
-// ИДЕАЛЬНОЕ ВПИСЫВАНИЕ PROGRESSBAR В STATUSBAR БЕЗ МЕРЦАНИЯ
-// =========================================================================
 procedure TPasswordGenForm.sbBottomResize(Sender: TObject);
 var
     R: TRect;

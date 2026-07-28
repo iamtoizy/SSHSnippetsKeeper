@@ -1,13 +1,13 @@
-﻿unit UIHelpers;
+﻿unit UI.Helpers;
 
 interface
 
 uses
-    Vcl.ComCtrls,
-    Tag,
     Category,
+    Tag,
     User,
-    System.Generics.Collections;
+    Vcl.ComCtrls
+    ;
 
 type
     // Статический контейнер вспомогательных методов для отрисовки UI-контролов.
@@ -31,7 +31,9 @@ type
 implementation
 
 uses
-    UI.StateLoader;
+    System.Generics.Collections,
+    UI.StateLoader
+    ;
 
 { TUIHelpers }
 

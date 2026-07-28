@@ -3,9 +3,10 @@ unit TagService;
 interface
 
 uses
+    Core.Interfaces,
     System.SysUtils,
-    Tag,
-    Core.Interfaces;
+    Tag
+    ;
 
 type
     TTagService = class(TInterfacedObject, ITagService)

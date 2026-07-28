@@ -3,11 +3,11 @@ unit UserRepository;
 interface
 
 uses
-    System.Generics.Collections,
-    User,
-    FireDAC.Comp.Client,
+    Core.Interfaces,
     RepositoryBase,
-    Core.Interfaces;
+    System.Generics.Collections,
+    User
+    ;
 
 type
     TUserRepository = class(TRepositoryBase, IUserRepository)
@@ -27,10 +27,11 @@ type
 implementation
 
 uses
-    System.SysUtils,
-    System.Variants,
+    FireDAC.Comp.Client,
     FireDAC.Stan.Param,
     System.Classes,
+    System.SysUtils,
+    System.Variants,
     UI.StateLoader
     ;
 

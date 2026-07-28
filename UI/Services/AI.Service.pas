@@ -1,16 +1,10 @@
-unit AIService;
+unit AI.Service;
 
 interface
 
 uses
-    System.SysUtils,
-    System.Classes,
-    System.JSON,
-    System.NetEncoding,
-    System.Net.HttpClient,
-    System.Net.HttpClientComponent,
-    System.Net.URLClient,
-    System.RegularExpressions;
+    System.Classes
+    ;
 
 type
     IAIService = interface
@@ -42,6 +36,12 @@ implementation
 
 uses
     System.Generics.Collections,
+    System.JSON,
+    System.Net.HttpClient,
+    System.Net.HttpClientComponent,
+    System.Net.URLClient,
+    System.RegularExpressions,
+    System.SysUtils,
     UI.StateLoader
     ;
 

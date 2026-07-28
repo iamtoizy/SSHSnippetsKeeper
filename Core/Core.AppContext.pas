@@ -3,18 +3,20 @@ unit Core.AppContext;
 interface
 
 uses
-    Core.Interfaces,
-    SnippetRepository,
     CategoryRepository,
-    TagRepository,
-    UserRepository,
-    SnippetService,
     CategoryService,
-    TagService,
-    UserService,
-    PasswordService,
+    Core.Interfaces,
+    EpochService,
     FireDAC.Comp.Client,
-    System.Classes;
+    PasswordService,
+    SnippetRepository,
+    SnippetService,
+    System.Classes,
+    TagRepository,
+    TagService,
+    UserRepository,
+    UserService
+    ;
 
 type
     TAppContext = class(TInterfacedObject, IAppContext)
@@ -27,7 +29,8 @@ type
         FPasswordService: IPasswordService;
         FSettingsManager: ISettingsManager;
         FWindowHelper: IWindowHelper;
-        FErrorHandler: IUIMessagesHandler;
+        FMessagesHandler: IUIMessagesHandler;
+        FEpochService: IEpochService;
 
         function GetDatabaseManager: IDatabaseManager;
         function GetSnippetService: ISnippetService;
@@ -38,6 +41,7 @@ type
         function GetSettingsManager: ISettingsManager;
         function GetWindowHelper: IWindowHelper;
         function GetErrorHandler: IUIMessagesHandler;
+        function GetEpochService: IEpochService;
     public
         // В конструктор передаем уже готовые сервисы
         constructor Create(
@@ -57,6 +61,7 @@ type
         property SettingsManager: ISettingsManager read GetSettingsManager;
         property WindowHelper: IWindowHelper read GetWindowHelper;
         property ErrorHandler: IUIMessagesHandler read GetErrorHandler;
+        property EpochService: IEpochService read GetEpochService;
 
         function CreateIsolatedSnippetService(out BackgroundConnection: TComponent): ISnippetService;
     end;
@@ -83,22 +88,24 @@ begin
     FDatabaseManager := DatabaseManager;
     FSettingsManager := SettingsManager;
     FWindowHelper := WindowHelper;
-    FErrorHandler := ErrorHandler;
+    FMessagesHandler := ErrorHandler;
 
-    // 1. Создаем репозитории
+    // Создаем репозитории
     SnippetRepo := TSnippetRepository.Create(DBConnection);
     CategoryRepo := TCategoryRepository.Create(DBConnection);
     TagRepo := TTagRepository.Create(DBConnection);
     UserRepo := TUserRepository.Create(DBConnection);
 
-    // 2. Создаем сервисы и ВНЕДРЯЕМ в них репозитории
+    // Создаем сервисы и внедряем в них репозитории
     FSnippetService := TSnippetService.Create(SnippetRepo, CategoryRepo, TagRepo, UserRepo);
 
     FCategoryService := TCategoryService.Create(CategoryRepo);
     FTagService := TTagService.Create(TagRepo);
     FUserService := TUserService.Create(UserRepo);
 
+    // Локальные сервисы, создающиеся в AppContext
     FPasswordService := TPasswordService.Create;
+    FEpochService := TEpochService.Create;
 end;
 
 function TAppContext.CreateIsolatedSnippetService(out BackgroundConnection: TComponent): ISnippetService;
@@ -158,9 +165,14 @@ begin
     Result := FDatabaseManager;
 end;
 
+function TAppContext.GetEpochService: IEpochService;
+begin
+    Result := FEpochService;
+end;
+
 function TAppContext.GetErrorHandler: IUIMessagesHandler;
 begin
-    Result := FErrorHandler;
+    Result := FMessagesHandler;
 end;
 
 function TAppContext.GetPasswordService: IPasswordService;

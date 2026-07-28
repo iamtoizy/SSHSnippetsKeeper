@@ -3,9 +3,10 @@ unit CategoryService;
 interface
 
 uses
-    System.SysUtils,
     Category,
-    Core.Interfaces;
+    Core.Interfaces,
+    System.SysUtils
+    ;
 
 type
     TCategoryService = class(TInterfacedObject, ICategoryService)

@@ -4,8 +4,9 @@ interface
 
 uses
     Core.Interfaces,
-    Winapi.Windows,
-    System.Classes;
+    System.Classes,
+    Winapi.Windows
+    ;
 
 type
     TUIMessagesHandler = class(TInterfacedObject, IUIMessagesHandler)
@@ -23,8 +24,8 @@ type
 implementation
 
 uses
-    Vcl.Forms,
-    UI.StateLoader
+    UI.StateLoader,
+    Vcl.Forms
     ;
 
 { TUIMessagesHandler }

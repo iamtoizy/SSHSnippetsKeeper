@@ -4,9 +4,7 @@ interface
 
 uses
     Vcl.ComCtrls,
-    Vcl.StdCtrls,
-    Vcl.Clipbrd,
-    Winapi.Windows
+    Vcl.StdCtrls
     ;
 
 { Показать тост-уведомление }
@@ -29,10 +27,13 @@ procedure WipeString(var S: string);
 implementation
 
 uses
+    System.IOUtils,
     System.Notification,
     System.SysUtils,
-    System.IOUtils,
-    UI.StateLoader;
+    UI.StateLoader,
+    Vcl.Clipbrd,
+    Winapi.Windows
+    ;
 
 var
     NotificationCenter: TNotificationCenter;

@@ -174,8 +174,8 @@
         <DCCReference Include="UI\Controls\HintTextMemo.pas"/>
         <DCCReference Include="UI\Forms\BaseFormUI.pas"/>
         <DCCReference Include="UI\Services\AppStateManager.pas"/>
-        <DCCReference Include="UI\Helpers\UIHelpers.pas"/>
-        <DCCReference Include="UI\Helpers\UITreeViewSearchHelper.pas"/>
+        <DCCReference Include="UI\Helpers\UI.Helpers.pas"/>
+        <DCCReference Include="UI\Helpers\UI.TreeViewSearchHelper.pas"/>
         <DCCReference Include="UI\ViewModels\SnippetViewData.pas"/>
         <DCCReference Include="MacroEngine\MacroActions.pas"/>
         <DCCReference Include="MacroEngine\MacroThread.pas"/>
@@ -211,8 +211,8 @@
         </DCCReference>
         <DCCReference Include="UI\Controllers\GlobalHotkeyManager.pas"/>
         <DCCReference Include="UI\Controls\TrackBarEx.pas"/>
-        <DCCReference Include="UI\Services\AIService.pas"/>
-        <DCCReference Include="UI\Services\AITextCleaner.pas"/>
+        <DCCReference Include="UI\Services\AI.Service.pas"/>
+        <DCCReference Include="UI\Services\AI.TextCleaner.pas"/>
         <DCCReference Include="UI\Forms\AISettingsFormUI.pas">
             <Form>AISettingsForm</Form>
         </DCCReference>
@@ -232,6 +232,11 @@
         <DCCReference Include="Core\Services\CronService.pas"/>
         <DCCReference Include="UI\Forms\CronGenFormUI.pas">
             <Form>CronGenForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="Core\Services\EpochService.pas"/>
+        <DCCReference Include="UI\Forms\EpochConverterFormUI.pas">
+            <Form>EpochConverterForm</Form>
             <FormType>dfm</FormType>
         </DCCReference>
         <RcItem Include="Database\Schema\000_schema_init.sql">
