@@ -87,6 +87,7 @@ type
         pmLanguage: TPopupMenu;
         nCronGenerator: TMenuItem;
         nEpochConverter: TMenuItem;
+        nNetworkCalculator: TMenuItem;
         procedure bManageWorkspacesClick(Sender: TObject);
         procedure cbUserChange(Sender: TObject);
         procedure nOpenDatabaseClick(Sender: TObject);
@@ -123,6 +124,7 @@ type
         procedure nPasswordGeneratorClick(Sender: TObject);
         procedure nEditTagClick(Sender: TObject);
         procedure nEpochConverterClick(Sender: TObject);
+        procedure nNetworkCalculatorClick(Sender: TObject);
         procedure nSearchClick(Sender: TObject);
         procedure rbTextClick(Sender: TObject);
         procedure sbBottomMouseDown(Sender: TObject; Button: TMouseButton; Shift:
@@ -208,6 +210,7 @@ uses
     CronGenFormUI,
     EpochConverterFormUI,
     MacroInputTypes,
+    NetworkFormUI,
     PasswordGenFormUI,
     QuickSearchFormUI,
     SnippetRunner,
@@ -223,7 +226,8 @@ uses
     User,
     Winapi.CommCtrl,
     WindowMonitor,
-    WorkspaceManagerUI;
+    WorkspaceManagerUI
+    ;
 
 const
     PRESERVE_CATEGORY_EMPTY_ID = -999;
@@ -1511,6 +1515,11 @@ end;
 procedure TMainForm.nEpochConverterClick(Sender: TObject);
 begin
     TEpochConverterForm.ExecuteGlobal(Self, FAppContext);
+end;
+
+procedure TMainForm.nNetworkCalculatorClick(Sender: TObject);
+begin
+    TNetworkForm.ExecuteGlobal(Self, FAppContext);
 end;
 
 procedure TMainForm.nSearchClick(Sender: TObject);

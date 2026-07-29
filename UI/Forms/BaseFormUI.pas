@@ -33,7 +33,18 @@ type
         // TODO Использовать в дочерних DoInitialize
         procedure DoInitialize; virtual;
         procedure DoShow; override;
-        procedure RegisterHelp(Control: TControl; Position: THelpIconPosition; const HelpKey: string; HelpKind: THelpKind = hkCustomForm);
+        procedure RegisterHelp(
+            Control: TControl;
+            Position: THelpIconPosition;
+            const HelpKey: string;
+            HelpKind: THelpKind = hkCustomForm;
+            OffsetX: Integer = 0;
+            OffsetY: Integer = 0);
+
+        // Добавил метод для точечной отписки, на случай если в будущем вы будете
+        // динамически удалять контролы с формы в рантайме.
+        procedure UnregisterHelp(Control: TControl);
+
         property MessagesHandler: IUIMessagesHandler read GetMessagesHandler;
     public
         constructor Create(Owner: TComponent); override;
@@ -67,13 +78,37 @@ end;
 
 destructor TBaseForm.Destroy;
 begin
-    if Assigned(FCustomHelpForm) then FCustomHelpForm.Free;
+    // 1. Отписываем ВСЕ контролы текущей формы от менеджера подсказок.
+    // Это предотвращает Access Violation, если форма уничтожается (Action := caFree),
+    // а менеджер (или его таймеры) попытается обратиться к уже удаленным контролам.
+    if Assigned(FHelpManager) then
+        FHelpManager.UnregisterAllForOwner(Self);
+
+    // 2. Безопасное удаление дочерних форм
+    if Assigned(FCustomHelpForm) then
+        FreeAndNil(FCustomHelpForm);
+
     inherited Destroy;
 end;
 
-procedure TBaseForm.RegisterHelp(Control: TControl; Position: THelpIconPosition; const HelpKey: string; HelpKind: THelpKind = hkCustomForm);
+procedure TBaseForm.RegisterHelp(
+            Control: TControl;
+            Position: THelpIconPosition;
+            const HelpKey: string;
+            HelpKind: THelpKind = hkCustomForm;
+            OffsetX: Integer = 0;
+            OffsetY: Integer = 0);
 begin
-    FHelpManager.RegisterControl(Control, Position, HelpKey, HelpKind);
+    if Assigned(FHelpManager) then
+        FHelpManager.RegisterControl(Control, Position, HelpKey, HelpKind, OffsetX, OffsetY);
+end;
+
+procedure TBaseForm.UnregisterHelp(Control: TControl);
+begin
+    // Обертка на случай, если вам понадобится снять хелп с конкретного контрола.
+    // Убедитесь, что в TUIHoverHelpManager есть метод UnregisterControl.
+    if Assigned(FHelpManager) then
+        FHelpManager.UnregisterControl(Control);
 end;
 
 procedure TBaseForm.DoInitialize;
@@ -151,7 +186,7 @@ begin
     // Применяем локализацию
     TUIStateLoader.ApplyTranslations(Self);
 
-    // Гарантированно пробрасываем настройки в HelpManager в одном месте для ВСЕХ форм!
+    // Гарантированно пробрасываем настройки в HelpManager в одном месте для ВСЕХ форм.
     // Дочерним формам вообще не нужно знать, как устроен менеджер справки внутри базовой.
     FHelpManager.Configure(FAppContext.SettingsManager.Data.UISettings);
 

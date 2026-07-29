@@ -287,7 +287,7 @@ begin
 
     Sb := TStringBuilder.Create;
     try
-        Sb.AppendLine('--- 🕒 Расписание задачи: ---');
+        Sb.AppendLine(TUIStateLoader.GetMessage('CronGenForm.TaskSchedule'));
         Sb.AppendLine(' • ' + ParseMinutes(Parts[0]));
         Sb.AppendLine(' • ' + ParseHours(Parts[1]));
         Sb.AppendLine(' • ' + ParseDaysOfMonth(Parts[2]));

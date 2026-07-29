@@ -239,6 +239,11 @@
             <Form>EpochConverterForm</Form>
             <FormType>dfm</FormType>
         </DCCReference>
+        <DCCReference Include="Core\Services\NetworkCalcService.pas"/>
+        <DCCReference Include="UI\Forms\NetworkFormUI.pas">
+            <Form>NetworkForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
         <RcItem Include="Database\Schema\000_schema_init.sql">
             <ContainerId>ResourceItem</ContainerId>
             <ResourceType>RCDATA</ResourceType>

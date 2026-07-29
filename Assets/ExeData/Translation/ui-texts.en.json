@@ -88,6 +88,9 @@
     },
     "nEpochConverter": {
       "Caption": "Epoch converter"
+    },
+    "nNetworkCalculator": {
+      "Caption": "IP/CIDR Calculator"
     }
   },
   "TagEditorForm": {
@@ -479,6 +482,65 @@
       "Caption": "Go to Bookmark"
     }
   },
+  "NetworkForm": {
+    "Caption": "IP/CIDR Calculator",
+    "gbTop": {
+      "Caption": "Input Data"
+    },
+    "cbIPInput": {
+      "TextHint": "Enter IP, subnet, or CIDR (e.g., 192.168.1.1/24)"
+    },
+    "tsInfo": {
+      "Caption": "Information"
+    },
+    "tsVLSM": {
+      "Caption": "Partitioning (VLSM)"
+    },
+    "lbVLSMMask": {
+      "Caption": "New mask:"
+    },
+    "lvVLSM": {
+      "Columns": {
+        "0": "#",
+        "1": "Subnet",
+        "2": "Hosts range",
+        "3": "Broadcast"
+      }
+    },
+    "ledNetworkAddress": {
+      "EditLabel.Caption": "Network Address"
+    },
+    "ledHostRange": {
+      "EditLabel.Caption": "Usable Host Range"
+    },
+    "ledBroadcastAddress": {
+      "EditLabel.Caption": "Broadcast"
+    },
+    "ledUsableHosts": {
+      "EditLabel.Caption": "Total Usable Hosts"
+    },
+    "ledNetmask": {
+      "EditLabel.Caption": "Netmask"
+    },
+    "ledWildcardMask": {
+      "EditLabel.Caption": "Wildcard Mask"
+    },
+    "ledNetworkType": {
+      "EditLabel.Caption": "Network Type"
+    },
+    "ledBinaryView": {
+      "EditLabel.Caption": "Binary View"
+    },
+    "bCopyAll": {
+      "Caption": "📄 Copy all"
+    },
+    "bCopyVLSM": {
+      "Caption": "📄 Copy"
+    },
+    "lbVLSMHostCount": {
+      "Caption": ""
+    }
+  },
   "Messages": {
     "Help": {
       "MainForm": {
@@ -540,12 +602,69 @@
         "mEpoch": {
           "Title": "Log and Text Analyzer",
           "Main": "Paste any text, JSON, or system log here. The program will automatically find all timestamps (Unix Epoch) and standard dates.",
-          "Expanded": "💡 <b>Smart recognition of Unix Time (seconds, milliseconds, and microseconds) is supported</b>, as well as dates in ISO 8601, Apache/Nginx, Syslog, and local time formats.<br><br>All found matches are highlighted: light blue markers indicate background timestamps, bright yellow marks the active timestamp selected in the list.<br><br><b>Bookmark system for navigation:</b><ul><li><code>Ctrl+B</code> (or context menu item) — create or delete a bookmark on the current line.</li><li><code>Alt+0..9</code> — hotkeys to set numbered bookmarks.</li><li><code>Ctrl+0..9</code> — instantly jump to the corresponding bookmark.</li></ul>Right-click brings up a context menu with a 'Go to Bookmark' submenu, showing a dynamic list of all active bookmarks with line numbers and text previews."
+          "Expanded": "💡 <b>Smart recognition of Unix Time (seconds, milliseconds, and microseconds) is supported</b>, as well as dates in ISO 8601, Apache/Nginx, Syslog, and local time formats.<br><br>All found matches are highlighted: light blue markers indicate background timestamps, bright yellow marks the active timestamp selected in the list.<br><br><b>Bookmark system for navigation:</b><ul><li><code>Ctrl+B</code> (or context menu item) — create or delete a bookmark on the current line.</li><li><code>CTRL+Alt+0..9</code> — hotkeys to set numbered bookmarks.</li><li><code>Ctrl+0..9</code> — instantly jump to the corresponding bookmark.</li></ul>Right-click brings up a context menu with a 'Go to Bookmark' submenu, showing a dynamic list of all active bookmarks with line numbers and text previews."
         },
         "lvParsed": {
           "Title": "List of Found Dates",
           "Main": "Chronological list of all timestamps extracted from your text, with instant conversion to local time.",
           "Expanded": "The 'Relative' column displays live time (e.g., '3 hours ago' or 'in 5 min'), which updates every second.<br>Clicking any row in the list instantly scrolls the text (log) to the corresponding line, highlights it with a yellow marker, and synchronizes the calendar for further work."
+        }
+      },
+      "NetworkForm": {
+        "cbIPInput": {
+          "Title": "IP Address & Mask Input",
+          "Main": "Input field for IPv4 address and subnet parameters.",
+          "Expanded": "Supported input formats:<br>• <code>192.168.1.50/24</code> (CIDR notation)<br>• <code>192.168.1.50 255.255.255.0</code> (IP and mask separated by space)<br>• <code>192.168.1.50</code> (mask is taken from the spin control on the right)<br><br>If an invalid address is entered, the text turns red."
+        },
+        "seMask": {
+          "Title": "Subnet Prefix (CIDR)",
+          "Main": "Subnet mask bit length (from /0 to /32).",
+          "Expanded": "Defines the number of fixed network bits.<br><br>Common prefix examples:<br>• <code>/24</code> — 254 hosts (standard local network)<br>• <code>/30</code> — 2 hosts (Point-to-Point router link)<br>• <code>/32</code> — 1 host (single IP address)"
+        },
+        "ledNetworkAddress": {
+          "Title": "Network Address",
+          "Main": "The first and base address of the subnet, acting as its identifier.",
+          "Expanded": "This address cannot be assigned to a physical device or server. All host bits are set to zero."
+        },
+        "ledHostRange": {
+          "Title": "Usable Host Range",
+          "Main": "The range of IP addresses that can be assigned to real devices.",
+          "Expanded": "Includes all addresses from the first host (<code>Network + 1</code>) to the last host (<code>Broadcast - 1</code>)."
+        },
+        "ledBroadcastAddress": {
+          "Title": "Broadcast Address",
+          "Main": "A special address used to send packets to all devices in the subnet.",
+          "Expanded": "Packets sent to this address are received by all nodes in the subnet. All host bits are set to one."
+        },
+        "ledUsableHosts": {
+          "Title": "Total Usable Hosts",
+          "Main": "Number of IP addresses in the subnet available for allocation to hosts.",
+          "Expanded": "Calculated as: <code>(2 ^ (32 - N)) - 2</code>, where N is the prefix length. Two addresses are reserved for Network and Broadcast.<br><br>Exception: <code>/31</code> subnets provide 2 usable hosts (RFC 3021)."
+        },
+        "ledNetmask": {
+          "Title": "Subnet Mask (Netmask)",
+          "Main": "Subnet mask in traditional dotted-decimal format.",
+          "Expanded": "Used by network adapters to separate the network portion of the IP address from the host portion (e.g., <code>255.255.255.0</code> for /24)."
+        },
+        "ledWildcardMask": {
+          "Title": "Wildcard Mask",
+          "Main": "The inverted subnet mask.",
+          "Expanded": "Calculated by bitwise inversion of the subnet mask (<code>255.255.255.255 - Netmask</code>).<br><br>Widely used in firewall rules, Access Control Lists (ACLs) on Cisco, MikroTik devices, and OSPF configurations."
+        },
+        "ledNetworkType": {
+          "Title": "Network Type",
+          "Main": "IP address classification according to RFC standards.",
+          "Expanded": "Possible values:<br>• <b>Private (RFC 1918)</b> — isolated local IPs (10.x, 172.16.x, 192.168.x)<br>• <b>Public IP</b> — globally routable Internet addresses<br>• <b>Loopback</b> — local host loopback interface (127.0.0.1)<br>• <b>Link-Local (APIPA)</b> — auto-assigned IPs when DHCP is unavailable (169.254.x)"
+        },
+        "ledBinaryView": {
+          "Title": "Binary View",
+          "Main": "32-bit binary representation of the IP address.",
+          "Expanded": "The <code>|</code> delimiter visually separates the network bit portion from the host portion."
+        },
+        "lvVLSM": {
+          "Title": "Subnet Table (VLSM)",
+          "Main": "This displays the list of subnets obtained after splitting the original network using the new mask.",
+          "Expanded": "The table contains the following data for each generated subnet:<br>• Subnet: Network address and its prefix (e.g., 192.168.1.0/26).<br>• Host Range: Available IP addresses for device assignment (excluding network address and broadcast).<br>• Broadcast: Broadcast address of the subnet.<br>• Hosts: Number of usable (available) addresses.<br><br>Note: To prevent program freezes and memory overflow, a limit of 4096 subnets displayed at a time is enforced."
         }
       }
     },
@@ -563,6 +682,7 @@
       "MoreInfo": "More Info",
       "WinEventHookError": "Failed to set up WinEventHook. Error: %s",
       "CopiedToClipboard": "Copied to clipboard.",
+      "NoDataToCopy": "❌ Нет данных для копирования в буфер обмена.",
       "Security": "Security",
       "Additional": "ADDITIONAL:"
     },
@@ -855,7 +975,13 @@
       "SelectWorkspaceFirst": "First, select a workspace."
     },
     "CronGenForm": {
-      "CopiedToClipboardToast": "Cron job text copied to clipboard."
+      "CopiedToClipboardToast": "Cron job text copied to clipboard.",
+      "TaskSchedule": "🕒 Cron task schedule: "
+    },
+    "NetworkForm": {
+      "InvalidFormat": "❌ Invalid IP or mask format",
+      "HostsPerSubnet": "Hosts per subnet: %d",
+      "TooManySubnets": "Too many subnets. Please decrease the mask difference."
     }
   }
 }

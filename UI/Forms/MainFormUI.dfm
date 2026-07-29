@@ -204,7 +204,6 @@ object MainForm: TMainForm
       HotTrack = True
       HotTrackStyles = [htHandPoint, htUnderlineHot]
       TileOptions.SubLineCount = 2
-      Items.ItemData = {050000000000000000}
       ReadOnly = True
       ParentFont = False
       ParentShowHint = False
@@ -235,7 +234,6 @@ object MainForm: TMainForm
         Columns = <>
         HideSelection = False
         TileOptions.SubLineCount = 2
-        Items.ItemData = {050000000000000000}
         MultiSelect = True
         StateImages = vilTags
         TabOrder = 0
@@ -367,6 +365,11 @@ object MainForm: TMainForm
         Caption = #1050#1086#1085#1074#1077#1088#1090#1077#1088' '#1101#1087#1086#1093
         ShortCut = 24645
         OnClick = nEpochConverterClick
+      end
+      object nNetworkCalculator: TMenuItem
+        Caption = #1050#1072#1083#1100#1082#1091#1083#1103#1090#1086#1088' '#1089#1077#1090#1077#1081
+        ShortCut = 24654
+        OnClick = nNetworkCalculatorClick
       end
     end
   end

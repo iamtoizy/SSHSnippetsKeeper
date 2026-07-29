@@ -11,12 +11,21 @@ uses
     Vcl.Controls,
     Vcl.ExtCtrls,
     Vcl.Forms,
+    Vcl.StdCtrls,
     Winapi.Messages,
-    Winapi.Windows
-    ;
+    Winapi.Windows;
 
 type
-    THelpIconPosition = (hipTopLeft, hipTopRight, hipLeftCenter, hipRightCenter, hipBottomLeft, hipBottomRight);
+    THelpIconPosition = (
+        hipTopLeft,
+        hipTopCenter,
+        hipTopRight,
+        hipLeftCenter,
+        hipRightCenter,
+        hipBottomLeft,
+        hipBottomCenter,
+        hipBottomRight
+    );
     THelpKind = (hkCustomForm, hkTaskDialog);
     THelpState = (hsHidden, hsWaiting, hsFadingIn, hsVisible);
 
@@ -24,6 +33,8 @@ type
         Position: THelpIconPosition;
         HelpKey: string;
         HelpKind: THelpKind;
+        OffsetX: Integer;
+        OffsetY: Integer;
     end;
 
     TOnShowHelpEvent = procedure(Target: TControl; const HelpKey: string; HelpKind: THelpKind) of object;
@@ -49,11 +60,11 @@ type
         FRegistered: TDictionary<TControl, THelpSetup>;
         FTimer: TTimer;
         FSharedButton: THelpPopupWindow;
-        FLastWnd: HWND;             // Кэш дескриптора окна
-        FStopwatch: TStopwatch;     // Для высокоточного отсчета времени
-        FLastMousePt: TPoint;       // Для кэширования позиции мыши
-        FLastHoveredCtrl: TControl; // Кэш найденного контрола
-        FCurrentTarget: TControl;   // Текущий контрол под курсором
+        FLastWnd: HWND;
+        FStopwatch: TStopwatch;
+        FLastMousePt: TPoint;
+        FLastHoveredCtrl: TControl;
+        FCurrentTarget: TControl;
         FOnShowHelp: TOnShowHelpEvent;
         FSettings: TUISettings;
         FHelpState: THelpState;
@@ -66,7 +77,7 @@ type
         procedure TargetWndProc(var Message: TMessage);
         procedure OnTimerTick(Sender: TObject);
         procedure OnPopupButtonClick(Sender: TObject);
-        procedure UpdateButtonPosition(Target: TControl; Pos: THelpIconPosition);
+        procedure UpdateButtonPosition(Target: TControl; const Setup: THelpSetup);
         procedure HideButton;
     protected
         procedure Notification(Component: TComponent; Operation: TOperation); override;
@@ -74,8 +85,16 @@ type
         constructor Create(Owner: TComponent); override;
         destructor Destroy; override;
 
-        procedure RegisterControl(Control: TControl; Position: THelpIconPosition; const HelpKey: string; HelpKind: THelpKind = hkCustomForm);
+        procedure RegisterControl(
+            Control: TControl;
+            Position: THelpIconPosition;
+            const HelpKey: string;
+            HelpKind: THelpKind = hkCustomForm;
+            OffsetX: Integer = 0;
+            OffsetY: Integer = 0
+        );
         procedure UnregisterControl(Control: TControl);
+        procedure UnregisterAllForOwner(AOwner: TComponent);
         procedure Configure(Settings: TUISettings);
 
         property OnShowHelp: TOnShowHelpEvent read FOnShowHelp write FOnShowHelp;
@@ -118,7 +137,6 @@ procedure THelpPopupWindow.CreateParams(var Params: TCreateParams);
 begin
     inherited;
     Params.Style := WS_POPUP;
-    // Защита от кражи фокуса (NOACTIVATE) и отображение поверх списков (TOPMOST)
     Params.ExStyle := Params.ExStyle or WS_EX_TOOLWINDOW or WS_EX_NOACTIVATE or WS_EX_TOPMOST;
     Params.WndParent := 0;
 end;
@@ -128,19 +146,13 @@ var
     Rgn: HRGN;
 begin
     inherited;
-    // Создаем регион (маску) со скругленными углами и применяем его к окну.
-    // Ширина/Высота берутся от самой формы (20х20).
-    // Последние два параметра (4, 4) - это радиус закругления в пикселях.
     Rgn := CreateRoundRectRgn(0, 0, Width, Height, 4, 4);
-
-    // Передаем регион системе. Важно: удалять (DeleteObject) этот регион не нужно,
-    // после успешного вызова SetWindowRgn система берет управление им на себя.
     SetWindowRgn(Handle, Rgn, True);
 end;
 
 procedure THelpPopupWindow.WMMouseActivate(var Message: TWMMouseActivate);
 begin
-    Message.Result := MA_NOACTIVATE; // Блокируем передачу фокуса при клике
+    Message.Result := MA_NOACTIVATE;
 end;
 
 procedure THelpPopupWindow.OnButtonClick(Sender: TObject);
@@ -165,13 +177,11 @@ begin
     FSharedButton := THelpPopupWindow.CreateNew(nil);
     FSharedButton.OnClickEvent := OnPopupButtonClick;
 
-    // Запускаем высокоточный секундомер
     FStopwatch := TStopwatch.StartNew;
-    // Сбрасываем точку мыши, чтобы первый тик гарантированно сработал
     FLastMousePt := Point(-1, -1);
 
     FTimer := TTimer.Create(Self);
-    FTimer.Interval := 15; // 60 FPS
+    FTimer.Interval := 15;
     FTimer.OnTimer := OnTimerTick;
 end;
 
@@ -200,24 +210,14 @@ procedure TUIHoverHelpManager.Notification(Component: TComponent; Operation: TOp
 begin
     inherited Notification(Component, Operation);
 
-    // Если какой-то компонент, за которым мы следим, физически уничтожается
     if Operation = opRemove then
     begin
-        // 1. Очищаем мертвый кэш
         if Component = FLastHoveredCtrl then
             FLastHoveredCtrl := nil;
 
-        // 2. Если удаляется наш текущий таргет (например, окно закрыли без WM_DESTROY)
         if Component = FCurrentTarget then
-        begin
-            FOldWndProc := nil; // Не пытаемся восстановить хук на умирающем объекте
-            FCurrentTarget := nil;
-            FHelpState := hsHidden;
-            if Assigned(FSharedButton) and FSharedButton.HandleAllocated then
-                ShowWindow(FSharedButton.Handle, SW_HIDE);
-        end;
+            HideButton;
 
-        // 3. Удаляем из регистрации
         if Component is TControl then
             FRegistered.Remove(TControl(Component));
     end;
@@ -244,7 +244,6 @@ begin
         Exit;
     end;
 
-    // Прячем кнопку мгновенно, если юзер крутит колесо, печатает текст или кликает внутри поля
     if (Message.Msg = WM_VSCROLL) or (Message.Msg = WM_HSCROLL) or
        (Message.Msg = WM_MOUSEWHEEL) or (Message.Msg = WM_KEYDOWN) or
        (Message.Msg = WM_LBUTTONDOWN) then
@@ -256,7 +255,13 @@ begin
         OldProc(Message);
 end;
 
-procedure TUIHoverHelpManager.RegisterControl(Control: TControl; Position: THelpIconPosition; const HelpKey: string; HelpKind: THelpKind = hkCustomForm);
+procedure TUIHoverHelpManager.RegisterControl(
+    Control: TControl;
+    Position: THelpIconPosition;
+    const HelpKey: string;
+    HelpKind: THelpKind;
+    OffsetX: Integer;
+    OffsetY: Integer);
 var
     Setup: THelpSetup;
 begin
@@ -264,8 +269,10 @@ begin
     Setup.Position := Position;
     Setup.HelpKey := HelpKey;
     Setup.HelpKind := HelpKind;
+    Setup.OffsetX := OffsetX;
+    Setup.OffsetY := OffsetY;
+
     FRegistered.AddOrSetValue(Control, Setup);
-    // Подписываемся на смерть контрола
     Control.FreeNotification(Self);
 end;
 
@@ -276,6 +283,31 @@ begin
         HideButton;
 end;
 
+procedure TUIHoverHelpManager.UnregisterAllForOwner(AOwner: TComponent);
+var
+    Ctrl: TControl;
+    ControlsToRemove: TList<TControl>;
+begin
+    if not Assigned(AOwner) then Exit;
+
+    ControlsToRemove := TList<TControl>.Create;
+    try
+        for Ctrl in FRegistered.Keys do
+        begin
+            if (Ctrl.Owner = AOwner) or
+               ((AOwner is TCustomForm) and (GetParentForm(Ctrl) = AOwner)) then
+            begin
+                ControlsToRemove.Add(Ctrl);
+            end;
+        end;
+
+        for Ctrl in ControlsToRemove do
+            UnregisterControl(Ctrl);
+    finally
+        ControlsToRemove.Free;
+    end;
+end;
+
 procedure TUIHoverHelpManager.OnPopupButtonClick(Sender: TObject);
 var
     Setup: THelpSetup;
@@ -283,13 +315,9 @@ var
 begin
     if Assigned(FCurrentTarget) and FRegistered.TryGetValue(FCurrentTarget, Setup) then
     begin
-        // Сохраняем таргет, так как HideButton полностью сбросит состояние менеджера
         CachedTarget := FCurrentTarget;
-
-        // Мгновенно прячем кнопку. Она не должна маячить поверх диалога.
         HideButton;
 
-        // Безопасно вызываем кастомную форму с сохранённым таргетом
         if Assigned(FOnShowHelp) then
             FOnShowHelp(CachedTarget, Setup.HelpKey, Setup.HelpKind);
     end;
@@ -299,8 +327,15 @@ procedure TUIHoverHelpManager.HideButton;
 begin
     UnhookTarget;
     FHelpState := hsHidden;
-    FSharedButton.AlphaBlendValue := 0;
-    ShowWindow(FSharedButton.Handle, SW_HIDE);
+    FLastHoveredCtrl := nil;
+    FLastMousePt := Point(-1, -1);
+    FLastWnd := 0;
+
+    if Assigned(FSharedButton) and FSharedButton.HandleAllocated then
+    begin
+        FSharedButton.AlphaBlendValue := 0;
+        ShowWindow(FSharedButton.Handle, SW_HIDE);
+    end;
 end;
 
 procedure TUIHoverHelpManager.OnTimerTick(Sender: TObject);
@@ -322,7 +357,7 @@ begin
     CurrentTime := FStopwatch.ElapsedMilliseconds;
 
     if (Pt.X = FLastMousePt.X) and (Pt.Y = FLastMousePt.Y) and (Wnd = FLastWnd) then
-        HoveredCtrl := FLastHoveredCtrl // Берем из кэша
+        HoveredCtrl := FLastHoveredCtrl
     else
     begin
         FLastMousePt := Pt;
@@ -342,17 +377,7 @@ begin
             end;
         end;
 
-        // Если мы навелись на новый контрол, переключаем подписку FreeNotification
-        if HoveredCtrl <> FLastHoveredCtrl then
-        begin
-            if Assigned(FLastHoveredCtrl) then
-                FLastHoveredCtrl.RemoveFreeNotification(Self);
-
-            FLastHoveredCtrl := HoveredCtrl;
-
-            if Assigned(FLastHoveredCtrl) then
-                FLastHoveredCtrl.FreeNotification(Self);
-        end;
+        FLastHoveredCtrl := HoveredCtrl;
     end;
 
     if Assigned(HoveredCtrl) and FRegistered.TryGetValue(HoveredCtrl, Setup) and HoveredCtrl.Enabled then
@@ -363,7 +388,7 @@ begin
             HookTarget(HoveredCtrl);
             FHelpState := hsWaiting;
             FWaitStartTick := CurrentTime;
-            UpdateButtonPosition(HoveredCtrl, Setup.Position);
+            UpdateButtonPosition(HoveredCtrl, Setup);
         end
         else
         begin
@@ -371,7 +396,7 @@ begin
             begin
                 FHelpState := hsWaiting;
                 FWaitStartTick := CurrentTime;
-                UpdateButtonPosition(FCurrentTarget, Setup.Position);
+                UpdateButtonPosition(FCurrentTarget, Setup);
             end;
 
             WaitDelay := FSettings.Help.HelpButton.HoverDelay;
@@ -384,8 +409,14 @@ begin
                         begin
                             FHelpState := hsFadingIn;
                             FFadeStartTick := CurrentTime;
-                            // Сбрасываем прозрачность, чтобы избежать мигания от предыдущего состояния
                             FSharedButton.AlphaBlendValue := 0;
+
+                            // [ИСПРАВЛЕНИЕ БАГА Z-ORDER]
+                            // Принудительно размещаем кнопку ПОВЕРХ ВСЕХ окон.
+                            // Это необходимо для форм со свойством fsStayOnTop,
+                            // иначе после закрытия модального окна они перекрывают кнопку.
+                            SetWindowPos(FSharedButton.Handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE or SWP_NOSIZE or SWP_NOACTIVATE);
+
                             ShowWindow(FSharedButton.Handle, SW_SHOWNOACTIVATE);
                         end;
                     end;
@@ -407,34 +438,51 @@ begin
         end;
     end
     else
-    begin
         HideButton;
-    end;
 end;
 
-procedure TUIHoverHelpManager.UpdateButtonPosition(Target: TControl; Pos: THelpIconPosition);
+procedure TUIHoverHelpManager.UpdateButtonPosition(Target: TControl; const Setup: THelpSetup);
 const
-    OFFSET_X = -1;
-    OFFSET_Y = -1;
+    BASE_OFFSET_X = -1;
+    BASE_OFFSET_Y = -1;
 var
     Pt: TPoint;
     TargetW, TargetH: Integer;
+    RightPadding: Integer;
 begin
     TargetW := Target.ClientWidth;
     TargetH := Target.ClientHeight;
+    RightPadding := 0;
 
-    case Pos of
-        hipTopLeft:     Pt := Point(OFFSET_X, OFFSET_Y);
-        hipTopRight:    Pt := Point(TargetW - BTN_WIDTH - OFFSET_X, OFFSET_Y);
-        hipLeftCenter:  Pt := Point(OFFSET_X, (TargetH - BTN_HEIGHT) div 2);
-        hipRightCenter: Pt := Point(TargetW - BTN_WIDTH - OFFSET_X, (TargetH - BTN_HEIGHT) div 2);
-        hipBottomLeft:  Pt := Point(OFFSET_X, TargetH - BTN_HEIGHT - OFFSET_Y);
-        hipBottomRight: Pt := Point(TargetW - BTN_WIDTH - OFFSET_X, TargetH - BTN_HEIGHT - OFFSET_Y);
+    // Автоматически вычисляем ширину встроенных кнопок (стрелочек)
+    if (Target is TCustomComboBox) or (Target.ClassName = 'TSpinEdit') then
+    begin
+        // GetSystemMetrics(SM_CXVSCROLL) возвращает точную системную ширину кнопки выпадающего списка
+        RightPadding := GetSystemMetrics(SM_CXVSCROLL);
     end;
 
+    // Вычитаем RightPadding из позиций, привязанных к ПРАВОМУ краю (Right)
+    case Setup.Position of
+        hipTopLeft:      Pt := Point(BASE_OFFSET_X, BASE_OFFSET_Y);
+        hipTopCenter:    Pt := Point((TargetW - BTN_WIDTH) div 2, BASE_OFFSET_Y);
+        hipTopRight:     Pt := Point(TargetW - RightPadding - BTN_WIDTH - BASE_OFFSET_X, BASE_OFFSET_Y);
+
+        hipLeftCenter:   Pt := Point(BASE_OFFSET_X, (TargetH - BTN_HEIGHT) div 2);
+        hipRightCenter:  Pt := Point(TargetW - RightPadding - BTN_WIDTH - BASE_OFFSET_X, (TargetH - BTN_HEIGHT) div 2);
+
+        hipBottomLeft:   Pt := Point(BASE_OFFSET_X, TargetH - BTN_HEIGHT - BASE_OFFSET_Y);
+        hipBottomCenter: Pt := Point((TargetW - BTN_WIDTH) div 2, TargetH - BTN_HEIGHT - BASE_OFFSET_Y);
+        hipBottomRight:  Pt := Point(TargetW - RightPadding - BTN_WIDTH - BASE_OFFSET_X, TargetH - BTN_HEIGHT - BASE_OFFSET_Y);
+    end;
+
+    // Применяем ручные смещения (если они были переданы при регистрации)
+    Pt.X := Pt.X + Setup.OffsetX;
+    Pt.Y := Pt.Y + Setup.OffsetY;
+
     Pt := Target.ClientToScreen(Pt);
-    FSharedButton.Left := Pt.X;
-    FSharedButton.Top := Pt.Y;
+
+    // Перемещаем кнопку и выводим на передний план
+    SetWindowPos(FSharedButton.Handle, HWND_TOPMOST, Pt.X, Pt.Y, 0, 0, SWP_NOSIZE or SWP_NOACTIVATE);
 end;
 
 end.

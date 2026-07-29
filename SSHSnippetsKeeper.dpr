@@ -80,7 +80,9 @@ uses
   CronService in 'Core\Services\CronService.pas',
   CronGenFormUI in 'UI\Forms\CronGenFormUI.pas' {CronGenForm},
   EpochService in 'Core\Services\EpochService.pas',
-  EpochConverterFormUI in 'UI\Forms\EpochConverterFormUI.pas' {EpochConverterForm};
+  EpochConverterFormUI in 'UI\Forms\EpochConverterFormUI.pas' {EpochConverterForm},
+  NetworkCalcService in 'Core\Services\NetworkCalcService.pas',
+  NetworkFormUI in 'UI\Forms\NetworkFormUI.pas' {NetworkForm};
 
 {$R *.res}
 

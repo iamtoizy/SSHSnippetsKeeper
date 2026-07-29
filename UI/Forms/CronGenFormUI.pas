@@ -12,10 +12,21 @@ uses
     Vcl.Controls,
     Vcl.ExtCtrls,
     Vcl.Forms,
-    Vcl.StdCtrls
+    Vcl.StdCtrls,
+    Winapi.Messages // Обязательно для TMessage
     ;
 
 type
+    // =========================================================================
+    // Класс-перехватчик.
+    // Лечит внутренний баг Delphi (EListError / ExtractWrapper) путем
+    // жесткой блокировки мусорных координат от встроенного автоскролла Windows.
+    // =========================================================================
+    TCheckListBox = class(Vcl.CheckLst.TCheckListBox)
+    protected
+        procedure WndProc(var Message: TMessage); override;
+    end;
+
     TCronGenForm = class(TBaseForm)
         pnlTop: TPanel;
         lbTitle: TLabel;
@@ -89,18 +100,21 @@ type
 
         // Обработчики Drag-to-Check
         procedure clbMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-        procedure clbMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
         procedure clbMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
         procedure clbClickCheck(Sender: TObject);
     private
         FCronService: ICronService;
         FUpdatingUI: Boolean;
 
-        // Переменные для умной "кисти" чекбоксов
-        FDragState: Integer; // 1 = Check, 2 = Uncheck, 3 = Invert (Alt)
-        FLastDragIdx: Integer;
-        FStartDragIdx: Integer;
-        FStartRelX: Integer;
+        // Переменные для умной "кисти" чекбоксов (Через таймер)
+        FBrushTimer: TTimer;
+        FActiveCLB: TCheckListBox;
+        FBrushMode: Integer; // 1 = Check, 2 = Uncheck, 3 = Invert
+        FLastBrushIdx: Integer;
+        FStartBrushIdx: Integer;
+        FBrushItemToggled: Boolean;
+
+        procedure OnBrushTimerTick(Sender: TObject);
 
         procedure PopulateLists;
         procedure FillCheckList(CLB: TCheckListBox; Start, Stop: Integer; const Names: TArray<string> = []);
@@ -130,10 +144,50 @@ uses
     UI.HoverHelpManager,
     UI.StateLoader,
     Vcl.Clipbrd,
-    Vcl.Graphics
+    Vcl.Graphics,
+    Winapi.Windows
     ;
 
 {$R *.dfm}
+
+// =========================================================================
+// Реализация перехватчика TCheckListBox
+// =========================================================================
+procedure TCheckListBox.WndProc(var Message: TMessage);
+var
+    X, Y: SmallInt;
+begin
+    // Перехватываем системные сообщения движения мыши и отпускания кнопки
+    if (Message.Msg = WM_MOUSEMOVE) or (Message.Msg = WM_LBUTTONUP) then
+    begin
+        // Если левая кнопка зажата (или это сообщение об её отпускании)
+        if (Message.Msg = WM_LBUTTONUP) or (TWMMouse(Message).Keys and MK_LBUTTON <> 0) then
+        begin
+            X := TWMMouse(Message).XPos;
+            Y := TWMMouse(Message).YPos;
+
+            // Если координаты вылетели за границы клиентской части контрола
+            if (X < 0) or (Y < 0) or (X > ClientWidth) or (Y > ClientHeight) then
+            begin
+                // Корректно снимаем системный захват (чтобы мышь не "залипла")
+                if (Message.Msg = WM_LBUTTONUP) and MouseCapture then
+                    ReleaseCapture;
+
+                // БЛОКИРУЕМ ПЕРЕДАЧУ СООБЩЕНИЯ ДАЛЬШЕ.
+                // VCL никогда не узнает, что мы вышли за границы, и не запустит
+                // багованную функцию, приводящую к EListError (-5, -8, -18).
+                Message.Result := 0;
+                Exit;
+            end;
+        end;
+    end;
+
+    inherited WndProc(Message);
+end;
+
+// =========================================================================
+// ОСНОВНОЙ КОД ФОРМЫ
+// =========================================================================
 
 class procedure TCronGenForm.Execute(AOwner: TComponent; AppContext: IAppContext);
 var
@@ -152,7 +206,6 @@ procedure TCronGenForm.FormCreate(Sender: TObject);
 begin
     inherited;
 
-    // Регистрация подсказок
     RegisterHelp(clbMin,  hipBottomRight, 'Help.CronGenForm.CheckListBox', hkCustomForm);
     RegisterHelp(clbHour, hipBottomRight, 'Help.CronGenForm.CheckListBox', hkCustomForm);
     RegisterHelp(clbDom,  hipBottomRight, 'Help.CronGenForm.CheckListBox', hkCustomForm);
@@ -162,6 +215,12 @@ begin
     FCronService := TCronService.Create;
 
     pgcBuilder.DoubleBuffered := True;
+
+    // Таймер для надежной аппаратной кисти
+    FBrushTimer := TTimer.Create(Self);
+    FBrushTimer.Interval := 15;
+    FBrushTimer.Enabled := False;
+    FBrushTimer.OnTimer := OnBrushTimerTick;
 
     FUpdatingUI := True;
     try
@@ -196,31 +255,26 @@ begin
 
     clbMin.OnEnter        := OnBuilderControlChange;
     clbMin.OnMouseDown    := clbMouseDown;
-    clbMin.OnMouseMove    := clbMouseMove;
     clbMin.OnMouseUp      := clbMouseUp;
     clbMin.OnClickCheck   := clbClickCheck;
 
     clbHour.OnEnter       := OnBuilderControlChange;
     clbHour.OnMouseDown   := clbMouseDown;
-    clbHour.OnMouseMove   := clbMouseMove;
     clbHour.OnMouseUp     := clbMouseUp;
     clbHour.OnClickCheck  := clbClickCheck;
 
     clbDom.OnEnter        := OnBuilderControlChange;
     clbDom.OnMouseDown    := clbMouseDown;
-    clbDom.OnMouseMove    := clbMouseMove;
     clbDom.OnMouseUp      := clbMouseUp;
     clbDom.OnClickCheck   := clbClickCheck;
 
     clbMon.OnEnter        := OnBuilderControlChange;
     clbMon.OnMouseDown    := clbMouseDown;
-    clbMon.OnMouseMove    := clbMouseMove;
     clbMon.OnMouseUp      := clbMouseUp;
     clbMon.OnClickCheck   := clbClickCheck;
 
     clbDow.OnEnter        := OnBuilderControlChange;
     clbDow.OnMouseDown    := clbMouseDown;
-    clbDow.OnMouseMove    := clbMouseMove;
     clbDow.OnMouseUp      := clbMouseUp;
     clbDow.OnClickCheck   := clbClickCheck;
 end;
@@ -259,7 +313,7 @@ var
     end;
 
 begin
-    InactiveColor := $00F0F0F0; // Со стилями не применяется, ахахах
+    InactiveColor := $00F0F0F0;
 
     SyncState(rbMinEvery,  []);
     SyncState(rbMinStep,   [cboMinStep]);
@@ -489,7 +543,7 @@ end;
 
 procedure TCronGenForm.BuildCronFromUI;
 begin
-    if FUpdatingUI then Exit; // Защита от бесконечного цикла
+    if FUpdatingUI then Exit;
 
     FUpdatingUI := True;
     try
@@ -539,13 +593,12 @@ begin
 
     FUpdatingUI := True;
     try
-        // 1. Авто-переключение радиокнопок, если юзер трогает комбобоксы или списки напрямую
         if Sender = cboMinStep then rbMinStep.Checked := True
         else if (Sender = cboMinRange1) or (Sender = cboMinRange2) then rbMinRange.Checked := True
         else if Sender = clbMin then
         begin
             rbMinSpec.Checked := True;
-            if clbMin.ItemIndex < 0 then clbMin.ItemIndex := 0; // Принудительно показываем рамку фокуса
+            if clbMin.ItemIndex < 0 then clbMin.ItemIndex := 0;
         end
         else if Sender = cboHourStep then rbHourStep.Checked := True
         else if (Sender = cboHourRange1) or (Sender = cboHourRange2) then rbHourRange.Checked := True
@@ -576,7 +629,6 @@ begin
             if clbDow.ItemIndex < 0 then clbDow.ItemIndex := 0;
         end;
 
-        // 2. Умный авто-фокус: если выбрали саму радиокнопку, перекидываем фокус внутрь списка
         if (Sender = rbMinSpec) and clbMin.CanFocus then
         begin
             clbMin.SetFocus;
@@ -622,117 +674,127 @@ begin
 end;
 
 // =========================================================================
-// Машина состояний для выделения чекбоксов
+// Машина состояний для выделения чекбоксов (Надежная реализация через Таймер)
 // =========================================================================
 
 procedure TCronGenForm.clbClickCheck(Sender: TObject);
 begin
-    // Вызывается VCL, когда клик пришелся ТОЧНО в квадратик чекбокса.
-    // VCL уже поменяла значение, нам нужно только пересобрать строку.
+    FBrushItemToggled := True;
     OnBuilderControlChange(Sender);
 end;
 
 procedure TCronGenForm.clbMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
-    CLB: TCheckListBox;
-    Idx, RelX: Integer;
-    ItemR: TRect;
-begin
-    if Button <> mbLeft then Exit;
-
-    if not (Sender is TCheckListBox) then Exit;
-    CLB := TCheckListBox(Sender);
-    Idx := CLB.ItemAtPos(Point(X, Y), True);
-
-    if Idx >= 0 then
-    begin
-        // Вычисляем X относительно левого края текущего элемента (колонки)
-        ItemR := CLB.ItemRect(Idx);
-        RelX := X - ItemR.Left;
-
-        // Определяем режим кисти: 1 = Вкл, 2 = Выкл, 3 = Инверсия (Alt)
-        if ssShift in Shift then
-            FDragState := 2
-        else if ssCtrl in Shift then
-            FDragState := 1
-        else if ssAlt in Shift then
-            FDragState := 3
-        else
-        begin
-            if CLB.Checked[Idx] then
-                FDragState := 2
-            else
-                FDragState := 1;
-        end;
-
-        FLastDragIdx := Idx;
-        FStartDragIdx := Idx;
-        FStartRelX := RelX; // Запоминаем относительный X для MouseMove
-
-        // Если клик по тексту (> 18px от края КОЛОНКИ), VCL проигнорирует его.
-        // Поэтому мы меняем значение сами.
-        if RelX > 18 then
-        begin
-            if FDragState = 3 then
-                CLB.Checked[Idx] := not CLB.Checked[Idx]
-            else
-                CLB.Checked[Idx] := (FDragState = 1);
-
-            OnBuilderControlChange(CLB);
-        end;
-    end
-    else
-        FDragState := 0;
-end;
-
-procedure TCronGenForm.clbMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
-var
-    CLB: TCheckListBox;
     Idx: Integer;
 begin
-    if FDragState = 0 then Exit;
+    if Button <> mbLeft then Exit;
+    if not (Sender is TCheckListBox) then Exit;
 
-    // Прерываем кисть, если кнопка мыши отпущена за пределами контрола
-    if not (ssLeft in Shift) then
+    FActiveCLB := TCheckListBox(Sender);
+
+    if (X < 0) or (Y < 0) or (X > FActiveCLB.ClientWidth) or (Y > FActiveCLB.ClientHeight) then
     begin
-        FDragState := 0;
+        FActiveCLB := nil;
         Exit;
     end;
 
-    if not (Sender is TCheckListBox) then Exit;
-    CLB := TCheckListBox(Sender);
-    Idx := CLB.ItemAtPos(Point(X, Y), True);
+    Idx := FActiveCLB.ItemAtPos(Point(X, Y), True);
 
-    if (Idx >= 0) and (Idx <> FLastDragIdx) then
+    if (Idx >= 0) and (Idx < FActiveCLB.Items.Count) then
     begin
-        // Для первого элемента: если мы начали тянуть мышь с самого квадратика,
-        // VCL "забудет" вызвать OnClickCheck. Ставим галочку задним числом.
-        if (FLastDragIdx = FStartDragIdx) and (FStartRelX <= 18) then
+        if ssShift in Shift then
+            FBrushMode := 2
+        else if ssCtrl in Shift then
+            FBrushMode := 1
+        else if ssAlt in Shift then
+            FBrushMode := 3
+        else
         begin
-            if FDragState = 3 then
-                CLB.Checked[FStartDragIdx] := not CLB.Checked[FStartDragIdx]
+            if FActiveCLB.Checked[Idx] then
+                FBrushMode := 2
             else
-                CLB.Checked[FStartDragIdx] := (FDragState = 1);
+                FBrushMode := 1;
         end;
 
-        FLastDragIdx := Idx;
+        FLastBrushIdx := Idx;
+        FStartBrushIdx := Idx;
+        FBrushItemToggled := False;
 
-        if FDragState = 3 then
-            CLB.Checked[Idx] := not CLB.Checked[Idx]
+        FBrushTimer.Enabled := True;
+    end;
+end;
+
+procedure TCronGenForm.OnBrushTimerTick(Sender: TObject);
+var
+    Pt: TPoint;
+    Idx: Integer;
+begin
+    if not Assigned(FActiveCLB) or (FBrushMode = 0) then
+    begin
+        FBrushTimer.Enabled := False;
+        Exit;
+    end;
+
+    // Функция возвращает отрицательное число (< 0), если кнопка зажата.
+    // Если результат >= 0, значит кнопка отпущена (юзер бросил мышку).
+    if GetAsyncKeyState(VK_LBUTTON) >= 0 then
+    begin
+        clbMouseUp(FActiveCLB, mbLeft, [], 0, 0);
+        Exit;
+    end;
+
+    Pt := FActiveCLB.ScreenToClient(Mouse.CursorPos);
+
+    if (Pt.X < 0) or (Pt.Y < 0) or (Pt.X > FActiveCLB.ClientWidth) or (Pt.Y > FActiveCLB.ClientHeight) then
+        Exit;
+
+    Idx := FActiveCLB.ItemAtPos(Pt, True);
+
+    if (Idx >= 0) and (Idx < FActiveCLB.Items.Count) and (Idx <> FLastBrushIdx) then
+    begin
+        if not FBrushItemToggled then
+        begin
+            if FBrushMode = 3 then
+                FActiveCLB.Checked[FStartBrushIdx] := not FActiveCLB.Checked[FStartBrushIdx]
+            else
+                FActiveCLB.Checked[FStartBrushIdx] := (FBrushMode = 1);
+            FBrushItemToggled := True;
+        end;
+
+        FLastBrushIdx := Idx;
+
+        if FBrushMode = 3 then
+            FActiveCLB.Checked[Idx] := not FActiveCLB.Checked[Idx]
         else
-            CLB.Checked[Idx] := (FDragState = 1);
+            FActiveCLB.Checked[Idx] := (FBrushMode = 1);
 
-        OnBuilderControlChange(CLB);
+        OnBuilderControlChange(FActiveCLB);
     end;
 end;
 
 procedure TCronGenForm.clbMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-    // В MouseUp НИКОГДА не трогаем CLB.Checked.
-    // Этим занимается либо VCL (ClickCheck), либо MouseDown/MouseMove.
-    // Мы только сбрасываем состояние "кисти".
-    if Button = mbLeft then
-        FDragState := 0;
+    if (Button = mbLeft) and (FBrushMode <> 0) and Assigned(FActiveCLB) then
+    begin
+        FBrushTimer.Enabled := False;
+
+        if not FBrushItemToggled then
+        begin
+            if (FStartBrushIdx >= 0) and (FStartBrushIdx < FActiveCLB.Items.Count) then
+            begin
+                if FBrushMode = 3 then
+                    FActiveCLB.Checked[FStartBrushIdx] := not FActiveCLB.Checked[FStartBrushIdx]
+                else
+                    FActiveCLB.Checked[FStartBrushIdx] := (FBrushMode = 1);
+
+                FBrushItemToggled := True;
+                OnBuilderControlChange(FActiveCLB);
+            end;
+        end;
+
+        FBrushMode := 0;
+        FActiveCLB := nil;
+    end;
 end;
 
 end.

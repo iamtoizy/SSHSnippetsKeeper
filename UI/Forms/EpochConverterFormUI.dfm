@@ -12,6 +12,7 @@ object EpochConverterForm: TEpochConverterForm
   Font.Name = 'Segoe UI'
   Font.Style = []
   Position = poScreenCenter
+  OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnResize = FormResize
@@ -63,6 +64,7 @@ object EpochConverterForm: TEpochConverterForm
       ParentFont = True
       PopupMenu = PopupMenu
       TabOrder = 0
+      OnKeyDown = mEpochKeyDown
       OnMouseDown = mEpochMouseDown
       UseCodeFolding = False
       Gutter.Font.Charset = DEFAULT_CHARSET
@@ -70,6 +72,7 @@ object EpochConverterForm: TEpochConverterForm
       Gutter.Font.Height = -11
       Gutter.Font.Name = 'Consolas'
       Gutter.Font.Style = []
+      Gutter.Font.Quality = fqClearTypeNatural
       Gutter.ShowLineNumbers = True
       Gutter.Bands = <
         item

@@ -10,6 +10,7 @@ uses
     Vcl.ComCtrls,
     Vcl.Controls,
     Vcl.ExtCtrls,
+    Vcl.Forms,
     Vcl.Graphics,
     Vcl.Menus,
     Vcl.StdCtrls
@@ -63,8 +64,12 @@ type
         procedure mEpochChange(Sender: TObject);
         procedure mEpochPaintTransient(Sender: TObject; Canvas: TCanvas; TransientType: TTransientType);
         procedure CopyToClipboardClick(Sender: TObject);
-        procedure mEpochMouseDown(Sender: TObject; Button: TMouseButton; Shift:
-            TShiftState; X, Y: Integer);
+        procedure FormClose(Sender: TObject; var Action: TCloseAction);
+        procedure mEpochMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+
+        // НОВОЕ СОБЫТИЕ: Обработка клавиатуры для mEpoch
+        procedure mEpochKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+
         procedure nCopyClick(Sender: TObject);
         procedure nCutClick(Sender: TObject);
         procedure nPasteClick(Sender: TObject);
@@ -104,7 +109,6 @@ uses
     UI.HoverHelpManager,
     UI.StateLoader,
     Vcl.Clipbrd,
-    Vcl.Forms,
     Winapi.ActiveX,
     Winapi.CommCtrl,
     Winapi.Windows
@@ -142,21 +146,62 @@ begin
     mEpoch.ScrollOptions := mEpoch.ScrollOptions + [eoScrollPastEOL];
     mEpoch.OnChange := mEpochChange;
     mEpoch.OnPaintTransient := mEpochPaintTransient;
+    mEpoch.OnKeyDown := mEpochKeyDown;
 
-    // Переопределяем горячую клавишу для установки закладок
+    // Отключаем системные закладки SynEdit (ecSetMarker0..9), так как теперь
+    // мы будем управлять ими вручную, чтобы избежать дублей и потери фокуса из-за ALT
     for I := 0 to mEpoch.Keystrokes.Count - 1 do
     begin
         Cmd := mEpoch.Keystrokes[I].Command;
         if (Cmd >= ecSetMarker0) and (Cmd <= ecSetMarker9) then
+            mEpoch.Keystrokes[I].ShortCut := 0;
+    end;
+end;
+
+procedure TEpochConverterForm.mEpochKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+var
+    Digit, I, MarkX, MarkY: Integer;
+    IsToggleOff: Boolean;
+begin
+    // Перехватываем комбинацию CTRL+ALT+(цифра от 0 до 9)
+    if (Shift = [ssCtrl, ssAlt]) and (Key >= Ord('0')) and (Key <= Ord('9')) then
+    begin
+        Digit := Key - Ord('0');
+        IsToggleOff := False;
+
+        // Ищем любые другие закладки на текущей строке и удаляем их
+        for I := 0 to 9 do
         begin
-            // Ord(Cmd) - Ord(ecSetMarker0) даст число от 0 до 9
-            mEpoch.Keystrokes[I].ShortCut := ShortCut(Word('0') + (Ord(Cmd) - Ord(ecSetMarker0)), [ssAlt]);
+            MarkX := 0;
+            MarkY := 0;
+            mEpoch.GetBookMark(I, MarkX, MarkY);
+
+            // Если закладка стоит на текущей строке курсора
+            if (MarkY > 0) and (MarkY = mEpoch.CaretY) then
+            begin
+                mEpoch.ClearBookMark(I);
+
+                // Если мы нажали ту же самую цифру, которая уже стояла,
+                // мы просто снимаем закладку (режим Toggle)
+                if I = Digit then
+                    IsToggleOff := True;
+            end;
         end;
+
+        // Если мы не выключали эту же самую закладку, ставим новую
+        if not IsToggleOff then
+            mEpoch.SetBookMark(Digit, mEpoch.CaretX, mEpoch.CaretY);
+
+        // Обнуляем Key.
+        // Это скажет Windows, что комбинация клавиш обработана,
+        // и не нужно передавать фокус в главное меню формы по нажатию ALT.
+        Key := 0;
     end;
 end;
 
 class procedure TEpochConverterForm.ExecuteGlobal(Owner: TComponent; AppContext: IAppContext);
 begin
+    // Если окно уже открыто - просто выводим его наверх
     if Assigned(FCurrentInstance) then
     begin
         if FCurrentInstance.WindowState = wsMinimized then
@@ -166,14 +211,12 @@ begin
         Exit;
     end;
 
-    FCurrentInstance := TEpochConverterForm.Create(Owner);
-    try
-        FCurrentInstance.Initialize(AppContext);
-        FCurrentInstance.FormStyle := fsStayOnTop;
-        FCurrentInstance.ShowModal;
-    finally
-        FreeAndNil(FCurrentInstance);
-    end;
+    // Иначе создаем новое.
+    FCurrentInstance := TEpochConverterForm.Create(Application);
+    FCurrentInstance.Initialize(AppContext);
+    FCurrentInstance.FormStyle := fsStayOnTop;
+
+    FCurrentInstance.Show;
 end;
 
 procedure TEpochConverterForm.FormShow(Sender: TObject);
@@ -269,7 +312,6 @@ var
 begin
     if not Assigned(FAppContext) or not Assigned(FAppContext.EpochService) then Exit;
 
-    // Время, заданное в DateTimePicker, всегда трактуем как локальное
     CombinedTime := Trunc(dtpDate.Date) + Frac(dtpTime.Time);
     EpochResult := FAppContext.EpochService.LocalToUnix(CombinedTime);
 
@@ -291,7 +333,6 @@ procedure TEpochConverterForm.Initialize(AppContext: IAppContext);
 begin
     inherited Initialize(AppContext);
 
-    // Регистрация подсказок
     RegisterHelp(mEpoch,   hipBottomRight, 'Help.EpochConverterForm.mEpoch',   hkCustomForm);
     RegisterHelp(lvParsed, hipBottomRight, 'Help.EpochConverterForm.lvParsed', hkCustomForm);
 end;
@@ -356,6 +397,12 @@ begin
     end;
 
     mEpoch.Invalidate;
+end;
+
+procedure TEpochConverterForm.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+    Action := caFree;
+    FCurrentInstance := nil;
 end;
 
 procedure TEpochConverterForm.FormResize(Sender: TObject);
@@ -428,8 +475,7 @@ begin
     DisplayTime;
 end;
 
-procedure TEpochConverterForm.mEpochMouseDown(Sender: TObject; Button:
-    TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TEpochConverterForm.mEpochMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
     I, MarkX, MarkY: Integer;
     NewItem: TMenuItem;
@@ -439,13 +485,11 @@ var
 begin
     if Button = mbRight then
     begin
-        // Состояние стандартных пунктов меню
         nCut.Enabled := mEpoch.SelLength > 0;
         nCopy.Enabled := mEpoch.SelLength > 0;
         nPaste.Enabled := Clipboard.HasFormat(CF_TEXT);
         nSelectAll.Enabled := mEpoch.Text <> '';
 
-        // Проверка закладок для динамической смены заголовка
         HasBookmarkOnCurrentLine := False;
 
         for I := 0 to 9 do
@@ -454,7 +498,6 @@ begin
             MarkY := 0;
             mEpoch.GetBookMark(I, MarkX, MarkY);
 
-            // Если хотя бы одна закладка указывает на текущую строку курсора
             if (MarkY > 0) and (MarkY = mEpoch.CaretY) then
             begin
                 HasBookmarkOnCurrentLine := True;
@@ -462,13 +505,11 @@ begin
             end;
         end;
 
-        // Меняем заголовок пункта в зависимости от наличия закладки на строке
         if HasBookmarkOnCurrentLine then
             nToggleBookmark.Caption := TUIStateLoader.GetMessage('Epoch.DeleteBookmark')
         else
             nToggleBookmark.Caption := TUIStateLoader.GetMessage('Epoch.CreateBookmark');
 
-        // Динамическое обновление подменю "перейти к закладке"
         nBookmarks.Clear;
         HasAnyBookmarks := False;
 
@@ -533,12 +574,10 @@ begin
     Canvas.Font.Assign(mEpoch.Font);
     Canvas.Font.Style := [fsBold];
 
-    // Запоминаем границы системного выделения мышью (если оно есть)
     if mEpoch.SelAvail then
     begin
         SelBegin := mEpoch.BlockBegin;
         SelEnd := mEpoch.BlockEnd;
-        // Нормализуем координаты (пользователь мог выделять текст снизу вверх)
         if (SelBegin.Line > SelEnd.Line) or ((SelBegin.Line = SelEnd.Line) and (SelBegin.Char > SelEnd.Char)) then
         begin
             SelBegin := mEpoch.BlockEnd;
@@ -551,11 +590,9 @@ begin
         Match := FMatches[I];
         IsActiveItem := (lvParsed.Selected <> nil) and (lvParsed.Selected.Index = I);
 
-        // Проверка пересечения с выделением
         MatchOverlapsSelection := False;
         if mEpoch.SelAvail then
         begin
-            // Проверяем, находится ли таймстемп на строке, задетой выделением
             if (Match.LineIdx >= SelBegin.Line) and (Match.LineIdx <= SelEnd.Line) then
             begin
                 MatchStart := Match.CharIdx;
@@ -564,19 +601,14 @@ begin
                 IsBeforeSel := (Match.LineIdx = SelBegin.Line) and (MatchEnd <= SelBegin.Char);
                 IsAfterSel := (Match.LineIdx = SelEnd.Line) and (MatchStart >= SelEnd.Char);
 
-                // Если маркер не ДО и не ПОСЛЕ выделения, значит они пересекаются
                 if not (IsBeforeSel or IsAfterSel) then
                     MatchOverlapsSelection := True;
             end;
         end;
 
-        // Если этот кусок текста выделен мышью, и он НЕ является
-        // текущим активным элементом лога - отменяем нашу заливку.
-        // TSynEdit сам покажет свое родное синее выделениe.
         if MatchOverlapsSelection and not IsActiveItem then
             Continue;
 
-        // Отрисовка
         CoordStart := BufferCoord(Match.CharIdx, Match.LineIdx);
         DispCoord := mEpoch.BufferToDisplayPos(CoordStart);
 
@@ -586,9 +618,9 @@ begin
             R := Rect(P1.X, P1.Y, P1.X + (Match.PosLength * mEpoch.CharWidth), P1.Y + mEpoch.LineHeight);
 
             if IsActiveItem then
-                Canvas.Brush.Color := $0000FFFF  // Ярко-желтый для активного
+                Canvas.Brush.Color := $0000FFFF
             else
-                Canvas.Brush.Color := $00FFCC99; // Светло-голубой для неактивных
+                Canvas.Brush.Color := $00FFCC99;
 
             Canvas.Font.Color := clBlack;
             Canvas.FillRect(R);
@@ -619,12 +651,6 @@ end;
 
 procedure TEpochConverterForm.nToggleBookmarkClick(Sender: TObject);
 const
-    // Windows (начиная с Windows Vista и вплоть до Windows 11)
-    // перехватывает нажатие Ctrl+Shift+0 на самом низком уровне ОС.
-    // Из-за этого сообщение о нажатии клавиш просто не доходит до приложения.
-    // При этом переход к закладке (Ctrl+0) работает отлично, так как в нём нет Shift.
-    // Поэтому раздаем слоты начиная с 1. Проблемный 0 слот оставляем напоследок.
-    // Его можно назначить только кодом.
     SlotPriority: array[0..9] of Integer = (1, 2, 3, 4, 5, 6, 7, 8, 9, 0);
 var
     I, Slot, MarkX, MarkY: Integer;
@@ -634,14 +660,12 @@ begin
     BookmarkFound := False;
     FreeSlot := -1;
 
-    // Сначала проверяем, есть ли на текущей строке уже установленные закладки
     for I := 0 to 9 do
     begin
         MarkX := 0;
         MarkY := 0;
         mEpoch.GetBookMark(I, MarkX, MarkY);
 
-        // Если закладка стоит на текущей строке - удаляем её
         if (MarkY > 0) and (MarkY = mEpoch.CaretY) then
         begin
             mEpoch.ClearBookMark(I);
@@ -649,10 +673,8 @@ begin
         end;
     end;
 
-    // Если закладок на строке не было, ищем свободный слот
     if not BookmarkFound then
     begin
-        // Ищем по массиву приоритетов
         for I := 0 to 9 do
         begin
             Slot := SlotPriority[I];
@@ -660,7 +682,6 @@ begin
             MarkY := 0;
             mEpoch.GetBookMark(Slot, MarkX, MarkY);
 
-            // Если MarkY = 0, значит этот слот свободен
             if MarkY = 0 then
             begin
                 FreeSlot := Slot;
@@ -668,11 +689,9 @@ begin
             end;
         end;
 
-        // Если все 10 слотов забиты, перезаписываем слот 1 (как самый используемый)
         if FreeSlot = -1 then
             FreeSlot := 1;
 
-        // Устанавливаем закладку
         mEpoch.SetBookMark(FreeSlot, mEpoch.CaretX, mEpoch.CaretY);
     end;
 end;
