@@ -3,9 +3,19 @@ unit CommonHelpers;
 interface
 
 uses
+    Core.Interfaces,
+    System.Generics.Collections,
+    System.Generics.Defaults,
     Vcl.ComCtrls,
     Vcl.StdCtrls
     ;
+
+type
+    // Статический класс-помощник для работы с историей ввода (MRU)
+    THistoryHelper = class
+    public
+        class procedure Add(var History: TArray<THistoryItem>; const NewValue: string; MaxItems: Integer = 15);
+    end;
 
 { Показать тост-уведомление }
 procedure ShowSimpleToast(const Text: string; const Title: string = '');
@@ -202,6 +212,47 @@ begin
         SecureZeroMemory(PChar(S), Length(S) * SizeOf(Char));
     end;
     S := ''; // Обнуляем указатель
+end;
+
+{ THistoryHelper }
+
+class procedure THistoryHelper.Add(var History: TArray<THistoryItem>; const NewValue: string; MaxItems: Integer);
+var
+    I: Integer;
+    Found: Boolean;
+begin
+    if NewValue.Trim = '' then Exit;
+
+    Found := False;
+    // 1. Ищем элемент. Если нашли — увеличиваем вес
+    for I := Low(History) to High(History) do
+    begin
+        if SameText(History[I].Value, NewValue) then
+        begin
+            Inc(History[I].UseCount);
+            Found := True;
+            Break;
+        end;
+    end;
+
+    // 2. Если не нашли — добавляем новый с весом 1
+    if not Found then
+    begin
+        SetLength(History, Length(History) + 1);
+        History[High(History)].Value := NewValue;
+        History[High(History)].UseCount := 1;
+    end;
+
+    // 3. Сортируем массив по весу (UseCount) по убыванию (от частых к редким)
+    TArray.Sort<THistoryItem>(History, TComparer<THistoryItem>.Construct(
+        function(const Left, Right: THistoryItem): Integer
+        begin
+            Result := Right.UseCount - Left.UseCount; // Сортировка по убыванию
+        end));
+
+    // 4. Ограничиваем размер истории (обрезаем хвост из самых редких)
+    if Length(History) > MaxItems then
+        SetLength(History, MaxItems);
 end;
 
 initialization

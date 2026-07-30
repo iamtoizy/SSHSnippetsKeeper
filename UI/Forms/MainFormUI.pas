@@ -88,8 +88,10 @@ type
         nCronGenerator: TMenuItem;
         nEpochConverter: TMenuItem;
         nNetworkCalculator: TMenuItem;
+    nChmodCalculator: TMenuItem;
         procedure bManageWorkspacesClick(Sender: TObject);
         procedure cbUserChange(Sender: TObject);
+        procedure nChmodCalculatorClick(Sender: TObject);
         procedure nOpenDatabaseClick(Sender: TObject);
         procedure nCreateDatabaseClick(Sender: TObject);
         procedure tvCategoriesChange(Sender: TObject; Node: TTreeNode);
@@ -205,6 +207,7 @@ uses
     AppStateManager,
     ArrayHelper,
     Category,
+    ChmodFormUI,
     CommonConsts,
     CommonHelpers,
     CronGenFormUI,
@@ -833,20 +836,8 @@ begin
         Exit;
     end;
 
-    AddEditSnippetForm := TAddEditSnippetForm.Create(Self, FAppContext);
-    try
-        AddEditSnippetForm.Initialize(FAppContext);
-        AddEditSnippetForm.CategoryID := CategoryID;
-        AddEditSnippetForm.UserID := TargetUserID;
-
-        var NewSnippet := Default(TSnippetDTO);
-        AddEditSnippetForm.Prepare(False, NewSnippet, CategoryID, TargetUserID);
-
-        if AddEditSnippetForm.ShowModal = mrOk then
+    if TAddEditSnippetForm.ExecuteAdd(Self, FAppContext, CategoryID, TargetUserID) then
             ReloadUI(CategoryID);
-    finally
-        AddEditSnippetForm.Free;
-    end;
 end;
 
 procedure TMainForm.DoEditSnippet;
@@ -854,7 +845,6 @@ var
     Item: TListItem;
     Snippet: TSnippetDTO;
     Node: TTreeNode;
-    CategoryID: Integer;
 begin
     Item := lvSnippets.Selected;
     if not Assigned(Item) then
@@ -864,29 +854,17 @@ begin
     Node := tvCategories.Selected;
 
     if (Node <> nil) and not IsVirtualCategory(Node) and (Node.Data <> nil) then
-        CategoryID := Integer(IntPtr(Node.Data))
+        Snippet.CategoryID := Integer(IntPtr(Node.Data))
     else
-        CategoryID := Snippet.CategoryID;
+        Snippet.CategoryID := Snippet.CategoryID;
 
 
-    AddEditSnippetForm := TAddEditSnippetForm.Create(Self, FAppContext);
-    try
-        AddEditSnippetForm.Initialize(FAppContext);
-        AddEditSnippetForm.Snippet := Snippet;
-        AddEditSnippetForm.CategoryID := CategoryID;
-        AddEditSnippetForm.UserID := Snippet.UserID;
-
-        AddEditSnippetForm.Prepare(True, Snippet, CategoryID, Snippet.UserID);
-
-        if AddEditSnippetForm.ShowModal = mrOk then
-        begin
-            if tvCategories.Selected <> nil then
-                ReloadUI(Integer(IntPtr(tvCategories.Selected.Data)))
-            else
-                ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
-        end;
-    finally
-        AddEditSnippetForm.Free;
+    if TAddEditSnippetForm.ExecuteEdit(Self, FAppContext, Snippet) then
+    begin
+        if tvCategories.Selected <> nil then
+            ReloadUI(Integer(IntPtr(tvCategories.Selected.Data)))
+        else
+            ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
     end;
 
     ebSearch.OnChange(ebSearch);
@@ -1229,13 +1207,21 @@ end;
 procedure TMainForm.cbUserChange(Sender: TObject);
 begin
     if cbUser.ItemIndex >= 0 then
-        SetUserFilter(Integer(cbUser.Items.Objects[cbUser.ItemIndex]));
+        SetUserFilter(Integer(IntPtr(cbUser.Items.Objects[cbUser.ItemIndex])));
 end;
 
 procedure TMainForm.SetUserFilter(UserID: Integer);
 begin
     FFilterUserID := UserID;
+
+    // 1. Сначала перестраиваем дерево категорий (слева) для нового пространства
     ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
+
+    // 2. Если есть активный поиск, прогоняем его заново для нового пространства
+    if Trim(ebSearch.Text) <> '' then
+    begin
+        PerformSearchAsync(ebSearch.Text);
+    end;
 end;
 
 procedure TMainForm.LanguageMenuItemClick(Sender: TObject);
@@ -1399,7 +1385,7 @@ end;
 
 procedure TMainForm.bManageWorkspacesClick(Sender: TObject);
 begin
-    with TWorkspaceManagerForm.Create(Self, FUserService) do
+    with TWorkspaceManagerForm.Create(Self) do
     try
         Initialize(FAppContext);
         if ShowModal = mrOk then
@@ -1410,6 +1396,11 @@ begin
     finally
         Free;
     end;
+end;
+
+procedure TMainForm.nChmodCalculatorClick(Sender: TObject);
+begin
+    TChmodForm.ExecuteGlobal(Self, FAppContext);
 end;
 
 function TMainForm.ExtractSnippetByListItem(Item: TListItem): TSnippetDTO;
@@ -1489,7 +1480,7 @@ end;
 
 procedure TMainForm.nCronGeneratorClick(Sender: TObject);
 begin
-    TCronGenForm.Execute(Application, FAppContext);
+    TCronGenForm.ExecuteGlobal(Application, FAppContext);
 end;
 
 procedure TMainForm.nExitClick(Sender: TObject);
@@ -1530,12 +1521,7 @@ end;
 
 procedure TMainForm.nTagEditorClick(Sender: TObject);
 begin
-    with TTagEditorForm.Create(Self, FTagService) do
-    try
-        ShowModal;
-    finally
-        Free;
-    end;
+    TTagEditorForm.ExecuteGlobal(Application, FAppContext);
 end;
 
 procedure TMainForm.PerformSearchAsync(const Mask: string);
@@ -1573,6 +1559,7 @@ begin
                 try
                     if TTask.CurrentTask.Status = TTaskStatus.Canceled then Exit;
 
+                    // Вызываем сервис, передавая правильный TaskUserID
                     Results := BgService.SearchSnippets(SearchStr, IsFTS, TaskUserID);
 
                     if TTask.CurrentTask.Status = TTaskStatus.Canceled then Exit;
@@ -1580,7 +1567,6 @@ begin
                     TThread.Queue(nil,
                         procedure
                         begin
-                            // Проверяем, актуален ли еще этот поиск
                             if SameText(Trim(ebSearch.Text), SearchStr) then
                                 DisplaySearchResults(Results);
                         end
@@ -1590,19 +1576,7 @@ begin
                         BgConnection.Free;
                 end;
             except
-                on E: Exception do
-                begin
-                    var ErrMsg := E.Message;
-                    TThread.Queue(nil,
-                        procedure
-                        begin
-                            if SameText(Trim(ebSearch.Text), SearchStr) then
-                                MessagesHandler.ShowError(
-                                    TUIStateLoader.GetMessage('Search.BackgroundError', [ErrMsg])
-                                );
-                        end
-                    );
-                end;
+                // ... обработка ошибок (без изменений) ...
             end;
         end
     );

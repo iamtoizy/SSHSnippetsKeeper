@@ -76,14 +76,12 @@ type
         procedure tvAIStructureChange(Sender: TObject; Node: TTreeNode);
     private
         FLocalSettings: TAppSettings; // Локальная копия для работы без порчи основного конфига до сохранения
-        FSettingsManager: ISettingsManager;
         procedure LoadStructureToTree;
         procedure ClearTreeData;
         procedure SaveCurrentEditorData;
         function CreateNodeData(AType: TNodeType; AHub, AModel: Integer): PNodeData;
     public
-        class function Execute(AppContext: IAppContext): Boolean;
-        procedure Initialize(AppContext: IAppContext);
+        procedure DoInitialize; override;
     end;
 
 var
@@ -127,21 +125,9 @@ begin
     Result^.ModelIndex := AModel;
 end;
 
-class function TAISettingsForm.Execute(AppContext: IAppContext): Boolean;
-var
-    Form: TAISettingsForm;
+procedure TAISettingsForm.DoInitialize;
 begin
-    Form := TAISettingsForm.Create(Application);
-    try
-        Form.Initialize(AppContext);
-        Form.FSettingsManager := AppContext.SettingsManager;
-        Form.FLocalSettings := AppContext.SettingsManager.Data;
-        Form.pcDetails.ActivePageIndex := 0;
-        Form.LoadStructureToTree;
-        Result := Form.ShowModal = mrOk;
-    finally
-        Form.Free;
-    end;
+    FLocalSettings := AppContext.SettingsManager.Data;
 end;
 
 procedure TAISettingsForm.LoadStructureToTree;
@@ -177,10 +163,10 @@ begin
     SaveCurrentEditorData; // Сохраняем то, что открыто в редакторе прямо сейчас
 
     // Переносим изменения из локальной структуры в глобальную
-    FSettingsManager.Data := FLocalSettings;
+    AppContext.SettingsManager.Data := FLocalSettings;
 
     // Записываем обновленный JSON на диск
-    FSettingsManager.Save;
+    AppContext.SettingsManager.Save;
 
     ModalResult := mrOk;
 end;
@@ -324,12 +310,6 @@ begin
         mSystemPrompt.Text := ModelItem.Params.Content;
     end;
 end;
-
-procedure TAISettingsForm.Initialize(AppContext: IAppContext);
-begin
-    inherited Initialize(AppContext);
-end;
-
 
 end.
 

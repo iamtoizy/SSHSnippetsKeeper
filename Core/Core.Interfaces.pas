@@ -66,13 +66,32 @@ type
         Items: TArrayRecord<TAIItem>;
     end;
 
-    TAppSettings = record // Можно переименовать в TAppSettings, чтобы отвязаться от слова JSON
+    // Структура пресета Chmod
+    TChmodPreset = record
+        Name: string;
+        OctalBits: Integer; // Например 755 или 644
+        IsDir: Boolean;     // Нужно ли ставить галку "Это директория"
+    end;
+
+    // Элемент истории с весом
+    THistoryItem = record
+        Value: string;
+        UseCount: Integer;
+    end;
+
+    TAppSettings = record
         UISettings: TUISettings;
         AllowedWindows: TArrayRecord<TWindowsNode>;
         WindowHelper: TWindowHelperNode;
         AllowedApplications: TArrayRecord<TAllowedApplicationsItem>;
         AISettings: TArrayRecord<TAIHub>;
         CurrentLanguage: string;
+        ChmodPresets: TArray<TChmodPreset>;
+
+        // Массивы для истории
+        HistoryUsers: TArray<THistoryItem>;
+        HistoryGroups: TArray<THistoryItem>;
+        HistoryFiles: TArray<THistoryItem>;
     end;
 
     // Интерфейс менеджера
@@ -214,6 +233,7 @@ type
         procedure ShowWarning(const Message: string);
         function AskConfirmation(const Message, Title: string; Flags: Cardinal = MB_YESNO or MB_ICONQUESTION): Boolean;
         function AskWarning(const Message, Title: string): Boolean;
+        function AskInput(const Title, Prompt: string; var Value: string): Boolean;
     end;
 
     TPasswordPreset = (

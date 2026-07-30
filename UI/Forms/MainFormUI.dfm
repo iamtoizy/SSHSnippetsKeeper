@@ -371,6 +371,11 @@ object MainForm: TMainForm
         ShortCut = 24654
         OnClick = nNetworkCalculatorClick
       end
+      object nChmodCalculator: TMenuItem
+        Caption = #1050#1072#1083#1100#1082#1091#1083#1103#1090#1086#1088' chmod'
+        ShortCut = 24653
+        OnClick = nChmodCalculatorClick
+      end
     end
   end
   object OpenDialog: TOpenDialog

@@ -12,7 +12,6 @@ object EpochConverterForm: TEpochConverterForm
   Font.Name = 'Segoe UI'
   Font.Style = []
   Position = poScreenCenter
-  OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnResize = FormResize

@@ -466,130 +466,60 @@ end;
 
 function TSnippetRepository.SearchByMaskFTS(const Mask: string; UserID: Integer = 0): TArray<TSnippetDTO>;
 var
-    Query: TFDQuery;
-    List: TList<TSnippetDTO>;
-    Snip: TSnippetDTO;
     SafeMask, SQL: string;
 begin
-    Result := [];
+    SafeMask := SanitizeFTS5(Mask);
+    if SafeMask = '' then
+        Exit(nil);
 
-    // Безопасность FTS:
-    // Экранируем двойные кавычки внутри строки, чтобы парсер SQLite не сломался.
-    // Если твоя функция SanitizeFTS5 делает что-то важное - можешь оставить её,
-    // но для FTS5 самое главное - правильно обернуть запрос в двойные кавычки ниже.
-    SafeMask := Mask.Trim.Replace('"', '""', [rfReplaceAll]);
+    // Оборачиваем запрос в двойные кавычки для поиска точной фразы
+    // и добавляем звездочку для префиксного поиска (чтобы искал даже по части слова)
+    SafeMask := '"' + SafeMask + '" *';
 
-    if SafeMask = '' then Exit;
+    // Выбираем только стандартные поля, чтобы InternalLoadSnippets смог их распарсить
+    SQL := 'SELECT s.id, s.user_id, s.title, s.content, s.comment, s.category_id, s.created_at, s.updated_at ' +
+           'FROM snippets s ' +
+           'JOIN snippet_fts fts ON s.id = fts.rowid ' +
+           'WHERE snippet_fts MATCH ? ';
 
-    List := TList<TSnippetDTO>.Create;
-    Query := CreateQuery;
-    try
-        // SQL ЗАПРОС: Берем s.* чтобы автоматически подцепить ВСЕ поля сниппета
-        SQL := 'SELECT s.*, fts.rank ' +
-               'FROM snippets s ' +
-               'JOIN snippet_fts fts ON s.id = fts.rowid ' +
-               'WHERE snippet_fts MATCH :term ';
+    if UserID > 0 then
+    begin
+        // Сортировать по fts.rank можно, даже если его нет в блоке SELECT
+        SQL := SQL + ' AND s.user_id = ? ORDER BY fts.rank ASC';
 
-        if UserID > 0 then
-            SQL := SQL + ' AND s.user_id = :uid ';
-
-        // Алгоритм BM25: чем больше минус, тем выше релевантность (самые точные - сверху)
-        SQL := SQL + 'ORDER BY fts.rank ASC';
-
-        Query.SQL.Text := SQL;
-
-        // Передача параметра:
-        // Обязательно оборачиваем в двойные кавычки. Это заставит SQLite искать точную фразу
-        // и не падать, если юзер введет знаки минуса, скобки или звездочки (например: "my-var*").
-        Query.ParamByName('term').AsString := '"' + SafeMask + '"';
-
-        if UserID > 0 then
-            Query.ParamByName('uid').AsInteger := UserID;
-
-        Query.Open;
-
-        while not Query.Eof do
-        begin
-            Snip.ID := Query.FieldByName('id').AsInteger;
-            Snip.UserID := Query.FieldByName('user_id').AsInteger;
-            Snip.Title := Query.FieldByName('title').AsString;
-            Snip.Content := Query.FieldByName('content').AsString;
-            Snip.CategoryID := Query.FieldByName('category_id').AsInteger;
-            Snip.CreatedAt := Query.FieldByName('created_at').AsLargeInt;
-
-            // Обработка NULL: updated_at может быть NULL в базе
-            if not Query.FieldByName('updated_at').IsNull then
-                Snip.UpdatedAt := Query.FieldByName('updated_at').AsLargeInt
-            else
-                Snip.UpdatedAt := 0;
-
-            Snip.Comment := Query.FieldByName('comment').AsString;
-            Snip.IsSecurityCheckIgnored := Query.FieldByName('is_security_ignored').AsInteger > 0;
-
-            Snip.Tags := []; // Теги подтягиваются отдельно
-
-            List.Add(Snip);
-            Query.Next;
-        end;
-
-        Result := List.ToArray;
-    finally
-        Query.Free;
-        List.Free;
+        // Используем позиционные параметры (знаки вопроса) - это 100% защита от багов FireDAC
+        Result := InternalLoadSnippets(SQL, [SafeMask, UserID]);
+    end
+    else
+    begin
+        SQL := SQL + ' ORDER BY fts.rank ASC';
+        Result := InternalLoadSnippets(SQL, [SafeMask]);
     end;
 end;
 
 function TSnippetRepository.SearchByMaskSimple(const Mask: string; UserID: Integer = 0): TArray<TSnippetDTO>;
 var
-    Query: TFDQuery;
-    List: TList<TSnippetDTO>;
-    Snip: TSnippetDTO;
-    SQL: string;
+    SearchStr, SQL: string;
 begin
-    Result := [];
-
     if Trim(Mask) = '' then
-        Exit;
+        Exit(nil);
 
-    List := TList<TSnippetDTO>.Create;
-    Query := CreateQuery;
-    try
-        SQL := 'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at ' +
-               'FROM snippets ' +
-               'WHERE (title LIKE :m COLLATE NOCASE OR content LIKE :m COLLATE NOCASE)';
+    SearchStr := '%' + Trim(Mask) + '%';
 
-        if UserID > 0 then
-            SQL := SQL + ' AND user_id = :uid';
+    SQL := 'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at ' +
+           'FROM snippets ' +
+           'WHERE (title LIKE ? COLLATE NOCASE OR content LIKE ? COLLATE NOCASE) ';
 
+    if UserID > 0 then
+    begin
+        SQL := SQL + ' AND user_id = ? ORDER BY updated_at DESC, title ASC';
+        // Передаем SearchStr дважды: для title и для content, и третьим идет UserID
+        Result := InternalLoadSnippets(SQL, [SearchStr, SearchStr, UserID]);
+    end
+    else
+    begin
         SQL := SQL + ' ORDER BY updated_at DESC, title ASC';
-
-        Query.SQL.Text := SQL;
-        Query.ParamByName('m').AsString := '%' + Trim(Mask) + '%';
-
-        if UserID > 0 then
-            Query.ParamByName('uid').AsInteger := UserID;
-
-        Query.Open;
-
-        while not Query.Eof do
-        begin
-            Snip.ID := Query.FieldByName('id').AsInteger;
-            Snip.UserID := Query.FieldByName('user_id').AsInteger;
-            Snip.Title := Query.FieldByName('title').AsString;
-            Snip.Content := Query.FieldByName('content').AsString;
-            Snip.Comment := Query.FieldByName('comment').AsString;
-            Snip.CategoryID := Query.FieldByName('category_id').AsInteger;
-            Snip.CreatedAt := Query.FieldByName('created_at').AsLargeInt;
-            Snip.UpdatedAt := Query.FieldByName('updated_at').AsLargeInt;
-            Snip.Tags := [];
-
-            List.Add(Snip);
-            Query.Next;
-        end;
-        Result := List.ToArray;
-    finally
-        Query.Free;
-        List.Free;
+        Result := InternalLoadSnippets(SQL, [SearchStr, SearchStr]);
     end;
 end;
 

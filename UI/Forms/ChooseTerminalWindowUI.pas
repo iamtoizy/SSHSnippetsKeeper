@@ -23,7 +23,6 @@ type
         FWindows: TArray<TWindowMonitorInfo>;
         procedure PopulateList;
     public
-        procedure Initialize(AppContext: IAppContext);
         property SelectedWindow: TWindowMonitorInfo read FSelectedWindow;
     end;
 
@@ -52,12 +51,6 @@ begin
         lvTerminalList.ItemIndex := 0;
         lvTerminalList.SetFocus;
     end;
-end;
-
-procedure TChooseTerminalWindow.Initialize(AppContext: IAppContext);
-begin
-    inherited;
-    FAppContext := AppContext;
 end;
 
 procedure TChooseTerminalWindow.lvTerminalListDblClick(Sender: TObject);

@@ -128,8 +128,6 @@ type
         procedure AssignEvents;
         procedure UpdateCronUI;
     public
-        class procedure Execute(AOwner: TComponent; AppContext: IAppContext);
-        procedure Initialize(AppContext: IAppContext);
     end;
 
 var
@@ -188,19 +186,6 @@ end;
 // =========================================================================
 // нямнбмни йнд тнплш
 // =========================================================================
-
-class procedure TCronGenForm.Execute(AOwner: TComponent; AppContext: IAppContext);
-var
-    Frm: TCronGenForm;
-begin
-    Frm := TCronGenForm.Create(AOwner);
-    try
-        Frm.Initialize(AppContext);
-        Frm.ShowModal;
-    finally
-        Frm.Free;
-    end;
-end;
 
 procedure TCronGenForm.FormCreate(Sender: TObject);
 begin
@@ -666,11 +651,6 @@ end;
 procedure TCronGenForm.FormShow(Sender: TObject);
 begin
     pgcBuilder.ActivePage := tsMinutes;
-end;
-
-procedure TCronGenForm.Initialize(AppContext: IAppContext);
-begin
-    inherited Initialize(AppContext);
 end;
 
 // =========================================================================

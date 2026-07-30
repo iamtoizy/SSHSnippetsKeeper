@@ -191,7 +191,7 @@ begin
     FTimer.Free;
     FSharedButton.Free;
     FRegistered.Free;
-    inherited;
+    inherited Destroy;
 end;
 
 procedure TUIHoverHelpManager.HookTarget(Target: TControl);
@@ -286,25 +286,28 @@ end;
 procedure TUIHoverHelpManager.UnregisterAllForOwner(AOwner: TComponent);
 var
     Ctrl: TControl;
-    ControlsToRemove: TList<TControl>;
+    KeysArray: TArray<TControl>;
 begin
     if not Assigned(AOwner) then Exit;
 
-    ControlsToRemove := TList<TControl>.Create;
-    try
-        for Ctrl in FRegistered.Keys do
+    // 1. Создаем статичную копию ключей (массив).
+    // Теперь нам не страшны любые модификации словаря FRegistered
+    // ни из нашего кода, ни из асинхронных вызовов Notification.
+    KeysArray := FRegistered.Keys.ToArray;
+
+    for Ctrl in KeysArray do
+    begin
+        // 2. Обязательно проверяем, что контрол всё ещё жив и не находится в процессе удаления
+        if Assigned(Ctrl) and not (csDestroying in Ctrl.ComponentState) then
         begin
             if (Ctrl.Owner = AOwner) or
                ((AOwner is TCustomForm) and (GetParentForm(Ctrl) = AOwner)) then
             begin
-                ControlsToRemove.Add(Ctrl);
+                // Безопасно отписываем.
+                // Даже если внутри сработает FRegistered.Remove, наш массив KeysArray не пострадает.
+                UnregisterControl(Ctrl);
             end;
         end;
-
-        for Ctrl in ControlsToRemove do
-            UnregisterControl(Ctrl);
-    finally
-        ControlsToRemove.Free;
     end;
 end;
 
@@ -449,40 +452,61 @@ var
     Pt: TPoint;
     TargetW, TargetH: Integer;
     RightPadding: Integer;
+    CurrentDPI: Integer;
+    ScaledOffsetX, ScaledOffsetY: Integer;
+    ActualBtnW, ActualBtnH: Integer;
 begin
     TargetW := Target.ClientWidth;
     TargetH := Target.ClientHeight;
     RightPadding := 0;
 
+    // 1. Определяем текущий масштаб (DPI) контрола, над которым мы находимся.
+    // В Delphi 10.3 Rio или новее у TControl есть CurrentPPI
+    {$IF CompilerVersion >= 33.0}
+    CurrentDPI := Target.CurrentPPI;
+    {$ELSE}
+    CurrentDPI := Screen.PixelsPerInch;
+    {$ENDIF}
+
+    // 2. Берем реальную ширину и высоту кнопки (VCL может сама отмасштабировать THelpPopupWindow)
+    // Это безопаснее, чем использовать константы BTN_WIDTH
+    ActualBtnW := FSharedButton.Width;
+    ActualBtnH := FSharedButton.Height;
+
+    // 3. Масштабируем ручные оффсеты под текущий DPI монитора.
+    // Если на 100% масштабе (96 DPI) OffsetX был -10, то на 200% (192 DPI) он станет -20
+    ScaledOffsetX := MulDiv(Setup.OffsetX, CurrentDPI, 96);
+    ScaledOffsetY := MulDiv(Setup.OffsetY, CurrentDPI, 96);
+
     // Автоматически вычисляем ширину встроенных кнопок (стрелочек)
     if (Target is TCustomComboBox) or (Target.ClassName = 'TSpinEdit') then
     begin
-        // GetSystemMetrics(SM_CXVSCROLL) возвращает точную системную ширину кнопки выпадающего списка
-        RightPadding := GetSystemMetrics(SM_CXVSCROLL);
+        // Масштабируем и системную метрику для HighDPI
+        RightPadding := MulDiv(GetSystemMetrics(SM_CXVSCROLL), CurrentDPI, 96);
     end;
 
-    // Вычитаем RightPadding из позиций, привязанных к ПРАВОМУ краю (Right)
+    // Вычитаем RightPadding из позиций, привязанных к праавому краю (Right)
     case Setup.Position of
         hipTopLeft:      Pt := Point(BASE_OFFSET_X, BASE_OFFSET_Y);
-        hipTopCenter:    Pt := Point((TargetW - BTN_WIDTH) div 2, BASE_OFFSET_Y);
-        hipTopRight:     Pt := Point(TargetW - RightPadding - BTN_WIDTH - BASE_OFFSET_X, BASE_OFFSET_Y);
+        hipTopCenter:    Pt := Point((TargetW - ActualBtnW) div 2, BASE_OFFSET_Y);
+        hipTopRight:     Pt := Point(TargetW - RightPadding - ActualBtnW - BASE_OFFSET_X, BASE_OFFSET_Y);
 
-        hipLeftCenter:   Pt := Point(BASE_OFFSET_X, (TargetH - BTN_HEIGHT) div 2);
-        hipRightCenter:  Pt := Point(TargetW - RightPadding - BTN_WIDTH - BASE_OFFSET_X, (TargetH - BTN_HEIGHT) div 2);
+        hipLeftCenter:   Pt := Point(BASE_OFFSET_X, (TargetH - ActualBtnH) div 2);
+        hipRightCenter:  Pt := Point(TargetW - RightPadding - ActualBtnW - BASE_OFFSET_X, (TargetH - ActualBtnH) div 2);
 
-        hipBottomLeft:   Pt := Point(BASE_OFFSET_X, TargetH - BTN_HEIGHT - BASE_OFFSET_Y);
-        hipBottomCenter: Pt := Point((TargetW - BTN_WIDTH) div 2, TargetH - BTN_HEIGHT - BASE_OFFSET_Y);
-        hipBottomRight:  Pt := Point(TargetW - RightPadding - BTN_WIDTH - BASE_OFFSET_X, TargetH - BTN_HEIGHT - BASE_OFFSET_Y);
+        hipBottomLeft:   Pt := Point(BASE_OFFSET_X, TargetH - ActualBtnH - BASE_OFFSET_Y);
+        hipBottomCenter: Pt := Point((TargetW - ActualBtnW) div 2, TargetH - ActualBtnH - BASE_OFFSET_Y);
+        hipBottomRight:  Pt := Point(TargetW - RightPadding - ActualBtnW - BASE_OFFSET_X, TargetH - ActualBtnH - BASE_OFFSET_Y);
     end;
 
-    // Применяем ручные смещения (если они были переданы при регистрации)
-    Pt.X := Pt.X + Setup.OffsetX;
-    Pt.Y := Pt.Y + Setup.OffsetY;
+    // Применяем отмасштабированные ручные смещения
+    Pt.X := Pt.X + ScaledOffsetX;
+    Pt.Y := Pt.Y + ScaledOffsetY;
 
     Pt := Target.ClientToScreen(Pt);
 
     // Перемещаем кнопку и выводим на передний план
-    SetWindowPos(FSharedButton.Handle, HWND_TOPMOST, Pt.X, Pt.Y, 0, 0, SWP_NOSIZE or SWP_NOACTIVATE);
+    SetWindowPos(FSharedButton.Handle, HWND_TOPMOST, Pt.X, Pt.Y, ActualBtnW, ActualBtnH, SWP_NOACTIVATE);
 end;
 
 end.

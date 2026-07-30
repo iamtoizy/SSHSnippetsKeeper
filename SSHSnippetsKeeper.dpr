@@ -82,7 +82,9 @@ uses
   EpochService in 'Core\Services\EpochService.pas',
   EpochConverterFormUI in 'UI\Forms\EpochConverterFormUI.pas' {EpochConverterForm},
   NetworkCalcService in 'Core\Services\NetworkCalcService.pas',
-  NetworkFormUI in 'UI\Forms\NetworkFormUI.pas' {NetworkForm};
+  NetworkFormUI in 'UI\Forms\NetworkFormUI.pas' {NetworkForm},
+  ChmodService in 'Core\Services\ChmodService.pas',
+  ChmodFormUI in 'UI\Forms\ChmodFormUI.pas' {ChmodForm};
 
 {$R *.res}
 

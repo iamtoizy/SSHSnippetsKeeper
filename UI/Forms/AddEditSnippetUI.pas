@@ -103,8 +103,6 @@ type
     protected
         procedure Loaded; override;
     private
-        FSnippetService: ISnippetService;
-        FTagService: ITagService;
         FIsAICanceled: Boolean;
         FFirstShow: Boolean;
 
@@ -118,7 +116,6 @@ type
         FCurrentHighlighter: TCustomBashSyn;
         FCompletionEngine: TBashCompletionEngine;
         FAIService: IAIService;
-        FSettingsManager: ISettingsManager;
 
         procedure ShowAIOverlay;
         procedure ExecuteAICommand;
@@ -135,8 +132,11 @@ type
         property CategoryID: Integer read FCategoryID write FCategoryID;
         property UserID: Integer read FUserID write FUserID;
 
-        constructor Create(Owner: TComponent; AppContext: IAppContext); reintroduce;
-        procedure Initialize(AppContext: IAppContext);
+        constructor Create(Owner: TComponent); override;
+        procedure DoInitialize; override;
+
+        class function ExecuteAdd(Owner: TComponent; AppContext: IAppContext; CategoryID, UserID: Integer): Boolean;
+        class function ExecuteEdit(Owner: TComponent; AppContext: IAppContext; var SnippetToEdit: TSnippetDTO): Boolean;
     end;
 
 var
@@ -165,41 +165,32 @@ uses
 
 {$R *.dfm}
 
-constructor TAddEditSnippetForm.Create(Owner: TComponent; AppContext: IAppContext);
+constructor TAddEditSnippetForm.Create(Owner: TComponent);
 begin
-    // Инициализируем зависимости до вызова inherited
-    FSnippetService := AppContext.SnippetService;
-    FTagService := AppContext.TagService;
-    FSettingsManager := AppContext.SettingsManager;
-
-    if Assigned(FSettingsManager) then
-        FBasicCommands := FSettingsManager.BashAutocomplete;
-
-    // Теперь VCL может безопасно создавать форму и вызывать FormCreate/Loaded
     inherited Create(Owner);
-
-    // Создаем движок автокомплита
-    FCompletionEngine := TBashCompletionEngine.Create(FBasicCommands);
-    FCompletionEngine.LoadFromJsonFile(ResolvePath('extra-commands.json'));
-
-    // Сразу применяем подсветку синтаксиса до показа формы (не ждем таймер)
-    SetSyntax;
+//    if Assigned(FSettingsManager) then
+//        FBasicCommands := FSettingsManager.BashAutocomplete;
+//
+//    // Теперь VCL может безопасно создавать форму и вызывать FormCreate/Loaded
+//    inherited Create(Owner);
+//
+//    // Создаем движок автокомплита
+//    FCompletionEngine := TBashCompletionEngine.Create(FBasicCommands);
+//    FCompletionEngine.LoadFromJsonFile(ResolvePath('extra-commands.json'));
+//
+//    // Сразу применяем подсветку синтаксиса до показа формы (не ждем таймер)
+//    SetSyntax;
 end;
 
 procedure TAddEditSnippetForm.bAISettingsClick(Sender: TObject);
 begin
-    // Вызываем модальную форму редактора структуры ИИ
-    if TAISettingsForm.Execute(FAppContext) then
-    begin
-        // Если пользователь сохранил настройки - обновляем выпадающие списки
-        // на форме редактирования сниппета, чтобы новые модели сразу появились
-        PopulateHubs;
-    end;
+    TAISettingsForm.ExecuteGlobal(Application, FAppContext);
+    PopulateHubs;
 end;
 
 procedure TAddEditSnippetForm.FormDestroy(Sender: TObject);
 begin
-    // ИСПРАВЛЕНИЕ УТЕЧКИ TSynDropTarget:
+    // Исправление утечки TSynDropTarget:
     // Принудительно отключаем OLE Drag&Drop до того, как уничтожатся Handle окон.
     if mContent.HandleAllocated then RevokeDragDrop(mContent.Handle);
     if mComment.HandleAllocated then RevokeDragDrop(mComment.Handle);
@@ -212,9 +203,16 @@ begin
         FCompletionEngine.Free;
 end;
 
-procedure TAddEditSnippetForm.Initialize(AppContext: IAppContext);
+procedure TAddEditSnippetForm.DoInitialize;
 begin
-    inherited Initialize(AppContext);
+    FBasicCommands := AppContext.SettingsManager.BashAutocomplete;
+
+//    // Создаем движок автокомплита
+    FCompletionEngine := TBashCompletionEngine.Create(FBasicCommands);
+    FCompletionEngine.LoadFromJsonFile(ResolvePath('extra-commands.json'));
+
+    // Сразу применяем подсветку синтаксиса до показа формы (не ждем таймер)
+    SetSyntax;
 
     // Регистрация подсказок
     RegisterHelp(mContent, hipTopRight, 'Help.AddEditSnippet.mContent', hkCustomForm);
@@ -302,7 +300,7 @@ begin
             Snippet.UpdatedAt := DateTimeToUnix(Now);
 
             // Передаем TagArr вместо пустых скобок []
-            FSnippetService.UpdateSnippet(Snippet, TagArr);
+            AppContext.SnippetService.UpdateSnippet(Snippet, TagArr);
             ModalResult := mrOk;
         end
         else
@@ -311,7 +309,7 @@ begin
             Snippet.UpdatedAt := 0;
 
             // Передаем TagArr вместо пустых скобок []
-            FSnippetService.CreateSnippet(Snippet, TagArr);
+            AppContext.SnippetService.CreateSnippet(Snippet, TagArr);
             ModalResult := mrOk;
         end;
     except
@@ -348,7 +346,7 @@ begin
     ModIdx := Integer(IntPtr(cbAIModel.Items.Objects[cbAIModel.ItemIndex]));
 
     // Вытаскиваем выбранную модель
-    SelectedAI := FSettingsManager.Data.AISettings[HubIdx].Items[ModIdx];
+    SelectedAI := AppContext.SettingsManager.Data.AISettings[HubIdx].Items[ModIdx];
 
     // Сюда можно добавить код обновления UI. Например:
     // lbAIInfo.Caption := Format('Лимит: %d токенов, Temp: %0.1f',
@@ -383,10 +381,10 @@ begin
     cbAIHub.Items.BeginUpdate;
     try
         cbAIHub.Clear;
-        for I := 0 to FSettingsManager.Data.AISettings.Count - 1 do
+        for I := 0 to AppContext.SettingsManager.Data.AISettings.Count - 1 do
         begin
             // Сохраняем индекс хаба прямо в объект (без выделения памяти)
-            cbAIHub.Items.AddObject(FSettingsManager.Data.AISettings[I].Name, TObject(IntPtr(I)));
+            cbAIHub.Items.AddObject(AppContext.SettingsManager.Data.AISettings[I].Name, TObject(IntPtr(I)));
         end;
     finally
         cbAIHub.Items.EndUpdate;
@@ -404,6 +402,27 @@ procedure TAddEditSnippetForm.ebCategorySearchChange(Sender: TObject);
 begin
     if (Length((Sender as TEdit).Text) < 3) then
         Exit;
+end;
+
+class function TAddEditSnippetForm.ExecuteAdd(Owner: TComponent; AppContext: IAppContext; CategoryID, UserID: Integer): Boolean;
+var
+    Frm: TAddEditSnippetForm;
+    NewSnippet: TSnippetDTO;
+begin
+    // Используем локальную переменную Frm, а не глобальную форму!
+    Frm := TAddEditSnippetForm.Create(Owner);
+    try
+        Frm.Initialize(AppContext);
+        Frm.CategoryID := CategoryID;
+        Frm.UserID := UserID;
+
+        NewSnippet := Default(TSnippetDTO);
+        Frm.Prepare(False, NewSnippet, CategoryID, UserID);
+
+        Result := (Frm.ShowModal = mrOk);
+    finally
+        Frm.Free;
+    end;
 end;
 
 procedure TAddEditSnippetForm.ExecuteAICommand;
@@ -427,7 +446,7 @@ begin
     ModIdx := Integer(IntPtr(cbAIModel.Items.Objects[cbAIModel.ItemIndex]));
 
     // Берем нужную модель из настроек
-    SelectedAI := FSettingsManager.Data.AISettings[HubIdx].Items[ModIdx];
+    SelectedAI := AppContext.SettingsManager.Data.AISettings[HubIdx].Items[ModIdx];
 
     // Создаем сервис с её параметрами
     FAIService := TYandexAIService.Create(
@@ -500,6 +519,20 @@ begin
                     mContent.SetFocus;
                 end));
         end).Start;
+end;
+
+class function TAddEditSnippetForm.ExecuteEdit(Owner: TComponent; AppContext: IAppContext; var SnippetToEdit: TSnippetDTO): Boolean;
+var
+    Frm: TAddEditSnippetForm;
+begin
+    Frm := TAddEditSnippetForm.Create(Owner);
+    try
+        Frm.Initialize(AppContext);
+        Frm.Prepare(True, SnippetToEdit, SnippetToEdit.CategoryID, SnippetToEdit.UserID);
+        Result := (Frm.ShowModal = mrOk);
+    finally
+        Frm.Free;
+    end;
 end;
 
 procedure TAddEditSnippetForm.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -714,9 +747,9 @@ begin
     cbAIModel.Items.BeginUpdate;
     try
         // Берем модели только из выбранного провайдера
-        for I := 0 to FSettingsManager.Data.AISettings[HubIndex].Items.Count - 1 do
+        for I := 0 to AppContext.SettingsManager.Data.AISettings[HubIndex].Items.Count - 1 do
         begin
-            cbAIModel.Items.AddObject(FSettingsManager.Data.AISettings[HubIndex].Items[I].Name, TObject(IntPtr(I)));
+            cbAIModel.Items.AddObject(AppContext.SettingsManager.Data.AISettings[HubIndex].Items[I].Name, TObject(IntPtr(I)));
         end;
     finally
         cbAIModel.Items.EndUpdate;
@@ -753,9 +786,9 @@ begin
     lvAllTags.Items.BeginUpdate;
     lvSelectedTags.Items.BeginUpdate;
     try
-        if Assigned(FTagService) then
+        if Assigned(AppContext.TagService) then
         begin
-            AllTags := FTagService.GetAllTags;
+            AllTags := AppContext.TagService.GetAllTags;
             TUIHelpers.FillTagList(lvAllTags, AllTags);
         end;
         lvSelectedTags.Items.Clear;
@@ -773,9 +806,9 @@ begin
             mContent.Text := FSnippet.Content;
             mComment.Text := FSnippet.Comment;
 
-            if Assigned(FTagService) then
+            if Assigned(AppContext.TagService) then
             begin
-                SnippetTags := FTagService.GetSnippetTags(FSnippet.ID);
+                SnippetTags := AppContext.TagService.GetSnippetTags(FSnippet.ID);
                 for Tag in SnippetTags do
                 begin
                     for i := lvAllTags.Items.Count - 1 downto 0 do

@@ -19,12 +19,14 @@ type
         procedure ShowWarning(const Message: string);
         function AskConfirmation(const Message, Title: string; Flags: Cardinal = MB_YESNO or MB_ICONQUESTION): Boolean;
         function AskWarning(const Message, Title: string): Boolean;
+        function AskInput(const Title, Prompt: string; var Value: string): Boolean;
     end;
 
 implementation
 
 uses
     UI.StateLoader,
+    Vcl.Dialogs,
     Vcl.Forms
     ;
 
@@ -93,6 +95,31 @@ begin
             end
         );
         Result := (DlgResult = IDYES);
+    end;
+end;
+
+function TUIMessagesHandler.AskInput(const Title, Prompt: string; var Value: string): Boolean;
+var
+    DlgResult: Boolean;
+    LValue: string;
+begin
+    LValue := Value; // Локальная копия для безопасного захвата в анонимный метод
+
+    if TThread.CurrentThread.ThreadID = MainThreadID then
+    begin
+        Result := InputQuery(Title, Prompt, LValue);
+        if Result then Value := LValue;
+    end
+    else
+    begin
+        TThread.Synchronize(nil,
+            procedure
+            begin
+                DlgResult := InputQuery(Title, Prompt, LValue);
+            end
+        );
+        Result := DlgResult;
+        if Result then Value := LValue;
     end;
 end;
 

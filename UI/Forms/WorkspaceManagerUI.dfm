@@ -13,7 +13,6 @@ object WorkspaceManagerForm: TWorkspaceManagerForm
   FormStyle = fsStayOnTop
   Menu = MainMenu
   Position = poScreenCenter
-  OnCreate = FormCreate
   OnResize = FormResize
   OnShow = FormShow
   TextHeight = 15

@@ -42,7 +42,6 @@ type
         procedure FormCreate(Sender: TObject);
         procedure FormDestroy(Sender: TObject);
     private
-        FTagService: ITagService;
         FChanges: TList<TTagChange>;
 
         procedure ApplyChangesToDB;
@@ -52,9 +51,6 @@ type
         procedure DoRenameTag;
         procedure RefreshTagList;
     public
-        // ¬недрение зависимости (Dependency Injection) через конструктор
-        constructor Create(Owner: TComponent; TagService: ITagService); reintroduce;
-        procedure Initialize(AppContext: IAppContext);
     end;
 
 var
@@ -76,12 +72,6 @@ uses
     Winapi.Windows
     ;
 
-constructor TTagEditorForm.Create(Owner: TComponent; TagService: ITagService);
-begin
-    inherited Create(Owner);
-    FTagService := TagService;
-end;
-
 procedure TTagEditorForm.FormCreate(Sender: TObject);
 begin
     FChanges := TList<TTagChange>.Create;
@@ -94,18 +84,13 @@ begin
     FChanges.Free;
 end;
 
-procedure TTagEditorForm.Initialize(AppContext: IAppContext);
-begin
-    inherited Initialize(AppContext);
-end;
-
 procedure TTagEditorForm.RefreshTagList;
 var
     Tags: TArray<TTagDTO>;
 begin
-    if Assigned(FTagService) then
+    if Assigned(AppContext.TagService) then
     begin
-        Tags := FTagService.GetAllTags;
+        Tags := AppContext.TagService.GetAllTags;
         TUIHelpers.FillTagList(lvTags, Tags);
     end;
 end;
@@ -253,22 +238,19 @@ procedure TTagEditorForm.ApplyChangesToDB;
 var
     Change: TTagChange;
 begin
-    if not Assigned(FTagService) then
-        raise Exception.Create('Tag service is not initialized!');
-
     for Change in FChanges do
     begin
         case Change.Action of
             teaAdd:
                 // —ервис сам проверит уникальность и пустоту имени
-                FTagService.CreateTag(Change.NewName, '');
+                AppContext.TagService.CreateTag(Change.NewName, '');
 
             teaRename:
                 // ѕередаем ID (с приведением типов) и новое им€
-                FTagService.RenameTag(Integer(Change.TagID), Change.NewName);
+                AppContext.TagService.RenameTag(Integer(Change.TagID), Change.NewName);
 
             teaDelete:
-                FTagService.DeleteTag(Integer(Change.TagID));
+                AppContext.TagService.DeleteTag(Integer(Change.TagID));
         end;
     end;
 

@@ -60,7 +60,6 @@ type
             UserID: Integer;
             CurrentHWND: HWND
         );
-        procedure Initialize(AppContext: IAppContext);
     end;
 
 var
@@ -519,11 +518,6 @@ begin
     InsertSelectedSnippet;
 end;
 
-procedure TQuickSearchForm.Initialize(AppContext: IAppContext);
-begin
-    inherited Initialize(AppContext);
-end;
-
 procedure TQuickSearchForm.InsertSelectedSnippet;
 var
     Item: TListItem;
@@ -559,7 +553,7 @@ begin
 
     Hide;
 
-    Runner := TSnippetRunner.Create(FUserID, FAppContext);
+    Runner := TSnippetRunner.Create(FUserID, AppContext);
     try
         Runner.ExecuteSnippet(Snippet, False);
     finally

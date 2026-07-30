@@ -91,6 +91,9 @@
     },
     "nNetworkCalculator": {
       "Caption": "IP/CIDR Calculator"
+    },
+    "nChmodCalculator": {
+      "Caption": "Chmod Calculator"
     }
   },
   "TagEditorForm": {
@@ -541,6 +544,50 @@
       "Caption": ""
     }
   },
+  "ChmodForm": {
+    "Caption": "chmod Calculator",
+    
+    "cbUr": { "Caption": "Read (r)" },
+    "cbUw": { "Caption": "Write (w)" },
+    "cbUx": { "Caption": "Execute (x)" },
+    
+    "cbGr": { "Caption": "Read (r)" },
+    "cbGw": { "Caption": "Write (w)" },
+    "cbGx": { "Caption": "Execute (x)" },
+    
+    "cbOr": { "Caption": "Read (r)" },
+    "cbOw": { "Caption": "Write (w)" },
+    "cbOx": { "Caption": "Execute (x)" },
+    
+    "cbSuid": { "Caption": "SUID" },
+    "cbSgid": { "Caption": "SGID" },
+    "cbSticky": { "Caption": "Sticky" },
+    
+    "cbIsDir": { "Caption": "Is Directory" },
+    "cbRecursive": { "Caption": "Recursive (-R)" },  
+    "cbSudo": { "Caption": "sudo" },
+    "cbSmartExecute": { "Caption": "Smart +X for directories" },
+    "cbSeparateMode": { "Caption": "Separate files (644) and directories (755)" },  
+    
+    "gbOwner": { "Caption": "Owner (User)" },
+    "gbGroup": { "Caption": "Group" },
+    "gbPublic": { "Caption": "Public (Other)" },
+    "gbSpecialBits": { "Caption": "Special Bits" },
+    "gbCommand": { "Caption": "Command" },
+
+    "ebOctal": { "EditLabel.Caption": "Octal" },
+    "ebSymbolic": { "EditLabel.Caption": "Symbolic" },    
+    "lbUser": { "Caption": "User" },
+    "lbGroup": { "Caption": "Group Name" },
+    "lbFileName": { "Caption": "File/Directory Name" },
+    "ebCommand": { "EditLabel.Caption": "Resulting Command" },
+
+    "lbPresets": { "Caption": "Presets" },
+    
+    "bSavePreset": { "Caption": "💾" },
+    "bDeletePreset": { "Caption": "🗑" },
+    "bCopyCommand": { "Caption": "📋" }
+  },
   "Messages": {
     "Help": {
       "MainForm": {
@@ -665,6 +712,13 @@
           "Title": "Subnet Table (VLSM)",
           "Main": "This displays the list of subnets obtained after splitting the original network using the new mask.",
           "Expanded": "The table contains the following data for each generated subnet:<br>• Subnet: Network address and its prefix (e.g., 192.168.1.0/26).<br>• Host Range: Available IP addresses for device assignment (excluding network address and broadcast).<br>• Broadcast: Broadcast address of the subnet.<br>• Hosts: Number of usable (available) addresses.<br><br>Note: To prevent program freezes and memory overflow, a limit of 4096 subnets displayed at a time is enforced."
+        }
+      },
+      "ChmodForm": {
+        "gbCommand": {
+          "Title": "Permission Calculator (Chmod / Chown)",
+          "Main": "Visual constructor for safe and fast generation of Linux permission configuration commands.",
+          "Expanded": "Matrix of permissions and special bits:<br>• R (Read), W (Write), X (Execute / Enter directory).<br>• SUID / SGID: Run as owner / Inherit directory group.<br>• Sticky Bit: Prevents deletion of others' files in shared folders (e.g., /tmp).<br>Smart modifiers:<br>• Smart X (+X): Safe recursion. Grants execute (enter) permissions only to directories, without making regular text files executable.<br>• Separate mode: Generates a `find` command chain for bulk web server permissions (directories — 755, files — 644).<br>• Recursive (-R): Applies the command to all nested items.<br>Formats and history:<br>• The \"Octal\" (0755) and \"Symbolic\" (drwxr-xr-x) fields synchronize with the checkboxes. Entering `d` as the first character automatically marks the target as a directory.<br>• Usernames, groups, and paths are automatically remembered (saved to history) when the \"Copy\" button is pressed.<br>• Frequent settings (e.g., for SSH keys) can be saved in \"Presets\"."
         }
       }
     },
@@ -982,6 +1036,20 @@
       "InvalidFormat": "❌ Invalid IP or mask format",
       "HostsPerSubnet": "Hosts per subnet: %d",
       "TooManySubnets": "Too many subnets. Please decrease the mask difference."
+    },
+    "ChmodForm": {
+      "InputQueryTitle": "New Preset",
+      "InputQueryPrompt": "Enter a name for the current permissions set:",
+      "PresetSaved": "Preset successfully saved.",
+      "DeleteConfirmFormat": "Are you sure you want to delete the preset \"%s\"?",
+      "DeleteTitle": "Deletion",
+      "Presets-Divider": "--- My Presets ---",
+      "Presets-WebDir": "Web Directory (755)",
+      "Presets-WebFile": "Web File (644)",
+      "Presets-SshDir": ".ssh Directory (700)",
+      "Presets-SshPrivateKey": "Private SSH Key (600)",
+      "Presets-SshPublicKey": "Public SSH Key (644)",
+      "Presets-Script": "Executable Script (755)"
     }
   }
 }

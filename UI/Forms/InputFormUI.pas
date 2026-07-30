@@ -35,7 +35,6 @@ type
         FResultValue: string;
         procedure ValidateInput;
     public
-        procedure Initialize(AppContext: IAppContext);
         property ResultValue: string read FResultValue;
     end;
 
@@ -140,12 +139,6 @@ begin
         27:
             bCancelClick(InputForm);
     end;
-end;
-
-procedure TInputForm.Initialize(AppContext: IAppContext);
-begin
-    inherited;
-    FAppContext := AppContext;
 end;
 
 procedure TInputForm.bCancelClick(Sender: TObject);

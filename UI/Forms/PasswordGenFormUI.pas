@@ -137,7 +137,7 @@ type
     public
         class procedure ExecuteGlobal(Owner: TComponent; const PasswordService: IPasswordService; AppContext: IAppContext);
         constructor Create(Owner: TComponent; PasswordService: IPasswordService); reintroduce;
-        procedure Initialize(AppContext: IAppContext);
+        procedure DoInitialize; override;
         procedure ApplyLanguage; override;
     end;
 
@@ -614,9 +614,8 @@ begin
     if Key = ' ' then Key := VISIBLE_SPACE;
 end;
 
-procedure TPasswordGenForm.Initialize(AppContext: IAppContext);
+procedure TPasswordGenForm.DoInitialize;
 begin
-    inherited Initialize(AppContext);
     RegisterHelp(lvHistory, hipBottomRight, 'Help.PasswordGenForm.lvHistory', hkCustomForm);
 end;
 
@@ -682,62 +681,81 @@ begin
     UpdateHistoryUI;
 end;
 
-class procedure TPasswordGenForm.ExecuteGlobal(Owner: TComponent; const PasswordService: IPasswordService; AppContext: IAppContext);
+class procedure TPasswordGenForm.ExecuteGlobal(
+    Owner: TComponent;
+    const PasswordService: IPasswordService;
+    AppContext: IAppContext
+);
 var
     TargetWnd: HWND;
     PasswordToType: string;
+    Frm: TPasswordGenForm;
 begin
+    // 1. Если форма уже открыта (например, вызвали горячей клавишей повторно), поднимаем её
     if Assigned(FCurrentInstance) then
     begin
-        if FCurrentInstance.WindowState = wsMinimized then FCurrentInstance.WindowState := wsNormal;
+        if FCurrentInstance.WindowState = wsMinimized then
+            FCurrentInstance.WindowState := wsNormal;
+
         SetForegroundWindow(FCurrentInstance.Handle);
         FCurrentInstance.BringToFront;
         Exit;
     end;
 
-    FCurrentInstance := TPasswordGenForm.Create(Owner, PasswordService);
+    // 2. Сохраняем хэндл окна, которое было в фокусе ДО открытия генератора
+    TargetWnd := GetForegroundWindow;
+
+    // 3. Создаем экземпляр формы
+    Frm := TPasswordGenForm.Create(Owner, PasswordService);
+    FCurrentInstance := Frm;
     try
-        FCurrentInstance.Initialize(AppContext);
-        TargetWnd := GetForegroundWindow;
-        FCurrentInstance.FormStyle := fsStayOnTop;
-        SetForegroundWindow(FCurrentInstance.Handle);
+        Frm.Initialize(AppContext);
+        Frm.FormStyle := fsStayOnTop;
+        SetForegroundWindow(Frm.Handle);
 
-        if FCurrentInstance.ShowModal = mrOk then
+        // 4. Показываем модально
+        if Frm.ShowModal = mrOk then
         begin
-            // Извлекаем пароль
-            PasswordToType := FCurrentInstance.FinalCleanPassword;
+            PasswordToType := Frm.FinalCleanPassword;
 
-            // Убиваем копию внутри формы
-            WipeString(FCurrentInstance.FinalCleanPassword);
+            // Сразу стираем копию внутри самой формы
+            WipeString(Frm.FinalCleanPassword);
 
             try
+                // Если Owner не задан (вызов глобальным хоткеем поверх чужого приложения)
                 if not Assigned(Owner) then
                 begin
                     if (TargetWnd <> 0) and IsWindow(TargetWnd) then
                     begin
-                        FCurrentInstance.FormStyle := fsNormal;
+                        Frm.FormStyle := fsNormal;
                         SetForegroundWindow(TargetWnd);
-                        Sleep(100);
-                        FCurrentInstance.SendStringViaInput(PasswordToType);
+                        Sleep(100); // Небольшая пауза для гарантированного переключения фокуса Windows
+
+                        // Эмулируем ввод символов
+                        Frm.SendStringViaInput(PasswordToType);
                     end;
                 end
                 else
                 begin
+                    // Если вызов из нашей программы — копируем в буфер с автоочисткой
                     if PasswordToType <> '' then
                     begin
                         CopyToClipboardSecure(PasswordToType);
-                        // Фоновый поток получит строку, сделает из нее хэш и отпустит
                         ClearClipboardAfterDelay(PasswordToType, CLIPBOARD_TIMEOUT_MS);
                     end;
                 end;
             finally
-                // Физически убиваем локальную переменную в памяти перед выходом из метода
+                // Гарантированно затираем локальную переменную с паролем в оперативной памяти
                 WipeString(PasswordToType);
             end;
         end;
     finally
-        if Assigned(FCurrentInstance) then FCurrentInstance.FPasswordService := nil;
-        FreeAndNil(FCurrentInstance);
+        // 5. Очищаем ссылки и уничтожаем форму
+        if Assigned(Frm) then
+            Frm.FPasswordService := nil;
+
+        FCurrentInstance := nil;
+        FreeAndNil(Frm);
     end;
 end;
 
@@ -977,7 +995,7 @@ begin
 
     if seBulkCount.Value > 10000 then
     begin
-        if FAppContext.MessagesHandler.AskConfirmation(
+        if AppContext.MessagesHandler.AskConfirmation(
             TUIStateLoader.GetMessage('PasswordGenForm.BulkLimitWarning'),
             TUIStateLoader.GetMessage('Common.Warning'),
             MB_YESNO or MB_ICONQUESTION
@@ -1004,7 +1022,7 @@ end;
 
 procedure TPasswordGenForm.bClearHistoryClick(Sender: TObject);
 begin
-    if FAppContext.MessagesHandler.AskConfirmation(
+    if AppContext.MessagesHandler.AskConfirmation(
         TUIStateLoader.GetMessage('PasswordGenForm.MemoryClearConfirm'),
         TUIStateLoader.GetMessage('Common.Security'),
         MB_YESNO or MB_ICONQUESTION

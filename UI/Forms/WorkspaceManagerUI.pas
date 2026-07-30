@@ -27,7 +27,6 @@ type
         procedure bOKClick(Sender: TObject);
         procedure bCancelClick(Sender: TObject);
         procedure lvWorkspacesEdited(Sender: TObject; Item: TListItem; var S: string);
-        procedure FormCreate(Sender: TObject);
         procedure FormResize(Sender: TObject);
         procedure FormShow(Sender: TObject);
         procedure lvWorkspacesDblClick(Sender: TObject);
@@ -36,17 +35,13 @@ type
         procedure nWorkspaceDeleteClick(Sender: TObject);
         procedure nWorkspaceRenameClick(Sender: TObject);
     private
-        FUserService: IUserService;
-
         procedure RefreshWorkspaces;
         procedure DoAddWorkspace;
         procedure DoDeleteWorkspace;
         procedure DoRenameWorkspace;
         procedure AdjustColumnWidth;
     public
-        // ¬недрение зависимости
-        constructor Create(Owner: TComponent; UserService: IUserService); reintroduce;
-        procedure Initialize(AppContext: IAppContext);
+        procedure DoInitialize; override;
     end;
 
 var
@@ -66,31 +61,13 @@ uses
 
 {$R *.dfm}
 
-constructor TWorkspaceManagerForm.Create(Owner: TComponent; UserService: IUserService);
-begin
-    inherited Create(Owner);
-    FUserService := UserService;
-
-    // Ѕезопасно загружаем данные после того, как сервис инициализирован
-    RefreshWorkspaces;
-end;
-
-procedure TWorkspaceManagerForm.FormCreate(Sender: TObject);
-begin
-    lvWorkspaces.OwnerData := False;
-    lvWorkspaces.ReadOnly := False; // –азрешаем редактирование
-end;
-
 procedure TWorkspaceManagerForm.RefreshWorkspaces;
 var
     Users: TArray<TUserDTO>;
     User: TUserDTO;
     Item: TListItem;
 begin
-    if not Assigned(FUserService) then
-        Exit;
-
-    Users := FUserService.GetAllUsers;
+    Users := AppContext.UserService.GetAllUsers;
     lvWorkspaces.Items.BeginUpdate;
     try
         lvWorkspaces.Items.Clear;
@@ -126,7 +103,7 @@ begin
         UserDTO.Name := NewName;
 
         // ѕолучаем ID новой записи из сервиса (а не пытаемс€ прочитать UserDTO.ID)
-        NewID := FUserService.AddUser(UserDTO);
+        NewID := AppContext.UserService.AddUser(UserDTO);
 
         Item := lvWorkspaces.Items.Add;
         Item.Caption := NewName;
@@ -160,7 +137,7 @@ begin
 
     try
         // Ѕизнес-проверка "ID=1" теперь выполн€етс€ внутри сервиса
-        FUserService.DeleteUser(UserID);
+        AppContext.UserService.DeleteUser(UserID);
         Item.Delete;
     except
         on E: Exception do
@@ -168,6 +145,11 @@ begin
                 TUIStateLoader.GetMessage('WorkspaceManagerForm.DeleteError', [E.Message])
             );
     end;
+end;
+
+procedure TWorkspaceManagerForm.DoInitialize;
+begin
+    RefreshWorkspaces;
 end;
 
 procedure TWorkspaceManagerForm.DoRenameWorkspace;
@@ -204,7 +186,7 @@ begin
         UserDTO.ID := UserID;
         UserDTO.Name := S;
 
-        FUserService.UpdateUser(UserDTO);
+        AppContext.UserService.UpdateUser(UserDTO);
     except
         on E: Exception do
         begin
@@ -243,11 +225,6 @@ end;
 procedure TWorkspaceManagerForm.FormShow(Sender: TObject);
 begin
     AdjustColumnWidth;
-end;
-
-procedure TWorkspaceManagerForm.Initialize(AppContext: IAppContext);
-begin
-    inherited Initialize(AppContext);
 end;
 
 procedure TWorkspaceManagerForm.lvWorkspacesDblClick(Sender: TObject);

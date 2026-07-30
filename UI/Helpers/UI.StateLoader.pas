@@ -77,12 +77,54 @@ var
     FormObj, CompObj: TJSONObject;
     PropPair, CompPropPair: TJSONPair;
     Comp: TComponent;
+    ClassKey: string;
+
+    // Внутренняя функция для установки свойств по точечному пути (например "EditLabel.Caption")
+    procedure SetNestedPropValue(AObject: TObject; const Path: string; const Value: string);
+    var
+        Tokens: TArray<string>;
+        I: Integer;
+        CurrentObj: TObject;
+        PropInfo: PPropInfo;
+    begin
+        if not Assigned(AObject) then Exit;
+
+        Tokens := Path.Split(['.']);
+        CurrentObj := AObject;
+
+        // Спускаемся по дереву объектов (например, сначала берем объект EditLabel)
+        for I := 0 to High(Tokens) - 1 do
+        begin
+            if not IsPublishedProp(CurrentObj, Tokens[I]) then Exit;
+            // Получаем ссылку на вложенный объект
+            CurrentObj := GetObjectProp(CurrentObj, Tokens[I]);
+            if not Assigned(CurrentObj) then Exit;
+        end;
+
+        // Применяем значение к последнему свойству (например, Caption)
+        if IsPublishedProp(CurrentObj, Tokens[High(Tokens)]) then
+        begin
+            // Проверка типа свойства: строку нельзя напрямую впихнуть в число и т.д.
+            PropInfo := GetPropInfo(CurrentObj, Tokens[High(Tokens)]);
+            if Assigned(PropInfo) and (PropInfo^.PropType^.Kind in [tkString, tkLString, tkWString, tkUString]) then
+                SetPropValue(CurrentObj, Tokens[High(Tokens)], Value);
+        end;
+    end;
+
 begin
     if not Assigned(GCachedLanguageData) then
         Exit;
 
+    // Вытаскиваем имя класса (Например, 'TAddEditSnippetForm' -> 'AddEditSnippetForm')
+    ClassKey := Form.ClassName;
+    if ClassKey.StartsWith('T') then
+        ClassKey := ClassKey.Substring(1);
+
     // Ищем блок с именем нашей формы (например, "MainForm")
-    if GCachedLanguageData.TryGetValue<TJSONObject>(Form.Name, FormObj) then
+    // Ищем сначала по имени класса (Надежно!), если не нашли - по имени экземпляра
+    if GCachedLanguageData.TryGetValue<TJSONObject>(ClassKey, FormObj) or
+       GCachedLanguageData.TryGetValue<TJSONObject>(Form.Name, FormObj) or
+       GCachedLanguageData.TryGetValue<TJSONObject>(Form.ClassName, FormObj) then
     begin
         // Перебираем только те ключи, которые есть в JSON
         for PropPair in FormObj do
@@ -90,8 +132,7 @@ begin
             // СЦЕНАРИЙ А: Значение является строкой -> Это свойство самой формы (например, Caption)
             if PropPair.JsonValue is TJSONString then
             begin
-                if IsPublishedProp(Form, PropPair.JsonString.Value) then
-                    SetPropValue(Form, PropPair.JsonString.Value, PropPair.JsonValue.Value);
+                SetNestedPropValue(Form, PropPair.JsonString.Value, PropPair.JsonValue.Value);
             end
             // СЦЕНАРИЙ Б: Значение является объектом -> Это настройки вложенного компонента
             else if PropPair.JsonValue is TJSONObject then
@@ -100,7 +141,10 @@ begin
                 Comp := Form.FindComponent(PropPair.JsonString.Value); // Быстрый поиск компонента по имени
                 {$IFDEF DEBUG}
                 if not Assigned(Comp) then
+                begin
+                showmessage(Form.Name);
                     raise Exception.Create('Компонент не найден на форме: ' + PropPair.JsonString.Value);
+                end;
                 {$ENDIF}
 
                 if Assigned(Comp) then
@@ -123,12 +167,14 @@ begin
                         end;
                     end;
                     // ---------------------------------------------
-                    // Применяем стандартные свойства (Caption, TextHint и т.д.) к компоненту
+                    // Применяем стандартные свойства к компоненту
                     for CompPropPair in CompObj do
                     begin
                         if CompPropPair.JsonString.Value <> 'Columns' then // Игнорируем узел колонок
-                            if IsPublishedProp(Comp, CompPropPair.JsonString.Value) then
-                                SetPropValue(Comp, CompPropPair.JsonString.Value, CompPropPair.JsonValue.Value)
+                        begin
+                            // Используем новую функцию для применения свойства
+                            SetNestedPropValue(Comp, CompPropPair.JsonString.Value, CompPropPair.JsonValue.Value);
+                        end;
                     end;
                 end;
             end;

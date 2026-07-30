@@ -64,7 +64,6 @@ type
         procedure mEpochChange(Sender: TObject);
         procedure mEpochPaintTransient(Sender: TObject; Canvas: TCanvas; TransientType: TTransientType);
         procedure CopyToClipboardClick(Sender: TObject);
-        procedure FormClose(Sender: TObject; var Action: TCloseAction);
         procedure mEpochMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 
         // НОВОЕ СОБЫТИЕ: Обработка клавиатуры для mEpoch
@@ -76,8 +75,6 @@ type
         procedure nSelectAllClick(Sender: TObject);
         procedure nToggleBookmarkClick(Sender: TObject);
     private
-        class var FCurrentInstance: TEpochConverterForm;
-
         FCurrentParsedEpoch: Int64;
         FIsValidEpoch: Boolean;
         FMatches: TArray<TEpochMatch>;
@@ -90,8 +87,7 @@ type
         procedure DisplayTime;
         procedure OnBookmarkMenuItemClick(Sender: TObject);
     public
-        class procedure ExecuteGlobal(Owner: TComponent; AppContext: IAppContext);
-        procedure Initialize(AppContext: IAppContext);
+        procedure DoInitialize; override;
     end;
 
 var
@@ -199,26 +195,6 @@ begin
     end;
 end;
 
-class procedure TEpochConverterForm.ExecuteGlobal(Owner: TComponent; AppContext: IAppContext);
-begin
-    // Если окно уже открыто - просто выводим его наверх
-    if Assigned(FCurrentInstance) then
-    begin
-        if FCurrentInstance.WindowState = wsMinimized then
-            FCurrentInstance.WindowState := wsNormal;
-        SetForegroundWindow(FCurrentInstance.Handle);
-        FCurrentInstance.BringToFront;
-        Exit;
-    end;
-
-    // Иначе создаем новое.
-    FCurrentInstance := TEpochConverterForm.Create(Application);
-    FCurrentInstance.Initialize(AppContext);
-    FCurrentInstance.FormStyle := fsStayOnTop;
-
-    FCurrentInstance.Show;
-end;
-
 procedure TEpochConverterForm.FormShow(Sender: TObject);
 begin
     FUpdatingUI := True;
@@ -241,10 +217,10 @@ procedure TEpochConverterForm.UpdateRelativeTime;
 var
     LocalParsedTime: TDateTime;
 begin
-    if not FIsValidEpoch or not Assigned(FAppContext) then Exit;
+    if not FIsValidEpoch or not Assigned(AppContext) then Exit;
 
-    LocalParsedTime := FAppContext.EpochService.UnixToLocal(FCurrentParsedEpoch);
-    lbRelative.Caption := FAppContext.EpochService.GetRelativeTimeHumanized(LocalParsedTime);
+    LocalParsedTime := AppContext.EpochService.UnixToLocal(FCurrentParsedEpoch);
+    lbRelative.Caption := AppContext.EpochService.GetRelativeTimeHumanized(LocalParsedTime);
 end;
 
 procedure TEpochConverterForm.UpdateListViewRelativeTimes;
@@ -252,15 +228,15 @@ var
     I: Integer;
     LocalTime: TDateTime;
 begin
-    if (lvParsed.Items.Count = 0) or (Length(FMatches) <> lvParsed.Items.Count) or not Assigned(FAppContext) then
+    if (lvParsed.Items.Count = 0) or (Length(FMatches) <> lvParsed.Items.Count) or not Assigned(AppContext) then
         Exit;
 
     lvParsed.Items.BeginUpdate;
     try
         for I := 0 to lvParsed.Items.Count - 1 do
         begin
-            LocalTime := FAppContext.EpochService.UnixToLocal(FMatches[I].UnixSeconds);
-            lvParsed.Items[I].SubItems[1] := FAppContext.EpochService.GetRelativeTimeHumanized(LocalTime);
+            LocalTime := AppContext.EpochService.UnixToLocal(FMatches[I].UnixSeconds);
+            lvParsed.Items[I].SubItems[1] := AppContext.EpochService.GetRelativeTimeHumanized(LocalTime);
         end;
     finally
         lvParsed.Items.EndUpdate;
@@ -310,18 +286,18 @@ var
     CombinedTime: TDateTime;
     EpochResult: Int64;
 begin
-    if not Assigned(FAppContext) or not Assigned(FAppContext.EpochService) then Exit;
+    if not Assigned(AppContext) or not Assigned(AppContext.EpochService) then Exit;
 
     CombinedTime := Trunc(dtpDate.Date) + Frac(dtpTime.Time);
-    EpochResult := FAppContext.EpochService.LocalToUnix(CombinedTime);
+    EpochResult := AppContext.EpochService.LocalToUnix(CombinedTime);
 
     FCurrentParsedEpoch := EpochResult;
     FIsValidEpoch := True;
 
     ebSourceTime.Text := IntToStr(EpochResult);
-    ebLocal.Text      := DateTimeToStr(FAppContext.EpochService.UnixToLocal(EpochResult));
-    ebUTC.Text        := DateTimeToStr(FAppContext.EpochService.UnixToUTC(EpochResult));
-    ebISO.Text        := FAppContext.EpochService.FormatISO8601(FAppContext.EpochService.UnixToUTC(EpochResult));
+    ebLocal.Text      := DateTimeToStr(AppContext.EpochService.UnixToLocal(EpochResult));
+    ebUTC.Text        := DateTimeToStr(AppContext.EpochService.UnixToUTC(EpochResult));
+    ebISO.Text        := AppContext.EpochService.FormatISO8601(AppContext.EpochService.UnixToUTC(EpochResult));
 
     lbDetectedFormat.Caption := TUIStateLoader.GetMessage('Epoch.Format-seconds');
 
@@ -329,10 +305,8 @@ begin
     tmrLiveUpdate.Enabled := True;
 end;
 
-procedure TEpochConverterForm.Initialize(AppContext: IAppContext);
+procedure TEpochConverterForm.DoInitialize;
 begin
-    inherited Initialize(AppContext);
-
     RegisterHelp(mEpoch,   hipBottomRight, 'Help.EpochConverterForm.mEpoch',   hkCustomForm);
     RegisterHelp(lvParsed, hipBottomRight, 'Help.EpochConverterForm.lvParsed', hkCustomForm);
 end;
@@ -372,19 +346,19 @@ begin
         Exit;
     end;
 
-    FMatches := FAppContext.EpochService.ExtractAllTimestamps(mEpoch.Lines);
+    FMatches := AppContext.EpochService.ExtractAllTimestamps(mEpoch.Lines);
 
     lvParsed.Items.BeginUpdate;
     try
         lvParsed.Items.Clear;
         for Match in FMatches do
         begin
-            LocalTime := FAppContext.EpochService.UnixToLocal(Match.UnixSeconds);
+            LocalTime := AppContext.EpochService.UnixToLocal(Match.UnixSeconds);
 
             LI := lvParsed.Items.Add;
             LI.Caption := Match.RawText;
             LI.SubItems.Add(DateTimeToStr(LocalTime));
-            LI.SubItems.Add(FAppContext.EpochService.GetRelativeTimeHumanized(LocalTime));
+            LI.SubItems.Add(AppContext.EpochService.GetRelativeTimeHumanized(LocalTime));
         end;
     finally
         lvParsed.Items.EndUpdate;
@@ -397,12 +371,6 @@ begin
     end;
 
     mEpoch.Invalidate;
-end;
-
-procedure TEpochConverterForm.FormClose(Sender: TObject; var Action: TCloseAction);
-begin
-    Action := caFree;
-    FCurrentInstance := nil;
 end;
 
 procedure TEpochConverterForm.FormResize(Sender: TObject);
@@ -441,13 +409,13 @@ begin
     end;
 
     ebSourceTime.Text := Match.RawText;
-    ebLocal.Text      := DateTimeToStr(FAppContext.EpochService.UnixToLocal(FCurrentParsedEpoch));
-    ebUTC.Text        := DateTimeToStr(FAppContext.EpochService.UnixToUTC(FCurrentParsedEpoch));
-    ebISO.Text        := FAppContext.EpochService.FormatISO8601(FAppContext.EpochService.UnixToUTC(FCurrentParsedEpoch));
+    ebLocal.Text      := DateTimeToStr(AppContext.EpochService.UnixToLocal(FCurrentParsedEpoch));
+    ebUTC.Text        := DateTimeToStr(AppContext.EpochService.UnixToUTC(FCurrentParsedEpoch));
+    ebISO.Text        := AppContext.EpochService.FormatISO8601(AppContext.EpochService.UnixToUTC(FCurrentParsedEpoch));
 
     FUpdatingUI := True;
     try
-        LocalParsedTime := FAppContext.EpochService.UnixToLocal(FCurrentParsedEpoch);
+        LocalParsedTime := AppContext.EpochService.UnixToLocal(FCurrentParsedEpoch);
         dtpDate.Date := Trunc(LocalParsedTime);
         dtpTime.Time := Frac(LocalParsedTime);
     finally

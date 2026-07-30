@@ -6,6 +6,7 @@ uses
     Core.Interfaces,
     CustomHelpFormUI,
     System.Classes,
+    System.Generics.Collections,
     UI.HoverHelpManager,
     Vcl.Controls,
     Vcl.Forms
@@ -22,10 +23,18 @@ type
 
     TBaseForm = class(TForm, ILocalizable)
     private
+        // Глобальный реестр открытых форм (Класс -> Экземпляр)
+        class var FInstances: TDictionary<TClass, TBaseForm>;
+
         FHelpManager: TUIHoverHelpManager;
         FCustomHelpForm: TCustomHelpForm;
         procedure DoShowHelp(Target: TControl; const HelpKey: string; HelpKind: THelpKind);
         function GetMessagesHandler: IUIMessagesHandler;
+
+        // Классовые конструктор и деструктор для инициализации словаря
+        class constructor CreateClass;
+        class destructor DestroyClass;
+    function GetAppContext: IAppContext;
     protected
         FAppContext: IAppContext;
         // Хук для дочерних классов. Виртуальный, но пустой по умолчанию.
@@ -45,13 +54,19 @@ type
         // динамически удалять контролы с формы в рантайме.
         procedure UnregisterHelp(Control: TControl);
 
+        // Переопределяем закрытие окна в базовом классе
+        procedure DoClose(var Action: TCloseAction); override;
+
         property MessagesHandler: IUIMessagesHandler read GetMessagesHandler;
+        property AppContext: IAppContext read GetAppContext;
     public
         constructor Create(Owner: TComponent); override;
         destructor Destroy; override;
         procedure UpdateUI(const State: TBaseFormState); virtual;
         procedure Initialize(AppContext: IAppContext);
         procedure ApplyLanguage; virtual;
+        // Универсальный метод вызова любой дочерней формы
+        class procedure ExecuteGlobal(Owner: TComponent; AppContext: IAppContext);
     end;
 
 implementation
@@ -59,7 +74,8 @@ implementation
 uses
     System.SysUtils,
     UI.StateLoader,
-    Vcl.Dialogs
+    Vcl.Dialogs,
+    Winapi.Windows
     ;
 
 procedure TBaseForm.ApplyLanguage;
@@ -76,19 +92,23 @@ begin
     FCustomHelpForm := TCustomHelpForm.Create(Self);
 end;
 
+class constructor TBaseForm.CreateClass;
+begin
+    FInstances := TDictionary<TClass, TBaseForm>.Create;
+end;
+
 destructor TBaseForm.Destroy;
 begin
-    // 1. Отписываем ВСЕ контролы текущей формы от менеджера подсказок.
-    // Это предотвращает Access Violation, если форма уничтожается (Action := caFree),
-    // а менеджер (или его таймеры) попытается обратиться к уже удаленным контролам.
-    if Assigned(FHelpManager) then
-        FHelpManager.UnregisterAllForOwner(Self);
-
     // 2. Безопасное удаление дочерних форм
     if Assigned(FCustomHelpForm) then
         FreeAndNil(FCustomHelpForm);
 
     inherited Destroy;
+end;
+
+class destructor TBaseForm.DestroyClass;
+begin
+    FInstances.Free;
 end;
 
 procedure TBaseForm.RegisterHelp(
@@ -105,10 +125,20 @@ end;
 
 procedure TBaseForm.UnregisterHelp(Control: TControl);
 begin
-    // Обертка на случай, если вам понадобится снять хелп с конкретного контрола.
-    // Убедитесь, что в TUIHoverHelpManager есть метод UnregisterControl.
+    // Обертка на случай, вам понадобится снять хелп с конкретного контрола.
     if Assigned(FHelpManager) then
         FHelpManager.UnregisterControl(Control);
+end;
+
+procedure TBaseForm.DoClose(var Action: TCloseAction);
+begin
+    inherited DoClose(Action); // Вызываем стандартную логику VCL и события OnClose
+
+    Action := caFree; // Гарантированно уничтожаем окно
+
+    // Удаляем себя из реестра открытых форм при закрытии
+    if FInstances.ContainsKey(Self.ClassType) then
+        FInstances.Remove(Self.ClassType);
 end;
 
 procedure TBaseForm.DoInitialize;
@@ -168,6 +198,42 @@ begin
                 end;
             end;
     end;
+end;
+
+class procedure TBaseForm.ExecuteGlobal(Owner: TComponent; AppContext: IAppContext);
+var
+    Instance: TBaseForm;
+begin
+    // В методах класса (class procedure) слово Self указывает на ТИП класса,
+    // из которого был вызван метод (например, TChmodForm или TNetworkForm).
+
+    // Проверяем, открыта ли уже форма такого класса
+    if FInstances.TryGetValue(Self, Instance) then
+    begin
+        if Instance.WindowState = wsMinimized then
+            Instance.WindowState := wsNormal;
+
+        SetForegroundWindow(Instance.Handle);
+        Instance.BringToFront;
+        Exit;
+    end;
+
+    // Вызываем виртуальный конструктор Create. Delphi поймет, что нужно
+    // создать именно дочерний класс (например, TChmodForm), а не TBaseForm.
+    Instance := Self.Create(Application) as TBaseForm;
+
+    // Регистрируем экземпляр в словаре ДО вызова Initialize,
+    // на случай если внутри Initialize форма попытается обратиться к синглтону
+    FInstances.Add(Self, Instance);
+
+    Instance.Initialize(AppContext);
+    Instance.FormStyle := fsStayOnTop;
+    Instance.Show;
+end;
+
+function TBaseForm.GetAppContext: IAppContext;
+begin
+    Result := FAppContext;
 end;
 
 function TBaseForm.GetMessagesHandler: IUIMessagesHandler;

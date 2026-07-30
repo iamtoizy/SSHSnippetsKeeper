@@ -65,7 +65,6 @@ type
         procedure cbIPInputKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
         procedure cbIPInputExit(Sender: TObject);
         procedure cbIPInputKeyPress(Sender: TObject; var Key: Char);
-        procedure FormClose(Sender: TObject; var Action: TCloseAction);
         procedure lvVLSMKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
         procedure lvVLSMResize(Sender: TObject);
         procedure pcMainChange(Sender: TObject);
@@ -75,7 +74,6 @@ type
     private
         FLastStatusBarText: string;
         FAutoSaveTimer: TTimer;
-        class var FCurrentInstance: TNetworkForm;
 
         procedure UpdateCalculations;
         procedure UpdateVLSM(Net: TIPv4Network);
@@ -90,8 +88,7 @@ type
         // НОВЫЙ МЕТОД: Централизованное управление статус-баром
         procedure ShowStatusMessage(const Msg: string);
     public
-        class procedure ExecuteGlobal(Owner: TComponent; AppContext: IAppContext);
-        procedure Initialize(AppContext: IAppContext);
+        procedure DoInitialize; override;
     end;
 
 var
@@ -286,23 +283,6 @@ begin
         Key := #0;
 end;
 
-class procedure TNetworkForm.ExecuteGlobal(Owner: TComponent; AppContext: IAppContext);
-begin
-    if Assigned(FCurrentInstance) then
-    begin
-        if FCurrentInstance.WindowState = wsMinimized then
-            FCurrentInstance.WindowState := wsNormal;
-        SetForegroundWindow(FCurrentInstance.Handle);
-        FCurrentInstance.BringToFront;
-        Exit;
-    end;
-
-    FCurrentInstance := TNetworkForm.Create(Application);
-    FCurrentInstance.Initialize(AppContext);
-    FCurrentInstance.FormStyle := fsStayOnTop;
-    FCurrentInstance.Show;
-end;
-
 procedure TNetworkForm.seMaskChange(Sender: TObject);
 var
     OldStart: Integer;
@@ -410,13 +390,6 @@ begin
     end;
 end;
 
-procedure TNetworkForm.FormClose(Sender: TObject; var Action: TCloseAction);
-begin
-    Action := caFree;
-    if FCurrentInstance = Self then
-        FCurrentInstance := nil;
-end;
-
 function TNetworkForm.GetNetworkTypeName(NetType: TIPNetworkType): string;
 begin
     case NetType of
@@ -431,10 +404,8 @@ begin
     end;
 end;
 
-procedure TNetworkForm.Initialize(AppContext: IAppContext);
+procedure TNetworkForm.DoInitialize;
 begin
-    inherited Initialize(AppContext);
-
     RegisterHelp(cbIPInput,           hipRightCenter, 'Help.NetworkForm.cbIPInput', hkCustomForm, -2);
     RegisterHelp(seMask,              hipRightCenter, 'Help.NetworkForm.seMask');
     RegisterHelp(ledNetworkAddress,   hipTopRight,    'Help.NetworkForm.ledNetworkAddress');

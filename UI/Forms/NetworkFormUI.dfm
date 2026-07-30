@@ -12,7 +12,6 @@ object NetworkForm: TNetworkForm
   Font.Name = 'Segoe UI'
   Font.Style = []
   Position = poScreenCenter
-  OnClose = FormClose
   OnCreate = FormCreate
   TextHeight = 15
   object gbTop: TGroupBox
@@ -23,7 +22,6 @@ object NetworkForm: TNetworkForm
     Align = alTop
     Caption = #1042#1074#1086#1076' '#1076#1072#1085#1085#1099#1093
     TabOrder = 0
-    ExplicitWidth = 486
     object seMask: TSpinEdit
       Left = 405
       Top = 27
@@ -51,12 +49,10 @@ object NetworkForm: TNetworkForm
     Top = 57
     Width = 480
     Height = 260
-    ActivePage = tsVLSM
+    ActivePage = tsInfo
     Align = alClient
     TabOrder = 1
     OnChange = pcMainChange
-    ExplicitWidth = 527
-    ExplicitHeight = 283
     object tsInfo: TTabSheet
       Caption = #1048#1085#1092#1086#1088#1084#1072#1094#1080#1103
       object bCopyAll: TButton
@@ -254,7 +250,6 @@ object NetworkForm: TNetworkForm
         Align = alTop
         BevelOuter = bvNone
         TabOrder = 0
-        ExplicitWidth = 519
         object lbVLSMMask: TLabel
           Left = 16
           Top = 5
@@ -278,7 +273,7 @@ object NetworkForm: TNetworkForm
           MaxValue = 0
           MinValue = 32
           TabOrder = 0
-          Value = 0
+          Value = 32
           OnChange = seVLSMChange
         end
         object bCopyVLSM: TButton
@@ -330,9 +325,6 @@ object NetworkForm: TNetworkForm
     Height = 19
     Panels = <>
     SimplePanel = True
-    ExplicitLeft = 208
-    ExplicitTop = 24
-    ExplicitWidth = 0
   end
   object tmrEraseStatusBar: TTimer
     Enabled = False
