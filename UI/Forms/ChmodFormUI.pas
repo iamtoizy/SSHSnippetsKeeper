@@ -9,8 +9,10 @@ uses
     System.Classes,
     System.Generics.Collections,
     Vcl.Controls,
+    Vcl.ExtCtrls,
     Vcl.Forms,
-    Vcl.StdCtrls, Vcl.Mask, Vcl.ExtCtrls
+    Vcl.Mask,
+    Vcl.StdCtrls
     ;
 
 type

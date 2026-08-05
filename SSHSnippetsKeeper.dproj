@@ -249,6 +249,10 @@
             <Form>ChmodForm</Form>
             <FormType>dfm</FormType>
         </DCCReference>
+        <DCCReference Include="UI\Forms\ArchiveBuilderFormUI.pas">
+            <Form>ArchiveBuilderForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
         <RcItem Include="Database\Schema\000_schema_init.sql">
             <ContainerId>ResourceItem</ContainerId>
             <ResourceType>RCDATA</ResourceType>

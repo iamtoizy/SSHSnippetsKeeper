@@ -94,6 +94,9 @@
     },
     "nChmodCalculator": {
       "Caption": "Калькулятор chmod"
+    },
+    "nArchiveBuilder": {
+      "Caption": "Команды архивации"
     }
   },
   "TagEditorForm": {
@@ -588,6 +591,60 @@
     "bDeletePreset": { "Caption": "🗑" },
     "bCopyCommand": { "Caption": "📋" }
   },
+  "ArchiveBuilderForm": {
+    "Caption": "Команды архивации",
+    "tsCreate": {
+      "Caption": "Создать архив"
+    },
+    "lbSourcePath": {
+      "Caption": "Исходная директория"
+    },
+    "lbExclude": {
+      "Caption": "Исключить"
+    },
+    "lbPresets": {
+      "Caption": "Предустановки"
+    },
+    "ebCommand": {
+      "EditLabel.Caption": "Итоговая команда"
+    },
+    "lbDestPath": {
+      "Caption": "Путь к архиву"
+    },
+    "lbFormat": {
+      "Caption": "Формат архива"
+    },
+    "lbPassword": {
+      "Caption": "Пароль (только zip/7z)"
+    },
+    "cbMaxCompression": {
+      "Caption": "Максимальное сжатие"
+    },
+    "cbRelativePath": {
+      "Caption": "Относительные пути"
+    },
+    "cbSplit": {
+      "Caption": "Разделить на тома (МБ)"
+    },
+    "tsExtract": {
+      "Caption": "Извлечь из архива"
+    },
+    "lbExtSourcePath": {
+      "Caption": "Путь к архиву"
+    },
+    "lbExtDestPath": {
+      "Caption": "Куда распаковать (оставь пустым для текущей директории):"
+    },
+    "lbExtFormat": {
+      "Caption": "Утилита"
+    },
+    "lbExtPassword": {
+      "Caption": "Пароль (только zip/7z)"
+    },
+    "cbListOnly": {
+      "Caption": "Только просмотр содержимого (Dry Run/List)"
+    }
+  },
   "Messages": {
     "Help": {
       "MainForm": {
@@ -1050,6 +1107,32 @@
       "Presets-SshPrivateKey": "Приватный ключ SSH (600)",
       "Presets-SshPublicKey": "Публичный ключ SSH (644)",
       "Presets-Script": "Исполняемый скрипт (755)"
+    },
+    "ArchiveBuilderForm": {
+      "Messages": {
+        "SavePresetTitle": "Сохранение предустановки",
+        "SavePresetPrompt": "Введите имя предустановки:",
+        "PresetSaved": "Предустановка успешно сохранена",
+        "DeletePresetConfirm": "Удалить предустановку \"%s\"?",
+        "DeleteTitle": "Подтверждение"
+      },
+      "DefaultPresets": {
+        "BitrixSite": "Bitrix: Бэкап сайта (без кэша)",
+        "BitrixCore": "Bitrix: Только ядро",
+        "Logs": "Logs: Сжать все логи",
+        "FastZstd": "Fast ZSTD: Ультра-быстрый бэкап",
+        "NodeJs": "Node.js: Только код (без node_modules)",
+        "Laravel": "PHP Frameworks: Код (без vendor/cache)",
+        "CleanSource": "Clean Source: Для клиента (без .git и IDE)",
+        "SqlDumps": "SQL Dumps: Ультра-сжатие (tar.xz -9)",
+        "CustomDivider": "--- Пользовательские ---"
+      },
+      "FormatPresets": {
+        "AutoDetect": "Автоопределение",
+        "zip": "zip",
+        "tar": "tar.* (gz, bz2, xz, zst, lz4)",
+        "7z": "7z"
+      }
     }
   }
 }

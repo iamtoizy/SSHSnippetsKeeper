@@ -88,7 +88,8 @@ type
         nCronGenerator: TMenuItem;
         nEpochConverter: TMenuItem;
         nNetworkCalculator: TMenuItem;
-    nChmodCalculator: TMenuItem;
+        nChmodCalculator: TMenuItem;
+        nArchiveBuilder: TMenuItem;
         procedure bManageWorkspacesClick(Sender: TObject);
         procedure cbUserChange(Sender: TObject);
         procedure nChmodCalculatorClick(Sender: TObject);
@@ -116,6 +117,7 @@ type
         procedure lvTagsEdited(Sender: TObject; Item: TListItem; var S: string);
         procedure nAddCategoryClick(Sender: TObject);
         procedure nAddTagClick(Sender: TObject);
+        procedure nArchiveBuilderClick(Sender: TObject);
         procedure nExitClick(Sender: TObject);
         procedure nCloseDatabaseClick(Sender: TObject);
         procedure nCronGeneratorClick(Sender: TObject);
@@ -205,6 +207,7 @@ implementation
 uses
     AddEditSnippetUI,
     AppStateManager,
+    ArchiveBuilderFormUI,
     ArrayHelper,
     Category,
     ChmodFormUI,
@@ -1476,6 +1479,11 @@ end;
 procedure TMainForm.nAddTagClick(Sender: TObject);
 begin
     DoAddTag;
+end;
+
+procedure TMainForm.nArchiveBuilderClick(Sender: TObject);
+begin
+    TArchiveBuilderForm.ExecuteGlobal(Self, FAppContext);
 end;
 
 procedure TMainForm.nCronGeneratorClick(Sender: TObject);

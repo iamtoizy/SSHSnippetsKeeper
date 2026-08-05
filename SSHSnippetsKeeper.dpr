@@ -84,7 +84,8 @@ uses
   NetworkCalcService in 'Core\Services\NetworkCalcService.pas',
   NetworkFormUI in 'UI\Forms\NetworkFormUI.pas' {NetworkForm},
   ChmodService in 'Core\Services\ChmodService.pas',
-  ChmodFormUI in 'UI\Forms\ChmodFormUI.pas' {ChmodForm};
+  ChmodFormUI in 'UI\Forms\ChmodFormUI.pas' {ChmodForm},
+  ArchiveBuilderFormUI in 'UI\Forms\ArchiveBuilderFormUI.pas' {ArchiveBuilderForm};
 
 {$R *.res}
 

@@ -94,6 +94,9 @@
     },
     "nChmodCalculator": {
       "Caption": "Chmod Calculator"
+    },
+    "nArchiveBuilder": {
+      "Caption": "Archive Commands"
     }
   },
   "TagEditorForm": {
@@ -588,6 +591,60 @@
     "bDeletePreset": { "Caption": "🗑" },
     "bCopyCommand": { "Caption": "📋" }
   },
+  "ArchiveBuilderForm": {
+    "Caption": "Archive Commands",
+    "tsCreate": {
+      "Caption": "Create Archive"
+    },
+    "lbSourcePath": {
+      "Caption": "Source Directory"
+    },
+    "lbExclude": {
+      "Caption": "Exclude"
+    },
+    "lbPresets": {
+      "Caption": "Presets"
+    },
+    "ebCommand": {
+      "EditLabel.Caption": "Final Command"
+    },
+    "lbDestPath": {
+      "Caption": "Archive Path"
+    },
+    "lbFormat": {
+      "Caption": "Archive Format"
+    },
+    "lbPassword": {
+      "Caption": "Password (zip/7z only)"
+    },
+    "cbMaxCompression": {
+      "Caption": "Maximum Compression"
+    },
+    "cbRelativePath": {
+      "Caption": "Relative Paths"
+    },
+    "cbSplit": {
+      "Caption": "Split into Volumes (MB)"
+    },
+    "tsExtract": {
+      "Caption": "Extract from Archive"
+    },
+    "lbExtSourcePath": {
+      "Caption": "Archive Path"
+    },
+    "lbExtDestPath": {
+      "Caption": "Extract to (leave empty for current directory):"
+    },
+    "lbExtFormat": {
+      "Caption": "Utility"
+    },
+    "lbExtPassword": {
+      "Caption": "Password (zip/7z only)"
+    },
+    "cbListOnly": {
+      "Caption": "List contents only (Dry Run/List)"
+    }
+  },
   "Messages": {
     "Help": {
       "MainForm": {
@@ -1050,6 +1107,32 @@
       "Presets-SshPrivateKey": "Private SSH Key (600)",
       "Presets-SshPublicKey": "Public SSH Key (644)",
       "Presets-Script": "Executable Script (755)"
+    },
+    "ArchiveBuilderForm": {
+      "Messages": {
+        "SavePresetTitle": "Save Preset",
+        "SavePresetPrompt": "Enter preset name:",
+        "PresetSaved": "Preset saved successfully",
+        "DeletePresetConfirm": "Delete preset \"%s\"?",
+        "DeleteTitle": "Confirmation"
+      },
+      "DefaultPresets": {
+        "BitrixSite": "Bitrix: Site Backup (No Cache)",
+        "BitrixCore": "Bitrix: Core Only",
+        "Logs": "Logs: Compress all logs",
+        "FastZstd": "Fast ZSTD: Ultra-fast backup",
+        "NodeJs": "Node.js: Source only (no node_modules)",
+        "Laravel": "PHP Frameworks: Source (no vendor/cache)",
+        "CleanSource": "Clean Source: For Client (no .git/IDE files)",
+        "SqlDumps": "SQL Dumps: Ultra-compression (tar.xz -9)",
+        "CustomDivider": "--- Custom Presets ---"
+      },
+      "FormatPresets": {
+        "AutoDetect": "Auto detect",
+        "zip": "zip",
+        "tar": "tar.* (gz, bz2, xz, zst, lz4)",
+        "7z": "7z"
+      }
     }
   }
 }

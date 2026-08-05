@@ -376,6 +376,11 @@ object MainForm: TMainForm
         ShortCut = 24653
         OnClick = nChmodCalculatorClick
       end
+      object nArchiveBuilder: TMenuItem
+        Caption = #1050#1086#1084#1072#1085#1076#1099' '#1072#1088#1093#1080#1074#1072#1094#1080#1080
+        ShortCut = 24641
+        OnClick = nArchiveBuilderClick
+      end
     end
   end
   object OpenDialog: TOpenDialog

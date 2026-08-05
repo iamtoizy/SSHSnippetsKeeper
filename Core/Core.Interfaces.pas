@@ -66,7 +66,7 @@ type
         Items: TArrayRecord<TAIItem>;
     end;
 
-    // Структура пресета Chmod
+    // Структура предустановок Chmod
     TChmodPreset = record
         Name: string;
         OctalBits: Integer; // Например 755 или 644
@@ -79,6 +79,14 @@ type
         UseCount: Integer;
     end;
 
+    // Структура предустановок архиватора
+    TArchivePreset = record
+        Name: string;
+        FormatIndex: Integer; // 0=zip, 1=tar.gz, 2=tar.bz2, 3=tar.xz, 4=7z
+        ExcludeMask: string;
+        MaxCompression: Boolean;
+    end;
+
     TAppSettings = record
         UISettings: TUISettings;
         AllowedWindows: TArrayRecord<TWindowsNode>;
@@ -88,10 +96,23 @@ type
         CurrentLanguage: string;
         ChmodPresets: TArray<TChmodPreset>;
 
-        // Массивы для истории
+        // Массивы для истории Chmod
         HistoryUsers: TArray<THistoryItem>;
         HistoryGroups: TArray<THistoryItem>;
         HistoryFiles: TArray<THistoryItem>;
+
+        // Архивация
+        ArchivePresets: TArray<TArchivePreset>;
+        // История путей архивации
+        HistoryArchivePaths: TArray<THistoryItem>; // Для путей (Source)
+        HistoryArchiveDests: TArray<THistoryItem>; // Для имен архивов (Dest)
+
+        // Сохранение состояния контролов
+        ArchiveLastFormat: Integer;
+        ArchiveRelativePath: Boolean;
+        ArchiveMaxCompression: Boolean;
+        ArchiveSplit: Boolean;
+        ArchiveSplitSize: Integer;
     end;
 
     // Интерфейс менеджера
