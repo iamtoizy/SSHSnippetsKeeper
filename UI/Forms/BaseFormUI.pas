@@ -65,8 +65,11 @@ type
         procedure UpdateUI(const State: TBaseFormState); virtual;
         procedure Initialize(AppContext: IAppContext);
         procedure ApplyLanguage; virtual;
-        // Универсальный метод вызова любой дочерней формы
+        // Для плавающих окон (Калькуляторы, Конвертеры)
         class procedure ExecuteGlobal(Owner: TComponent; AppContext: IAppContext);
+
+        // Для диалогов (Настройки, Менеджер рабочих пространств)
+        class function ExecuteModal(Owner: TComponent; AppContext: IAppContext): TModalResult;
     end;
 
 implementation
@@ -134,11 +137,21 @@ procedure TBaseForm.DoClose(var Action: TCloseAction);
 begin
     inherited DoClose(Action); // Вызываем стандартную логику VCL и события OnClose
 
-    Action := caFree; // Гарантированно уничтожаем окно
+    // Проверяем: если форма открыта МОДАЛЬНО, мы НЕ делаем ей caFree,
+    // так как блок try..finally в ExecuteModal сам сделает Instance.Free.
+    if fsModal in FormState then
+    begin
+        Action := caHide; // Оставляем удаление на совести вызывающего
+    end
+    else
+    begin
+        // Если форма плавающая (ExecuteGlobal), она уничтожает себя сама
+        Action := caFree;
 
-    // Удаляем себя из реестра открытых форм при закрытии
-    if FInstances.ContainsKey(Self.ClassType) then
-        FInstances.Remove(Self.ClassType);
+        // И удаляет себя из реестра открытых окон
+        if FInstances.ContainsKey(Self.ClassType) then
+            FInstances.Remove(Self.ClassType);
+    end;
 end;
 
 procedure TBaseForm.DoInitialize;
@@ -231,6 +244,21 @@ begin
     Instance.Show;
 end;
 
+class function TBaseForm.ExecuteModal(Owner: TComponent; AppContext: IAppContext): TModalResult;
+var
+    Instance: TBaseForm;
+begin
+    // Для модальных окон нам не нужен реестр FInstances.
+    // Просто создаем, инициализируем, показываем с блокировкой и уничтожаем.
+    Instance := Self.Create(Owner) as TBaseForm;
+    try
+        Instance.Initialize(AppContext);
+        Result := Instance.ShowModal;
+    finally
+        Instance.Free;
+    end;
+end;
+
 function TBaseForm.GetAppContext: IAppContext;
 begin
     Result := FAppContext;
@@ -255,6 +283,10 @@ begin
     // Гарантированно пробрасываем настройки в HelpManager в одном месте для ВСЕХ форм.
     // Дочерним формам вообще не нужно знать, как устроен менеджер справки внутри базовой.
     FHelpManager.Configure(FAppContext.SettingsManager.Data.UISettings);
+
+    // Автоматически применяем горячие клавиши для дочерней формы.
+    if Assigned(FAppContext.HotkeyService) then
+        FAppContext.HotkeyService.ApplySettingsToForm(Self);
 
     // Вызываем кастомную логику дочерней формы (если она переопределена)
     DoInitialize;

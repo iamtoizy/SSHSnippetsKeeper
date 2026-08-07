@@ -87,6 +87,50 @@ type
         MaxCompression: Boolean;
     end;
 
+    // Конфигурация одной горячей клавиши
+    THotkeyConfig = record
+        Modifiers: Cardinal; // Битмаска Win32 MOD_ALT, MOD_CONTROL, MOD_SHIFT, MOD_WIN
+        Key: Cardinal;       // Virtual Key Code (например, VK_Q или Ord('Q'))
+        Enabled: Boolean;
+    end;
+
+    // Настройки всех глобальных горячих клавиш программы
+    THotkeySettings = record
+        QuickSearch: THotkeyConfig; // HUD Быстрого поиска (Alt + Q)
+        PasswordGen: THotkeyConfig; // Генератор паролей (Ctrl + Alt + G)
+    end;
+
+    // В настройках храним только измененные юзером шорткаты
+    TCustomShortCut = record
+        ActionName: string;
+        ShortCutValue: Integer;
+    end;
+
+    // Описывает одно настраиваемое действие
+    TActionHotkeyInfo = record
+        ActionName: string;         // Уникальное имя (например, 'actSaveSnippet')
+        DisplayName: string;        // Текст для UI ('Сохранить сниппет')
+        Category: string;           // Группа ('Редактор сниппетов')
+        DefaultShortCut: TShortCut; // Дефолтный шорткат (например, Ctrl+S)
+        CurrentShortCut: TShortCut; // Текущий шорткат
+    end;
+
+    // Интерфейс сервиса горячих клавиш
+    IHotkeyService = interface
+        ['{7E54069A-5120-4B86-AC03-156435B99686}']
+        function GetAllActions: TArray<TActionHotkeyInfo>;
+        function GetActionShortCut(const ActionName: string): TShortCut;
+        procedure SetActionShortCut(const ActionName: string; NewShortCut: TShortCut);
+
+        // Проверка на конфликты
+        function IsShortCutInUse(const ActionID: string; ShortCut: TShortCut; out ConflictingActionName: string): Boolean;
+
+        // Синхронизация с настройками и формами
+        procedure ApplySettingsToForm(const Form: TComponent);
+        procedure LoadFromSettings(const CustomShortCuts: TArray<TCustomShortCut>);
+        function SaveToSettings: TArray<TCustomShortCut>;
+    end;
+
     TAppSettings = record
         UISettings: TUISettings;
         AllowedWindows: TArrayRecord<TWindowsNode>;
@@ -113,6 +157,10 @@ type
         ArchiveMaxCompression: Boolean;
         ArchiveSplit: Boolean;
         ArchiveSplitSize: Integer;
+
+        // Глобальные горячие клавиши
+        Hotkeys: THotkeySettings;
+        CustomShortCuts: TArray<TCustomShortCut>;
     end;
 
     // Интерфейс менеджера
@@ -412,6 +460,7 @@ type
         function GetWindowHelper: IWindowHelper;
         function GetErrorHandler: IUIMessagesHandler;
         function GetEpochService: IEpochService;
+        function GetHotkeyService: IHotkeyService;
 
         // Фабрика для фоновых потоков. Возвращает готовый сервис и ссылку на коннект для его очистки.
         function CreateIsolatedSnippetService(out ABackgroundConnection: TComponent): ISnippetService;
@@ -426,6 +475,7 @@ type
         property WindowHelper: IWindowHelper read GetWindowHelper;
         property MessagesHandler: IUIMessagesHandler read GetErrorHandler;  // TODO Переименовать!
         property EpochService: IEpochService read GetEpochService;
+        property HotkeyService: IHotkeyService read GetHotkeyService;
     end;
 
 implementation

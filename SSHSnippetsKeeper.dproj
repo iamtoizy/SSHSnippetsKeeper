@@ -150,7 +150,7 @@
         <DCCReference Include="UI\Forms\MainFormUI.pas">
             <Form>MainForm</Form>
         </DCCReference>
-        <DCCReference Include="Common\JSONSerializer.pas"/>
+        <DCCReference Include="ThirdParty\JSONSerializer.pas"/>
         <DCCReference Include="Common\Settings.pas"/>
         <DCCReference Include="Data\DataModule.pas">
             <Form>AppDatabase</Form>
@@ -165,7 +165,7 @@
         <DCCReference Include="Core\Entities\User.pas"/>
         <DCCReference Include="Data\Repositories\TagRepository.pas"/>
         <DCCReference Include="Data\RepositoryBase.pas"/>
-        <DCCReference Include="Common\ArrayHelper.pas"/>
+        <DCCReference Include="ThirdParty\ArrayHelper.pas"/>
         <DCCReference Include="Automation\WindowHelper.pas"/>
         <DCCReference Include="UI\Forms\AddEditSnippetUI.pas">
             <Form>AddEditSnippetForm</Form>
@@ -253,6 +253,12 @@
             <Form>ArchiveBuilderForm</Form>
             <FormType>dfm</FormType>
         </DCCReference>
+        <DCCReference Include="UI\Forms\SettingsFormUI.pas">
+            <Form>SettingsForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="Core\Services\HotkeyService.pas"/>
+        <DCCReference Include="ThirdParty\Bcrypt.pas"/>
         <RcItem Include="Database\Schema\000_schema_init.sql">
             <ContainerId>ResourceItem</ContainerId>
             <ResourceType>RCDATA</ResourceType>

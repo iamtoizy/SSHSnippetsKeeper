@@ -99,9 +99,11 @@ uses
     CommonHelpers,
     SynEditKeyCmds,
     SynEditTypes,
+    SynFunc,
     SynThemeAdapter,
     System.RegularExpressions,
     System.SysUtils,
+    System.Types,
     UI.HoverHelpManager,
     UI.StateLoader,
     Vcl.Clipbrd,
@@ -156,7 +158,8 @@ end;
 
 procedure TEpochConverterForm.mEpochKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 var
-    Digit, I, MarkX, MarkY: Integer;
+    Digit: Integer;
+    I, MarkX, MarkY: TSynNativeInt;
     IsToggleOff: Boolean;
 begin
     // Перехватываем комбинацию CTRL+ALT+(цифра от 0 до 9)
@@ -445,7 +448,7 @@ end;
 
 procedure TEpochConverterForm.mEpochMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
-    I, MarkX, MarkY: Integer;
+    I, MarkX, MarkY: TSynNativeInt;
     NewItem: TMenuItem;
     LineText: string;
     HasAnyBookmarks: Boolean;
@@ -621,7 +624,7 @@ procedure TEpochConverterForm.nToggleBookmarkClick(Sender: TObject);
 const
     SlotPriority: array[0..9] of Integer = (1, 2, 3, 4, 5, 6, 7, 8, 9, 0);
 var
-    I, Slot, MarkX, MarkY: Integer;
+    I, Slot, MarkX, MarkY: TSynNativeInt;
     BookmarkFound: Boolean;
     FreeSlot: Integer;
 begin

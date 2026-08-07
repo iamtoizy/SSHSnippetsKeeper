@@ -8,6 +8,7 @@ uses
     Core.Interfaces,
     EpochService,
     FireDAC.Comp.Client,
+    HotkeyService,
     PasswordService,
     SnippetRepository,
     SnippetService,
@@ -31,6 +32,7 @@ type
         FWindowHelper: IWindowHelper;
         FMessagesHandler: IUIMessagesHandler;
         FEpochService: IEpochService;
+        FHotkeyService: IHotkeyService;
 
         function GetDatabaseManager: IDatabaseManager;
         function GetSnippetService: ISnippetService;
@@ -42,6 +44,7 @@ type
         function GetWindowHelper: IWindowHelper;
         function GetErrorHandler: IUIMessagesHandler;
         function GetEpochService: IEpochService;
+        function GetHotkeyService: IHotkeyService;
     public
         // В конструктор передаем уже готовые сервисы
         constructor Create(
@@ -49,7 +52,7 @@ type
             DBConnection: TFDConnection;
             SettingsManager: ISettingsManager;
             WindowHelper: IWindowHelper;
-            ErrorHandler: IUIMessagesHandler
+            MessagesHandler: IUIMessagesHandler
         );
         destructor Destroy; override;
         property DatabaseManager: IDatabaseManager read GetDatabaseManager;
@@ -60,8 +63,9 @@ type
         property PasswordService: IPasswordService read GetPasswordService;
         property SettingsManager: ISettingsManager read GetSettingsManager;
         property WindowHelper: IWindowHelper read GetWindowHelper;
-        property ErrorHandler: IUIMessagesHandler read GetErrorHandler;
+        property MessagesHandler: IUIMessagesHandler read GetErrorHandler;
         property EpochService: IEpochService read GetEpochService;
+        property HotkeyService: IHotkeyService read GetHotkeyService;
 
         function CreateIsolatedSnippetService(out BackgroundConnection: TComponent): ISnippetService;
     end;
@@ -75,7 +79,7 @@ constructor TAppContext.Create(
     DBConnection: TFDConnection;
     SettingsManager: ISettingsManager;
     WindowHelper: IWindowHelper;
-    ErrorHandler: IUIMessagesHandler
+    MessagesHandler: IUIMessagesHandler
 );
 var
     SnippetRepo: ISnippetRepository;
@@ -88,7 +92,11 @@ begin
     FDatabaseManager := DatabaseManager;
     FSettingsManager := SettingsManager;
     FWindowHelper := WindowHelper;
-    FMessagesHandler := ErrorHandler;
+    FMessagesHandler := MessagesHandler;
+
+    FHotkeyService := THotkeyService.Create;
+    // Накладываем настройки юзера из JSON поверх дефолтной карты
+    FHotkeyService.LoadFromSettings(FSettingsManager.Data.CustomShortCuts);
 
     // Создаем репозитории
     SnippetRepo := TSnippetRepository.Create(DBConnection);
@@ -173,6 +181,11 @@ end;
 function TAppContext.GetErrorHandler: IUIMessagesHandler;
 begin
     Result := FMessagesHandler;
+end;
+
+function TAppContext.GetHotkeyService: IHotkeyService;
+begin
+    Result := FHotkeyService;
 end;
 
 function TAppContext.GetPasswordService: IPasswordService;

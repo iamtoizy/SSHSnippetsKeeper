@@ -67,20 +67,30 @@ object TagEditorForm: TTagEditorForm
     object nActions: TMenuItem
       Caption = #1044#1077#1081#1089#1090#1074#1080#1103
       object nTagAdd: TMenuItem
-        Caption = #1044#1086#1073#1072#1074#1080#1090#1100' '#1090#1077#1075
-        ShortCut = 16449
-        OnClick = nTagAddClick
+        Action = actAddTag
       end
       object nTagDelete: TMenuItem
-        Caption = #1059#1076#1072#1083#1080#1090#1100' '#1090#1077#1075
-        ShortCut = 16452
-        OnClick = nTagDeleteClick
+        Action = actDeleteTag
       end
       object nTagRename: TMenuItem
-        Caption = #1055#1077#1088#1077#1080#1084#1077#1085#1086#1074#1072#1090#1100' '#1090#1077#1075
-        ShortCut = 16466
-        OnClick = nTagRenameClick
+        Action = actEditTag
       end
+    end
+  end
+  object ActionList: TActionList
+    Left = 232
+    Top = 32
+    object actAddTag: TAction
+      Caption = 'actAddTag'
+      OnExecute = actAddTagExecute
+    end
+    object actDeleteTag: TAction
+      Caption = 'actDeleteTag'
+      OnExecute = actDeleteTagExecute
+    end
+    object actEditTag: TAction
+      Caption = 'actEditTag'
+      OnExecute = actEditTagExecute
     end
   end
 end

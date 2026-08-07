@@ -232,43 +232,71 @@ object AISettingsForm: TAISettingsForm
     object nFile: TMenuItem
       Caption = #1060#1072#1081#1083
       object nSave: TMenuItem
-        Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100
-        ShortCut = 16467
-        OnClick = nSaveClick
+        Action = actSave
       end
     end
     object nProvider: TMenuItem
       Caption = #1055#1088#1086#1074#1072#1081#1076#1077#1088
       object nProviderCreate: TMenuItem
-        Caption = #1057#1086#1079#1076#1072#1090#1100
-        ShortCut = 16462
-        OnClick = nProviderCreateClick
+        Action = actCreateProvider
       end
       object nProviderDelete: TMenuItem
-        Caption = #1059#1076#1072#1083#1080#1090#1100
-        ShortCut = 16452
-        OnClick = nProviderDeleteClick
+        Action = actDeleteProvider
       end
       object nProviderEdit: TMenuItem
-        Caption = #1048#1079#1084#1077#1085#1080#1090#1100
-        ShortCut = 16453
+        Action = actEditProvider
       end
     end
     object nModel: TMenuItem
       Caption = #1052#1086#1076#1077#1083#1100
       object nModelCreate: TMenuItem
-        Caption = #1057#1086#1079#1076#1072#1090#1100
-        ShortCut = 24654
-        OnClick = nModelCreateClick
+        Action = actCreateModel
       end
       object nModelDelete: TMenuItem
-        Caption = #1059#1076#1072#1083#1080#1090#1100
-        ShortCut = 24644
+        Action = actDeleteModel
       end
       object nModelEdit: TMenuItem
-        Caption = #1048#1079#1084#1077#1085#1080#1090#1100
-        ShortCut = 24645
+        Action = actEditModel
       end
+    end
+  end
+  object ActionList: TActionList
+    Left = 520
+    Top = 78
+    object actSave: TAction
+      Category = 'File'
+      Caption = 'actSave'
+      OnExecute = actSaveExecute
+    end
+    object actCreateProvider: TAction
+      Category = 'Provider'
+      Caption = 'actCreateProvider'
+      OnExecute = actCreateProviderExecute
+    end
+    object actDeleteProvider: TAction
+      Category = 'Provider'
+      Caption = 'actDeleteProvider'
+      OnExecute = actDeleteProviderExecute
+    end
+    object actEditProvider: TAction
+      Category = 'Provider'
+      Caption = 'actEditProvider'
+      OnExecute = actEditProviderExecute
+    end
+    object actCreateModel: TAction
+      Category = 'Model'
+      Caption = 'actCreateModel'
+      OnExecute = actCreateModelExecute
+    end
+    object actDeleteModel: TAction
+      Category = 'Model'
+      Caption = 'actDeleteModel'
+      OnExecute = actDeleteModelExecute
+    end
+    object actEditModel: TAction
+      Category = 'Model'
+      Caption = 'actEditModel'
+      OnExecute = actEditModelExecute
     end
   end
 end

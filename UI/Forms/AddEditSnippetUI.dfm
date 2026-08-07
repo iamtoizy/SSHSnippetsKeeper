@@ -580,14 +580,10 @@ object AddEditSnippetForm: TAddEditSnippetForm
     object nAI: TMenuItem
       Caption = #1048#1048' '#1087#1086#1084#1086#1097#1085#1080#1082
       object nShowAIPrompt: TMenuItem
-        Caption = #1042#1099#1079#1074#1072#1090#1100' '#1048#1048
-        ShortCut = 16457
-        OnClick = nShowAIPromptClick
+        Action = actShowAIForm
       end
       object nAISettings: TMenuItem
-        Caption = #1050#1086#1085#1092#1080#1075#1091#1088#1072#1094#1080#1103' '#1048#1048
-        ShortCut = 49225
-        OnClick = nAISettingsClick
+        Action = actConfigureAI
       end
     end
   end
@@ -596,5 +592,17 @@ object AddEditSnippetForm: TAddEditSnippetForm
     OnTimer = tmrSecurityScanTimer
     Left = 485
     Top = 49
+  end
+  object ActionList: TActionList
+    Left = 485
+    Top = 105
+    object actShowAIForm: TAction
+      Caption = 'actShowAIForm'
+      OnExecute = actShowAIFormExecute
+    end
+    object actConfigureAI: TAction
+      Caption = 'actConfigureAI'
+      OnExecute = actConfigureAIExecute
+    end
   end
 end

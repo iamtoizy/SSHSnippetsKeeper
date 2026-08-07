@@ -29,6 +29,9 @@
     "nCloseDatabase": {
       "Caption": "Закрыть базу данных"
     },
+    "nSettings": {
+      "Caption": "Настройки"
+    },
     "nExit": {
       "Caption": "Выход"
     },
@@ -109,10 +112,10 @@
     "bCancel": {"Caption": "Отмена"}
   },
   "InputForm": {
-      "Caption": "!Ввод значения",
-      "bOK": { "Caption": "!ОК" },
-      "bCancel": { "Caption": "!Отмена" },
-      "lbPrompt": { "Caption": "!Введи значение:" }
+      "Caption": "Ввод значения",
+      "bOK": { "Caption": "ОК" },
+      "bCancel": { "Caption": "Отмена" },
+      "lbPrompt": { "Caption": "Введи значение:" }
   },
   "AddEditSnippetForm": {
     "Caption": "SSH Snippets Keeper - Добавить/редактировать сниппет",
@@ -645,6 +648,58 @@
       "Caption": "Только просмотр содержимого (Dry Run/List)"
     }
   },
+  "SettingsForm": {
+    "Caption": "Настройки",
+    "tsHotkeys": {
+      "Caption": "Горячие клавиши"
+    },
+    "gbGlobalHotkeys": {
+      "Caption": "Глобальные горячие клавиши"
+    },
+    "chkEnableQuickSearch": {
+      "Caption": "Глобальный вызов \"Панели быстрого поиска\""
+    },
+    "chkEnablePassGen": {
+      "Caption": "Глобальный вызов \"Генератора паролей\""
+    },
+    "gbAppHotkeys": {
+      "Caption": "Локальные горячие клавиши"
+    },
+    "ebSearchHotkeys": {
+      "TextHint": "Введи что-то для поиска..."
+    },
+    "lvHotkeys": {
+      "Columns": {
+        "0": "Категория",
+        "1": "Действие",
+        "2": "Горячая клавиша"
+      }
+    },
+    "lbHotkey": {
+      "Caption": "Горячая клавиша:"
+    },
+    "lbAction": {
+      "Caption": "Действие:"
+    },
+    "lbActionID": {
+      "Caption": "Идентификатор:"
+    },
+    "bApplyShortcut": {
+      "Caption": "✔"
+    },
+    "bResetShortcut": {
+      "Caption": "↺"
+    },
+    "bResetAll": {
+      "Caption": "Сбросить всё"
+    },
+    "bSave": {
+      "Caption": "Сохранить"
+    },
+    "bCancel": {
+      "Caption": "Отмена"
+    }
+  },
   "Messages": {
     "Help": {
       "MainForm": {
@@ -778,6 +833,69 @@
         }
       }
     },
+    "Actions": {
+      "MainForm": {
+        "Data": {
+          "Caption": "Управление данными",
+          "AddSnippet": "Добавить новый сниппет",
+          "DeleteSnippet": "Удалить сниппет",
+          "EditSnippet": "Изменить сниппет",
+          "AddCategory": "Создать категорию",
+          "DeleteCategory": "Удалить категорию",
+          "EditCategory": "Переименовать категорию",
+          "AddTag": "Добавить тег",
+          "DeleteTag": "Удалить тег",
+          "EditTag": "Переименовать тег"
+        },
+        "Database": {
+          "Caption": "База данных",
+          "CreateDatabase": "Создать БД",
+          "OpenDatabase": "Открыть БД",
+          "CloseDatabase": "Закрыть БД"
+        },
+        "Tools": {
+          "Caption": "Утилиты",
+          "Search": "Полнотекстовый поиск",
+          "PasswordGenerator": "Генератор паролей",
+          "CronGenerator": "Cron Конструктор",
+          "EpochConverter": "Unix Epoch Конвертер",
+          "NetworkCalculator": "IP/CIDR Калькулятор",
+          "ChmodCalculator": "Chmod Калькулятор",
+          "ArchiveBuilder": "Архиватор (tar/zip)"
+        },
+        "Other": {
+          "Caption": "Прочее",
+          "Settings": "Настройки"
+        }
+      },
+      "AddEditSnippetForm": {
+        "Caption": "Редактор сниппетов",
+        "actShowAIForm": "Вызвать окно ИИ-ассистента",
+        "actConfigureAI": "Настроить ИИ-ассистента"
+      },
+      "AISettingsForm": {
+        "Caption": "ИИ-ассистент",
+        "actSave": "Сохранить настройки",
+        "actCreateProvider": "Создать провайдера",
+        "actDeleteProvider": "Удалить провайдера",
+        "actEditProvider": "Редактировать провайдера",
+        "actCreateModel": "Создать модель",
+        "actDeleteModel": "Удалить модель",
+        "actEditModel": "Редактировать модель"
+      },
+      "TTagEditor": {
+        "Caption": "Редактор тегов",
+        "actAddTag": "Добавить тег",
+        "actDeleteTag": "Удалить тег",
+        "actEditTag": "Изменить тег"
+      },
+      "TWorkspaceManagerForm": {
+        "Caption": "Пространства",
+        "actAddWorkspace": "Добавить пространство",
+        "actDeleteWorkspace": "Удалить пространство",
+        "actEditWorkspace": "Изменить пространство"
+      }
+    },
     "Common": {
       "NotificationDefaultCaption": "Менеджер сниппетов",
       "Confirmation": "Подтверждение",
@@ -794,7 +912,10 @@
       "CopiedToClipboard": "Скопировано в буфер обмена.",
       "NoDataToCopy": "❌ Нет данных для копирования в буфер обмена.",
       "Security": "Безопасность",
-      "Additional": "ДОПОЛНИТЕЛЬНО:"
+      "Additional": "ДОПОЛНИТЕЛЬНО:",
+      "HotkeyConflict": "Эта комбинация клавиш уже используется действием:\n'%s'.\n\nВыбери другую.",
+      "HotkeyApplied": "Горячая клавиша временно применена. Нажми 'Сохранить' внизу окна, чтобы записать изменения в файл.",
+      "HotkeyRegistrationError": "Не удалось зарегистрировать глобальную клавишу (ID: %d). Возможно, она занята другим приложением."
     },
     "DB": {
       "ConnectError": "Критическая ошибка!\nНе удалось подключиться к базе данных SQLite.\nПроверь путь к файлу.",
@@ -1133,6 +1254,9 @@
         "tar": "tar.* (gz, bz2, xz, zst, lz4)",
         "7z": "7z"
       }
+    },
+    "SettingsForm": {
+      "ResetAllPrompt": "Уверен, что хочешь сбросить ВСЕ локальные настройки горячих клавиш к значениям по умолчанию?"
     }
   }
 }

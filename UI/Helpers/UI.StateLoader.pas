@@ -142,7 +142,6 @@ begin
                 {$IFDEF DEBUG}
                 if not Assigned(Comp) then
                 begin
-                showmessage(Form.Name);
                     raise Exception.Create('Компонент не найден на форме: ' + PropPair.JsonString.Value);
                 end;
                 {$ENDIF}

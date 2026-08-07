@@ -10,7 +10,7 @@ uses
     Vcl.Controls,
     Vcl.ExtCtrls,
     Vcl.Menus,
-    Vcl.StdCtrls
+    Vcl.StdCtrls, System.Actions, Vcl.ActnList
     ;
 
 type
@@ -24,6 +24,13 @@ type
         nWorkspaceAdd: TMenuItem;
         nWorkspaceDelete: TMenuItem;
         nWorkspaceRename: TMenuItem;
+    ActionList: TActionList;
+    actAddWorkspace: TAction;
+    actDeleteWorkspace: TAction;
+    actEditWorkspace: TAction;
+        procedure actAddWorkspaceExecute(Sender: TObject);
+        procedure actDeleteWorkspaceExecute(Sender: TObject);
+        procedure actEditWorkspaceExecute(Sender: TObject);
         procedure bOKClick(Sender: TObject);
         procedure bCancelClick(Sender: TObject);
         procedure lvWorkspacesEdited(Sender: TObject; Item: TListItem; var S: string);
@@ -31,9 +38,6 @@ type
         procedure FormShow(Sender: TObject);
         procedure lvWorkspacesDblClick(Sender: TObject);
         procedure lvWorkspacesResize(Sender: TObject);
-        procedure nWorkspaceAddClick(Sender: TObject);
-        procedure nWorkspaceDeleteClick(Sender: TObject);
-        procedure nWorkspaceRenameClick(Sender: TObject);
     private
         procedure RefreshWorkspaces;
         procedure DoAddWorkspace;
@@ -60,6 +64,21 @@ uses
     ;
 
 {$R *.dfm}
+
+procedure TWorkspaceManagerForm.actAddWorkspaceExecute(Sender: TObject);
+begin
+    DoAddWorkspace;
+end;
+
+procedure TWorkspaceManagerForm.actDeleteWorkspaceExecute(Sender: TObject);
+begin
+    DoDeleteWorkspace;
+end;
+
+procedure TWorkspaceManagerForm.actEditWorkspaceExecute(Sender: TObject);
+begin
+    DoRenameWorkspace;
+end;
 
 procedure TWorkspaceManagerForm.RefreshWorkspaces;
 var
@@ -236,21 +255,6 @@ procedure TWorkspaceManagerForm.lvWorkspacesResize(Sender: TObject);
 begin
     ShowScrollBar(lvWorkspaces.Handle, SB_HORZ, False);
     lvWorkspaces.Columns[0].Width := lvWorkspaces.ClientWidth - 30
-end;
-
-procedure TWorkspaceManagerForm.nWorkspaceAddClick(Sender: TObject);
-begin
-    DoAddWorkspace;
-end;
-
-procedure TWorkspaceManagerForm.nWorkspaceDeleteClick(Sender: TObject);
-begin
-    DoDeleteWorkspace;
-end;
-
-procedure TWorkspaceManagerForm.nWorkspaceRenameClick(Sender: TObject);
-begin
-    DoRenameWorkspace;
 end;
 
 end.

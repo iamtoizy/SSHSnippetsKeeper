@@ -4,9 +4,12 @@ interface
 
 uses
     Core.Interfaces,
+    System.Classes,
     System.Generics.Collections,
     System.Generics.Defaults,
     Vcl.ComCtrls,
+    Vcl.Controls,
+    Vcl.Menus,
     Vcl.StdCtrls
     ;
 
@@ -33,11 +36,21 @@ procedure SecureZeroMemory(Ptr: Pointer; Size: NativeUInt);
 procedure CopyToClipboardSecure(const Text: string);
 { Безопасное уничтожение локальных строк в RAM }
 procedure WipeString(var S: string);
+{ Конвертация из Win32 (RegisterHotKey) в VCL (THotKey) }
+procedure Win32HotkeyToVCL(const Config: THotkeyConfig; HotKeyCtrl: THotKey);
+{ Конвертация из VCL (THotKey) в Win32 (RegisterHotKey) }
+function VCLHotkeyToWin32(HotKeyCtrl: THotKey; Enabled: Boolean = True): THotkeyConfig;
+{ Преобразование комбинации в красивую строку для интерфейса (например "Ctrl + Alt + Q") }
+function HotkeyToString(const Config: THotkeyConfig): string;
+{ Функция для генерации заголовка Basic Auth }
+function GenerateHtpasswdString(const Username, Password: string): string;
 
 implementation
 
 uses
     System.IOUtils,
+    System.Hash,
+    System.NetEncoding,
     System.Notification,
     System.SysUtils,
     UI.StateLoader,
@@ -253,6 +266,89 @@ begin
     // 4. Ограничиваем размер истории (обрезаем хвост из самых редких)
     if Length(History) > MaxItems then
         SetLength(History, MaxItems);
+end;
+
+procedure Win32HotkeyToVCL(const Config: THotkeyConfig; HotKeyCtrl: THotKey);
+var
+    ShiftState: TShiftState;
+begin
+    ShiftState := [];
+    // Собираем стандартный VCL TShiftState из Win32 флагов
+    if (Config.Modifiers and MOD_ALT) <> 0 then
+        Include(ShiftState, ssAlt);
+    if (Config.Modifiers and MOD_CONTROL) <> 0 then
+        Include(ShiftState, ssCtrl);
+    if (Config.Modifiers and MOD_SHIFT) <> 0 then
+        Include(ShiftState, ssShift);
+
+    // Vcl.Menus.ShortCut сам соберет правильный Integer (TShortCut),
+    // а компонент THotKey автоматически обновит свои визуальные Modifiers
+    HotKeyCtrl.HotKey := Vcl.Menus.ShortCut(Config.Key, ShiftState);
+end;
+
+function VCLHotkeyToWin32(HotKeyCtrl: THotKey; Enabled: Boolean = True): THotkeyConfig;
+var
+    Key: Word;
+    ShiftState: TShiftState;
+    WinModifiers: Cardinal;
+begin
+    // Расщепляем TShortCut обратно на кнопку и стандартный TShiftState
+    Vcl.Menus.ShortCutToKey(HotKeyCtrl.HotKey, Key, ShiftState);
+
+    WinModifiers := 0;
+    // Собираем флаги Win32
+    if ssAlt in ShiftState then
+        WinModifiers := WinModifiers or MOD_ALT;
+    if ssCtrl in ShiftState then
+        WinModifiers := WinModifiers or MOD_CONTROL;
+    if ssShift in ShiftState then
+        WinModifiers := WinModifiers or MOD_SHIFT;
+
+    Result.Modifiers := WinModifiers;
+    Result.Key := Key;
+    Result.Enabled := Enabled and (Result.Key <> 0);
+end;
+
+function HotkeyToString(const Config: THotkeyConfig): string;
+var
+    Parts: string;
+    KeyName: array[0..31] of Char;
+    ScanCode: UINT;
+begin
+    if not Config.Enabled or (Config.Key = 0) then
+        Exit('Нет');
+
+    Parts := '';
+    if (Config.Modifiers and MOD_CONTROL) <> 0 then Parts := Parts + 'Ctrl + ';
+    if (Config.Modifiers and MOD_ALT) <> 0 then Parts := Parts + 'Alt + ';
+    if (Config.Modifiers and MOD_SHIFT) <> 0 then Parts := Parts + 'Shift + ';
+    if (Config.Modifiers and MOD_WIN) <> 0 then Parts := Parts + 'Win + ';
+
+    ScanCode := MapVirtualKey(Config.Key, MAPVK_VK_TO_VSC);
+    if GetKeyNameText(ScanCode shl 16, KeyName, Length(KeyName)) > 0 then
+        Parts := Parts + string(KeyName)
+    else
+        Parts := Parts + Chr(Config.Key);
+
+    Result := Parts;
+end;
+
+function GenerateHtpasswdString(const Username, Password: string): string;
+var
+    HashBytes: TBytes;
+    Base64Str: string;
+begin
+    // 1. Получаем SHA-1 хэш от пароля в виде "сырых" байтов (не HEX-строку!)
+    HashBytes := THashSHA1.GetHashBytes(Password);
+
+    // 2. Кодируем эти байты в стандартный Base64
+    Base64Str := TNetEncoding.Base64.EncodeBytesToString(HashBytes);
+
+    // 3. На всякий случай удаляем возможные переносы строк (Base64 иногда их вставляет)
+    Base64Str := Base64Str.Replace(#13#10, '', [rfReplaceAll]);
+
+    // 4. Возвращаем готовую строку для вставки в файл .htpasswd
+    Result := Format('%s:{SHA}%s', [Username, Base64Str]);
 end;
 
 initialization

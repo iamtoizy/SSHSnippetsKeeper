@@ -316,7 +316,7 @@ begin
         bDeletePreset.Enabled := False;
 
     // Загрузка сохраненного состояния
-    Setts := FAppContext.SettingsManager.Data;
+    Setts := AppContext.SettingsManager.Data;
 
     // Блокируем UI, чтобы OnChange у поля ввода не перебил наши настройки
     FUpdatingUI := True;
@@ -373,7 +373,7 @@ var
         end;
     end;
 begin
-    Setts := FAppContext.SettingsManager.Data;
+    Setts := AppContext.SettingsManager.Data;
 
     // Вкладка "Создать архив"
     // Что архивируем (путь к директории/файлу) -> берем из истории путей
@@ -456,7 +456,7 @@ begin
             False
         );
 
-        Setts := FAppContext.SettingsManager.Data;
+        Setts := AppContext.SettingsManager.Data;
         if Length(Setts.ArchivePresets) > 0 then
         begin
             cbPresets.Items.AddObject(TUIStateLoader.GetMessage('ArchiveBuilderForm.DefaultPresets.CustomDivider'), nil);
@@ -679,12 +679,12 @@ begin
         NewPreset.ExcludeMask := mExclude.Text;
         NewPreset.MaxCompression := cbMaxCompression.Checked;
 
-        Setts := FAppContext.SettingsManager.Data;
+        Setts := AppContext.SettingsManager.Data;
         SetLength(Setts.ArchivePresets, Length(Setts.ArchivePresets) + 1);
         Setts.ArchivePresets[High(Setts.ArchivePresets)] := NewPreset;
 
-        FAppContext.SettingsManager.Data := Setts;
-        FAppContext.SettingsManager.Save;
+        AppContext.SettingsManager.Data := Setts;
+        AppContext.SettingsManager.Save;
 
         LoadPresetsToComboBox;
         ShowSimpleToast(TUIStateLoader.GetMessage('ArchiveBuilder.Messages.PresetSaved'));
@@ -706,7 +706,7 @@ begin
         TUIStateLoader.GetMessage('ArchiveBuilder.Messages.DeleteTitle')
     ) then Exit;
 
-    Setts := FAppContext.SettingsManager.Data;
+    Setts := AppContext.SettingsManager.Data;
     IndexToRemove := -1;
     for I := Low(Setts.ArchivePresets) to High(Setts.ArchivePresets) do
     begin
@@ -720,8 +720,8 @@ begin
     if IndexToRemove >= 0 then
     begin
         Delete(Setts.ArchivePresets, IndexToRemove, 1);
-        FAppContext.SettingsManager.Data := Setts;
-        FAppContext.SettingsManager.Save;
+        AppContext.SettingsManager.Data := Setts;
+        AppContext.SettingsManager.Save;
         LoadPresetsToComboBox;
         bDeletePreset.Enabled := False;
     end;
@@ -736,7 +736,7 @@ begin
         Clipboard.AsText := ebCommand.Text;
         ShowSimpleToast(TUIStateLoader.GetMessage('Common.CopiedToClipboard'));
 
-        Setts := FAppContext.SettingsManager.Data;
+        Setts := AppContext.SettingsManager.Data;
 
         if pcMain.ActivePage = tsCreate then
         begin
@@ -757,8 +757,8 @@ begin
                 THistoryHelper.Add(Setts.HistoryArchivePaths, cbDestExtract.Text); // Сохраняем путь извлечения
         end;
 
-        FAppContext.SettingsManager.Data := Setts;
-        FAppContext.SettingsManager.Save;
+        AppContext.SettingsManager.Data := Setts;
+        AppContext.SettingsManager.Save;
         LoadHistoryToUI;
     end;
 end;

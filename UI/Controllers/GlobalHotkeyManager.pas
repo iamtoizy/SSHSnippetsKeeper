@@ -26,27 +26,33 @@ type
     private
         FWindowHandle: Winapi.Windows.HWND;
         FAppContext: IAppContext;
+        FIsListening: Boolean;
+
         procedure WndProc(var Msg: TMessage);
         procedure OnHUDHotkeyTriggered;
         procedure OnPassGenHotkeyTriggered;
+        procedure RegisterSingleHotkey(ID: Integer; const Config: THotkeyConfig);
     public
         constructor Create(AppContext: IAppContext);
         destructor Destroy; override;
+
         procedure StartListening;
         procedure StopListening;
+        procedure ReloadHotkeys; // Перерегистрация при изменении настроек в UI
     end;
 
 implementation
 
 uses
+    QuickSearchFormUI,
     System.Classes,
-    QuickSearchFormUI;
+    UI.StateLoader;
 
 constructor TGlobalHotkeyManager.Create(AppContext: IAppContext);
 begin
     inherited Create;
     FAppContext := AppContext;
-    // Создаем скрытое служебное окно для перехвата сообщений хоткея
+    FIsListening := False;
     FWindowHandle := AllocateHWnd(WndProc);
 end;
 
@@ -57,19 +63,56 @@ begin
     inherited;
 end;
 
-procedure TGlobalHotkeyManager.StartListening;
+procedure TGlobalHotkeyManager.RegisterSingleHotkey(ID: Integer; const Config: THotkeyConfig);
+var
+    Flags: Cardinal;
 begin
-    // HUD-форма поиска и ввода сниппета:
-    // Регистрируем Alt + Q (MOD_ALT и ORD('Q'))
-    // Можно вынести в настройки Settings.SettingsRecord
-    Winapi.Windows.RegisterHotKey(FWindowHandle, HOTKEY_ID_HUD, MOD_ALT, Ord('Q'));
-    // Генератор паролей
-    Winapi.Windows.RegisterHotKey(FWindowHandle, HOTKEY_ID_PASSGEN, MOD_CONTROL or MOD_ALT, Ord('G'));
+    // Сначала обязательно снимаем старую регистрацию
+    Winapi.Windows.UnregisterHotKey(FWindowHandle, ID);
+
+    if Config.Enabled and (Config.Key <> 0) then
+    begin
+        // Добавляем MOD_NOREPEAT, чтобы убрать автоповтор при зажатии клавиши
+        Flags := Config.Modifiers or MOD_NOREPEAT;
+
+        if not Winapi.Windows.RegisterHotKey(FWindowHandle, ID, Flags, Config.Key) then
+        begin
+            // Если комбинация занята другой программой в Windows
+            if Assigned(FAppContext) and Assigned(FAppContext.MessagesHandler) then
+                FAppContext.MessagesHandler.ShowWarning(
+                    TUIStateLoader.GetMessage('Common.HotkeyRegistrationError', [ID])
+                );
+        end;
+    end;
+end;
+
+procedure TGlobalHotkeyManager.StartListening;
+var
+    Settings: TAppSettings;
+begin
+    if FIsListening then Exit;
+
+    Settings := FAppContext.SettingsManager.Data;
+
+    // Регистрируем динамические значения из настроек
+    RegisterSingleHotkey(HOTKEY_ID_HUD, Settings.Hotkeys.QuickSearch);
+    RegisterSingleHotkey(HOTKEY_ID_PASSGEN, Settings.Hotkeys.PasswordGen);
+
+    FIsListening := True;
 end;
 
 procedure TGlobalHotkeyManager.StopListening;
 begin
     Winapi.Windows.UnregisterHotKey(FWindowHandle, HOTKEY_ID_HUD);
+    Winapi.Windows.UnregisterHotKey(FWindowHandle, HOTKEY_ID_PASSGEN);
+    FIsListening := False;
+end;
+
+procedure TGlobalHotkeyManager.ReloadHotkeys;
+begin
+    // Перезагрузка горячих клавиш на лету при сохранении настроек
+    StopListening;
+    StartListening;
 end;
 
 procedure TGlobalHotkeyManager.WndProc(var Msg: TMessage);
@@ -81,11 +124,13 @@ begin
             begin
                 OnHUDHotkeyTriggered;
                 Msg.Result := 0;
+                Exit;
             end;
             HOTKEY_ID_PASSGEN:
             begin
                 OnPassGenHotkeyTriggered;
                 Msg.Result := 0;
+                Exit;
             end;
         end;
     end;
@@ -97,28 +142,18 @@ var
     CurrentHWND: HWND;
     ActiveWindowInfo: TWindowMonitorInfo;
 begin
-    // 1. Получаем хендл текущего активного окна в ОС Windows
     CurrentHWND := Winapi.Windows.GetForegroundWindow;
-
-    // 2. Спрашиваем твой WindowMonitor, является ли это окно разрешенным терминалом
-    // (Поскольку метод WinMonitor.IsAllowedWindow обычно private или работает внутри,
-    // проверим через GetLastAllowedWindow или историю)
     ActiveWindowInfo := WinMonitor.GetLastAllowedWindow;
 
-    // Критичная проверка: хоткей сработает ТОЛЬКО если активное окно совпадает с
-    // последним зафиксированным терминалом и оно валидно
     if QuickSearchForm.Visible then
     begin
         QuickSearchForm.Hide;
         Exit;
     end;
+
     if (ActiveWindowInfo.HWND = CurrentHWND) and IsWindow(CurrentHWND) and (FAppContext.DatabaseManager.IsConnected) then
     begin
-        // 3. Создаем и показываем полупрозрачную поисковую форму поверх
-        // Создаем форму БЕЗ модального режима
         QuickSearchForm.ShowWithService(nil, FAppContext, 0, CurrentHWND);
-
-        // Показываем как независимое окно
         QuickSearchForm.Show;
     end;
 end;
@@ -129,4 +164,3 @@ begin
 end;
 
 end.
-

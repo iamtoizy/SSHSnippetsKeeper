@@ -11,7 +11,7 @@ uses
     Vcl.Controls,
     Vcl.ExtCtrls,
     Vcl.Menus,
-    Vcl.StdCtrls
+    Vcl.StdCtrls, System.Actions, Vcl.ActnList
     ;
 
 type
@@ -33,11 +33,15 @@ type
         nTagAdd: TMenuItem;
         nTagDelete: TMenuItem;
         nTagRename: TMenuItem;
+    ActionList: TActionList;
+    actAddTag: TAction;
+    actDeleteTag: TAction;
+    actEditTag: TAction;
+        procedure actAddTagExecute(Sender: TObject);
+        procedure actDeleteTagExecute(Sender: TObject);
+        procedure actEditTagExecute(Sender: TObject);
         procedure bOKClick(Sender: TObject);
         procedure bCancelClick(Sender: TObject);
-        procedure nTagAddClick(Sender: TObject);
-        procedure nTagDeleteClick(Sender: TObject);
-        procedure nTagRenameClick(Sender: TObject);
         procedure lvTagsEdited(Sender: TObject; Item: TListItem; var S: string);
         procedure FormCreate(Sender: TObject);
         procedure FormDestroy(Sender: TObject);
@@ -71,6 +75,21 @@ uses
     Winapi.CommCtrl,
     Winapi.Windows
     ;
+
+procedure TTagEditorForm.actAddTagExecute(Sender: TObject);
+begin
+    DoAddTag;
+end;
+
+procedure TTagEditorForm.actDeleteTagExecute(Sender: TObject);
+begin
+    DoDeleteTags;
+end;
+
+procedure TTagEditorForm.actEditTagExecute(Sender: TObject);
+begin
+    DoRenameTag;
+end;
 
 procedure TTagEditorForm.FormCreate(Sender: TObject);
 begin
@@ -178,21 +197,6 @@ begin
 
     if (lvTags.Selected <> nil) then
         lvTags.Selected.EditCaption;
-end;
-
-procedure TTagEditorForm.nTagAddClick(Sender: TObject);
-begin
-    DoAddTag;
-end;
-
-procedure TTagEditorForm.nTagDeleteClick(Sender: TObject);
-begin
-    DoDeleteTags;
-end;
-
-procedure TTagEditorForm.nTagRenameClick(Sender: TObject);
-begin
-    DoRenameTag;
 end;
 
 procedure TTagEditorForm.lvTagsEdited(Sender: TObject; Item: TListItem; var S: string);

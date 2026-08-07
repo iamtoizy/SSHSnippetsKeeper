@@ -8,6 +8,36 @@ program SSHSnippetsKeeper;
 {$R '000_schema_init.res' 'Database\Schema\000_schema_init.rc'}
 {$R *.dres}
 
+{$IFDEF RELEASE}
+  // Включает максимальную оптимизацию кода компилятором (вырезает "мертвый" код, упрощает циклы и вычисления).
+  // Аналог настройки Project -> Options -> Delphi Compiler -> Compiling -> Optimization
+  {$OPTIMIZATION ON}
+
+  // Отключает генерацию отладочной информации (номера строк, имена переменных) внутри скомпилированных файлов.
+  // Аналог настройки Project -> Options -> Delphi Compiler -> Compiling -> Debug information
+  {$DEBUGINFO OFF}
+
+  // Отключает сохранение локальных символов (имен локальных переменных внутри процедур/функций).
+  // Без этого отладчик не сможет показать значения переменных, но размер exe уменьшится.
+  // Аналог настройки Project -> Options -> Delphi Compiler -> Compiling -> Local symbols
+  {$LOCALSYMBOLS OFF}
+
+  // Отключает генерацию информации о перекрестных ссылках символов (Symbol Reference Info).
+  // Это информация нужна IDE для навигации по коду (Ctrl+Click), в релизном exe она не нужна.
+  {$DEFINITIONINFO OFF}
+
+  // Умное связывание RTTI (Run-Time Type Information).
+  // Заставляет компилятор/линковщик "выбрасывать" метаданные о типах и классах, которые
+  // скомпилированы, но реально нигде в вашем коде не вызываются и не используются.
+  {$WEAKLINKRTTI ON}
+
+  // Жестко отключает генерацию расширенного RTTI для методов, свойств и полей
+  // для всех классов в проекте (если только они явно не потребуют обратного через {$RTTI EXPLICIT...}).
+  // В новых версиях Delphi RTTI генерируется по умолчанию для всего подряд и сильно раздувает exe.
+  // Эта директива - главный инструмент для радикального "похудения" приложения.
+  {$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
+{$ENDIF}
+
 uses
   {$IFDEF DEBUG}
   FastMM5,
@@ -20,7 +50,7 @@ uses
   System.IOUtils,
   System.SysUtils,
   MainFormUI in 'UI\Forms\MainFormUI.pas' {MainForm},
-  JSONSerializer in 'Common\JSONSerializer.pas',
+  JSONSerializer in 'ThirdParty\JSONSerializer.pas',
   Settings in 'Common\Settings.pas',
   DataModule in 'Data\DataModule.pas' {AppDatabase: TDataModule},
   Snippet in 'Core\Entities\Snippet.pas',
@@ -32,7 +62,7 @@ uses
   User in 'Core\Entities\User.pas',
   TagRepository in 'Data\Repositories\TagRepository.pas',
   RepositoryBase in 'Data\RepositoryBase.pas',
-  ArrayHelper in 'Common\ArrayHelper.pas',
+  ArrayHelper in 'ThirdParty\ArrayHelper.pas',
   WindowHelper in 'Automation\WindowHelper.pas',
   AddEditSnippetUI in 'UI\Forms\AddEditSnippetUI.pas' {AddEditSnippetForm},
   HintTextEdit in 'UI\Controls\HintTextEdit.pas',
@@ -85,7 +115,10 @@ uses
   NetworkFormUI in 'UI\Forms\NetworkFormUI.pas' {NetworkForm},
   ChmodService in 'Core\Services\ChmodService.pas',
   ChmodFormUI in 'UI\Forms\ChmodFormUI.pas' {ChmodForm},
-  ArchiveBuilderFormUI in 'UI\Forms\ArchiveBuilderFormUI.pas' {ArchiveBuilderForm};
+  ArchiveBuilderFormUI in 'UI\Forms\ArchiveBuilderFormUI.pas' {ArchiveBuilderForm},
+  SettingsFormUI in 'UI\Forms\SettingsFormUI.pas' {SettingsForm},
+  HotkeyService in 'Core\Services\HotkeyService.pas',
+  Bcrypt in 'ThirdParty\Bcrypt.pas';
 
 {$R *.res}
 
@@ -144,15 +177,21 @@ ReportMemoryLeaksOnShutdown := True;
     SettingsManager := TSettingsManager.Create;
     SettingsManager.Load;
 
+    // --- Глобальная загрузка языка до создания окон ---
+    var GlobalLang: string := SettingsManager.Data.CurrentLanguage;
+    if GlobalLang = '' then
+        GlobalLang := 'ru';
+
+    TUIStateLoader.LoadLanguageFile(ResolvePath('Translation\ui-texts.' + GlobalLang + '.json'));
+    // ---------------------------------------------------------
+
     WindowHelper := TWindowHelper.Create(SettingsManager);
     ErrorHandler := TUIMessagesHandler.Create;
-
-
 
     Application.Initialize;
     Application.MainFormOnTaskbar := True;
     TStyleManager.TrySetStyle('Glow');
-  Application.Title := 'SSH Snippets Keeper';
+    Application.Title := 'SSH Snippets Keeper';
     Application.CreateForm(TAppDatabase, AppDatabase);
   Application.CreateForm(TMainForm, MainForm);
   Application.CreateForm(TQuickSearchForm, QuickSearchForm);

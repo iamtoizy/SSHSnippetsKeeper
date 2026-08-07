@@ -25,7 +25,7 @@ uses
     Vcl.Menus,
     Vcl.StdCtrls,
     // Подцепляем последним:
-    HintTextEdit
+    HintTextEdit, System.Actions, Vcl.ActnList
     ;
 
 type
@@ -75,6 +75,11 @@ type
         mInfo: TMemo;
         spTopLeft: TSplitter;
         mContent: TSynEdit;
+    ActionList: TActionList;
+    actShowAIForm: TAction;
+    actConfigureAI: TAction;
+        procedure actConfigureAIExecute(Sender: TObject);
+        procedure actShowAIFormExecute(Sender: TObject);
         procedure bAISettingsClick(Sender: TObject);
         procedure FormDestroy(Sender: TObject);
         procedure FormCreate(Sender: TObject);
@@ -95,8 +100,6 @@ type
         procedure mContentChange(Sender: TObject);
         procedure mContentKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
         procedure mContentProcessCommand(Sender: TObject; var Command: TSynEditorCommand; var Char: WideChar; Data: Pointer);
-        procedure nAISettingsClick(Sender: TObject);
-        procedure nShowAIPromptClick(Sender: TObject);
         procedure SynCompletionProposalExecute(Kind: SynCompletionType; Sender: TObject; var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
         procedure tmrReloadCommandsTimer(Sender: TObject);
         procedure tmrSecurityScanTimer(Sender: TObject);
@@ -139,9 +142,6 @@ type
         class function ExecuteEdit(Owner: TComponent; AppContext: IAppContext; var SnippetToEdit: TSnippetDTO): Boolean;
     end;
 
-var
-    AddEditSnippetForm: TAddEditSnippetForm;
-
 implementation
 
 uses
@@ -182,9 +182,19 @@ begin
 //    SetSyntax;
 end;
 
+procedure TAddEditSnippetForm.actConfigureAIExecute(Sender: TObject);
+begin
+    bAISettingsClick(bAISettings);
+end;
+
+procedure TAddEditSnippetForm.actShowAIFormExecute(Sender: TObject);
+begin
+    ShowAIOverlay;
+end;
+
 procedure TAddEditSnippetForm.bAISettingsClick(Sender: TObject);
 begin
-    TAISettingsForm.ExecuteGlobal(Application, FAppContext);
+    TAISettingsForm.ExecuteGlobal(Application, AppContext);
     PopulateHubs;
 end;
 
@@ -728,16 +738,6 @@ begin
             Command := ecNone;
         end;
     end;
-end;
-
-procedure TAddEditSnippetForm.nAISettingsClick(Sender: TObject);
-begin
-    bAISettingsClick(bAISettings);
-end;
-
-procedure TAddEditSnippetForm.nShowAIPromptClick(Sender: TObject);
-begin
-    ShowAIOverlay;
 end;
 
 procedure TAddEditSnippetForm.PopulateModels(HubIndex: Integer);

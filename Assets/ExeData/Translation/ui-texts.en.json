@@ -29,6 +29,9 @@
     "nCloseDatabase": {
       "Caption": "Close database"
     },
+    "nSettings": {
+      "Caption": "Settings"
+    },
     "nExit": {
       "Caption": "Exit"
     },
@@ -645,6 +648,58 @@
       "Caption": "List contents only (Dry Run/List)"
     }
   },
+  "SettingsForm": {
+    "Caption": "Settings",
+    "tsHotkeys": {
+      "Caption": "Hotkeys"
+    },
+    "gbGlobalHotkeys": {
+      "Caption": "Global Hotkeys"
+    },
+    "chkEnableQuickSearch": {
+      "Caption": "Global call of \"Quick Search Panel\""
+    },
+    "chkEnablePassGen": {
+      "Caption": "Global call of \"Password Generator\""
+    },
+    "gbAppHotkeys": {
+      "Caption": "Local Hotkeys"
+    },
+    "ebSearchHotkeys": {
+      "TextHint": "Type something to search..."
+    },
+    "lvHotkeys": {
+      "Columns": {
+        "0": "Category",
+        "1": "Action",
+        "2": "Hotkey"
+      }
+    },
+    "lbHotkey": {
+      "Caption": "Hotkey:"
+    },
+    "lbAction": {
+      "Caption": "Action:"
+    },
+    "lbActionID": {
+      "Caption": "Action ID:"
+    },
+    "bApplyShortcut": {
+      "Caption": "✔"
+    },
+    "bResetShortcut": {
+      "Caption": "↺"
+    },
+    "bResetAll": {
+      "Caption": "Reset all"
+    },
+    "bSave": {
+      "Caption": "Save"
+    },
+    "bCancel": {
+      "Caption": "Cancel"
+    }
+  },
   "Messages": {
     "Help": {
       "MainForm": {
@@ -779,6 +834,69 @@
         }
       }
     },
+    "Actions": {
+      "MainForm": {
+        "Data": {
+          "Caption": "Data Management",
+          "AddSnippet": "Add New Snippet",
+          "DeleteSnippet": "Delete Snippet",
+          "EditSnippet": "Edit Snippet",
+          "AddCategory": "Create Category",
+          "DeleteCategory": "Delete Category",
+          "EditCategory": "Rename Category",
+          "AddTag": "Add Tag",
+          "DeleteTag": "Delete Tag",
+          "EditTag": "Rename Tag"
+        },
+        "Database": {
+          "Caption": "Database",
+          "CreateDatabase": "Create Database",
+          "OpenDatabase": "Open Database",
+          "CloseDatabase": "Close Database"
+        },
+        "Tools": {
+          "Caption": "DevOps Utilities",
+          "Search": "Full-text Search",
+          "PasswordGenerator": "Password Generator",
+          "CronGenerator": "Cron Builder",
+          "EpochConverter": "Unix Epoch Converter",
+          "NetworkCalculator": "IP/CIDR Calculator",
+          "ChmodCalculator": "Chmod Calculator",
+          "ArchiveBuilder": "Archive Builder (tar/zip)"
+        },
+        "Other": {
+          "Caption": "Other",
+          "Settings": "Program Settings"
+        }
+      },
+      "AddEditSnippetForm": {
+        "Caption": "Snippet Editor",
+        "actShowAIForm": "Show AI Assistant",
+        "actConfigureAI": "Configure AI Assistant"
+      },
+      "AISettingsForm": {
+        "Caption": "AI Assistant",
+        "actSave": "Save settings",
+        "actCreateProvider": "Create provider",
+        "actDeleteProvider": "Delete provider",
+        "actEditProvider": "Edit provider",
+        "actCreateModel": "Create model",
+        "actDeleteModel": "Delete model",
+        "actEditModel": "Edit model"
+      },
+      "TTagEditor": {
+        "Caption": "Tag Editor",
+        "actAddTag": "Add tag",
+        "actDeleteTag": "Delete tag",
+        "actEditTag": "Edit tag"
+      },
+      "TWorkspaceManagerForm": {
+        "Caption": "Workspaces",
+        "actAddWorkspace": "Add workspace",
+        "actDeleteWorkspace": "Delete workspace",
+        "actEditWorkspace": "Edit workspace"
+      }
+    },
     "Common": {
       "NotificationDefaultCaption": "SSH Snippets Keeper",
       "Confirmation": "Confirmation",
@@ -793,9 +911,12 @@
       "MoreInfo": "More Info",
       "WinEventHookError": "Failed to set up WinEventHook. Error: %s",
       "CopiedToClipboard": "Copied to clipboard.",
-      "NoDataToCopy": "❌ Нет данных для копирования в буфер обмена.",
+      "NoDataToCopy": "❌ No data to copy to the clipboard.",
       "Security": "Security",
-      "Additional": "ADDITIONAL:"
+      "Additional": "ADDITIONAL:",
+      "HotkeyConflict": "This key combination is already used by the action:\n'%s'.\n\nChoose another one.",
+      "HotkeyApplied": "Hotkey temporarily applied. Click 'Save' at the bottom of the window to write changes to the file.",
+      "HotkeyRegistrationError": "Failed to register global key (ID: %d). It might be occupied by another application."
     },
     "DB": {
       "ConnectError": "Critical Error!\nFailed to connect to the SQLite database.\nCheck the file path.",
@@ -1133,6 +1254,9 @@
         "tar": "tar.* (gz, bz2, xz, zst, lz4)",
         "7z": "7z"
       }
+    },
+    "SettingsForm": {
+      "ResetAllPrompt": "Are you sure you want to reset ALL local hotkey settings to their default values?"
     }
   }
 }

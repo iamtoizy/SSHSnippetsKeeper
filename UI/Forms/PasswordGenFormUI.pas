@@ -62,11 +62,9 @@ type
         pbBulkProgress: TProgressBar;
         bExport: TButton;
         SaveDialog: TSaveDialog;
-
         tmrClipboard: TTimer;
         bClearHistory: TButton;
         sbBottom: TStatusBar;
-
         procedure bBulkGenerateClick(Sender: TObject);
         procedure FormDestroy(Sender: TObject);
         procedure bClearHistoryClick(Sender: TObject);
@@ -147,6 +145,7 @@ var
 implementation
 
 uses
+    Bcrypt,
     CommonHelpers,
     System.Hash,
     System.SysUtils,

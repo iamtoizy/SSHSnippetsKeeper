@@ -72,20 +72,30 @@ object WorkspaceManagerForm: TWorkspaceManagerForm
     object nWorkspaces: TMenuItem
       Caption = #1055#1088#1086#1089#1090#1088#1072#1085#1089#1090#1074#1072
       object nWorkspaceAdd: TMenuItem
-        Caption = #1044#1086#1073#1072#1074#1080#1090#1100
-        ShortCut = 16449
-        OnClick = nWorkspaceAddClick
+        Action = actAddWorkspace
       end
       object nWorkspaceDelete: TMenuItem
-        Caption = #1059#1076#1072#1083#1080#1090#1100
-        ShortCut = 16452
-        OnClick = nWorkspaceDeleteClick
+        Action = actDeleteWorkspace
       end
       object nWorkspaceRename: TMenuItem
-        Caption = #1048#1079#1084#1077#1085#1080#1090#1100
-        ShortCut = 16453
-        OnClick = nWorkspaceRenameClick
+        Action = actEditWorkspace
       end
+    end
+  end
+  object ActionList: TActionList
+    Left = 168
+    Top = 120
+    object actAddWorkspace: TAction
+      Caption = 'actAddWorkspace'
+      OnExecute = actAddWorkspaceExecute
+    end
+    object actDeleteWorkspace: TAction
+      Caption = 'actDeleteWorkspace'
+      OnExecute = actDeleteWorkspaceExecute
+    end
+    object actEditWorkspace: TAction
+      Caption = 'actEditWorkspace'
+      OnExecute = actEditWorkspaceExecute
     end
   end
 end
