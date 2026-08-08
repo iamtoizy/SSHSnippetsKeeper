@@ -1404,6 +1404,25 @@ type
 	end;
 	PBlowfishBlock = ^TBlowfishBlock;
 
+// Заглушка. Оптимизатор Delphi не может заглянуть внутрь и поэтому не смеет удалять вызовы, ведущие к ней.
+procedure DummyRead(const P: Pointer);
+asm
+    // Пустой блок. Компилятор не видит, что внутри,
+    // поэтому вынужден считать, что указатель P здесь используется.
+end;
+
+// Реализация SecureZeroMemory
+procedure SecureZeroMemory(Destination: Pointer; Length: NativeUInt);
+begin
+    if (Destination <> nil) and (Length > 0) then
+    begin
+        FillChar(Destination^, Length, 0);
+        // Искусственное чтение. Заставляет компилятор считать,
+        // что стертые данные нам нужны, предотвращая Dead Store Elimination.
+        DummyRead(Destination);
+    end;
+end;
+
 class procedure TBCrypt.ExpandKey(var State: TBlowfishData; const salt, key: array of Byte);
 var
 	i, j: Integer;
@@ -1411,105 +1430,82 @@ var
 	A: Cardinal;
 	keyB: PByteArray;
 	block	: array[0..7] of Byte;
-	//block: TBlowfishBlock;
 	keyLen: Integer;
-	//saltHalf: Integer;
 	saltHalfIndex: Integer;
 begin
-{
-	This is the function that is called 8000 times.
-}
-	//TODO: burn all stack variables
+	try
+		// Оригинальный код автора
+		keyLen := Length(key);
+		if (keyLen > BCRYPT_MaxKeyLen) then
+			raise EBCryptException.CreateFmt(SKeyRangeError, [keyLen]);
 
-	//ExpandKey phase of the Expensive key setup
-	keyLen := Length(key);
-	if (keyLen > BCRYPT_MaxKeyLen) then
-		raise EBCryptException.CreateFmt(SKeyRangeError, [keyLen]); //'Key must be between 0 and 72 bytes long (%d)'
-
-	{
-		XOR all the subkeys in the P-array with the encryption key.
-			- The first 32 bits of the key are XORed with P1,
-			- the next 32 bits with P2,
-			- and so on.
-
-		The key is viewed as being cyclic; when the process reaches the end of the key,
-		it starts reusing bits from the beginning to XOR with subkeys.
-	}
-	if keyLen > 0 then
-	begin
-		keyB := PByteArray(@key[0]); //access to key-array without bounds checking
-		keyOffset := 0;
-		for i := 0 to 17 do
+		if keyLen > 0 then
 		begin
-			//Next the next 4-bytes of the key as a UInt32 - making sure to wrap around the end of the key array
-			A :=      (keyB[(keyOffset  )           ] shl 24);
-			A := A or (keyB[(keyOffset+1) mod keyLen] shl 16);
-			A := A or (keyB[(keyOffset+2) mod keyLen] shl  8);
-			A := A or (keyB[(keyOffset+3) mod keyLen]       );
-			keyOffset := (keyOffset+4) mod keyLen;
+			keyB := PByteArray(@key[0]);
+			keyOffset := 0;
+			for i := 0 to 17 do
+			begin
+				A :=      (keyB[(keyOffset  )           ] shl 24);
+				A := A or (keyB[(keyOffset+1) mod keyLen] shl 16);
+				A := A or (keyB[(keyOffset+2) mod keyLen] shl  8);
+				A := A or (keyB[(keyOffset+3) mod keyLen]       );
+				keyOffset := (keyOffset+4) mod keyLen;
 
-			State.PBox[i] := State.PBox[i] xor A;
+				State.PBox[i] := State.PBox[i] xor A;
+			end;
 		end;
-	end;
 
-	//Blowfish-encrypt the first 64 bits of the salt argument using the current state of the key schedule.
-	BlowfishEncryptECB(State, PLongWord(@salt[0]), PLongWord(@block));
+		BlowfishEncryptECB(State, PLongWord(@salt[0]), PLongWord(@block));
 
-	//The resulting ciphertext replaces subkeys P1 and P2.
-	State.PBox[0] := (block[0] shl 24) or (block[1] shl 16) or (block[2] shl 8) or block[3];
-	State.PBox[1] := (block[4] shl 24) or (block[5] shl 16) or (block[6] shl 8) or block[7];
+		State.PBox[0] := (block[0] shl 24) or (block[1] shl 16) or (block[2] shl 8) or block[3];
+		State.PBox[1] := (block[4] shl 24) or (block[5] shl 16) or (block[6] shl 8) or block[7];
 
 {$RANGECHECKS OFF}
-	saltHalfIndex := 8;
-	for i := 1 to 8 do
-	begin
-		//That same ciphertext is also XORed with the second 64-bits of salt
-
-		//Delphi compiler is not worth its salt; it doesn't do hoisting ("Any compiler worth its salt will hoist" - Eric Brumer C++ compiler team)
-		//[Build 2013 Native Code Performance and Memory The Elephant in the CPU](https://youtu.be/kUpKE2F2lHc?t=1295)
-		//Salt is 0..15 (0..7 is first block, 8..15 is second block)
-		PLongWord(@block[0])^ := PLongWord(@block[0])^ xor PLongWord(@salt[saltHalfIndex  ])^;
-		PLongWord(@block[4])^ := PLongWord(@block[4])^ xor PLongWord(@salt[saltHalfIndex+4])^;
-		//block.Lo := block.Lo xor PLongWord(@salt[saltHalfIndex+0])^;
-		//block.Hi := block.Hi xor PLongWord(@salt[saltHalfIndex+4])^;
-
-		//saltHalf := saltHalf xor 1;
-		saltHalfIndex := saltHalfIndex xor 8; //toggle between 0 -> 8 -> 0 -> 8 -> etc
-
-		//and the result encrypted with the new state of the key schedule
-		BlowfishEncryptECB(State, PLongWord(@block[0]), PLongWord(@block[0]));
-
-		// The output of the second encryption replaces subkeys P3 and P4. (P[2] and P[3])
-		State.PBox[i*2+0] := LongWord(block[3]) or (block[2] shl 8) or (block[1] shl 16) or (block[0] shl 24);
-		State.PBox[i*2+1] := LongWord(block[7]) or (block[6] shl 8) or (block[5] shl 16) or (block[4] shl 24);
-	end;
-
-	//When ExpandKey finishes replacing entries in the P-Array, it continues on replacing S-box entries two at a time.
-	for j := 0 to 3 do
-	begin
-		i := 0;
-		while (i < 256) do
+		saltHalfIndex := 8;
+		for i := 1 to 8 do
 		begin
-			//That same ciphertext is also XORed with the second 64-bits of salt
-			//Delphi compiler is not worth its salt; it doesn't do hoisting ("Any compiler worth its salt will hoist" - Eric Brumer C++ compiler team)
-			//Salt is 0..15 (0..7 is first block, 8..15 is second block)
 			PLongWord(@block[0])^ := PLongWord(@block[0])^ xor PLongWord(@salt[saltHalfIndex  ])^;
 			PLongWord(@block[4])^ := PLongWord(@block[4])^ xor PLongWord(@salt[saltHalfIndex+4])^;
-
-			//saltHalf := saltHalf xor 1;
 			saltHalfIndex := saltHalfIndex xor 8;
 
-			//and the result encrypted with the new state of the key schedule
-			BlowfishEncryptECB(State, PLongWord(@Block), PLongWord(@Block));
+			BlowfishEncryptECB(State, PLongWord(@block[0]), PLongWord(@block[0]));
 
-			// The output of the second encryption replaces subkeys S1 and P2. (S[0] and S[1])
-			State.SBox[j, i+0] := LongWord(block[3]) or (block[2] shl 8) or (block[1] shl 16) or (block[0] shl 24);
-			State.SBox[j, i+1] := LongWord(block[7]) or (block[6] shl 8) or (block[5] shl 16) or (block[4] shl 24);
-
-			Inc(i, 2);
+			State.PBox[i*2+0] := LongWord(block[3]) or (block[2] shl 8) or (block[1] shl 16) or (block[0] shl 24);
+			State.PBox[i*2+1] := LongWord(block[7]) or (block[6] shl 8) or (block[5] shl 16) or (block[4] shl 24);
 		end;
-	end;
+
+		for j := 0 to 3 do
+		begin
+			i := 0;
+			while (i < 256) do
+			begin
+				PLongWord(@block[0])^ := PLongWord(@block[0])^ xor PLongWord(@salt[saltHalfIndex  ])^;
+				PLongWord(@block[4])^ := PLongWord(@block[4])^ xor PLongWord(@salt[saltHalfIndex+4])^;
+				saltHalfIndex := saltHalfIndex xor 8;
+
+				BlowfishEncryptECB(State, PLongWord(@Block), PLongWord(@Block));
+
+				State.SBox[j, i+0] := LongWord(block[3]) or (block[2] shl 8) or (block[1] shl 16) or (block[0] shl 24);
+				State.SBox[j, i+1] := LongWord(block[7]) or (block[6] shl 8) or (block[5] shl 16) or (block[4] shl 24);
+
+				Inc(i, 2);
+			end;
+		end;
 {$RANGECHECKS ON}
+	finally
+		// Сжигаем абсолютно все локальные переменные,
+		// чтобы компилятор не смел вырезать этот код (Dead Store Elimination)
+        // Взятие адреса переменной (@) и передача её в другую функцию
+        // заставляет компилятор думать, что переменная "используется".
+		SecureZeroMemory(@block, SizeOf(block));
+		SecureZeroMemory(@A, SizeOf(A));
+		SecureZeroMemory(@keyB, SizeOf(keyB));
+		SecureZeroMemory(@keyOffset, SizeOf(keyOffset));
+		SecureZeroMemory(@keyLen, SizeOf(keyLen));
+		SecureZeroMemory(@saltHalfIndex, SizeOf(saltHalfIndex));
+		SecureZeroMemory(@i, SizeOf(i));
+		SecureZeroMemory(@j, SizeOf(j));
+	end;
 end;
 
 class function TBCrypt.CheckPassword(const password: UnicodeString; const salt, hash: array of Byte; const Cost: Integer; out PasswordRehashNeeded: Boolean): Boolean;

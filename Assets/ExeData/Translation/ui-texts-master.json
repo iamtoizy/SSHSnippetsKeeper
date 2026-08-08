@@ -104,18 +104,36 @@
   },
   "TagEditorForm": {
     "Caption": "Редактор тегов",
-    "nActions": {"Caption": "Действия"},
-    "nTagAdd": {"Caption": "Добавить"},
-    "nTagDelete": {"Caption": "Удалить"},
-    "nTagRename": {"Caption": "Переименовать"},
-    "bOK": {"Caption": "ОК"},
-    "bCancel": {"Caption": "Отмена"}
+    "nActions": {
+      "Caption": "Действия"
+    },
+    "nTagAdd": {
+      "Caption": "Добавить"
+    },
+    "nTagDelete": {
+      "Caption": "Удалить"
+    },
+    "nTagRename": {
+      "Caption": "Переименовать"
+    },
+    "bOK": {
+      "Caption": "ОК"
+    },
+    "bCancel": {
+      "Caption": "Отмена"
+    }
   },
   "InputForm": {
-      "Caption": "Ввод значения",
-      "bOK": { "Caption": "ОК" },
-      "bCancel": { "Caption": "Отмена" },
-      "lbPrompt": { "Caption": "Введи значение:" }
+    "Caption": "Ввод значения",
+    "bOK": {
+      "Caption": "ОК"
+    },
+    "bCancel": {
+      "Caption": "Отмена"
+    },
+    "lbPrompt": {
+      "Caption": "Введи значение:"
+    }
   },
   "AddEditSnippetForm": {
     "Caption": "SSH Snippets Keeper - Добавить/редактировать сниппет",
@@ -301,6 +319,12 @@
     "nSaveToFile": {
       "Caption": "Сохранить в файл"
     },
+    "nCopyNormal": {
+      "Caption": "Копировать обычный пароль"
+    },
+    "nCopyBcrypt": {
+      "Caption": "Скопировать для .htpasswd (Bcrypt)"
+    },
     "cbLowercase": {
       "Caption": "Нижний регистр"
     },
@@ -334,7 +358,7 @@
       "TextHint": "Введи что-нибудь..."
     },
     "rbText": {
-      "Caption": "Текстовый поиск"    
+      "Caption": "Текстовый поиск"
     },
     "rbFTS": {
       "Caption": "FTS5 поиск"
@@ -552,47 +576,102 @@
   },
   "ChmodForm": {
     "Caption": "Калькулятор прав доступа (chmod)",
-    
-    "cbUr": { "Caption": "Чтение (r)" },
-    "cbUw": { "Caption": "Запись (w)" },
-    "cbUx": { "Caption": "Выполнение (x)" },
-    
-    "cbGr": { "Caption": "Чтение (r)" },
-    "cbGw": { "Caption": "Запись (w)" },
-    "cbGx": { "Caption": "Выполнение (x)" },
-    
-    "cbOr": { "Caption": "Чтение (r)" },
-    "cbOw": { "Caption": "Запись (w)" },
-    "cbOx": { "Caption": "Выполнение (x)" },
-    
-    "cbSuid": { "Caption": "SUID" },
-    "cbSgid": { "Caption": "SGID" },
-    "cbSticky": { "Caption": "Sticky" },
-    
-    "cbIsDir": { "Caption": "Это директория (Directory)" },
-    "cbRecursive": { "Caption": "Рекурсивно (-R)" },
-    "cbSudo": { "Caption": "sudo" },
-    "cbSmartExecute": { "Caption": "Умный X для директорий (+X)" },
-    "cbSeparateMode": { "Caption": "Раздельно файлы (644) и директории (755)" },
-    
-    "gbOwner": { "Caption": "Владелец (User)" },
-    "gbGroup": { "Caption": "Группа (Group)" },
-    "gbPublic": { "Caption": "Остальные (Public)" },
-    "gbSpecialBits": { "Caption": "Специальные биты" },
-    "gbCommand": { "Caption": "Команда" },
-    
-    "ebOctal": { "EditLabel.Caption": "Восьмеричный" },
-    "ebSymbolic": { "EditLabel.Caption": "Символьный" },
-    "lbUser": { "Caption": "Имя владельца" },
-    "lbGroup": { "Caption": "Имя группы" },
-    "lbFileName": { "Caption": "Имя файла/директории" },
-    "ebCommand": { "EditLabel.Caption": "Итоговая команда" },
-
-    "lbPresets": { "Caption": "Предустановки" },
-    
-    "bSavePreset": { "Caption": "💾" },
-    "bDeletePreset": { "Caption": "🗑" },
-    "bCopyCommand": { "Caption": "📋" }
+    "cbUr": {
+      "Caption": "Чтение (r)"
+    },
+    "cbUw": {
+      "Caption": "Запись (w)"
+    },
+    "cbUx": {
+      "Caption": "Выполнение (x)"
+    },
+    "cbGr": {
+      "Caption": "Чтение (r)"
+    },
+    "cbGw": {
+      "Caption": "Запись (w)"
+    },
+    "cbGx": {
+      "Caption": "Выполнение (x)"
+    },
+    "cbOr": {
+      "Caption": "Чтение (r)"
+    },
+    "cbOw": {
+      "Caption": "Запись (w)"
+    },
+    "cbOx": {
+      "Caption": "Выполнение (x)"
+    },
+    "cbSuid": {
+      "Caption": "SUID"
+    },
+    "cbSgid": {
+      "Caption": "SGID"
+    },
+    "cbSticky": {
+      "Caption": "Sticky"
+    },
+    "cbIsDir": {
+      "Caption": "Это директория (Directory)"
+    },
+    "cbRecursive": {
+      "Caption": "Рекурсивно (-R)"
+    },
+    "cbSudo": {
+      "Caption": "sudo"
+    },
+    "cbSmartExecute": {
+      "Caption": "Умный X для директорий (+X)"
+    },
+    "cbSeparateMode": {
+      "Caption": "Раздельно файлы (644) и директории (755)"
+    },
+    "gbOwner": {
+      "Caption": "Владелец (User)"
+    },
+    "gbGroup": {
+      "Caption": "Группа (Group)"
+    },
+    "gbPublic": {
+      "Caption": "Остальные (Public)"
+    },
+    "gbSpecialBits": {
+      "Caption": "Специальные биты"
+    },
+    "gbCommand": {
+      "Caption": "Команда"
+    },
+    "ebOctal": {
+      "EditLabel.Caption": "Восьмеричный"
+    },
+    "ebSymbolic": {
+      "EditLabel.Caption": "Символьный"
+    },
+    "lbUser": {
+      "Caption": "Имя владельца"
+    },
+    "lbGroup": {
+      "Caption": "Имя группы"
+    },
+    "lbFileName": {
+      "Caption": "Имя файла/директории"
+    },
+    "ebCommand": {
+      "EditLabel.Caption": "Итоговая команда"
+    },
+    "lbPresets": {
+      "Caption": "Предустановки"
+    },
+    "bSavePreset": {
+      "Caption": "💾"
+    },
+    "bDeletePreset": {
+      "Caption": "🗑"
+    },
+    "bCopyCommand": {
+      "Caption": "📋"
+    }
   },
   "ArchiveBuilderForm": {
     "Caption": "Команды архивации",
@@ -761,7 +840,8 @@
         "mEpoch": {
           "Title": "Анализатор логов и текста",
           "Main": "Вставьте сюда любой текст, JSON или системный лог. Программа автоматически найдет все временные метки (Unix Epoch) и стандартные даты.",
-          "Expanded": "💡 <b>Поддерживается умное распознавание Unix Time (секунды, милли- и микросекунды)</b>, а также дат в форматах ISO 8601, Apache/Nginx, Syslog и локального времени.<br><br>Все найденные совпадения подсвечиваются: светло-голубым маркером — фоновые метки, ярко-желтым — активная метка, выбранная в списке.<br><br><b>Система закладок для навигации:</b><ul><li><code>Ctrl+B</code> (или пункт контекстного меню) — создать или удалить закладку на текущей строке.</li><li><code>CTRL+Alt+0..9</code> — горячие клавиши для установки нумерованных закладок.</li><li><code>Ctrl+0..9</code> — мгновенный переход к соответственной закладке.</li></ul>По правому клику мыши доступно контекстное меню с подменю «Перейти к закладке», где отображается динамический список всех активных закладок с номерами строк и превью текста."},
+          "Expanded": "💡 <b>Поддерживается умное распознавание Unix Time (секунды, милли- и микросекунды)</b>, а также дат в форматах ISO 8601, Apache/Nginx, Syslog и локального времени.<br><br>Все найденные совпадения подсвечиваются: светло-голубым маркером — фоновые метки, ярко-желтым — активная метка, выбранная в списке.<br><br><b>Система закладок для навигации:</b><ul><li><code>Ctrl+B</code> (или пункт контекстного меню) — создать или удалить закладку на текущей строке.</li><li><code>CTRL+Alt+0..9</code> — горячие клавиши для установки нумерованных закладок.</li><li><code>Ctrl+0..9</code> — мгновенный переход к соответственной закладке.</li></ul>По правому клику мыши доступно контекстное меню с подменю «Перейти к закладке», где отображается динамический список всех активных закладок с номерами строк и превью текста."
+        },
         "lvParsed": {
           "Title": "Список найденных дат",
           "Main": "Хронологический список всех временных меток, извлеченных из вашего текста, с мгновенным переводом в локальное время.",
@@ -1044,22 +1124,18 @@
       "EveryStep": "Каждые %d %s",
       "Range": "%s - %s",
       "Range-Base": "%s - %s",
-
       "Prefix-Minutes": "Минуты: %s",
       "Prefix-Hours": "Часы: %s",
       "Prefix-DaysOfMonth": "Дни месяца: %s",
       "Prefix-Months": "Месяцы: %s",
       "Prefix-DaysOfWeek": "Дни недели: %s",
-
       "Every-Minutes": "Каждую минуту",
       "Every-Hours": "Каждый час",
       "Every-DaysOfMonth": "Каждый день месяца",
       "Every-Months": "Каждый месяц",
       "Every-DaysOfWeek": "Любой день недели",
-
       "Dow-WorkDays": "с понедельника по пятницу",
       "Dow-Weekends": "по выходным",
-
       "Word-Minute-1": "минуту",
       "Word-Minute-2": "минуты",
       "Word-Minute-5": "минут",
@@ -1075,7 +1151,6 @@
       "Word-Dow-1": "день недели",
       "Word-Dow-2": "дня недели",
       "Word-Dow-5": "дней недели",
-
       "Month-Prep-1": "в январе",
       "Month-Prep-2": "в феврале",
       "Month-Prep-3": "в марте",
@@ -1088,7 +1163,6 @@
       "Month-Prep-10": "в октябре",
       "Month-Prep-11": "в ноябре",
       "Month-Prep-12": "в декабре",
-
       "Dow-Prep-0": "в воскресенье",
       "Dow-Prep-1": "в понедельник",
       "Dow-Prep-2": "во вторник",
@@ -1096,7 +1170,6 @@
       "Dow-Prep-4": "в четверг",
       "Dow-Prep-5": "в пятницу",
       "Dow-Prep-6": "в субботу",
-
       "Month-1": "Январь",
       "Month-2": "Февраль",
       "Month-3": "Март",
@@ -1109,7 +1182,6 @@
       "Month-10": "Октябрь",
       "Month-11": "Ноябрь",
       "Month-12": "Декабрь",
-
       "Dow-0": "Воскресенье",
       "Dow-1": "Понедельник",
       "Dow-2": "Вторник",
@@ -1158,6 +1230,10 @@
       "MemoryCleared": "Память паролей очищена.",
       "ClipboardCleared": "Буфер обмена безопасно очищен.",
       "PasswordCopied": "Пароль скопирован. Буфер будет очищен через 15 сек.",
+      "HtPasswdTitle": "Nginx .htpasswd",
+      "HtPasswdLoginPrompt": "Введи логин для Basic Auth:",
+      "HtPasswdLoginError": "Логин не может быть пустым.",
+      "HtPasswdBcryptCopied": "Строка Bcrypt скопирована в буфер обмена.",
       "Presets": {
         "WebStandard": "Обычный пароль для сайта (Web Safe)",
         "ActiveDirectory": "Active Directory (A-Z, a-z, 0-9, спецсимвол)",
@@ -1184,7 +1260,6 @@
       "Prompt.Float": "Введи вещественное число (например, 3.14)",
       "Prompt.Password": "Введи пароль",
       "Prompt.Date": "Введи дату (YYYY-MM-DD)",
-      
       "Error.Number": "Ошибка: введи целое число",
       "Error.Hex": "Ошибка: введи HEX значение (0-9, A-F)",
       "Error.Float": "Ошибка: введи вещественное (например, 3.14)",

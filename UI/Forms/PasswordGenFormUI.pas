@@ -65,9 +65,14 @@ type
         tmrClipboard: TTimer;
         bClearHistory: TButton;
         sbBottom: TStatusBar;
+    bCopySpecial: TButton;
+    pmCopyOptions: TPopupMenu;
+    nCopyNormal: TMenuItem;
+    nCopyBcrypt: TMenuItem;
         procedure bBulkGenerateClick(Sender: TObject);
         procedure FormDestroy(Sender: TObject);
         procedure bClearHistoryClick(Sender: TObject);
+        procedure bCopySpecialClick(Sender: TObject);
         procedure bExcludePresetsClick(Sender: TObject);
         procedure bIncludePresetsClick(Sender: TObject);
         procedure bGenerateClick(Sender: TObject);
@@ -88,6 +93,8 @@ type
         procedure FormShow(Sender: TObject);
         procedure lvHistoryClick(Sender: TObject);
         procedure lvHistoryDblClick(Sender: TObject);
+        procedure nCopyBcryptClick(Sender: TObject);
+        procedure nCopyNormalClick(Sender: TObject);
         procedure nCopyToClipboardClick(Sender: TObject);
         procedure pcHostChanging(Sender: TObject; var AllowChange: Boolean);
         procedure sbBottomResize(Sender: TObject);
@@ -1037,6 +1044,15 @@ begin
     end;
 end;
 
+procedure TPasswordGenForm.bCopySpecialClick(Sender: TObject);
+var
+    Pt: TPoint;
+begin
+    Pt := bCopySpecial.ClientToScreen(Point(bCopySpecial.Width, bCopySpecial.Height));
+    pmCopyOptions.Alignment := paRight;
+    pmCopyOptions.Popup(Pt.X, Pt.Y);
+end;
+
 procedure TPasswordGenForm.FormHide(Sender: TObject);
 begin
     if not (csDestroying in ComponentState) then
@@ -1060,6 +1076,82 @@ end;
 procedure TPasswordGenForm.FormShow(Sender: TObject);
 begin
     pcHost.ActivePage := tsHistory;
+end;
+
+procedure TPasswordGenForm.nCopyBcryptClick(Sender: TObject);
+var
+    CleanPass, Username, Hash, ResultStr: string;
+begin
+    // Берем текущий пароль с экрана и очищаем его от визуальных пробелов
+    CleanPass := StringReplace(ebPassword.Text, VISIBLE_SPACE, ' ', [rfReplaceAll]);
+
+    if CleanPass = '' then
+    begin
+        MessagesHandler.ShowWarning('Сначала сгенерируйте пароль!');
+        Exit;
+    end;
+
+    // Спрашиваем у пользователя логин
+    Username := '';
+    if not MessagesHandler.AskInput(
+        TUIStateLoader.GetMessage('PasswordGenForm.HtPasswdTitle'),
+        TUIStateLoader.GetMessage('PasswordGenForm.HtPasswdLoginPrompt'),
+        Username
+    ) then Exit;
+
+    Username := Trim(Username);
+    if Username = '' then
+    begin
+        MessagesHandler.ShowWarning(TUIStateLoader.GetMessage('PasswordGenForm.HtPasswdLoginError'));
+        Exit;
+    end;
+
+    // Шифруем пароль алгоритмом Bcrypt.
+    Hash := TBCrypt.HashPassword(CleanPass);
+
+    // Склеиваем результат
+    ResultStr := Username + ':' + Hash;
+
+    // Безопасно кладем в буфер обмена и запускаем таймер на 15 секунд для автоочистки
+    CopyToClipboardSecure(ResultStr);
+    StartClipboardTimer(ResultStr);
+
+    // Очищаем чувствительные данные из памяти
+    WipeString(CleanPass);
+    WipeString(Hash);
+
+    // Показываем уведомление
+    ShowSimpleToast(TUIStateLoader.GetMessage('PasswordGenForm.HtPasswdBcryptCopied'));
+end;
+
+procedure TPasswordGenForm.nCopyNormalClick(Sender: TObject);
+var
+    CleanPass: string;
+begin
+    // 1. Берем текущий пароль с экрана и очищаем его от визуальных пробелов
+    CleanPass := StringReplace(ebPassword.Text, VISIBLE_SPACE, ' ', [rfReplaceAll]);
+
+    if CleanPass = '' then
+    begin
+        // Если вы используете MessagesHandler из AppContext:
+        MessagesHandler.ShowWarning(TUIStateLoader.GetMessage('PasswordGenForm.NoPasswordGenerated'));
+        Exit;
+    end;
+
+    try
+        // 2. Безопасно кладем в буфер обмена
+        CopyToClipboardSecure(CleanPass);
+
+        // 3. Запускаем таймер на автоочистку буфера (зеленый прогресс-бар)
+        StartClipboardTimer(CleanPass);
+
+        // 4. Показываем уведомление
+        // Можно использовать локализованный ключ, если он есть, либо просто строку
+        ShowSimpleToast(TUIStateLoader.GetMessage('Common.CopiedToClipboard'));
+    finally
+        // 5. Гарантированно затираем локальную переменную с паролем в оперативной памяти
+        WipeString(CleanPass);
+    end;
 end;
 
 procedure TPasswordGenForm.sbBottomResize(Sender: TObject);

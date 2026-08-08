@@ -301,6 +301,12 @@
     "nSaveToFile": {
       "Caption": "Save to File"
     },
+    "nCopyNormal": {
+      "Caption": "Copy Normal Password"
+    },
+    "nCopyBcrypt": {
+      "Caption": "Copy for .htpasswd (Bcrypt)"
+    },
     "cbLowercase": {
       "Caption": "Lowercase"
     },
@@ -1159,6 +1165,11 @@
       "MemoryCleared": "Password memory cleared.",
       "ClipboardCleared": "Clipboard cleared.",
       "PasswordCopied": "Password copied. Clipboard will be cleared in 15 seconds.",
+      "HtPasswdTitle": "Nginx .htpasswd",
+      "HtPasswdLoginPrompt": "Enter login for Basic Auth:",
+      "HtPasswdLoginError": "Login cannot be empty.",
+      "HtPasswdBcryptCopied": "Bcrypt string copied to clipboard. Clipboard will be cleared in 15 seconds.",
+      "NoPasswordGenerated": "Generate a password first.",
       "Presets": {
         "WebStandard": "Standard Web Password (Web Safe)",
         "ActiveDirectory": "Active Directory (A-Z, a-z, 0-9, symbol)",

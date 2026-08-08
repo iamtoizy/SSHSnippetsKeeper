@@ -220,7 +220,7 @@ object EpochConverterForm: TEpochConverterForm
       object lbDetectedFormat: TLabel
         Left = 8
         Top = 11
-        Width = 382
+        Width = 466
         Height = 15
         Alignment = taCenter
         AutoSize = False
@@ -265,7 +265,7 @@ object EpochConverterForm: TEpochConverterForm
         Caption = #1048#1089#1093#1086#1076#1085#1086#1077
       end
       object bCopyISO: TButton
-        Left = 396
+        Left = 451
         Top = 125
         Width = 23
         Height = 23
@@ -275,7 +275,7 @@ object EpochConverterForm: TEpochConverterForm
         OnClick = CopyToClipboardClick
       end
       object bCopyUTC: TButton
-        Left = 396
+        Left = 451
         Top = 67
         Width = 23
         Height = 23
@@ -295,7 +295,7 @@ object EpochConverterForm: TEpochConverterForm
       object ebISO: TEdit
         Left = 269
         Top = 125
-        Width = 121
+        Width = 176
         Height = 23
         ReadOnly = True
         TabOrder = 8
@@ -303,7 +303,7 @@ object EpochConverterForm: TEpochConverterForm
       object ebLocal: TEdit
         Left = 269
         Top = 96
-        Width = 121
+        Width = 176
         Height = 23
         ReadOnly = True
         TabOrder = 6
@@ -311,7 +311,7 @@ object EpochConverterForm: TEpochConverterForm
       object ebUTC: TEdit
         Left = 269
         Top = 67
-        Width = 121
+        Width = 176
         Height = 23
         ReadOnly = True
         TabOrder = 4
@@ -319,7 +319,7 @@ object EpochConverterForm: TEpochConverterForm
       object ebSourceTime: TEdit
         Left = 269
         Top = 38
-        Width = 121
+        Width = 176
         Height = 23
         ReadOnly = True
         TabOrder = 2
@@ -346,7 +346,7 @@ object EpochConverterForm: TEpochConverterForm
         OnClick = dtpChange
       end
       object bCopySource: TButton
-        Left = 396
+        Left = 451
         Top = 38
         Width = 23
         Height = 23
@@ -355,7 +355,7 @@ object EpochConverterForm: TEpochConverterForm
         OnClick = CopyToClipboardClick
       end
       object bCopyLocal: TButton
-        Left = 396
+        Left = 451
         Top = 96
         Width = 23
         Height = 23

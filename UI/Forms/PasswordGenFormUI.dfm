@@ -91,7 +91,7 @@ object PasswordGenForm: TPasswordGenForm
   object ebPassword: TEdit
     Left = 136
     Top = 54
-    Width = 377
+    Width = 360
     Height = 23
     TabOrder = 2
     OnKeyPress = edIncludeKeyPress
@@ -339,6 +339,16 @@ object PasswordGenForm: TPasswordGenForm
       end>
     OnResize = sbBottomResize
   end
+  object bCopySpecial: TButton
+    Left = 490
+    Top = 54
+    Width = 23
+    Height = 23
+    Caption = #9660
+    DropDownMenu = pmCopyOptions
+    TabOrder = 8
+    OnClick = bCopySpecialClick
+  end
   object pmCharPresets: TPopupMenu
     Left = 376
     Top = 8
@@ -356,13 +366,25 @@ object PasswordGenForm: TPasswordGenForm
   end
   object SaveDialog: TSaveDialog
     Filter = 'TEXT|*.txt|ALL|*.*'
-    Left = 456
-    Top = 8
+    Left = 184
+    Top = 80
   end
   object tmrClipboard: TTimer
     Enabled = False
     OnTimer = tmrClipboardTimer
     Left = 200
     Top = 8
+  end
+  object pmCopyOptions: TPopupMenu
+    Left = 120
+    Top = 8
+    object nCopyNormal: TMenuItem
+      Caption = #1050#1086#1087#1080#1088#1086#1074#1072#1090#1100' '#1074' '#1073#1091#1092#1077#1088
+      OnClick = nCopyNormalClick
+    end
+    object nCopyBcrypt: TMenuItem
+      Caption = #1050#1086#1087#1080#1088#1086#1074#1072#1090#1100' '#1082#1072#1082' BCrypt'
+      OnClick = nCopyBcryptClick
+    end
   end
 end

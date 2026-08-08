@@ -319,6 +319,12 @@
     "nSaveToFile": {
       "Caption": "Сохранить в файл"
     },
+    "nCopyNormal": {
+      "Caption": "Копировать обычный пароль"
+    },
+    "nCopyBcrypt": {
+      "Caption": "Скопировать для .htpasswd (Bcrypt)"
+    },
     "cbLowercase": {
       "Caption": "Нижний регистр"
     },
@@ -1224,6 +1230,10 @@
       "MemoryCleared": "Память паролей очищена.",
       "ClipboardCleared": "Буфер обмена безопасно очищен.",
       "PasswordCopied": "Пароль скопирован. Буфер будет очищен через 15 сек.",
+      "HtPasswdTitle": "Nginx .htpasswd",
+      "HtPasswdLoginPrompt": "Введи логин для Basic Auth:",
+      "HtPasswdLoginError": "Логин не может быть пустым.",
+      "HtPasswdBcryptCopied": "Строка Bcrypt скопирована в буфер обмена. Буфер будет очищен через 15 сек.",
       "Presets": {
         "WebStandard": "Обычный пароль для сайта (Web Safe)",
         "ActiveDirectory": "Active Directory (A-Z, a-z, 0-9, спецсимвол)",
