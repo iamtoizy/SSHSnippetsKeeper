@@ -100,6 +100,9 @@
     },
     "nArchiveBuilder": {
       "Caption": "Archive Commands"
+    },
+    "nSyncDatabase": {
+      "Caption": "Synchronize Database"
     }
   },
   "TagEditorForm": {
@@ -659,6 +662,9 @@
     "tsHotkeys": {
       "Caption": "Hotkeys"
     },
+    "tsLocalSync": {
+      "Caption": "Markdown Sync"
+    },
     "gbGlobalHotkeys": {
       "Caption": "Global Hotkeys"
     },
@@ -704,6 +710,15 @@
     },
     "bCancel": {
       "Caption": "Cancel"
+    },
+    "ledMarkdownPath": {
+      "EditLabel.Caption": "Markdown Sync Path"
+    },
+    "cbSyncOnStart": {
+      "Caption": "Sync on database open"
+    },
+    "cbSyncOnExit": {
+      "Caption": "Sync on database close"
     }
   },
   "Messages": {
@@ -890,13 +905,13 @@
         "actDeleteModel": "Delete model",
         "actEditModel": "Edit model"
       },
-      "TTagEditor": {
+      "TagEditor": {
         "Caption": "Tag Editor",
         "actAddTag": "Add tag",
         "actDeleteTag": "Delete tag",
         "actEditTag": "Edit tag"
       },
-      "TWorkspaceManagerForm": {
+      "WorkspaceManagerForm": {
         "Caption": "Workspaces",
         "actAddWorkspace": "Add workspace",
         "actDeleteWorkspace": "Delete workspace",
@@ -922,7 +937,11 @@
       "Additional": "ADDITIONAL:",
       "HotkeyConflict": "This key combination is already used by the action:\n'%s'.\n\nChoose another one.",
       "HotkeyApplied": "Hotkey temporarily applied. Click 'Save' at the bottom of the window to write changes to the file.",
-      "HotkeyRegistrationError": "Failed to register global key (ID: %d). It might be occupied by another application."
+      "HotkeyRegistrationError": "Failed to register global key (ID: %d). It might be occupied by another application.",
+      "SyncFolderCreationError": "Failed to create synchronization folder: %s",
+      "SyncingStorage": "Synchronizing storage...",
+      "SyncCompleted": "Synchronization completed.",
+      "SyncError": "Error synchronizing: %s"
     },
     "DB": {
       "ConnectError": "Critical Error!\nFailed to connect to the SQLite database.\nCheck the file path.",

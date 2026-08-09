@@ -118,7 +118,9 @@ uses
   ArchiveBuilderFormUI in 'UI\Forms\ArchiveBuilderFormUI.pas' {ArchiveBuilderForm},
   SettingsFormUI in 'UI\Forms\SettingsFormUI.pas' {SettingsForm},
   HotkeyService in 'Core\Services\HotkeyService.pas',
-  Bcrypt in 'ThirdParty\Bcrypt.pas';
+  Bcrypt in 'ThirdParty\Bcrypt.pas',
+  Core.MarkdownExporter in 'Core\Core.MarkdownExporter.pas',
+  Core.MarkdownImporter in 'Core\Core.MarkdownImporter.pas';
 
 {$R *.res}
 

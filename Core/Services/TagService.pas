@@ -19,6 +19,7 @@ type
         function CreateTag(const Name, Color: string): Integer;
         procedure DeleteTag(TagID: Integer);
         procedure RenameTag(TagID: Integer; const NewName: string);
+        function GetOrCreateTag(const Name: string): Integer;
     end;
 
 implementation
@@ -35,6 +36,17 @@ end;
 function TTagService.GetAllTags: TArray<TTagDTO>;
 begin
     Result := FTagRepo.GetAll;
+end;
+
+function TTagService.GetOrCreateTag(const Name: string): Integer;
+var
+    CleanName: string;
+begin
+    CleanName := Trim(Name);
+    if CleanName = '' then
+        Exit(0);
+
+    Result := FTagRepo.GetOrCreateTag(CleanName);
 end;
 
 function TTagService.GetSnippetTags(SnippetID: Integer): TArray<TTagDTO>;
@@ -92,7 +104,7 @@ begin
 
     if FTagRepo.ExistsByName(CleanName) then
         raise Exception.Create(
-            TUIStateLoader.GetMessage('Tag.EmptyNameError', [CleanName])
+            TUIStateLoader.GetMessage('Tag.DuplicateNameError', [CleanName])
         );
 
     TagToUpdate := Default(TTagDTO);

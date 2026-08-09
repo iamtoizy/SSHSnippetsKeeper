@@ -17,7 +17,7 @@ uses
     Vcl.Graphics,
     Vcl.StdCtrls,
     Winapi.Messages,
-    Winapi.Windows
+    Winapi.Windows, Vcl.Mask
     ;
 
 type
@@ -44,10 +44,15 @@ type
         bApplyShortcut: TButton;
         bResetShortcut: TButton;
         bResetAll: TButton;
-    lbAction: TLabel;
-    ebAction: TEdit;
+        lbAction: TLabel;
+        ebAction: TEdit;
         lbActionID: TLabel;
         ebActionID: TEdit;
+        tsLocalSync: TTabSheet;
+        ledMarkdownPath: TLabeledEdit;
+        bSelectVaultPath: TButton;
+        cbSyncOnStart: TCheckBox;
+        cbSyncOnExit: TCheckBox;
 
         procedure bSaveClick(Sender: TObject);
         procedure bCancelClick(Sender: TObject);
@@ -55,7 +60,9 @@ type
         procedure bApplyShortcutClick(Sender: TObject);
         procedure bResetShortcutClick(Sender: TObject);
         procedure bResetAllClick(Sender: TObject);
+        procedure bSelectVaultPathClick(Sender: TObject);
         procedure ebSearchHotkeysChange(Sender: TObject);
+        procedure FormShow(Sender: TObject);
         procedure lvHotkeysDeletion(Sender: TObject; Item: TListItem);
         procedure lvHotkeysCompare(Sender: TObject; Item1, Item2: TListItem; Data: Integer; var Compare: Integer);
     private
@@ -76,8 +83,11 @@ implementation
 
 uses
     CommonHelpers,
+    System.IOUtils,
     UI.StateLoader,
-    Vcl.Menus;
+    Vcl.FileCtrl,
+    Vcl.Menus
+    ;
 
 constructor TSettingsForm.Create(AOwner: TComponent);
 begin
@@ -112,6 +122,17 @@ begin
 
     Win32HotkeyToVCL(Setts.Hotkeys.PasswordGen, hkPassGen);
     chkEnablePassGen.Checked := Setts.Hotkeys.PasswordGen.Enabled;
+
+    // --- Блок синхронизации Markdown ---
+    if Setts.SyncDirectory.IsEmpty then
+        // По умолчанию: папка 'SnippetsVault' рядом с EXE программы
+        ledMarkdownPath.Text := TPath.Combine(ExtractFilePath(ParamStr(0)), 'SnippetsVault')
+    else
+        ledMarkdownPath.Text := Setts.SyncDirectory;
+
+    cbSyncOnStart.Checked := Setts.SyncOnStart;
+    cbSyncOnExit.Checked := Setts.SyncOnExit;
+    // -----------------------------------
 
     FLocalActions.Clear;
     Actions := AppContext.HotkeyService.GetAllActions;
@@ -305,6 +326,12 @@ begin
     Setts.Hotkeys.QuickSearch := VCLHotkeyToWin32(hkQuickSearch, chkEnableQuickSearch.Checked);
     Setts.Hotkeys.PasswordGen := VCLHotkeyToWin32(hkPassGen, chkEnablePassGen.Checked);
 
+    // --- Сохраняем настройки синхронизации ---
+    Setts.SyncDirectory := Trim(ledMarkdownPath.Text);
+    Setts.SyncOnStart := cbSyncOnStart.Checked;
+    Setts.SyncOnExit := cbSyncOnExit.Checked;
+    // -----------------------------------------
+
     for Info in FLocalActions.Values do
         AppContext.HotkeyService.SetActionShortCut(Info.ActionName, Info.CurrentShortCut);
 
@@ -322,6 +349,24 @@ end;
 procedure TSettingsForm.bCancelClick(Sender: TObject);
 begin
     ModalResult := mrCancel;
+end;
+
+procedure TSettingsForm.bSelectVaultPathClick(Sender: TObject);
+var
+    ChosenDir: string;
+begin
+    ChosenDir := ledMarkdownPath.Text;
+
+    // Вызываем стандартный диалог выбора папки Windows
+    if SelectDirectory(TUIStateLoader.GetMessage('Settings.SelectVaultPath'), '', ChosenDir) then
+    begin
+        ledMarkdownPath.Text := ChosenDir;
+    end;
+end;
+
+procedure TSettingsForm.FormShow(Sender: TObject);
+begin
+    pcSettings.ActivePage := tsHotkeys;
 end;
 
 end.

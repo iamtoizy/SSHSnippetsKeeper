@@ -115,6 +115,9 @@ type
         nSettings: TMenuItem;
         N1: TMenuItem;
         actSettings: TAction;
+        nSyncDatabase: TMenuItem;
+        actSyncDatabase: TAction;
+    tmrAutoSync: TTimer;
         procedure actAddCategoryExecute(Sender: TObject);
         procedure actAddSnippetExecute(Sender: TObject);
         procedure actAddTagExecute(Sender: TObject);
@@ -130,6 +133,7 @@ type
         procedure actEditSnippetExecute(Sender: TObject);
         procedure actEditTagExecute(Sender: TObject);
         procedure actEpochConverterExecute(Sender: TObject);
+        procedure actSyncDatabaseExecute(Sender: TObject);
         procedure actNetworkCalculatorExecute(Sender: TObject);
         procedure actOpenDatabaseExecute(Sender: TObject);
         procedure actPasswordGeneratorExecute(Sender: TObject);
@@ -160,6 +164,7 @@ type
         procedure sbBottomMouseDown(Sender: TObject; Button: TMouseButton; Shift:
             TShiftState; X, Y: Integer);
         procedure sbBottomResize(Sender: TObject);
+        procedure tmrAutoSyncTimer(Sender: TObject);
         procedure tmrSearchTimerTimer(Sender: TObject);
         procedure tvCategoriesClick(Sender: TObject);
         procedure tvCategoriesEndDrag(Sender, Target: TObject; X, Y: Integer);
@@ -172,7 +177,9 @@ type
         FIgnoreCategoryChange: Boolean;
         FHotkeyMgr: TGlobalHotkeyManager;
         FSearchTask: ITask;
+        FIsDbDirty: Boolean;  // Флаг: "Были ли реальные изменения в БД?"
 
+        procedure MarkDataChanged;
         procedure ApplyTagFilter(TagID: Integer; const TagName: string);
         procedure ClearTagFilter;
         procedure FillSnippetListView(const Snippets: TArray<TSnippetDTO>);
@@ -207,6 +214,9 @@ type
         procedure DisplaySearchResults(const Results: TArray<TSnippetDTO>);
         procedure LoadAvailableLanguages;
         procedure LanguageMenuItemClick(Sender: TObject);
+        // Синхронизация Markdown
+        procedure PerformSync(IsAsync: Boolean);
+        function GetCurrentDbSyncPath: string;
     protected
         procedure WMActivate(var Msg: TWMActivate); message WM_ACTIVATE;
         procedure DoInitialize; override;
@@ -230,6 +240,8 @@ uses
     ChmodFormUI,
     CommonConsts,
     CommonHelpers,
+    Core.MarkdownExporter,
+    Core.MarkdownImporter,
     CronGenFormUI,
     EpochConverterFormUI,
     HotkeyService,
@@ -249,6 +261,7 @@ uses
     UI.HoverHelpManager,
     UI.StateLoader,
     User,
+    Vcl.FileCtrl,
     Winapi.CommCtrl,
     WindowMonitor,
     WorkspaceManagerUI
@@ -349,6 +362,11 @@ begin
     TEpochConverterForm.ExecuteGlobal(Self, AppContext);
 end;
 
+procedure TMainForm.actSyncDatabaseExecute(Sender: TObject);
+begin
+    PerformSync(True);
+end;
+
 procedure TMainForm.actNetworkCalculatorExecute(Sender: TObject);
 begin
     TNetworkForm.ExecuteGlobal(Self, AppContext);
@@ -368,6 +386,12 @@ begin
             cbUserChange(cbUser); // Вызываем OnChange, что инициирует ReloadUI с правильным ID
 
             ShowSimpleToast(TUIStateLoader.GetMessage('DB.OpenedSuccess'));
+
+            // Авто-синхронизация при старте
+            if AppContext.SettingsManager.Data.SyncOnStart then
+            begin
+                PerformSync(True); // Асинхронно, чтобы не тормозить показ формы
+            end;
         except
             on E: Exception do
                 MessagesHandler.ShowError(TUIStateLoader.GetMessage('DB.OpenError', [E.Message]));
@@ -434,6 +458,7 @@ begin
         bfsDBConnected, bfsDBOpen:
             begin
                 nCloseDatabase.Enabled := True;
+                nSyncDatabase.Enabled := True;
                 nSearch.Enabled := True;
                 cbUser.Enabled := True;
                 ebSearch.Enabled := True;
@@ -450,6 +475,7 @@ begin
         bfsDBDisconnected:
             begin
                 nCloseDatabase.Enabled := False;
+                nSyncDatabase.Enabled := False;
                 nSearch.Enabled := False;
                 cbUser.Enabled := False;
                 ebSearch.Enabled := False;
@@ -597,6 +623,35 @@ begin
     FillSnippetListView(Snippets);
 end;
 
+function TMainForm.GetCurrentDbSyncPath: string;
+var
+    BaseDir, ConnStr, DbPath, DbName: string;
+    Strings: TStringList;
+begin
+    BaseDir := Trim(AppContext.SettingsManager.Data.SyncDirectory);
+    if BaseDir.IsEmpty then
+        BaseDir := TPath.Combine(ExtractFilePath(ParamStr(0)), 'SnippetsVault');
+
+    // Пытаемся вытащить имя базы из строки подключения FireDAC
+    ConnStr := AppContext.DatabaseManager.GetConnectionString;
+    Strings := TStringList.Create;
+    try
+        Strings.Text := ConnStr;
+        DbPath := Strings.Values['Database'];
+    finally
+        Strings.Free;
+    end;
+
+    // Если нашли - берем имя файла без расширения (например, "snippets" или "work")
+    if DbPath <> '' then
+        DbName := TPath.GetFileNameWithoutExtension(DbPath)
+    else
+        DbName := 'DefaultDB';
+
+    // Формируем безопасный изолированный путь!
+    Result := TPath.Combine(BaseDir, DbName);
+end;
+
 function TMainForm.GetSelectedCategoryUserID: Integer;
 begin
     Result := GetWorkspaceUserID(tvCategories.Selected);
@@ -712,6 +767,8 @@ begin
             Node.EditText;
 
         sbBottom.Panels[0].Text := TUIStateLoader.GetMessage('Category.CreatedMsg', [NewCatName]);
+
+        MarkDataChanged;
     except
         on E: Exception do
             MessagesHandler.ShowError(
@@ -740,6 +797,7 @@ begin
             AppContext.CategoryService.DeleteCategory(Cat.ID);
             ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
             sbBottom.Panels[0].Text := TUIStateLoader.GetMessage('Category.DeleteMsg', [Cat.Name]);
+            MarkDataChanged;
         except
             on E: Exception do
                 MessagesHandler.ShowError(
@@ -762,7 +820,9 @@ begin
             TUIStateLoader.GetMessage('Workspace.RenameError')
         )
     else if not IsVirtualCategory(Node) then
+    begin
         Node.EditText;
+    end;
 end;
 
 procedure TMainForm.tvCategoriesEdited(Sender: TObject; Node: TTreeNode; var S: string);
@@ -787,6 +847,7 @@ begin
     try
         Cat := AppContext.CategoryService.GetCategoryByID(Integer(IntPtr(Node.Data)));
         AppContext.CategoryService.RenameCategory(Cat.ID, S);
+        MarkDataChanged;
     except
         on E: Exception do
         begin
@@ -976,7 +1037,10 @@ begin
     end;
 
     if TAddEditSnippetForm.ExecuteAdd(Self, AppContext, CategoryID, TargetUserID) then
-            ReloadUI(CategoryID);
+    begin
+        MarkDataChanged;
+        ReloadUI(CategoryID);
+    end;
 end;
 
 procedure TMainForm.DoEditSnippet;
@@ -1004,6 +1068,8 @@ begin
             ReloadUI(Integer(IntPtr(tvCategories.Selected.Data)))
         else
             ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
+
+        MarkDataChanged;
     end;
 
     ebSearch.OnChange(ebSearch);
@@ -1021,7 +1087,6 @@ begin
 
     Snippet := ExtractSnippetByListItem(Item);
 
-    // TODO: Вынести в IUIErrorHandler
     if MessagesHandler.AskConfirmation(
         TUIStateLoader.GetMessage('Snippet.DeleteConfirm', [Snippet.Title]),
         TUIStateLoader.GetMessage('Common.Confirmation'),
@@ -1037,6 +1102,7 @@ begin
 
             ReloadUI(SelectedCatID);
             sbBottom.Panels[0].Text := TUIStateLoader.GetMessage('Snippet.DeletedMsg');
+            MarkDataChanged;
         except
             on E: Exception do
                 MessagesHandler.ShowError(
@@ -1172,6 +1238,7 @@ begin
             MakeVisible(False);
         end;
         sbBottom.Panels[0].Text:= TUIStateLoader.GetMessage('Tag.AddedMsg', [NewName]);
+        MarkDataChanged;
     except
         on E: Exception do
             MessagesHandler.ShowError(
@@ -1211,6 +1278,7 @@ begin
             );
 
         sbBottom.Panels[0].Text := TUIStateLoader.GetMessage('Tag.DeletedMsg');
+        MarkDataChanged;
     except
         on E: Exception do
             MessagesHandler.ShowError(
@@ -1242,6 +1310,7 @@ begin
         TagID := Integer(Item.Data);
         AppContext.TagService.RenameTag(TagID, S);
         sbBottom.Panels[0].Text := TUIStateLoader.GetMessage('Tag.RenamedMsg', [OldName, S]);
+        MarkDataChanged;
     except
         on E: Exception do
         begin
@@ -1251,6 +1320,20 @@ begin
             S := OldName;
         end;
     end;
+end;
+
+procedure TMainForm.MarkDataChanged;
+begin
+    // Включаем флаг
+    FIsDbDirty := True;
+
+    // Перезапускаем таймер (эффект Debounce)
+    // Если метод вызывается часто (пользователь активно работает),
+    // таймер всё время сбрасывается и сработает только через 5 сек после ПОСЛЕДНЕГО изменения.
+    tmrAutoSync.Enabled := False;
+
+    if AppContext.SettingsManager.Data.SyncOnExit then
+        tmrAutoSync.Enabled := True;
 end;
 
 procedure TMainForm.lvTagsDblClick(Sender: TObject);
@@ -1292,8 +1375,18 @@ end;
 
 procedure TMainForm.CloseDatabase;
 begin
-    if Assigned(AppContext.DatabaseManager) then
+    if Assigned(AppContext.DatabaseManager) and AppContext.DatabaseManager.IsConnected then
     begin
+        // Авто-синхронизация при закрытии
+        // Если мы закрываем программу, а таймер еще тикает (прошло меньше 5 сек с последней правки)
+        if FIsDbDirty and AppContext.SettingsManager.Data.SyncOnExit then
+        begin
+            tmrAutoSync.Enabled := False; // Глушим таймер
+            // Важно! Вызываем СИНХРОННО (False). Программа "зависнет" на секунду,
+            // но гарантированно допишет все файлы на жесткий диск перед закрытием.
+            PerformSync(False);
+        end;
+
         AppContext.DatabaseManager.CloseDatabase;
         TStateMgr.Instance.CloseDatabase;
         UpdateUI(bfsDBDisconnected);
@@ -1596,6 +1689,87 @@ begin
     );
 end;
 
+procedure TMainForm.PerformSync(IsAsync: Boolean);
+var
+    SyncDir: string;
+    DoSyncLogic: TProc;
+begin
+    if not AppContext.DatabaseManager.IsConnected then Exit;
+
+    SyncDir := GetCurrentDbSyncPath;
+
+    if not TDirectory.Exists(SyncDir) then
+    begin
+        try
+            System.SysUtils.ForceDirectories(SyncDir);
+        except
+            on E: Exception do
+            begin
+                MessagesHandler.ShowError(TUIStateLoader.GetMessage('Common.SyncFolderCreationError', [E.Message]));
+                Exit;
+            end;
+        end;
+    end;
+
+    actSyncDatabase.Enabled := False;
+    sbBottom.Panels[0].Text := TUIStateLoader.GetMessage('Common.SyncingStorage');
+
+    DoSyncLogic := procedure
+    var
+        BgConnection: TComponent;
+        BgContext: IAppContext;
+    begin
+        try
+            // ВАЖНО: Если мы в фоне, создаем изолированное подключение!
+            // Если мы закрываем программу (IsAsync = False), можно безопасно использовать основной AppContext
+            if IsAsync then
+                BgContext := AppContext.CreateIsolatedContext(BgConnection)
+            else
+                BgContext := AppContext;
+
+            try
+                // Передаем BgContext вместо AppContext.
+                // Теперь чтение/запись в БД идет в параллельном потоке SQLite и не трогает UI!
+                TMarkdownImporter.ImportFromDirectory(BgContext, SyncDir);
+                TMarkdownExporter.ExportDatabase(BgContext, SyncDir);
+
+                TThread.Queue(nil, procedure
+                begin
+                    ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
+                    sbBottom.Panels[0].Text := TUIStateLoader.GetMessage('Common.SyncCompleted');
+                end);
+            finally
+                // Обязательно освобождаем фоновое подключение (DataModule), чтобы не было утечек памяти
+                if IsAsync and Assigned(BgConnection) then
+                    BgConnection.Free;
+            end;
+        except
+            on E: Exception do
+            begin
+                var ErrMsg := E.Message;
+                TThread.Queue(nil, procedure
+                begin
+                    MessagesHandler.ShowError(TUIStateLoader.GetMessage('Common.SyncError', [ErrMsg]));
+                    sbBottom.Panels[0].Text := '';
+                end);
+            end;
+        end;
+
+        TThread.Queue(nil, procedure
+        begin
+            actSyncDatabase.Enabled := True;
+        end);
+    end;
+
+    if IsAsync then
+        TTask.Run(DoSyncLogic)  // Идеально плавный фоновый процесс
+    else
+    begin
+        Application.ProcessMessages;
+        DoSyncLogic();          // Синхронный вызов при выходе
+    end;
+end;
+
 procedure TMainForm.rbTextClick(Sender: TObject);
 begin
     ebSearchChange(Sender);
@@ -1638,6 +1812,18 @@ end;
 procedure TMainForm.sbBottomResize(Sender: TObject);
 begin
     sbBottom.Panels[0].Width := sbBottom.ClientWidth - sbBottom.Panels[1].Width;
+end;
+
+procedure TMainForm.tmrAutoSyncTimer(Sender: TObject);
+begin
+    tmrAutoSync.Enabled := False; // Выключаем таймер
+
+    // Если были изменения - запускаем фоновую синхронизацию!
+    if FIsDbDirty and AppContext.DatabaseManager.IsConnected then
+    begin
+        PerformSync(True); // True = Асинхронно (в фоне, UI не виснет)
+        FIsDbDirty := False; // Сбрасываем флаг после успешного старта синхронизации
+    end;
 end;
 
 procedure TMainForm.tmrSearchTimerTimer(Sender: TObject);

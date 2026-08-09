@@ -44,6 +44,8 @@ function VCLHotkeyToWin32(HotKeyCtrl: THotKey; Enabled: Boolean = True): THotkey
 function HotkeyToString(const Config: THotkeyConfig): string;
 { Функция для генерации заголовка Basic Auth }
 function GenerateHtpasswdString(const Username, Password: string): string;
+{ Запуск git }
+function RunGitCommand(const RepoPath, GitCommand: string; out Output: string): Boolean;
 
 implementation
 
@@ -349,6 +351,57 @@ begin
 
     // 4. Возвращаем готовую строку для вставки в файл .htpasswd
     Result := Format('%s:{SHA}%s', [Username, Base64Str]);
+end;
+
+function RunGitCommand(const RepoPath, GitCommand: string; out Output: string): Boolean;
+var
+    SecurityAttr: TSecurityAttributes;
+    ReadPipe, WritePipe: THandle;
+    StartInfo: TStartupInfo;
+    ProcInfo: TProcessInformation;
+    Buffer: array[0..255] of AnsiChar;
+    BytesRead: DWORD;
+    Command: string;
+begin
+    Result := False;
+    Output := '';
+
+    // Создаем Pipe, чтобы перехватить ответ от Git (например, сообщения об ошибках)
+    FillChar(SecurityAttr, SizeOf(SecurityAttr), 0);
+    SecurityAttr.nLength := SizeOf(SecurityAttr);
+    SecurityAttr.bInheritHandle := True;
+    CreatePipe(ReadPipe, WritePipe, @SecurityAttr, 0);
+
+    FillChar(StartInfo, SizeOf(StartInfo), 0);
+    StartInfo.cb := SizeOf(StartInfo);
+    StartInfo.dwFlags := STARTF_USESHOWWINDOW or STARTF_USESTDHANDLES;
+    StartInfo.wShowWindow := SW_HIDE; // Прячем черное окно консоли
+    StartInfo.hStdOutput := WritePipe;
+    StartInfo.hStdError := WritePipe;
+
+    Command := 'cmd.exe /c cd /d "' + RepoPath + '" && ' + GitCommand;
+
+    if CreateProcess(nil, PChar(Command), nil, nil, True, CREATE_NO_WINDOW, nil, PChar(RepoPath), StartInfo, ProcInfo) then
+    begin
+        WaitForSingleObject(ProcInfo.hProcess, 15000); // Ждем максимум 15 секунд
+
+        CloseHandle(WritePipe); // Закрываем запись, чтобы чтение не зависло
+
+        // Читаем, что ответил Git
+        while ReadFile(ReadPipe, Buffer, SizeOf(Buffer) - 1, BytesRead, nil) and (BytesRead > 0) do
+        begin
+            Buffer[BytesRead] := #0;
+            Output := Output + string(AnsiString(Buffer)); // Конвертируем ответ в строку
+        end;
+
+        CloseHandle(ProcInfo.hProcess);
+        CloseHandle(ProcInfo.hThread);
+        Result := True;
+    end
+    else
+        CloseHandle(WritePipe);
+
+    CloseHandle(ReadPipe);
 end;
 
 initialization

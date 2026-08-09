@@ -100,6 +100,9 @@
     },
     "nArchiveBuilder": {
       "Caption": "Команды архивации"
+    },
+    "nSyncDatabase": {
+      "Caption": "Синхронизировать базу данных"
     }
   },
   "TagEditorForm": {
@@ -732,6 +735,9 @@
     "tsHotkeys": {
       "Caption": "Горячие клавиши"
     },
+    "tsLocalSync": {
+      "Caption": "Markdown-синхронизация"
+    },
     "gbGlobalHotkeys": {
       "Caption": "Глобальные горячие клавиши"
     },
@@ -777,6 +783,15 @@
     },
     "bCancel": {
       "Caption": "Отмена"
+    },
+    "ledMarkdownPath": {
+      "EditLabel.Caption": "Путь к Markdown-хранилищу"
+    },
+    "cbSyncOnStart": {
+      "Caption": "Синхронизация при запуске приложения"
+    },
+    "cbSyncOnExit": {
+      "Caption": "Синхронизация при закрытии приложения"
     }
   },
   "Messages": {
@@ -963,13 +978,13 @@
         "actDeleteModel": "Удалить модель",
         "actEditModel": "Редактировать модель"
       },
-      "TTagEditor": {
+      "TagEditor": {
         "Caption": "Редактор тегов",
         "actAddTag": "Добавить тег",
         "actDeleteTag": "Удалить тег",
         "actEditTag": "Изменить тег"
       },
-      "TWorkspaceManagerForm": {
+      "WorkspaceManagerForm": {
         "Caption": "Пространства",
         "actAddWorkspace": "Добавить пространство",
         "actDeleteWorkspace": "Удалить пространство",
@@ -995,7 +1010,11 @@
       "Additional": "ДОПОЛНИТЕЛЬНО:",
       "HotkeyConflict": "Эта комбинация клавиш уже используется действием:\n'%s'.\n\nВыбери другую.",
       "HotkeyApplied": "Горячая клавиша временно применена. Нажми 'Сохранить' внизу окна, чтобы записать изменения в файл.",
-      "HotkeyRegistrationError": "Не удалось зарегистрировать глобальную клавишу (ID: %d). Возможно, она занята другим приложением."
+      "HotkeyRegistrationError": "Не удалось зарегистрировать глобальную клавишу (ID: %d). Возможно, она занята другим приложением.",
+      "SyncFolderCreationError": "Не удалось создать папку синхронизации: %s",
+      "SyncingStorage": "Синхронизация хранилища...",
+      "SyncCompleted": "Синхронизация завершена.",
+      "SyncError": "Ошибка синхронизации: %s"
     },
     "DB": {
       "ConnectError": "Критическая ошибка!\nНе удалось подключиться к базе данных SQLite.\nПроверь путь к файлу.",
@@ -1233,7 +1252,8 @@
       "HtPasswdTitle": "Nginx .htpasswd",
       "HtPasswdLoginPrompt": "Введи логин для Basic Auth:",
       "HtPasswdLoginError": "Логин не может быть пустым.",
-      "HtPasswdBcryptCopied": "Строка Bcrypt скопирована в буфер обмена.",
+      "HtPasswdBcryptCopied": "Строка Bcrypt скопирована в буфер обмена. Буфер будет очищен через 15 сек.",
+      "NoPasswordGenerated": "Сначала сгенерируй пароль",
       "Presets": {
         "WebStandard": "Обычный пароль для сайта (Web Safe)",
         "ActiveDirectory": "Active Directory (A-Z, a-z, 0-9, спецсимвол)",

@@ -12,13 +12,14 @@ object SettingsForm: TSettingsForm
   Font.Name = 'Segoe UI'
   Font.Style = []
   Position = poScreenCenter
+  OnShow = FormShow
   TextHeight = 15
   object pcSettings: TPageControl
     Left = 0
     Top = 0
     Width = 624
     Height = 408
-    ActivePage = tsHotkeys
+    ActivePage = tsLocalSync
     Align = alClient
     TabOrder = 0
     object tsHotkeys: TTabSheet
@@ -183,6 +184,46 @@ object SettingsForm: TSettingsForm
           TabOrder = 2
           OnChange = ebSearchHotkeysChange
         end
+      end
+    end
+    object tsLocalSync: TTabSheet
+      Caption = 'Markdown-'#1089#1080#1085#1093#1088#1086#1085#1080#1079#1072#1094#1080#1103
+      ImageIndex = 1
+      object ledMarkdownPath: TLabeledEdit
+        Left = 3
+        Top = 24
+        Width = 574
+        Height = 23
+        EditLabel.Width = 101
+        EditLabel.Height = 15
+        EditLabel.Caption = #1055#1091#1090#1100' '#1082' '#1093#1088#1072#1085#1080#1083#1080#1097#1091
+        TabOrder = 0
+        Text = ''
+      end
+      object bSelectVaultPath: TButton
+        Left = 584
+        Top = 24
+        Width = 23
+        Height = 23
+        Caption = #55357#56514
+        TabOrder = 1
+        OnClick = bSelectVaultPathClick
+      end
+      object cbSyncOnStart: TCheckBox
+        Left = 3
+        Top = 53
+        Width = 575
+        Height = 17
+        Caption = #1057#1080#1085#1093#1088#1086#1085#1080#1079#1072#1094#1080#1103' '#1087#1088#1080' '#1079#1072#1087#1091#1089#1082#1077' '#1087#1088#1080#1083#1086#1078#1077#1085#1080#1103
+        TabOrder = 2
+      end
+      object cbSyncOnExit: TCheckBox
+        Left = 3
+        Top = 76
+        Width = 574
+        Height = 17
+        Caption = #1057#1080#1085#1093#1088#1086#1085#1080#1079#1072#1094#1080#1103' '#1087#1088#1080' '#1079#1072#1082#1088#1099#1090#1080#1080' '#1087#1088#1080#1083#1086#1078#1077#1085#1080#1103
+        TabOrder = 3
       end
     end
   end

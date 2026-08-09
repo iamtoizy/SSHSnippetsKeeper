@@ -258,6 +258,10 @@ object MainForm: TMainForm
       object nCloseDatabase: TMenuItem
         Action = actCloseDatabase
       end
+      object nSyncDatabase: TMenuItem
+        Action = actSyncDatabase
+        Enabled = False
+      end
       object N3: TMenuItem
         Caption = '-'
       end
@@ -2761,5 +2765,17 @@ object MainForm: TMainForm
       Caption = 'actSettings'
       OnExecute = actSettingsExecute
     end
+    object actSyncDatabase: TAction
+      Category = 'Database'
+      Caption = 'actSyncDatabase'
+      OnExecute = actSyncDatabaseExecute
+    end
+  end
+  object tmrAutoSync: TTimer
+    Enabled = False
+    Interval = 5000
+    OnTimer = tmrAutoSyncTimer
+    Left = 332
+    Top = 217
   end
 end

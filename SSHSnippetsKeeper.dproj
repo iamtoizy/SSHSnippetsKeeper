@@ -259,6 +259,8 @@
         </DCCReference>
         <DCCReference Include="Core\Services\HotkeyService.pas"/>
         <DCCReference Include="ThirdParty\Bcrypt.pas"/>
+        <DCCReference Include="Core\Core.MarkdownExporter.pas"/>
+        <DCCReference Include="Core\Core.MarkdownImporter.pas"/>
         <RcItem Include="Database\Schema\000_schema_init.sql">
             <ContainerId>ResourceItem</ContainerId>
             <ResourceType>RCDATA</ResourceType>

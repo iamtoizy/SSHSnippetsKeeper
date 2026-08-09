@@ -161,6 +161,11 @@ type
         // Глобальные горячие клавиши
         Hotkeys: THotkeySettings;
         CustomShortCuts: TArray<TCustomShortCut>;
+
+        // Синхронизация Markdown
+        SyncDirectory: string;
+        SyncOnStart: Boolean;
+        SyncOnExit: Boolean;
     end;
 
     // Интерфейс менеджера
@@ -275,6 +280,8 @@ type
         function CreateTag(const Name, Color: string): Integer;
         procedure RenameTag(ID: Integer; const NewName: string);
         procedure DeleteTag(ID: Integer);
+        // новый метод для фоновой синхронизации
+        function GetOrCreateTag(const Name: string): Integer;
     end;
 
     IUserService = interface
@@ -463,7 +470,9 @@ type
         function GetHotkeyService: IHotkeyService;
 
         // Фабрика для фоновых потоков. Возвращает готовый сервис и ссылку на коннект для его очистки.
-        function CreateIsolatedSnippetService(out ABackgroundConnection: TComponent): ISnippetService;
+        function CreateIsolatedSnippetService(out BackgroundConnection: TComponent): ISnippetService;
+        // Создает полностью независимую копию контекста со своим подключением к БД
+        function CreateIsolatedContext(out BackgroundConnection: TComponent): IAppContext;
 
         property DatabaseManager: IDatabaseManager read GetDatabaseManager;
         property SnippetService: ISnippetService read GetSnippetService;
