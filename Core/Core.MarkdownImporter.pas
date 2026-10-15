@@ -75,7 +75,7 @@ class function TMarkdownImporter.ParseMarkdownFile(const FilePath: string; out P
 var
     Lines: TArray<string>;
     Line, Key, Value, LowerLine: string;
-    InFrontmatter, InCodeBlock: Boolean;
+    InCodeBlock: Boolean;
     YamlLines, BodyLines, CodeLines: TList<string>;
     I, FirstDashIdx, SecondDashIdx: Integer;
 begin

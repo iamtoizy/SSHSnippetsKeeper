@@ -15,13 +15,14 @@ object CronGenForm: TCronGenForm
   OnCreate = FormCreate
   OnShow = FormShow
   TextHeight = 15
-  object pnlTop: TPanel
+  object pTop: TPanel
     Left = 0
     Top = 0
     Width = 650
     Height = 169
     Align = alTop
     BevelOuter = bvNone
+    ParentBackground = False
     ShowCaption = False
     TabOrder = 0
     object lbTitle: TLabel

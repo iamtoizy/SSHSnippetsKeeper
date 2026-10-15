@@ -117,7 +117,7 @@ type
         actSettings: TAction;
         nSyncDatabase: TMenuItem;
         actSyncDatabase: TAction;
-    tmrAutoSync: TTimer;
+        tmrAutoSync: TTimer;
         procedure actAddCategoryExecute(Sender: TObject);
         procedure actAddSnippetExecute(Sender: TObject);
         procedure actAddTagExecute(Sender: TObject);
@@ -160,6 +160,7 @@ type
         procedure lvTagsDblClick(Sender: TObject);
         procedure lvTagsEdited(Sender: TObject; Item: TListItem; var S: string);
         procedure nExitClick(Sender: TObject);
+        procedure nTerminalsClick(Sender: TObject);
         procedure rbTextClick(Sender: TObject);
         procedure sbBottomMouseDown(Sender: TObject; Button: TMouseButton; Shift:
             TShiftState; X, Y: Integer);
@@ -245,6 +246,7 @@ uses
     CronGenFormUI,
     EpochConverterFormUI,
     HotkeyService,
+    LocalAIService,
     MacroInputTypes,
     NetworkFormUI,
     PasswordGenFormUI,
@@ -1057,10 +1059,7 @@ begin
     Node := tvCategories.Selected;
 
     if (Node <> nil) and not IsVirtualCategory(Node) and (Node.Data <> nil) then
-        Snippet.CategoryID := Integer(IntPtr(Node.Data))
-    else
-        Snippet.CategoryID := Snippet.CategoryID;
-
+        Snippet.CategoryID := Integer(IntPtr(Node.Data));
 
     if TAddEditSnippetForm.ExecuteEdit(Self, AppContext, Snippet) then
     begin
@@ -1227,7 +1226,7 @@ begin
         Exit;
 
     try
-        NewID := AppContext.TagService.CreateTag(NewName, '');
+        NewID := AppContext.TagService.CreateTag(NewName);
 
         with lvTags.Items.Add do
         begin
@@ -1257,7 +1256,7 @@ begin
         Exit;
 
     TagID := Integer(IntPtr(Item.Data));
-    if MessagesHandler.AskConfirmation(
+    if not MessagesHandler.AskConfirmation(
         TUIStateLoader.GetMessage('Tag.DeleteConfirm', [Item.Caption]),
         TUIStateLoader.GetMessage('Common.Confirmation'),
         MB_YESNO or MB_ICONQUESTION or MB_DEFBUTTON2
@@ -1629,6 +1628,77 @@ end;
 procedure TMainForm.nTagEditorClick(Sender: TObject);
 begin
     TTagEditorForm.ExecuteGlobal(Application, AppContext);
+end;
+
+procedure TMainForm.nTerminalsClick(Sender: TObject);
+//var
+//    Answer, InstallLog: string;
+//    AIService: ILocalAIService;
+begin
+{    AIService := AppContext.LocalAIService;
+
+    // 1. Проверяем, есть ли вообще Python на ПК инженера
+    if not AIService.IsPythonAvailable then
+    begin
+        MessagesHandler.ShowError(
+            'На вашем компьютере не обнаружен Python.' + sLineBreak +
+            'Пожалуйста, запросите у отдела ИТ установку Python (рекомендуется версия 3.11) ' +
+            'и перезапустите программу.'
+        );
+        Exit;
+    end;
+
+    // 2. Проверяем, установлена ли нейросетевая библиотека
+    if not AIService.IsLlamaModuleInstalled then
+    begin
+        if MessagesHandler.AskConfirmation(
+            'Для работы локального ИИ требуется библиотека "llama-cpp-python".' + sLineBreak +
+            'Установить её сейчас через корпоративный репозиторий (pip)?',
+            'Требуются зависимости'
+        ) then
+        begin
+            sbBottom.Panels[0].Text := 'Установка llama-cpp-python...';
+            Application.ProcessMessages;
+
+            // Запускаем установку
+            if not AIService.InstallLlamaModule(InstallLog) then
+            begin
+                MessagesHandler.ShowError('Ошибка установки. Лог:' + sLineBreak + InstallLog);
+                sbBottom.Panels[0].Text := 'Ошибка установки зависимостей';
+                Exit;
+            end;
+
+            ShowSimpleToast('Библиотека успешно установлена!');
+        end
+        else
+            Exit; // Пользователь отказался
+    end;
+
+    // 3. Проверяем/грузим модель (пусть путь хранится в SettingsManager)
+    if not AIService.IsModelLoaded then
+    begin
+        sbBottom.Panels[0].Text := 'Загрузка модели Qwen в оперативную память...';
+        Application.ProcessMessages;
+
+        if not AIService.LoadModel('C:\Users\toizy\OneDrive\Desktop\Qwen3.5-4B-Q5_K_M.gguf') then
+        begin
+            MessagesHandler.ShowError('Не удалось загрузить файл модели!');
+            Exit;
+        end;
+    end;
+
+    // 2. Спрашиваем ИИ
+    sbBottom.Panels[0].Text := 'ИИ анализирует сниппет...';
+    Application.ProcessMessages;
+
+    Answer := AIService.Ask(
+        'Ты DevOps инженер. Объясни этот Bash-скрипт коротко и по делу.',
+        'find . -size -100k'
+    );
+
+    // 3. Выводим ответ
+    ShowMessage(Answer);
+    sbBottom.Panels[0].Text := 'Готово';        }
 end;
 
 procedure TMainForm.PerformSearchAsync(const Mask: string);

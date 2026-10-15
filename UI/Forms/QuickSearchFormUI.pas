@@ -32,6 +32,7 @@ type
         procedure lvQuickResultsDblClick(Sender: TObject);
         procedure lvQuickResultsEnter(Sender: TObject);
         procedure lvQuickResultsKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure lvQuickResultsDeletion(Sender: TObject; Item: TListItem);
     private
         FSnippetService: ISnippetService;
         FUserService: IUserService;
@@ -516,6 +517,12 @@ end;
 procedure TQuickSearchForm.lvQuickResultsDblClick(Sender: TObject);
 begin
     InsertSelectedSnippet;
+end;
+
+procedure TQuickSearchForm.lvQuickResultsDeletion(Sender: TObject; Item: TListItem);
+begin
+    if Assigned(Item.Data) then
+        TSnippetViewData(Item.Data).Free;
 end;
 
 procedure TQuickSearchForm.InsertSelectedSnippet;

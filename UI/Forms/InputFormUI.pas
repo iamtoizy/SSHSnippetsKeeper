@@ -56,7 +56,7 @@ const
 
 {$R *.dfm}
 
-function ShowInputForm(const Prompt, DefaultValue: string; InputType: TMacroInputType; const AppContext: IAppContext; var FormResult: string): Boolean;
+function ShowInputFormModal(const Prompt, DefaultValue: string; InputType: TMacroInputType; const AppContext: IAppContext; var Value: string): Boolean;
 var
     Form: TInputForm;
 begin
@@ -75,10 +75,32 @@ begin
 
         Result := Form.ShowModal = mrOk;
         if Result then
-            FormResult := Form.ResultValue;
+            Value := Form.ResultValue;
     finally
         Form.Free;
     end;
+end;
+
+function ShowInputForm(const Prompt, DefaultValue: string; InputType: TMacroInputType; const AppContext: IAppContext; var FormResult: string): Boolean;
+var
+    ModalOk: Boolean;
+    ModalValue: string;
+begin
+    ModalOk := False;
+    ModalValue := '';
+
+    if TThread.CurrentThread.ThreadID = MainThreadID then
+        ModalOk := ShowInputFormModal(Prompt, DefaultValue, InputType, AppContext, ModalValue)
+    else
+        TThread.Synchronize(nil,
+            procedure
+            begin
+                ModalOk := ShowInputFormModal(Prompt, DefaultValue, InputType, AppContext, ModalValue);
+            end);
+
+    Result := ModalOk;
+    if Result then
+        FormResult := ModalValue;
 end;
 
 procedure TInputForm.FormCreate(Sender: TObject);
@@ -135,9 +157,9 @@ procedure TInputForm.HandleKeyPresses(const Key: Word);
 begin
     case Key of
         13:
-            bOKClick(InputForm);
+            bOKClick(Self);
         27:
-            bCancelClick(InputForm);
+            bCancelClick(Self);
     end;
 end;
 

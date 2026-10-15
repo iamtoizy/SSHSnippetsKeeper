@@ -33,6 +33,7 @@ type
         FMessagesHandler: IUIMessagesHandler;
         FEpochService: IEpochService;
         FHotkeyService: IHotkeyService;
+        FLocalAIService: ILocalAIService;
 
         function GetDatabaseManager: IDatabaseManager;
         function GetSnippetService: ISnippetService;
@@ -42,9 +43,10 @@ type
         function GetPasswordService: IPasswordService;
         function GetSettingsManager: ISettingsManager;
         function GetWindowHelper: IWindowHelper;
-        function GetErrorHandler: IUIMessagesHandler;
+        function GetMessagesHandler: IUIMessagesHandler;
         function GetEpochService: IEpochService;
         function GetHotkeyService: IHotkeyService;
+        function GetLocalAIService: ILocalAIService;
     public
         // Основной конструктор (для UI-потока)
         constructor Create(
@@ -55,7 +57,7 @@ type
             MessagesHandler: IUIMessagesHandler
         );
 
-        // ВТОРОЙ КОНСТРУКТОР: Для безопасных фоновых задач (TTask)
+        // Второй конструктор: Для безопасных фоновых задач (TTask)
         constructor CreateBackground(DBConnection: TFDConnection; BaseContext: IAppContext);
 
         destructor Destroy; override;
@@ -67,9 +69,10 @@ type
         property PasswordService: IPasswordService read GetPasswordService;
         property SettingsManager: ISettingsManager read GetSettingsManager;
         property WindowHelper: IWindowHelper read GetWindowHelper;
-        property MessagesHandler: IUIMessagesHandler read GetErrorHandler;
+        property MessagesHandler: IUIMessagesHandler read GetMessagesHandler;
         property EpochService: IEpochService read GetEpochService;
         property HotkeyService: IHotkeyService read GetHotkeyService;
+        property LocalAIService: ILocalAIService read GetLocalAIService;
 
         function CreateIsolatedSnippetService(out BackgroundConnection: TComponent): ISnippetService;
 
@@ -78,6 +81,10 @@ type
     end;
 
 implementation
+
+uses
+    LocalAIService
+    ;
 
 { TAppContext }
 
@@ -120,6 +127,9 @@ begin
     // Локальные сервисы, создающиеся в AppContext
     FPasswordService := TPasswordService.Create;
     FEpochService := TEpochService.Create;
+
+    // Создаем сервис ИИ
+    FLocalAIService := TLocalAIService.Create(nil);
 end;
 
 // ============================================================================
@@ -157,6 +167,10 @@ begin
 
     FPasswordService := TPasswordService.Create;
     FEpochService := TEpochService.Create;
+
+    // В фоновом контексте пробрасываем тот же сервис или оставляем nil,
+    // если фоновые задачи не работают с ИИ напрямую
+    FLocalAIService := BaseContext.LocalAIService;
 end;
 
 // ============================================================================
@@ -235,7 +249,7 @@ begin
     Result := FEpochService;
 end;
 
-function TAppContext.GetErrorHandler: IUIMessagesHandler;
+function TAppContext.GetMessagesHandler: IUIMessagesHandler;
 begin
     Result := FMessagesHandler;
 end;
@@ -243,6 +257,11 @@ end;
 function TAppContext.GetHotkeyService: IHotkeyService;
 begin
     Result := FHotkeyService;
+end;
+
+function TAppContext.GetLocalAIService: ILocalAIService;
+begin
+    Result := FLocalAIService;
 end;
 
 function TAppContext.GetPasswordService: IPasswordService;

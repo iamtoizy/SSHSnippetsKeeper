@@ -217,7 +217,7 @@ class procedure TBaseForm.ExecuteGlobal(Owner: TComponent; AppContext: IAppConte
 var
     Instance: TBaseForm;
 begin
-    // В методах класса (class procedure) слово Self указывает на ТИП класса,
+    // В методах класса (class procedure) Self указывает на ТИП класса,
     // из которого был вызван метод (например, TChmodForm или TNetworkForm).
 
     // Проверяем, открыта ли уже форма такого класса
@@ -239,8 +239,14 @@ begin
     // на случай если внутри Initialize форма попытается обратиться к синглтону
     FInstances.Add(Self, Instance);
 
-    Instance.Initialize(AppContext);
-    Instance.FormStyle := fsStayOnTop;
+
+    Instance.LockDrawing; // Попытка уменьшить мерцание формы со стилями VCL
+    try
+        Instance.Initialize(AppContext);
+        Instance.FormStyle := fsStayOnTop;
+    finally
+        Instance.UnlockDrawing;   // Попытка уменьшить мерцание формы со стилями VCL
+    end;
     Instance.Show;
 end;
 

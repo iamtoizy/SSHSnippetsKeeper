@@ -120,7 +120,8 @@ uses
   HotkeyService in 'Core\Services\HotkeyService.pas',
   Bcrypt in 'ThirdParty\Bcrypt.pas',
   Core.MarkdownExporter in 'Core\Core.MarkdownExporter.pas',
-  Core.MarkdownImporter in 'Core\Core.MarkdownImporter.pas';
+  Core.MarkdownImporter in 'Core\Core.MarkdownImporter.pas',
+  LocalAIService in 'Core\LocalAIService.pas';
 
 {$R *.res}
 
@@ -193,11 +194,13 @@ ReportMemoryLeaksOnShutdown := True;
     Application.Initialize;
     Application.MainFormOnTaskbar := True;
     TStyleManager.TrySetStyle('Glow');
+//    TStyleManager.UseParentPaintBuffers := True;
     Application.Title := 'SSH Snippets Keeper';
     Application.CreateForm(TAppDatabase, AppDatabase);
   Application.CreateForm(TMainForm, MainForm);
   Application.CreateForm(TQuickSearchForm, QuickSearchForm);
   Application.CreateForm(TCustomHelpForm, CustomHelpForm);
+  Application.CreateForm(TInputForm, InputForm);
   //-----------------------------------
     AppContext := TAppContext.Create(
         AppDatabase,               // Реализует IDatabaseManager
@@ -208,9 +211,14 @@ ReportMemoryLeaksOnShutdown := True;
     );
     //-----------------------------------
     QuickSearchForm.Initialize(AppContext);
-    MainForm.Initialize(AppContext);
+    MainForm.LockDrawing;
+    try
+        MainForm.Initialize(AppContext);
+    finally
+        MainForm.UnlockDrawing;
+    end;
     MainForm.Show;
-    Application.CreateForm(TInputForm, InputForm);
+
     Application.Run;
 
     AppContext := nil;

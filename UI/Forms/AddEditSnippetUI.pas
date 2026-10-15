@@ -25,7 +25,9 @@ uses
     Vcl.Menus,
     Vcl.StdCtrls,
     // Подцепляем последним:
-    HintTextEdit, System.Actions, Vcl.ActnList
+    HintTextEdit,
+    System.Actions,
+    Vcl.ActnList
     ;
 
 type
@@ -59,7 +61,7 @@ type
         cbIgnoreSecurityChecks: TCheckBox;
         tmrSecurityScan: TTimer;
         sbBottom: TStatusBar;
-        pnlClient: TPanel;
+    pClient: TPanel;
         pTop: TPanel;
         bAISettings: TButton;
         cbAIModel: TComboBox;
@@ -75,9 +77,9 @@ type
         mInfo: TMemo;
         spTopLeft: TSplitter;
         mContent: TSynEdit;
-    ActionList: TActionList;
-    actShowAIForm: TAction;
-    actConfigureAI: TAction;
+        ActionList: TActionList;
+        actShowAIForm: TAction;
+        actConfigureAI: TAction;
         procedure actConfigureAIExecute(Sender: TObject);
         procedure actShowAIFormExecute(Sender: TObject);
         procedure bAISettingsClick(Sender: TObject);
@@ -502,7 +504,7 @@ begin
                     pAIOverlay.Visible := False;
 
                     if ErrorMsg <> '' then
-                        TUIStateLoader.GetMessage('Common.GeneralError', [ErrorMsg])
+                        MessagesHandler.ShowError(TUIStateLoader.GetMessage('Common.GeneralError', [ErrorMsg]))
                     else
                     begin
                         mContent.BeginUpdate;
@@ -537,8 +539,13 @@ var
 begin
     Frm := TAddEditSnippetForm.Create(Owner);
     try
-        Frm.Initialize(AppContext);
-        Frm.Prepare(True, SnippetToEdit, SnippetToEdit.CategoryID, SnippetToEdit.UserID);
+        Frm.LockDrawing;  // Попытка уменьшить мерцание формы со стилями VCL
+        try
+            Frm.Initialize(AppContext);
+            Frm.Prepare(True, SnippetToEdit, SnippetToEdit.CategoryID, SnippetToEdit.UserID);
+        finally
+            Frm.UnlockDrawing;  // Попытка уменьшить мерцание формы со стилями VCL
+        end;
         Result := (Frm.ShowModal = mrOk);
     finally
         Frm.Free;

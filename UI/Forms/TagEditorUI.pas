@@ -247,7 +247,7 @@ begin
         case Change.Action of
             teaAdd:
                 // —ервис сам проверит уникальность и пустоту имени
-                AppContext.TagService.CreateTag(Change.NewName, '');
+                AppContext.TagService.CreateTag(Change.NewName);
 
             teaRename:
                 // ѕередаем ID (с приведением типов) и новое им€

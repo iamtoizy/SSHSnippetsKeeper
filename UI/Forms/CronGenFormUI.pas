@@ -28,7 +28,7 @@ type
     end;
 
     TCronGenForm = class(TBaseForm)
-        pnlTop: TPanel;
+    pTop: TPanel;
         lbTitle: TLabel;
         ebCronExpression: TEdit;
         bCopy: TButton;

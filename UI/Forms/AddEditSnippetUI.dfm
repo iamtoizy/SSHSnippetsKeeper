@@ -25,6 +25,7 @@ object AddEditSnippetForm: TAddEditSnippetForm
     Height = 447
     Align = alLeft
     BevelOuter = bvNone
+    ParentBackground = False
     TabOrder = 0
     object lbCaption: TLabel
       Left = 0
@@ -118,6 +119,7 @@ object AddEditSnippetForm: TAddEditSnippetForm
     Height = 32
     Align = alBottom
     BevelOuter = bvNone
+    ParentBackground = False
     TabOrder = 1
     DesignSize = (
       730
@@ -155,13 +157,14 @@ object AddEditSnippetForm: TAddEditSnippetForm
     Panels = <>
     SimplePanel = True
   end
-  object pnlClient: TPanel
+  object pClient: TPanel
     Left = 201
     Top = 0
     Width = 529
     Height = 447
     Align = alClient
     BevelOuter = bvNone
+    ParentBackground = False
     TabOrder = 3
     object pTop: TPanel
       Left = 0
@@ -171,6 +174,7 @@ object AddEditSnippetForm: TAddEditSnippetForm
       Align = alTop
       BevelOuter = bvNone
       TabOrder = 0
+      ExplicitWidth = 423
       object spTopLeft: TSplitter
         Left = 240
         Top = 0

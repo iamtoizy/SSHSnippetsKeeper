@@ -42,6 +42,7 @@ object QuickSearchForm: TQuickSearchForm
     TabOrder = 1
     ViewStyle = vsList
     OnDblClick = lvQuickResultsDblClick
+    OnDeletion = lvQuickResultsDeletion
     OnEnter = lvQuickResultsEnter
     OnKeyDown = lvQuickResultsKeyDown
   end

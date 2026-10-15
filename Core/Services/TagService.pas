@@ -16,7 +16,7 @@ type
         constructor Create(TagRepo: ITagRepository);
         function GetAllTags: TArray<TTagDTO>;
         function GetSnippetTags(SnippetID: Integer): TArray<TTagDTO>;
-        function CreateTag(const Name, Color: string): Integer;
+        function CreateTag(const Name: string): Integer;
         procedure DeleteTag(TagID: Integer);
         procedure RenameTag(TagID: Integer; const NewName: string);
         function GetOrCreateTag(const Name: string): Integer;
@@ -58,7 +58,7 @@ begin
     Result := FTagRepo.GetSnippetTags(SnippetID);
 end;
 
-function TTagService.CreateTag(const Name, Color: string): Integer;
+function TTagService.CreateTag(const Name: string): Integer;
 var
     CleanName: string;
     NewTag: TTagDTO;

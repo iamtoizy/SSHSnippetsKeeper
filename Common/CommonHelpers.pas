@@ -44,8 +44,8 @@ function VCLHotkeyToWin32(HotKeyCtrl: THotKey; Enabled: Boolean = True): THotkey
 function HotkeyToString(const Config: THotkeyConfig): string;
 { Функция для генерации заголовка Basic Auth }
 function GenerateHtpasswdString(const Username, Password: string): string;
-{ Запуск git }
-function RunGitCommand(const RepoPath, GitCommand: string; out Output: string): Boolean;
+{ Запуск pip }
+function RunCmdCommand(const WorkingDir, Command: string; out Output: string): Boolean;
 
 implementation
 
@@ -178,7 +178,7 @@ end;
 
 procedure WipeVCLControlText(Control: TCustomEdit);
 begin
-    if not Assigned(Control) or (Control.Text = '') then Exit;
+    if not Assigned(Control) or (Control.GetTextLen = 0) then Exit;
     // Физически перезаписываем участок памяти контрола нулями,
     // прежде чем освободить строку
     Control.Text := StringOfChar('0', Control.GetTextLen);
@@ -221,7 +221,7 @@ procedure WipeString(var S: string);
 begin
     // StringRefCount возвращает -1 для строковых констант (литералов в коде).
     // Попытка затереть константу вызовет краш (Access Violation).
-    if (S <> '') and (StringRefCount(S) > 0) then
+    if (S <> '') and (StringRefCount(S) = 1) then
     begin
         // Физически затираем оригинальный блок памяти нулями
         SecureZeroMemory(PChar(S), Length(S) * SizeOf(Char));
@@ -353,53 +353,78 @@ begin
     Result := Format('%s:{SHA}%s', [Username, Base64Str]);
 end;
 
-function RunGitCommand(const RepoPath, GitCommand: string; out Output: string): Boolean;
+function RunCmdCommand(const WorkingDir, Command: string; out Output: string): Boolean;
 var
     SecurityAttr: TSecurityAttributes;
     ReadPipe, WritePipe: THandle;
     StartInfo: TStartupInfo;
     ProcInfo: TProcessInformation;
-    Buffer: array[0..255] of AnsiChar;
+    Buffer: array[0..2047] of AnsiChar; // Увеличенный буфер
     BytesRead: DWORD;
-    Command: string;
+    FullCommand: string;
+    WorkDirPtr: PChar;
 begin
     Result := False;
     Output := '';
 
-    // Создаем Pipe, чтобы перехватить ответ от Git (например, сообщения об ошибках)
     FillChar(SecurityAttr, SizeOf(SecurityAttr), 0);
     SecurityAttr.nLength := SizeOf(SecurityAttr);
     SecurityAttr.bInheritHandle := True;
-    CreatePipe(ReadPipe, WritePipe, @SecurityAttr, 0);
+
+    // 1. Создаем Pipe
+    if not CreatePipe(ReadPipe, WritePipe, @SecurityAttr, 0) then
+        Exit;
 
     FillChar(StartInfo, SizeOf(StartInfo), 0);
     StartInfo.cb := SizeOf(StartInfo);
     StartInfo.dwFlags := STARTF_USESHOWWINDOW or STARTF_USESTDHANDLES;
-    StartInfo.wShowWindow := SW_HIDE; // Прячем черное окно консоли
+    StartInfo.wShowWindow := SW_HIDE; // Прячем черное окно
     StartInfo.hStdOutput := WritePipe;
-    StartInfo.hStdError := WritePipe;
+    StartInfo.hStdError := WritePipe; // Перехватываем и ошибки тоже
 
-    Command := 'cmd.exe /c cd /d "' + RepoPath + '" && ' + GitCommand;
+    // Оборачиваем команду в вызов интерпретатора CMD
+    FullCommand := 'cmd.exe /c ' + Command;
 
-    if CreateProcess(nil, PChar(Command), nil, nil, True, CREATE_NO_WINDOW, nil, PChar(RepoPath), StartInfo, ProcInfo) then
+    // Если рабочая директория не указана, передаем nil
+    if WorkingDir <> '' then
+        WorkDirPtr := PChar(WorkingDir)
+    else
+        WorkDirPtr := nil;
+
+    // 2. Запускаем процесс. Передаем WorkingDir прямо в API Windows
+    if CreateProcess(nil, PChar(FullCommand), nil, nil, True, CREATE_NO_WINDOW, nil, WorkDirPtr, StartInfo, ProcInfo) then
     begin
-        WaitForSingleObject(ProcInfo.hProcess, 15000); // Ждем максимум 15 секунд
+        // ВАЖНО (Защита от Deadlock):
+        // Мы должны закрыть НАШ (родительский) дескриптор на запись ПЕРЕД чтением.
+        // Копия этого дескриптора уже передана дочернему процессу.
+        // Если этого не сделать, ReadFile никогда не вернет False, так как будет
+        // считать, что кто-то (мы сами) еще может что-то записать.
+        CloseHandle(WritePipe);
 
-        CloseHandle(WritePipe); // Закрываем запись, чтобы чтение не зависло
-
-        // Читаем, что ответил Git
+        // 3. Читаем данные по мере их поступления в цикле
         while ReadFile(ReadPipe, Buffer, SizeOf(Buffer) - 1, BytesRead, nil) and (BytesRead > 0) do
         begin
             Buffer[BytesRead] := #0;
-            Output := Output + string(AnsiString(Buffer)); // Конвертируем ответ в строку
+
+            // Перекодируем OEM (консольную CP866) в ANSI (системную CP1251),
+            // чтобы русские буквы из CMD отображались корректно
+            OemToCharA(Buffer, Buffer);
+
+            Output := Output + string(AnsiString(Buffer));
         end;
+
+        // Ждем окончательного закрытия процесса (теперь это мгновенно)
+        WaitForSingleObject(ProcInfo.hProcess, INFINITE);
 
         CloseHandle(ProcInfo.hProcess);
         CloseHandle(ProcInfo.hThread);
         Result := True;
     end
     else
+    begin
+        // Если процесс не запустился, закрываем WritePipe
         CloseHandle(WritePipe);
+    end;
 
     CloseHandle(ReadPipe);
 end;

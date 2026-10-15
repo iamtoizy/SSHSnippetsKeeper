@@ -318,6 +318,8 @@ object MainForm: TMainForm
     end
     object nTerminals: TMenuItem
       Caption = #1058#1077#1088#1084#1080#1085#1072#1083
+      Visible = False
+      OnClick = nTerminalsClick
     end
     object nTools: TMenuItem
       Caption = #1048#1085#1089#1090#1088#1091#1084#1077#1085#1090#1099

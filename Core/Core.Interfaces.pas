@@ -277,7 +277,7 @@ type
         ['{83E06A1E-D877-48B0-A0AC-B51140A4101A}']
         function GetAllTags: TArray<TTagDTO>;
         function GetSnippetTags(SnippetID: Integer): TArray<TTagDTO>;
-        function CreateTag(const Name, Color: string): Integer;
+        function CreateTag(const Name: string): Integer;
         procedure RenameTag(ID: Integer; const NewName: string);
         procedure DeleteTag(ID: Integer);
         // новый метод для фоновой синхронизации
@@ -454,6 +454,24 @@ type
         function ValidateExpression(const Expression: string; out ErrorMsg: string): Boolean;
     end;
 
+    ILocalAIService = interface
+        ['{78EEB8FB-9550-46CB-A7B8-3692B2510474}']
+        function LoadModel(const GgufPath: string): Boolean;
+        function IsModelLoaded: Boolean;
+
+        // Главный метод: отправляет промпт и возвращает ответ
+        function Ask(const SystemPrompt, UserPrompt: string): string;
+
+        // Проверяет, живой ли вообще интерпретатор
+        function IsPythonAvailable: Boolean;
+
+        // Проверяет, установлен ли модуль
+        function IsLlamaModuleInstalled: Boolean;
+
+        // Выполняет установку пакета
+        function InstallLlamaModule(out Log: string): Boolean;
+    end;
+
     // Контейнер всех глобальных сервисов приложения
     IAppContext = interface
         ['{05B6A3A0-F265-4DF3-85A1-BF260B30957F}']
@@ -465,9 +483,10 @@ type
         function GetPasswordService: IPasswordService;
         function GetSettingsManager: ISettingsManager;
         function GetWindowHelper: IWindowHelper;
-        function GetErrorHandler: IUIMessagesHandler;
+        function GetMessagesHandler: IUIMessagesHandler;
         function GetEpochService: IEpochService;
         function GetHotkeyService: IHotkeyService;
+        function GetLocalAIService: ILocalAIService;
 
         // Фабрика для фоновых потоков. Возвращает готовый сервис и ссылку на коннект для его очистки.
         function CreateIsolatedSnippetService(out BackgroundConnection: TComponent): ISnippetService;
@@ -482,9 +501,10 @@ type
         property PasswordService: IPasswordService read GetPasswordService;
         property SettingsManager: ISettingsManager read GetSettingsManager;
         property WindowHelper: IWindowHelper read GetWindowHelper;
-        property MessagesHandler: IUIMessagesHandler read GetErrorHandler;  // TODO Переименовать!
+        property MessagesHandler: IUIMessagesHandler read GetMessagesHandler;
         property EpochService: IEpochService read GetEpochService;
         property HotkeyService: IHotkeyService read GetHotkeyService;
+        property LocalAIService: ILocalAIService read GetLocalAIService;
     end;
 
 implementation

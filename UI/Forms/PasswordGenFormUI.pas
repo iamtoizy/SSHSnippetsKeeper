@@ -473,11 +473,13 @@ begin
             finally
                 if Assigned(TempList) then
                 begin
-                    // Безопасная очистка всего списка паролей
+                    // Очистка списка паролей: сначала отвязываем ссылку
+                    // списка, затем затираем уникальный буфер по месту
                     for I := 0 to TempList.Count - 1 do
                     begin
-                        RawPassword := TempList[I]; // Получаем ссылку
-                        WipeString(RawPassword);    // Затираем память
+                        RawPassword := TempList[I];
+                        TempList[I] := '';
+                        WipeString(RawPassword);
                     end;
                     TempList.Free; // Уничтожаем сам объект списка
                 end;
@@ -724,8 +726,9 @@ begin
         begin
             PasswordToType := Frm.FinalCleanPassword;
 
-            // Сразу стираем копию внутри самой формы
-            WipeString(Frm.FinalCleanPassword);
+            // Отвязываем ссылку в форме: пароль остаётся только
+            // в локальной переменной и будет затёрт по месту в finally
+            Frm.FinalCleanPassword := '';
 
             try
                 // Если Owner не задан (вызов глобальным хоткеем поверх чужого приложения)
@@ -890,6 +893,7 @@ end;
 
 procedure TPasswordGenForm.SetControlsState(Enabled: Boolean);
 begin
+    LockDrawing;    // Попытка уменьшить мерцание формы со стилями VCL
     bGenerate.Enabled := Enabled;
     bBulkGenerate.Enabled := True;
     bInsertAndClose.Enabled := Enabled;
@@ -908,6 +912,7 @@ begin
     cbSymbols.Enabled := Enabled;
     edInclude.Enabled := Enabled;
     edExclude.Enabled := Enabled;
+    UnlockDrawing;    // Попытка уменьшить мерцание формы со стилями VCL
 end;
 
 procedure TPasswordGenForm.SetupPresetsMenu;
