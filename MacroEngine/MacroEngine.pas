@@ -208,11 +208,11 @@ var
     InputAction: TInputAction;
     Value: string;
 begin
-    Context.UserCancelled := False;
+    Context.UserCanceled := False;
 
     for Action in Actions do
     begin
-        if Context.UserCancelled then
+        if Context.UserCanceled then
             Break;
 
         if Action is TInputAction then
@@ -230,7 +230,7 @@ begin
 
                 Value := Context.OnInput(InputAction.GetPrompt);
 
-                if not Context.UserCancelled then
+                if not Context.UserCanceled then
                     InputAction.SetPreCollectedValue(Value);
             end;
         end;

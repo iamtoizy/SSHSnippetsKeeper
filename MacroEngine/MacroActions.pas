@@ -103,7 +103,7 @@ begin
         begin
             // Значение уже собрано при pre-collect
             if FPreCollectedValue <> '__CONFIRMED__' then
-                TInterlocked.Exchange(FContext.Cancelled, 1);
+                TInterlocked.Exchange(FContext.Canceled, 1);
         end
         else
         begin
@@ -111,7 +111,7 @@ begin
             if Assigned(FContext.OnConfirm) then
             begin
                 if not ConfirmUser(FPrompt) then
-                    TInterlocked.Exchange(FContext.Cancelled, 1);
+                    TInterlocked.Exchange(FContext.Canceled, 1);
             end;
         end;
         Exit; // НЕ печатаем ничего в терминал!

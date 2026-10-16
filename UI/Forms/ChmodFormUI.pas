@@ -6,6 +6,7 @@ uses
     BaseFormUI,
     ChmodService,
     Core.Interfaces,
+    PresetData,
     System.Classes,
     System.Generics.Collections,
     Vcl.Controls,
@@ -70,17 +71,16 @@ type
         procedure OnChownOrFlagChange(Sender: TObject);
     private
         type
-            TPresetData = class
-                FOctalBits: Integer;
-                FIsDir: Boolean;
-                FIsCustom: Boolean;       // Можно ли его удалять
-                FOriginalName: string;    // Точное имя для поиска при удалении
-                constructor Create(Octal: Integer; IsDir, IsCustom: Boolean; const Name: string = '');
+            TChmodPresetData = class(TPresetData)
+            public
+                OctalBits: Integer;
+                IsDir: Boolean;
+                constructor Create(AOctalBits: Integer; AIsDir, AIsCustom: Boolean; const AName: string = '');
             end;
     private
         FUpdatingUI: Boolean;
         FCheckboxes: array[0..11] of TCheckBox;
-        FPresetDataList: TObjectList<TPresetData>;
+        FPresetDataList: TObjectList<TChmodPresetData>;
 
         procedure LoadPresetsToComboBox;
         function GetBitsFromUI: TChmodBits;
@@ -105,13 +105,11 @@ uses
 
 {$R *.dfm}
 
-{ TPresetData }
-constructor TChmodForm.TPresetData.Create(Octal: Integer; IsDir, IsCustom: Boolean; const Name: string);
+constructor TChmodForm.TChmodPresetData.Create(AOctalBits: Integer; AIsDir, AIsCustom: Boolean; const AName: string);
 begin
-    FOctalBits := Octal;
-    FIsDir := IsDir;
-    FIsCustom := IsCustom;
-    FOriginalName := Name;
+    inherited Create(AIsCustom, AName);
+    OctalBits := AOctalBits;
+    IsDir := AIsDir;
 end;
 
 procedure TChmodForm.FormDestroy(Sender: TObject);
@@ -127,7 +125,7 @@ var
 begin
     inherited;
 
-    FPresetDataList := TObjectList<TPresetData>.Create(True);
+    FPresetDataList := TObjectList<TChmodPresetData>.Create(True);
 
     FCheckboxes[TChmodService.BIT_O_X] := cbOx;
     FCheckboxes[TChmodService.BIT_O_W] := cbOw;
@@ -179,9 +177,9 @@ var
 
     procedure AddPreset(const ADisplayName: string; AOctal: Integer; AIsDir, AIsCustom: Boolean; const AOriginalName: string = '');
     var
-        Data: TPresetData;
+        Data: TChmodPresetData;
     begin
-        Data := TPresetData.Create(AOctal, AIsDir, AIsCustom, AOriginalName);
+        Data := TChmodPresetData.Create(AOctal, AIsDir, AIsCustom, AOriginalName);
         FPresetDataList.Add(Data);
         cbPresets.Items.AddObject(ADisplayName, Data);
     end;
@@ -226,26 +224,26 @@ end;
 
 procedure TChmodForm.cbPresetsChange(Sender: TObject);
 var
-    Data: TPresetData;
+    Data: TChmodPresetData;
 begin
     if cbPresets.ItemIndex < 0 then Exit;
 
-    Data := TPresetData(cbPresets.Items.Objects[cbPresets.ItemIndex]);
+    Data := TChmodPresetData(cbPresets.Items.Objects[cbPresets.ItemIndex]);
     if not Assigned(Data) then Exit; // Кликнули по разделителю
 
     // Отключаем обновление пресетов на момент установки UI
     FUpdatingUI := True;
     try
-        cbIsDir.Checked := Data.FIsDir;
+        cbIsDir.Checked := Data.IsDir;
     finally
         FUpdatingUI := False;
     end;
 
-    SetBitsToUI(TChmodService.OctalToBits(IntToStr(Data.FOctalBits)));
+    SetBitsToUI(TChmodService.OctalToBits(IntToStr(Data.OctalBits)));
 
     // Обновляем состояние кнопки "Удалить" в зависимости от того, кастомный ли пресет
     if Assigned(bDeletePreset) then
-        bDeletePreset.Enabled := Data.FIsCustom;
+        bDeletePreset.Enabled := Data.IsCustom;
 end;
 
 // =========================================================================
@@ -286,17 +284,17 @@ end;
 
 procedure TChmodForm.bDeletePresetClick(Sender: TObject);
 var
-    Data: TPresetData;
+    Data: TChmodPresetData;
     Setts: TAppSettings;
     I, IndexToRemove: Integer;
 begin
     if cbPresets.ItemIndex < 0 then Exit;
 
-    Data := TPresetData(cbPresets.Items.Objects[cbPresets.ItemIndex]);
-    if not Assigned(Data) or not Data.FIsCustom then Exit;
+    Data := TChmodPresetData(cbPresets.Items.Objects[cbPresets.ItemIndex]);
+    if not Assigned(Data) or not Data.IsCustom then Exit;
 
     if not MessagesHandler.AskConfirmation(
-        Format(TUIStateLoader.GetMessage('ChmodForm.DeleteConfirmFormat'), [Data.FOriginalName]),
+        Format(TUIStateLoader.GetMessage('ChmodForm.DeleteConfirmFormat'), [Data.OriginalName]),
         TUIStateLoader.GetMessage('ChmodForm.DeleteTitle')) then
         Exit;
 
@@ -306,7 +304,7 @@ begin
     // Ищем пресет по оригинальному имени
     for I := Low(Setts.ChmodPresets) to High(Setts.ChmodPresets) do
     begin
-        if Setts.ChmodPresets[I].Name = Data.FOriginalName then
+        if Setts.ChmodPresets[I].Name = Data.OriginalName then
         begin
             IndexToRemove := I;
             Break;

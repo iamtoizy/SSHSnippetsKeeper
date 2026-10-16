@@ -1,11 +1,11 @@
-unit UserService;
+п»їunit UserService;
 
 interface
 
 uses
     Core.Interfaces,
     System.SysUtils,
-    User
+    Core.Entities.User
     ;
 
 type
@@ -44,7 +44,7 @@ begin
         raise Exception.Create(
             TUIStateLoader.GetMessage('User.InvalidIdError')
         );
-    // Делегируем получение данных репозиторию
+    // Р”РµР»РµРіРёСЂСѓРµРј РїРѕР»СѓС‡РµРЅРёРµ РґР°РЅРЅС‹С… СЂРµРїРѕР·РёС‚РѕСЂРёСЋ
     Result := FUserRepo.GetByID(UserID);
 end;
 

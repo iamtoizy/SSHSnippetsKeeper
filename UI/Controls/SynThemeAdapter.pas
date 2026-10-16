@@ -115,7 +115,7 @@ begin
     if not Assigned(SynEdit) then
         Exit;
 
-  // Берем цвет напрямую из текущего стиля VCL (решает проблему с мерцанием)
+    // Берем цвет напрямую из текущего стиля VCL (решает проблему с мерцанием)
     if TStyleManager.IsCustomStyleActive then
         SysBgColor := TStyleManager.ActiveStyle.GetStyleColor(scEdit)
     else
@@ -126,21 +126,21 @@ begin
     else
         Palette := GetLightPalette;
 
-  // Базовые цвета редактора
+    // Базовые цвета редактора
     SynEdit.Color := SysBgColor;
     SynEdit.Font.Color := Palette.Foreground;
     SynEdit.ActiveLineColor := Palette.ActiveLine;
 
-  // Цвета панели Gutter
+    // Цвета панели Gutter
     SynEdit.Gutter.Color := Palette.GutterBackground;
     SynEdit.Gutter.Font.Color := Palette.GutterForeground;
 
-  // Именно это свойство отвечает за вертикальную разделительную линию
+    // Именно это свойство отвечает за вертикальную разделительную линию
     SynEdit.Gutter.BorderColor := Palette.GutterBorder;
 
     SynEdit.RightEdgeColor := Palette.RightEdge;
 
-  // Адаптация хайлайтера
+    // Адаптация хайлайтера
     Hl := SynEdit.Highlighter;
     if Assigned(Hl) then
     begin
@@ -172,7 +172,7 @@ begin
         end;
     end;
 
-  // Настройка CodeFolding (плюсики/минусики и их линии)
+    // Настройка CodeFolding (плюсики/минусики и их линии)
     SynEdit.CodeFolding.CollapsedLineColor := Palette.GutterForeground;
     SynEdit.CodeFolding.FolderBarLinesColor := Palette.GutterBorder;
 end;

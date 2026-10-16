@@ -6,6 +6,7 @@ uses
     BaseFormUI,
     Core.Interfaces,
     System.Classes,
+    System.SyncObjs,
     Vcl.Buttons,
     Vcl.ComCtrls,
     Vcl.Controls,
@@ -65,10 +66,10 @@ type
         tmrClipboard: TTimer;
         bClearHistory: TButton;
         sbBottom: TStatusBar;
-    bCopySpecial: TButton;
-    pmCopyOptions: TPopupMenu;
-    nCopyNormal: TMenuItem;
-    nCopyBcrypt: TMenuItem;
+        bCopySpecial: TButton;
+        pmCopyOptions: TPopupMenu;
+        nCopyNormal: TMenuItem;
+        nCopyBcrypt: TMenuItem;
         procedure bBulkGenerateClick(Sender: TObject);
         procedure FormDestroy(Sender: TObject);
         procedure bClearHistoryClick(Sender: TObject);
@@ -106,14 +107,14 @@ type
         class var FStatesInitialized: Boolean;
         FUpdatingUI: Boolean;
         FProgressBar: TProgressBar;
-        FinalCleanPassword: string;
+        FFinalCleanPassword: string;
 
         FPasswordService: IPasswordService;
         FSelectedPreset: TPasswordPreset;
         FActiveEditForPresets: TEdit;
         FOldEditWindowProc: TWndMethod;
 
-        FCancellationToken: Boolean;
+        FCancellationToken: Integer;
         FIsGenerating: Boolean;
         FCloseRequested: Boolean;
         FClipboardCountdown: Integer;
@@ -263,7 +264,7 @@ begin
                 ShowSimpleToast(TUIStateLoader.GetMessage('PasswordGenForm.MemoryCleared'));
             end;
         finally
-            // БЕЗОПАСНО УНИЧТОЖАЕМ СЛЕДЫ
+            // Безопасно уничтожаем текст в переменных
             WipeString(TextToCopy);
             WipeString(CleanText);
         end;
@@ -348,17 +349,19 @@ var
     Count: Integer;
     PassLen: Integer;
     UniqueChars: Boolean;
+    Preset: TPasswordPreset;
 begin
     if FSelectedPreset = wpCustom then
         Settings := GetCustomSettingsFromUI();
 
     PassLen := seLength.Value;
     UniqueChars := cbUnique.Checked;
+    Preset := FSelectedPreset;
 
     if BulkGenerate then Count := BulkCount else Count := 1;
 
     FIsGenerating := True;
-    FCancellationToken := False;
+    TInterlocked.Exchange(FCancellationToken, 0);
     FCloseRequested := False;
 
     SetControlsState(False);
@@ -394,12 +397,12 @@ begin
 
                 for I := 1 to Count do
                 begin
-                    if FCancellationToken then Break;
+                    if TInterlocked.CompareExchange(FCancellationToken, 0, 0) <> 0 then Break;
 
-                    if FSelectedPreset = wpCustom then
+                    if Preset = wpCustom then
                         RawPassword := FPasswordService.GenerateCustomPassword(Settings, PassLen, UniqueChars)
                     else
-                        RawPassword := FPasswordService.GeneratePassword(FSelectedPreset, PassLen, UniqueChars);
+                        RawPassword := FPasswordService.GeneratePassword(Preset, PassLen, UniqueChars);
 
                     if IsDirectToFile then
                         Writer.WriteLine(RawPassword)
@@ -435,7 +438,7 @@ begin
                     begin
                         pbBulkProgress.Position := Count;
 
-                        if FCancellationToken then
+                        if FCancellationToken <> 0 then
                         begin
                             if BulkGenerate then bBulkGenerate.Enabled := True;
                         end
@@ -506,7 +509,7 @@ begin
                             bBulkGenerate.Caption := TUIStateLoader.GetMessage('PasswordGenForm.MassGenerationCaption');
                             SetControlsState(True);
                             pbBulkProgress.Visible := False;
-                            MessageDlg(ErrMsg, mtError, [mbOK], 0);
+                            MessagesHandler.ShowError(ErrMsg);
                         end);
                 end;
             end;
@@ -530,7 +533,7 @@ end;
 procedure TPasswordGenForm.bInsertAndCloseClick(Sender: TObject);
 begin
     // Сохраняем пароль ДО того, как сработает FormHide и уничтожит данные
-    FinalCleanPassword := StringReplace(ebPassword.Text, VISIBLE_SPACE, ' ', [rfReplaceAll]);
+    FFinalCleanPassword := StringReplace(ebPassword.Text, VISIBLE_SPACE, ' ', [rfReplaceAll]);
     ModalResult := mrOk;
 end;
 
@@ -749,11 +752,11 @@ begin
         // 4. Показываем модально
         if Frm.ShowModal = mrOk then
         begin
-            PasswordToType := Frm.FinalCleanPassword;
+            PasswordToType := Frm.FFinalCleanPassword;
 
             // Отвязываем ссылку в форме: пароль остаётся только
             // в локальной переменной и будет затёрт по месту в finally
-            Frm.FinalCleanPassword := '';
+            Frm.FFinalCleanPassword := '';
 
             try
                 // Если Owner не задан (вызов глобальным хоткеем поверх чужого приложения)
@@ -802,7 +805,7 @@ begin
     if FIsGenerating then
     begin
         CanClose := False;
-        FCancellationToken := True;
+        TInterlocked.Exchange(FCancellationToken, 1);
         FCloseRequested := True;
         Caption := TUIStateLoader.GetMessage('PasswordGenForm.StopGeneratorCaption');
         bBulkGenerate.Enabled := False;
@@ -1028,7 +1031,7 @@ procedure TPasswordGenForm.bBulkGenerateClick(Sender: TObject);
 begin
     if FIsGenerating then
     begin
-        FCancellationToken := True;
+        TInterlocked.Exchange(FCancellationToken, 1);
         bBulkGenerate.Enabled := False;
         Exit;
     end;

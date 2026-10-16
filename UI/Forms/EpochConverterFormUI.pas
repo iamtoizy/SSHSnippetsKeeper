@@ -66,7 +66,7 @@ type
         procedure CopyToClipboardClick(Sender: TObject);
         procedure mEpochMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 
-        // НОВОЕ СОБЫТИЕ: Обработка клавиатуры для mEpoch
+        // Обработка клавиатуры для mEpoch
         procedure mEpochKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 
         procedure nCopyClick(Sender: TObject);

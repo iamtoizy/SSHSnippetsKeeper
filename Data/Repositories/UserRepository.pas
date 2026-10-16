@@ -1,4 +1,4 @@
-unit UserRepository;
+п»їunit UserRepository;
 
 interface
 
@@ -6,7 +6,8 @@ uses
     Core.Interfaces,
     RepositoryBase,
     System.Generics.Collections,
-    User
+
+    Core.Entities.User
     ;
 
 type
@@ -103,7 +104,7 @@ function TUserRepository.Add(const User: TUserDTO): Integer;
 var
     NewID: Variant;
 begin
-    // Безопасная вставка, исключающая гонку потоков
+    // Р‘РµР·РѕРїР°СЃРЅР°СЏ РІСЃС‚Р°РІРєР°, РёСЃРєР»СЋС‡Р°СЋС‰Р°СЏ РіРѕРЅРєСѓ РїРѕС‚РѕРєРѕРІ
     NewID := FConnection.ExecSQLScalar(
         'INSERT INTO users (name, created_at) VALUES (?, ?) RETURNING id',
         [User.Name, User.CreatedAt]

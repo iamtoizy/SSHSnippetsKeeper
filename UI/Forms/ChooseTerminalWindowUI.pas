@@ -27,7 +27,7 @@ type
     end;
 
 var
-    ChooseTerminalWindow: TChooseTerminalWindow;
+    ChooseTerminalWindowForm: TChooseTerminalWindow;
 
 implementation
 

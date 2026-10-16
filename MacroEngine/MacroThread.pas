@@ -13,7 +13,7 @@ type
     private
         FActions: TArray<IScriptAction>;
         FContext: TMacroContext;
-        FCancelled: Integer;
+        FCanceled: Integer;
         // Добавляем поле для коллбэка
         FOnRecordRun: TProc<Integer, Integer>;
     protected
@@ -48,7 +48,7 @@ end;
 
 procedure TMacroThread.Cancel;
 begin
-    TInterlocked.Exchange(FCancelled, 1);
+    TInterlocked.Exchange(FCanceled, 1);
     Terminate;
 end;
 
@@ -66,8 +66,8 @@ begin
                 CompletedSuccessfully := False;
                 Break;
             end;
-            if (TInterlocked.Add(FCancelled, 0) <> 0) or
-                (Assigned(FContext) and (TInterlocked.Add(FContext.Cancelled, 0) <> 0)) then
+            if (TInterlocked.Add(FCanceled, 0) <> 0) or
+                (Assigned(FContext) and (TInterlocked.Add(FContext.Canceled, 0) <> 0)) then
             begin
                 CompletedSuccessfully := False;
                 Break;

@@ -329,8 +329,8 @@ object EpochConverterForm: TEpochConverterForm
         Top = 38
         Width = 81
         Height = 23
-        Date = 46230.000000000000000000
-        Time = 0.440494085647515000
+        Date = 46230.00000000000000000
+        Time = 0.44049408564751500
         TabOrder = 0
         OnClick = dtpChange
       end
@@ -339,8 +339,8 @@ object EpochConverterForm: TEpochConverterForm
         Top = 38
         Width = 63
         Height = 23
-        Date = 46230.000000000000000000
-        Time = 0.440602685186604500
+        Date = 46230.00000000000000000
+        Time = 0.44060268518660450
         Kind = dtkTime
         TabOrder = 1
         OnClick = dtpChange

@@ -6,7 +6,7 @@ uses
     BaseFormUI,
     Core.Interfaces,
     GlobalHotkeyManager,
-    Snippet,
+    Core.Entities.Snippet,
     System.Actions,
     System.Classes,
     System.DateUtils,
@@ -156,6 +156,8 @@ type
         procedure tvCategoriesEdited(Sender: TObject; Node: TTreeNode; var S: string);
         procedure lvSnippetsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
         procedure lvTagsClick(Sender: TObject);
+        procedure lvTagsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+        procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
         procedure nTagEditorClick(Sender: TObject);
         procedure lvTagsEdited(Sender: TObject; Item: TListItem; var S: string);
         procedure nExitClick(Sender: TObject);
@@ -170,7 +172,7 @@ type
         procedure tvCategoriesEndDrag(Sender, Target: TObject; X, Y: Integer);
     private
         FHotItemIndex: Integer;
-        FFilterByTagID: Integer;
+        FFilterByTagIDs: TArray<Integer>;
         FCurrentSnippetID: Integer;
         FUserID: Integer;
         FFilterUserID: Integer;
@@ -180,8 +182,9 @@ type
         FIsDbDirty: Boolean;  // Флаг: "Были ли реальные изменения в БД?"
 
         procedure MarkDataChanged;
-        procedure ApplyTagFilter(TagID: Integer; const TagName: string);
+        procedure ApplyTagFilter(const TagIDs: TArray<Integer>; const TagNames: string);
         procedure ClearTagFilter;
+        procedure ClearTagSelection;
         procedure FillSnippetListView(const Snippets: TArray<TSnippetDTO>);
         function ExtractSnippetByListItem(Item: TListItem): TSnippetDTO;
         procedure FillUserInterfaceFromSnippet(const Snippet: TSnippetDTO);
@@ -236,7 +239,7 @@ uses
     AppStateManager,
     ArchiveBuilderFormUI,
     ArrayHelper,
-    Category,
+    Core.Entities.Category,
     ChmodFormUI,
     CommonConsts,
     CommonHelpers,
@@ -256,12 +259,12 @@ uses
     System.Math,
     System.Types,
     System.UITypes,
-    Tag,
+    Core.Entities.Tag,
     TagEditorUI,
     UI.Helpers,
     UI.HoverHelpManager,
     UI.StateLoader,
-    User,
+    Core.Entities.User,
     Vcl.FileCtrl,
     Winapi.CommCtrl,
     WindowMonitor,
@@ -432,7 +435,6 @@ begin
     FIgnoreCategoryChange := False;
 
     FHotItemIndex := -1;
-    FFilterByTagID := 0;
     FCurrentSnippetID := 0;
     FFilterUserID := 0;
 
@@ -469,7 +471,8 @@ begin
                 tvCategories.Enabled := True;
                 lvSnippets.Enabled := True;
 
-                // ВАЖНО: При открытии БД сниппет еще не выбран.
+                // ВАЖНО: При открытии БД сниппет еще не выбран, фильтр по тегам сбрасывается
+                SetLength(FFilterByTagIDs, 0);
                 UpdateUI(bfsSnippetDeselected);
             end;
 
@@ -523,8 +526,9 @@ begin
             begin
                 UpdateMenuState; // Отключит пункты "Изменить/Удалить сниппет"
 
-                // Сбрасываем теги
-                if Assigned(lvTags) and Assigned(AppContext.TagService) then
+                // Сбрасываем теги. При активном фильтре выделение тегов сохраняем,
+                // чтобы пользователь видел выбранную комбинацию тегов
+                if Assigned(lvTags) and Assigned(AppContext.TagService) and (Length(FFilterByTagIDs) = 0) then
                     TUIHelpers.FillTagListWithSelection(lvTags, AppContext.TagService.GetAllTags, []);
             end;
     end;
@@ -701,7 +705,8 @@ begin
     if Node = nil then
         Exit;
 
-    FFilterByTagID := 0;
+    SetLength(FFilterByTagIDs, 0);
+    ClearTagSelection;
     RefreshCurrentSnippetList;
     UpdateMenuState;
 end;
@@ -743,13 +748,12 @@ begin
         ParentID := Integer(IntPtr(Node.Data));
 
     TargetUserID := GetWorkspaceUserID(Node);
-    NewCatName := Trim(
-        InputBox(
-            TUIStateLoader.GetMessage('Category.NewDefaultName'),
-            TUIStateLoader.GetMessage('Category.NewNamePrompt'),
-            TUIStateLoader.GetMessage('Category.NewDefaultName')
-        )
-    );
+    NewCatName := TUIStateLoader.GetMessage('Category.NewDefaultName');
+    MessagesHandler.AskInput(
+        TUIStateLoader.GetMessage('Category.NewDefaultName'),
+        TUIStateLoader.GetMessage('Category.NewNamePrompt'),
+        NewCatName);
+    NewCatName := Trim(NewCatName);
 
     if NewCatName = '' then
         Exit;
@@ -963,6 +967,11 @@ end;
 
 procedure TMainForm.DoInitialize;
 begin
+    KeyPreview := True;
+    OnKeyDown := FormKeyDown;
+
+    lvTags.OnMouseDown := lvTagsMouseDown;
+
     // Строим меню языков в StatusBar
     LoadAvailableLanguages;
 
@@ -1214,7 +1223,7 @@ var
     NewName: string;
     NewID: Integer;
 begin
-    if not InputQuery(
+    if not MessagesHandler.AskInput(
         TUIStateLoader.GetMessage('Tag.NewDefaultName'),
         TUIStateLoader.GetMessage('Tag.NewPrompt'),
         NewName
@@ -1249,6 +1258,7 @@ procedure TMainForm.DoDeleteTag;
 var
     Item: TListItem;
     TagID: Integer;
+    FilteredID: Integer;
 begin
     Item := lvTags.Selected;
     if Item = nil then
@@ -1265,10 +1275,14 @@ begin
         AppContext.TagService.DeleteTag(TagID);
         Item.Delete;
 
-        if FFilterByTagID = TagID then
-            ClearTagFilter;
+        for FilteredID in FFilterByTagIDs do
+            if FilteredID = TagID then
+            begin
+                ClearTagFilter;
+                Break;
+            end;
 
-        if FCurrentSnippetID > 0 then
+        if (FCurrentSnippetID > 0) and (Length(FFilterByTagIDs) = 0) then
             TUIHelpers.FillTagListWithSelection(
                 lvTags,
                 AppContext.TagService.GetAllTags,
@@ -1334,20 +1348,34 @@ begin
         tmrAutoSync.Enabled := True;
 end;
 
-procedure TMainForm.ApplyTagFilter(TagID: Integer; const TagName: string);
+procedure TMainForm.ApplyTagFilter(const TagIDs: TArray<Integer>; const TagNames: string);
 begin
-    FFilterByTagID := TagID;
-    FillSnippetListView(AppContext.SnippetService.GetSnippetsByTag(TagID));
-    sbBottom.Panels[0].Text := TUIStateLoader.GetMessage('Tag.FilterPrefix', [TagName]);
+    FFilterByTagIDs := TagIDs;
+
+    // Вызов сервиса. MatchAll = True, чтобы показывать сниппеты,
+    // в которых присутствуют СТРОГО ВСЕ выбранные теги. False покажет сниппеты с ЛЮБЫМ из тегов.
+    FillSnippetListView(AppContext.SnippetService.GetSnippetsByTags(TagIDs, False));
+
+    sbBottom.Panels[0].Text := TUIStateLoader.GetMessage('Tag.FilterPrefix', [TagNames]);
+end;
+
+procedure TMainForm.ClearTagSelection;
+var
+    I: Integer;
+begin
+    for I := 0 to lvTags.Items.Count - 1 do
+        lvTags.Items[I].Selected := False;
 end;
 
 procedure TMainForm.ClearTagFilter;
 begin
-    FFilterByTagID := 0;
+    ClearTagSelection;
+
     if tvCategories.Selected <> nil then
         tvCategoriesChange(tvCategories, tvCategories.Selected)
     else
         lvSnippets.Items.Clear;
+    SetLength(FFilterByTagIDs, 0);
     sbBottom.Panels[0].Text := TUIStateLoader.GetMessage('Tag.FilterReset');
 end;
 
@@ -1584,10 +1612,15 @@ begin
     if User.ID > 0 then
         sbBottom.Panels[0].Text := Format('[%d] %s (ID: %d) CID: %d', [Snippet.ID, User.Name, Snippet.UserID, Snippet.CategoryID]);
 
-    // Отрисовка тегов через TUIHelpers
-    AllTags := AppContext.TagService.GetAllTags;
-    SnippetTags := AppContext.TagService.GetSnippetTags(Snippet.ID);
-    TUIHelpers.FillTagListWithSelection(lvTags, AllTags, SnippetTags);
+    // Отрисовка тегов через TUIHelpers.
+    // При активном фильтре по тегам список не перерисовываем:
+    // выделение фильтра должно оставаться видимым до его сброса пользователем
+    if Length(FFilterByTagIDs) = 0 then
+    begin
+        AllTags := AppContext.TagService.GetAllTags;
+        SnippetTags := AppContext.TagService.GetSnippetTags(Snippet.ID);
+        TUIHelpers.FillTagListWithSelection(lvTags, AllTags, SnippetTags);
+    end;
 end;
 
 function TMainForm.IsVirtualCategory(Node: TTreeNode): Boolean;
@@ -1600,20 +1633,56 @@ begin
     Result := Assigned(Node) and (Node.Data = nil) and not IsVirtualCategory(Node);
 end;
 
+procedure TMainForm.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+    if (Key = VK_ESCAPE) and (Length(FFilterByTagIDs) > 0) and not lvTags.IsEditing then
+    begin
+        ClearTagFilter;
+        Key := 0;
+    end;
+end;
+
+procedure TMainForm.lvTagsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+    if Button <> mbLeft then
+        Exit;
+
+    if (lvTags.GetItemAt(X, Y) = nil) and
+        ((lvTags.SelCount > 0) or (Length(FFilterByTagIDs) > 0)) then
+        ClearTagFilter;
+end;
+
 procedure TMainForm.lvTagsClick(Sender: TObject);
 var
-    Item: TListItem;
+    i: Integer;
+    TagIDs: TArray<Integer>;
+    TagNames: TStringList;
 begin
     UpdateMenuState;
 
-    Item := lvTags.Selected;
-    if Item = nil then
+    if lvTags.SelCount = 0 then
+    begin
+        ClearTagFilter;
         Exit;
+    end;
 
-    if FFilterByTagID = Integer(IntPtr(Item.Data)) then
-        ClearTagFilter
-    else
-        ApplyTagFilter(Integer(IntPtr(Item.Data)), Item.Caption);
+    TagNames := TStringList.Create;
+    try
+        for i := 0 to lvTags.Items.Count - 1 do
+        begin
+            if lvTags.Items[i].Selected then
+            begin
+                SetLength(TagIDs, Length(TagIDs) + 1);
+                TagIDs[High(TagIDs)] := Integer(IntPtr(lvTags.Items[i].Data));
+                TagNames.Add(lvTags.Items[i].Caption);
+            end;
+        end;
+
+        // Передаем массив ID и строку с названиями через запятую (например, "Delphi, SQL, Python")
+        ApplyTagFilter(TagIDs, TagNames.CommaText);
+    finally
+        TagNames.Free;
+    end;
 end;
 
 procedure TMainForm.nExitClick(Sender: TObject);
@@ -1832,7 +1901,7 @@ begin
         TTask.Run(DoSyncLogic)  // Идеально плавный фоновый процесс
     else
     begin
-        Application.ProcessMessages;
+        sbBottom.Update;
         DoSyncLogic();          // Синхронный вызов при выходе
     end;
 end;

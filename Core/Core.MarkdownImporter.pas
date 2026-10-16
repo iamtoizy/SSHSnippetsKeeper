@@ -1,22 +1,24 @@
-unit Core.MarkdownImporter;
+п»їunit Core.MarkdownImporter;
 
 interface
 
 uses
-    Category,
+    Core.Entities.Category,
     Core.Interfaces,
-    Snippet,
+
+    Core.Entities.Snippet,
     System.Classes,
     System.DateUtils,
     System.Generics.Collections,
     System.IOUtils,
     System.SysUtils,
-    Tag,
-    User
+    Core.Entities.Tag,
+
+    Core.Entities.User
     ;
 
 type
-    // Временная структура парсинга одного .md файла
+    // Р’СЂРµРјРµРЅРЅР°СЏ СЃС‚СЂСѓРєС‚СѓСЂР° РїР°СЂСЃРёРЅРіР° РѕРґРЅРѕРіРѕ .md С„Р°Р№Р»Р°
     TParsedMarkdown = record
         ID: Integer;
         Title: string;
@@ -32,7 +34,7 @@ type
         class function ParseMarkdownFile(const FilePath: string; out Parsed: TParsedMarkdown): Boolean;
         class function ExtractTagsFromYaml(const TagsStr: string): TArray<string>;
 
-        // Разрешает путь к категории: создает юзера и дерево категорий на основе папок на диске
+        // Р Р°Р·СЂРµС€Р°РµС‚ РїСѓС‚СЊ Рє РєР°С‚РµРіРѕСЂРёРё: СЃРѕР·РґР°РµС‚ СЋР·РµСЂР° Рё РґРµСЂРµРІРѕ РєР°С‚РµРіРѕСЂРёР№ РЅР° РѕСЃРЅРѕРІРµ РїР°РїРѕРє РЅР° РґРёСЃРєРµ
         class function ResolveCategoryAndUserFromPath(
             const AppContext: IAppContext;
             const BaseDir, FilePath: string;
@@ -40,7 +42,7 @@ type
             CatCache: TDictionary<string, Integer>;
             out OutUserID, OutCategoryID: Integer): Boolean;
     public
-        // Главный метод: сканирует папку и импортирует/обновляет все .md файлы в БД
+        // Р“Р»Р°РІРЅС‹Р№ РјРµС‚РѕРґ: СЃРєР°РЅРёСЂСѓРµС‚ РїР°РїРєСѓ Рё РёРјРїРѕСЂС‚РёСЂСѓРµС‚/РѕР±РЅРѕРІР»СЏРµС‚ РІСЃРµ .md С„Р°Р№Р»С‹ РІ Р‘Р”
         class procedure ImportFromDirectory(const AppContext: IAppContext; const BaseDir: string);
     end;
 
@@ -56,7 +58,7 @@ var
 begin
     ResultList := TList<string>.Create;
     try
-        // Превращаем '["tag1", "tag2"]' в простую строку 'tag1, tag2'
+        // РџСЂРµРІСЂР°С‰Р°РµРј '["tag1", "tag2"]' РІ РїСЂРѕСЃС‚СѓСЋ СЃС‚СЂРѕРєСѓ 'tag1, tag2'
         CleanStr := TagsStr.Replace('[', '').Replace(']', '').Replace('"', '').Replace('''', '');
         Parts := CleanStr.Split([',']);
 
@@ -92,7 +94,7 @@ begin
     CodeLines := TList<string>.Create;
     try
         // ---------------------------------------------------------------------
-        // 1. Извлекаем YAML Frontmatter (между первыми двумя '---')
+        // 1. РР·РІР»РµРєР°РµРј YAML Frontmatter (РјРµР¶РґСѓ РїРµСЂРІС‹РјРё РґРІСѓРјСЏ '---')
         // ---------------------------------------------------------------------
         FirstDashIdx := -1;
         SecondDashIdx := -1;
@@ -116,7 +118,7 @@ begin
             for I := FirstDashIdx + 1 to SecondDashIdx - 1 do
                 YamlLines.Add(Lines[I]);
 
-            // Парсим ключи YAML
+            // РџР°СЂСЃРёРј РєР»СЋС‡Рё YAML
             for Line in YamlLines do
             begin
                 var ColonIdx := Line.IndexOf(':');
@@ -124,7 +126,7 @@ begin
                 begin
                     Key := Trim(Line.Substring(0, ColonIdx)).ToLower;
                     Value := Trim(Line.Substring(ColonIdx + 1));
-                    // Очищаем значение от кавычек
+                    // РћС‡РёС‰Р°РµРј Р·РЅР°С‡РµРЅРёРµ РѕС‚ РєР°РІС‹С‡РµРє
                     if (Value.StartsWith('"') and Value.EndsWith('"')) or
                        (Value.StartsWith('''') and Value.EndsWith('''')) then
                         Value := Value.Substring(1, Value.Length - 2);
@@ -139,7 +141,7 @@ begin
         end;
 
         // ---------------------------------------------------------------------
-        // 2. Парсим Тело (Комментарий и Блок Кода)
+        // 2. РџР°СЂСЃРёРј РўРµР»Рѕ (РљРѕРјРјРµРЅС‚Р°СЂРёР№ Рё Р‘Р»РѕРє РљРѕРґР°)
         // ---------------------------------------------------------------------
         var StartBodyIdx := 0;
         if SecondDashIdx <> -1 then
@@ -155,14 +157,14 @@ begin
             if LowerLine.StartsWith('```') then
             begin
                 InCodeBlock := not InCodeBlock;
-                Continue; // Пропускаем сами строки с маркдауновскими ```
+                Continue; // РџСЂРѕРїСѓСЃРєР°РµРј СЃР°РјРё СЃС‚СЂРѕРєРё СЃ РјР°СЂРєРґР°СѓРЅРѕРІСЃРєРёРјРё ```
             end;
 
             if InCodeBlock then
                 CodeLines.Add(Line)
             else
             begin
-                // Игнорируем заголовок первого уровня `# Title`, если он совпадает с Title
+                // РРіРЅРѕСЂРёСЂСѓРµРј Р·Р°РіРѕР»РѕРІРѕРє РїРµСЂРІРѕРіРѕ СѓСЂРѕРІРЅСЏ `# Title`, РµСЃР»Рё РѕРЅ СЃРѕРІРїР°РґР°РµС‚ СЃ Title
                 if LowerLine.StartsWith('# ') then Continue;
                 BodyLines.Add(Line);
             end;
@@ -171,7 +173,7 @@ begin
         Parsed.Comment := Trim(string.Join(sLineBreak, BodyLines.ToArray));
         Parsed.Content := string.Join(sLineBreak, CodeLines.ToArray);
 
-        // Фоллбэк для заголовка: если в YAML не было title, берем имя файла
+        // Р¤РѕР»Р»Р±СЌРє РґР»СЏ Р·Р°РіРѕР»РѕРІРєР°: РµСЃР»Рё РІ YAML РЅРµ Р±С‹Р»Рѕ title, Р±РµСЂРµРј РёРјСЏ С„Р°Р№Р»Р°
         if Parsed.Title = '' then
             Parsed.Title := TPath.GetFileNameWithoutExtension(FilePath);
 
@@ -208,14 +210,14 @@ begin
     PathParts := RelPath.Split([TPath.DirectorySeparatorChar]);
     if Length(PathParts) = 0 then Exit;
 
-    UserName := PathParts[0].ToLower; // Сравниваем в нижнем регистре для надежности
+    UserName := PathParts[0].ToLower; // РЎСЂР°РІРЅРёРІР°РµРј РІ РЅРёР¶РЅРµРј СЂРµРіРёСЃС‚СЂРµ РґР»СЏ РЅР°РґРµР¶РЅРѕСЃС‚Рё
 
-    // ИЩЕМ В КЭШЕ
+    // РР©Р•Рњ Р’ РљР­РЁР•
     if not UserCache.TryGetValue(UserName, OutUserID) then
     begin
-        // Если нет - создаем в БД и добавляем в кэш
+        // Р•СЃР»Рё РЅРµС‚ - СЃРѕР·РґР°РµРј РІ Р‘Р” Рё РґРѕР±Р°РІР»СЏРµРј РІ РєСЌС€
         NewUser := Default(TUserDTO);
-        NewUser.Name := PathParts[0]; // Оригинальный регистр
+        NewUser.Name := PathParts[0]; // РћСЂРёРіРёРЅР°Р»СЊРЅС‹Р№ СЂРµРіРёСЃС‚СЂ
         OutUserID := AppContext.UserService.AddUser(NewUser);
         UserCache.Add(UserName, OutUserID);
     end;
@@ -225,10 +227,10 @@ begin
     begin
         CatName := PathParts[I];
 
-        // Уникальный ключ для категории: "ИДЮзера_ИДРодителя_ИмяКатегории"
+        // РЈРЅРёРєР°Р»СЊРЅС‹Р№ РєР»СЋС‡ РґР»СЏ РєР°С‚РµРіРѕСЂРёРё: "РР”Р®Р·РµСЂР°_РР”Р РѕРґРёС‚РµР»СЏ_РРјСЏРљР°С‚РµРіРѕСЂРёРё"
         CatCacheKey := Format('%d_%d_%s', [OutUserID, ParentCatID, CatName.ToLower]);
 
-        // ИЩЕМ В КЭШЕ
+        // РР©Р•Рњ Р’ РљР­РЁР•
         if not CatCache.TryGetValue(CatCacheKey, CurrentCatID) then
         begin
             NewCat := Default(TCategoryDTO);
@@ -268,7 +270,7 @@ begin
     UserCache := TDictionary<string, Integer>.Create;
     CatCache := TDictionary<string, Integer>.Create;
     try
-        // === ПРЕДЗАГРУЗКА КЭША ===
+        // === РџР Р•Р”Р—РђР“Р РЈР—РљРђ РљР­РЁРђ ===
         for User in AppContext.UserService.GetAllUsers do
             UserCache.Add(User.Name.ToLower, User.ID);
 
@@ -282,7 +284,7 @@ begin
         begin
             if not ParseMarkdownFile(FilePath, Parsed) then Continue;
 
-            // Передаем кэш внутрь
+            // РџРµСЂРµРґР°РµРј РєСЌС€ РІРЅСѓС‚СЂСЊ
             if not ResolveCategoryAndUserFromPath(AppContext, BaseDir, FilePath, UserCache, CatCache, UserID, CategoryID) then Continue;
 
             TagIDs := TList<Integer>.Create;

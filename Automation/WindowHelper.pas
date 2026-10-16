@@ -1,4 +1,4 @@
-unit WindowHelper;
+п»їunit WindowHelper;
 
 interface
 
@@ -17,13 +17,14 @@ type
         FMacroEngine: TMacroEngine;
         FMacroThread: TMacroThread;
         FSettingsManager: ISettingsManager;
+        FActiveSettings: TAppSettings;
 
         procedure Reset;
         procedure SendUnicodeChar(CharCode: Word);
         procedure ActivateTargetWindow;
         procedure OnMacroTerminate(Sender: TObject);
 
-        // Явная реализация IUnknown для отключения reference counting
+        // РЇРІРЅР°СЏ СЂРµР°Р»РёР·Р°С†РёСЏ IUnknown РґР»СЏ РѕС‚РєР»СЋС‡РµРЅРёСЏ reference counting
         function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
         function _AddRef: Integer; stdcall;
         function _Release: Integer; stdcall;
@@ -71,19 +72,17 @@ begin
     begin
         FMacroThread.Cancel;
 
-        // Grace period for the running macro
+        // Р–РґС‘Рј Р·Р°РІРµСЂС€РµРЅРёСЏ РїРѕС‚РѕРєР°
         WaitResult := WaitForSingleObject(FMacroThread.Handle, 2000);
 
         if WaitResult = WAIT_OBJECT_0 then
         begin
-            // Thread finished - the object frees itself (FreeOnTerminate), just drop the reference
+            // РџРѕС‚РѕРє Р·Р°РІРµСЂС€РёР»СЃСЏ РЅРѕСЂРјР°Р»СЊРЅРѕ - FreeOnTerminate СѓР¶Рµ СѓРЅРёС‡С‚РѕР¶РёР» РѕР±СЉРµРєС‚
+            // РџСЂРѕСЃС‚Рѕ РѕР±РЅСѓР»СЏРµРј СѓРєР°Р·Р°С‚РµР»СЊ
             FMacroThread := nil;
         end
         else
         begin
-            // TerminateThread/Free of a still running thread is unsafe (AV, loader lock).
-            // Detach instead: Cancel was requested, the thread will finish on its own
-            // and free itself via FreeOnTerminate.
             LogMsg('TWindowHelper.Destroy: macro thread did not stop in 2s, detached (FreeOnTerminate)');
             FMacroThread.FreeOnTerminate := True;
             FMacroThread := nil;
@@ -141,7 +140,7 @@ end;
 
 procedure TWindowHelper.OnMacroTerminate(Sender: TObject);
 begin
-    // Обнуляем указатель только если это тот самый поток, который мы отслеживали
+    // РћР±РЅСѓР»СЏРµРј СѓРєР°Р·Р°С‚РµР»СЊ С‚РѕР»СЊРєРѕ РµСЃР»Рё СЌС‚Рѕ С‚РѕС‚ СЃР°РјС‹Р№ РїРѕС‚РѕРє, РєРѕС‚РѕСЂС‹Р№ РјС‹ РѕС‚СЃР»РµР¶РёРІР°Р»Рё
     if Sender = FMacroThread then
         FMacroThread := nil;
 end;
@@ -180,7 +179,7 @@ begin
 
     SendInput(Length(Inputs), Inputs[0], SizeOf(TInput));
 
-    Sleep(FSettingsManager.Data.WindowHelper.KeyPressInterval);
+    Sleep(FActiveSettings.WindowHelper.KeyPressInterval);
 end;
 
 procedure TWindowHelper.PressKey(Key: Word);
@@ -198,7 +197,7 @@ begin
 
     SendInput(Length(Inputs), Inputs[0], SizeOf(TInput));
 
-    Sleep(FSettingsManager.Data.WindowHelper.KeyPressInterval);
+    Sleep(FActiveSettings.WindowHelper.KeyPressInterval);
 end;
 
 function TWindowHelper.QueryInterface(const IID: TGUID; out Obj): HResult;
@@ -217,10 +216,10 @@ begin
         Exit;
 
     SetForegroundWindow(FWindowHelperInfo.Handle);
-    Sleep(FSettingsManager.Data.WindowHelper.ActivationDelay);
+    Sleep(FActiveSettings.WindowHelper.ActivationDelay);
 
-    ActivateTargetWindow; // либо вообще SetForegroundWindow(FWindow.Handle);
-    Sleep(FSettingsManager.Data.WindowHelper.SetFocusDelay);
+    ActivateTargetWindow; // Р»РёР±Рѕ РІРѕРѕР±С‰Рµ SetForegroundWindow(FWindow.Handle);
+    Sleep(FActiveSettings.WindowHelper.SetFocusDelay);
 
     for I := 1 to Length(Text) do
     begin
@@ -229,7 +228,7 @@ begin
         else
             SendUnicodeChar(Ord(Text[I]));
 
-        Sleep(FSettingsManager.Data.WindowHelper.KeyPressInterval);
+        Sleep(FActiveSettings.WindowHelper.KeyPressInterval);
     end;
 end;
 
@@ -237,8 +236,9 @@ procedure TWindowHelper.TypeTextIntoWindowWithContext(const Text: string; Contex
 var
     Actions: TArray<IScriptAction>;
 begin
+    FActiveSettings := FSettingsManager.Data;
     {$IFDEF DEBUG}
-    OutputDebugString(PChar(Format('[WinHelper] TypeTextIntoWindowWithContext: Text="%s"', [Text])));
+    OutputDebugString(PChar(Format('[WinHelper] TypeTextIntoWindowWithContext: TextLength=%d', [Length(Text)])));
     {$ENDIF}
 
     if Text = '' then
@@ -246,7 +246,7 @@ begin
         {$IFDEF DEBUG}
         OutputDebugString('[WinHelper] ERROR: Text is EMPTY');
         {$ENDIF}
-        Context.Free;  // Освобождаем контекст
+        Context.Free;  // РћСЃРІРѕР±РѕР¶РґР°РµРј РєРѕРЅС‚РµРєСЃС‚
         Exit;
     end;
 
@@ -262,19 +262,19 @@ begin
 
         {$IFDEF DEBUG}
         OutputDebugString(PChar(Format('[WinHelper] Parsed %d actions', [Length(Actions)])));
-        // Собираем все InputQuery ДО запуска потока
+        // РЎРѕР±РёСЂР°РµРј РІСЃРµ InputQuery Р”Рћ Р·Р°РїСѓСЃРєР° РїРѕС‚РѕРєР°
         OutputDebugString('[WinHelper] Pre-collecting inputs...');
         {$ENDIF}
 
         FMacroEngine.PreCollectInputs(Actions, Context);
 
-        // Если пользователь отменил ввод - прерываем
-        if Context.UserCancelled then
+        // Р•СЃР»Рё РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РѕС‚РјРµРЅРёР» РІРІРѕРґ - РїСЂРµСЂС‹РІР°РµРј
+        if Context.UserCanceled then
         begin
             {$IFDEF DEBUG}
             OutputDebugString('[WinHelper] User cancelled input, macro will NOT start');
             {$ENDIF}
-            Context.Free;  // Освобождаем контекст
+            Context.Free;  // РћСЃРІРѕР±РѕР¶РґР°РµРј РєРѕРЅС‚РµРєСЃС‚
             Exit;
         end;
 
@@ -282,7 +282,7 @@ begin
         OutputDebugString('[WinHelper] Pre-collection completed successfully');
         {$ENDIF}
 
-        // Создаём и запускаем поток только если ввод не был отменён
+        // РЎРѕР·РґР°С‘Рј Рё Р·Р°РїСѓСЃРєР°РµРј РїРѕС‚РѕРє С‚РѕР»СЊРєРѕ РµСЃР»Рё РІРІРѕРґ РЅРµ Р±С‹Р» РѕС‚РјРµРЅС‘РЅ
         FMacroThread := TMacroThread.Create(Actions, Context);
         FMacroThread.OnTerminate := OnMacroTerminate;
 
@@ -290,7 +290,7 @@ begin
         OutputDebugString('[WinHelper] Thread started');
         {$ENDIF}
     except
-        Context.Free; // Гарантированно освобождаем при сбое парсинга
+        Context.Free; // Р“Р°СЂР°РЅС‚РёСЂРѕРІР°РЅРЅРѕ РѕСЃРІРѕР±РѕР¶РґР°РµРј РїСЂРё СЃР±РѕРµ РїР°СЂСЃРёРЅРіР°
         raise;
     end;
 end;
@@ -300,6 +300,7 @@ var
     Context: TMacroContext;
     Actions: TArray<IScriptAction>;
 begin
+    FActiveSettings := FSettingsManager.Data;
     if Assigned(FMacroThread) then
     begin
         FMacroThread.Cancel;
@@ -317,12 +318,12 @@ end;
 
 function TWindowHelper._AddRef: Integer;
 begin
-    Result := -1; // Возвращаем -1, чтобы отключить reference counting
+    Result := -1; // Р’РѕР·РІСЂР°С‰Р°РµРј -1, С‡С‚РѕР±С‹ РѕС‚РєР»СЋС‡РёС‚СЊ reference counting
 end;
 
 function TWindowHelper._Release: Integer;
 begin
-    Result := -1; // Возвращаем -1, чтобы отключить reference counting
+    Result := -1; // Р’РѕР·РІСЂР°С‰Р°РµРј -1, С‡С‚РѕР±С‹ РѕС‚РєР»СЋС‡РёС‚СЊ reference counting
 end;
 
 procedure TWindowHelper.ActivateTargetWindow;

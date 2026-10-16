@@ -1,4 +1,4 @@
-unit PasswordService;
+﻿unit PasswordService;
 
 interface
 
@@ -10,17 +10,17 @@ uses
     ;
 
 const
-    // ��������� ��� Windows DPAPI (RAM Encryption)
+    // Константы для Windows DPAPI (RAM Encryption)
     CRYPTPROTECTMEMORY_BLOCK_SIZE = 16;
     CRYPTPROTECTMEMORY_SAME_PROCESS = 0;
 
-// ������ ����������������� ������� ��� ���������� � ������� ������
+// Импорт криптографических функций для шифрования и очистки памяти
 function CryptProtectMemory(pDataIn: Pointer; cbDataIn: Cardinal; dwFlags: Cardinal): BOOL; stdcall; external 'Crypt32.dll';
 function CryptUnprotectMemory(pDataIn: Pointer; cbDataIn: Cardinal; dwFlags: Cardinal): BOOL; stdcall; external 'Crypt32.dll';
 function RtlGenRandom(RandomBuffer: Pointer; RandomBufferLength: ULONG): BOOLEAN; stdcall; external 'advapi32.dll' name 'SystemFunction036';
 
 type
-    // ���������� ���������: ������ ������� ���������� � RAM
+    // Внутренняя структура: пароль надежно зашифрован в RAM
     TEncryptedHistoryItem = record
         EncryptedPassword: TBytes;
         OriginalLen: Integer;
@@ -29,7 +29,7 @@ type
         CreatedAt: TDateTime;
     end;
 
-    // ����� ��� �������� ������� � ������������� ������
+    // Буфер для хранения паролей с автоудалением старых
     TPasswordHistoryBuffer = class
     private
         FItems: TArray<TEncryptedHistoryItem>;
@@ -65,7 +65,7 @@ type
         FHistory: TPasswordHistoryBuffer;
         FHistoryLock: TCriticalSection;
 
-        // DPAPI Helpers (������ �� �������� ����)
+        // DPAPI Helpers (Скрыты от внешнего мира)
         function ProtectString(const S: string; out OriginalBytes: Integer): TBytes;
         function DecryptHistoryItem(const Item: TEncryptedHistoryItem): string;
 
@@ -94,7 +94,7 @@ type
         function CalculateEntropy(Length, PoolSize: Integer): Double;
         function GenerateCustomPassword(const Settings: TCustomPasswordSettings; Length: Integer; UniqueChars: Boolean): string;
 
-        // ������� ���������� ����������� ������������ DTO
+        // История возвращает стандартный интерфейсный DTO
         function GetHistory: TArray<TPasswordHistoryItem>;
         procedure ClearHistory;
     end;
@@ -133,7 +133,7 @@ end;
 
 { TPasswordService }
 
-// DPAPI: ���������� RAM
+// DPAPI: Шифрование RAM
 function TPasswordService.ProtectString(const S: string; out OriginalBytes: Integer): TBytes;
 var
     RawBytes: TBytes;
@@ -188,7 +188,7 @@ begin
         FHistoryLock.Release;
     end;
 
-    // ������������� ������������� �������� � ������������ ������ ��� UI
+    // Распаковываем зашифрованные элементы в интерфейсный формат для UI
     SetLength(Result, Length(EncryptedItems));
     for I := 0 to High(EncryptedItems) do
     begin
@@ -292,7 +292,7 @@ begin
     Result := Length(DummyPool);
 end;
 
-// ����������
+// Генераторы
 function TPasswordService.GenerateStandardSequence(const FullPool, FirstCharPool: string; Length: Integer): string;
 var I: Integer;
 begin

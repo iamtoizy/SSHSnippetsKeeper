@@ -1,4 +1,4 @@
-unit MacroInputTypes;
+ï»¿unit MacroInputTypes;
 
 interface
 
@@ -20,10 +20,10 @@ type
         Executor: ITextExecutor;
         OnInput: TInputCallback;
         OnConfirm: TConfirmCallback;
-        Cancelled: Integer;
+        Canceled: Integer;
         CurrentInputType: TMacroInputType;
         CurrentDefaultValue: string;
-        UserCancelled: Boolean;
+        UserCanceled: Boolean;
         SnippetID: Integer;
         UserID: Integer;
     end;
@@ -117,9 +117,9 @@ begin
 
     while GetTickCount - StartTick < FMilliseconds do
     begin
-        // Ïðîâåðÿåì îáà ôëàãà: ïîëüçîâàòåëüñêóþ îòìåíó È ñèñòåìíîå çàâåðøåíèå ïîòîêà
+        // ÐŸÑ€Ð¾Ð²ÐµÑ€ÑÐµÐ¼ Ð¾Ð±Ð° Ñ„Ð»Ð°Ð³Ð°: Ð¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ñ‚ÐµÐ»ÑŒÑÐºÑƒÑŽ Ð¾Ñ‚Ð¼ÐµÐ½Ñƒ Ð˜ ÑÐ¸ÑÑ‚ÐµÐ¼Ð½Ð¾Ðµ Ð·Ð°Ð²ÐµÑ€ÑˆÐµÐ½Ð¸Ðµ Ð¿Ð¾Ñ‚Ð¾ÐºÐ°
         if Assigned(FContext) and
-           (TInterlocked.CompareExchange(FContext.Cancelled, 0, 0) <> 0) then
+           (TInterlocked.CompareExchange(FContext.Canceled, 0, 0) <> 0) then
             Exit;
 
         if TThread.CurrentThread.CheckTerminated then

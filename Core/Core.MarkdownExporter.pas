@@ -1,11 +1,11 @@
-unit Core.MarkdownExporter;
+п»їunit Core.MarkdownExporter;
 
 interface
 
 uses
     Core.Interfaces,
-    Category,
-    User,
+    Core.Entities.Category,
+    Core.Entities.User,
     System.SysUtils,
     System.Classes,
     System.IOUtils,
@@ -18,7 +18,7 @@ type
         const MAX_FILENAME_LENGTH = 80;
         class function SanitizeFileName(const Name: string): string;
 
-        // ВАЖНО: Теперь передаем закэшированные словари вместо AppContext
+        // РџРµСЂРµРґР°РµРј Р·Р°РєСЌС€РёСЂРѕРІР°РЅРЅС‹Рµ СЃР»РѕРІР°СЂРё РІРјРµСЃС‚Рѕ AppContext
         class function BuildCategoryPath(
             CatDict: TDictionary<Integer, TCategoryDTO>;
             UserDict: TDictionary<Integer, TUserDTO>;
@@ -30,12 +30,13 @@ type
 implementation
 
 uses
-    Tag,
-    Snippet
+    Core.Entities.Tag,
+
+    Core.Entities.Snippet
     ;
 
 class function TMarkdownExporter.SanitizeFileName(const Name: string): string;
-// ... (остается БЕЗ изменений, как было раньше) ...
+// ... (РѕСЃС‚Р°РµС‚СЃСЏ Р‘Р•Р— РёР·РјРµРЅРµРЅРёР№, РєР°Рє Р±С‹Р»Рѕ СЂР°РЅСЊС€Рµ) ...
 var
     InvalidChars: TArray<Char>;
     C: Char;
@@ -67,14 +68,14 @@ begin
         CurrentCatID := CategoryID;
         while CurrentCatID > 0 do
         begin
-            // ЧИТАЕМ ИЗ ОПЕРАТИВНОЙ ПАМЯТИ (0 SQL запросов!)
+            // Р§РРўРђР•Рњ РР— РћРџР•Р РђРўРР’РќРћР™ РџРђРњРЇРўР (0 SQL Р·Р°РїСЂРѕСЃРѕРІ)
             if not CatDict.TryGetValue(CurrentCatID, Cat) then Break;
 
             PathParts.Add(SanitizeFileName(Cat.Name));
             CurrentCatID := Cat.ParentID;
         end;
 
-        // ЧИТАЕМ ИЗ ОПЕРАТИВНОЙ ПАМЯТИ
+        // Р§РРўРђР•Рњ РР— РћРџР•Р РђРўРР’РќРћР™ РџРђРњРЇРўР
         if UserDict.TryGetValue(UserID, User) then
             PathParts.Add(SanitizeFileName(User.Name))
         else
@@ -109,7 +110,7 @@ begin
     CatDict := TDictionary<Integer, TCategoryDTO>.Create;
     UserDict := TDictionary<Integer, TUserDTO>.Create;
     try
-        // === ПРЕДЗАГРУЗКА КЭША (Всего 2 SQL запроса на всю базу!) ===
+        // === РџР Р•Р”Р—РђР“Р РЈР—РљРђ РљР­РЁРђ (Р’СЃРµРіРѕ 2 SQL Р·Р°РїСЂРѕСЃР° РЅР° РІСЃСЋ Р±Р°Р·Сѓ) ===
         for Cat in AppContext.CategoryService.GetAllCategories(0) do
             CatDict.Add(Cat.ID, Cat);
 
@@ -121,7 +122,7 @@ begin
 
         for Snippet in Snippets do
         begin
-            // Передаем кэш внутрь
+            // РџРµСЂРµРґР°РµРј РєСЌС€ РІРЅСѓС‚СЂСЊ
             CatPath := BuildCategoryPath(CatDict, UserDict, Snippet.UserID, Snippet.CategoryID);
             FullDir := TPath.Combine(BaseDir, CatPath);
             ForceDirectories(FullDir);
@@ -160,14 +161,14 @@ begin
             TFile.WriteAllText(FinalFileName, FileContent, TEncoding.UTF8);
         end;
 
-        // БЛОК ОЧИСТКИ (Остается без изменений)
+        // Р‘Р›РћРљ РћР§РРЎРўРљР
         ExistingFiles := TDirectory.GetFiles(BaseDir, '*.md', TSearchOption.soAllDirectories);
         for OldFile in ExistingFiles do
         begin
             if not GeneratedFiles.ContainsKey(LowerCase(OldFile)) then
             begin
                 try TFile.Delete(OldFile);
-                except on E: Exception do raise Exception.CreateFmt('Не удалось удалить файл: "%s"', [ExtractFileName(OldFile)]); end;
+                except on E: Exception do raise Exception.CreateFmt('пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ: "%s"', [ExtractFileName(OldFile)]); end;
             end;
         end;
 
@@ -180,7 +181,7 @@ begin
             if Dir.Contains(TPath.DirectorySeparatorChar + '.git') or Dir.EndsWith(TPath.DirectorySeparatorChar + '.git') then Continue;
             try
                 if TDirectory.IsEmpty(Dir) then TDirectory.Delete(Dir);
-            except on E: Exception do raise Exception.CreateFmt('Не удалось удалить папку: "%s"', [ExtractFileName(Dir)]); end;
+            except on E: Exception do raise Exception.CreateFmt('пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ: "%s"', [ExtractFileName(Dir)]); end;
         end;
 
     finally

@@ -8,7 +8,7 @@ uses
     BashCompletionEngine,
     Core.Interfaces,
     CustomBashSyn,
-    Snippet,
+    Core.Entities.Snippet,
     SynCompletionProposal,
     SynEdit,
     SynEditHighlighter,
@@ -161,7 +161,7 @@ uses
     System.DateUtils,
     System.Generics.Collections,
     System.SysUtils,
-    Tag,
+    Core.Entities.Tag,
     UI.Helpers,
     UI.HoverHelpManager,
     UI.StateLoader,
@@ -232,8 +232,8 @@ begin
         // Отвязываем событие, чтобы оно не "выстрелило" после ручного удаления потока
         FAIThread.OnTerminate := nil;
 
-        // ВАЖНО: Если у вашего FAIService есть метод прерывания HTTP-запроса
-        // (например, Abort, Disconnect или Cancel), обязательно вызовите его здесь!
+        // ВАЖНО: Если у FAIService есть метод прерывания HTTP-запроса
+        // (например, Abort, Disconnect или Cancel), обязательно вызвать его здесь!
         // Иначе WaitFor заморозит форму, пока не истечет таймаут сети.
         // FAIService.Abort;
 
@@ -251,7 +251,7 @@ procedure TAddEditSnippetForm.DoInitialize;
 begin
     FBasicCommands := AppContext.SettingsManager.BashAutocomplete;
 
-//    // Создаем движок автокомплита
+    // Создаем движок автокомплита
     FCompletionEngine := TBashCompletionEngine.Create(FBasicCommands);
     FCompletionEngine.LoadFromJsonFile(ResolvePath('extra-commands.json'));
 

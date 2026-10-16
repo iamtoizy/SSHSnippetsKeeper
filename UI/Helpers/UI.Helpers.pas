@@ -3,9 +3,9 @@
 interface
 
 uses
-    Category,
-    Tag,
-    User,
+    Core.Entities.Category,
+    Core.Entities.Tag,
+    Core.Entities.User,
     Vcl.ComCtrls
     ;
 

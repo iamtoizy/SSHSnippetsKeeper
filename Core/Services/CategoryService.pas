@@ -1,9 +1,9 @@
-unit CategoryService;
+п»їunit CategoryService;
 
 interface
 
 uses
-    Category,
+    Core.Entities.Category,
     Core.Interfaces,
     System.SysUtils
     ;
@@ -37,7 +37,7 @@ end;
 
 function TCategoryService.GetAllCategories(UserID: Integer): TArray<TCategoryDTO>;
 begin
-    // Передаем UserID в репозиторий (0 означает "все пользователи")
+    // РџРµСЂРµРґР°РµРј UserID РІ СЂРµРїРѕР·РёС‚РѕСЂРёР№ (0 РѕР·РЅР°С‡Р°РµС‚ "РІСЃРµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё")
     Result := FCategoryRepo.GetAll(UserID);
 end;
 
@@ -79,7 +79,7 @@ begin
         raise Exception.Create(
             TUIStateLoader.GetMessage('Category.EmptyNameError')
         );
-    // Проверка на циклические ссылки (перемещение родителя в ребенка) должна быть в репозитории или здесь
+    // РџСЂРѕРІРµСЂРєР° РЅР° С†РёРєР»РёС‡РµСЃРєРёРµ СЃСЃС‹Р»РєРё (РїРµСЂРµРјРµС‰РµРЅРёРµ СЂРѕРґРёС‚РµР»СЏ РІ СЂРµР±РµРЅРєР°) РґРѕР»Р¶РЅР° Р±С‹С‚СЊ РІ СЂРµРїРѕР·РёС‚РѕСЂРёРё РёР»Рё Р·РґРµСЃСЊ
     FCategoryRepo.MoveCategory(CategoryID, NewParentID, Position);
 end;
 

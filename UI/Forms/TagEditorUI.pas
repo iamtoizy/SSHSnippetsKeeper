@@ -1,17 +1,19 @@
-unit TagEditorUI;
+﻿unit TagEditorUI;
 
 interface
 
 uses
     BaseFormUI,
     Core.Interfaces,
+    System.Actions,
     System.Classes,
     System.Generics.Collections,
+    Vcl.ActnList,
     Vcl.ComCtrls,
     Vcl.Controls,
     Vcl.ExtCtrls,
     Vcl.Menus,
-    Vcl.StdCtrls, System.Actions, Vcl.ActnList
+    Vcl.StdCtrls
     ;
 
 type
@@ -19,8 +21,8 @@ type
 
     TTagChange = record
         Action: TTagEditAction;
-        TagID: Integer;      // ��� Rename/Delete
-        NewName: string;     // ��� Add/Rename
+        TagID: Integer;
+        NewName: string;
     end;
 
     TTagEditorForm = class(TBaseForm)
@@ -33,10 +35,10 @@ type
         nTagAdd: TMenuItem;
         nTagDelete: TMenuItem;
         nTagRename: TMenuItem;
-    ActionList: TActionList;
-    actAddTag: TAction;
-    actDeleteTag: TAction;
-    actEditTag: TAction;
+        ActionList: TActionList;
+        actAddTag: TAction;
+        actDeleteTag: TAction;
+        actEditTag: TAction;
         procedure actAddTagExecute(Sender: TObject);
         procedure actDeleteTagExecute(Sender: TObject);
         procedure actEditTagExecute(Sender: TObject);
@@ -71,7 +73,7 @@ implementation
 uses
     System.SysUtils,
     System.UITypes,
-    Tag,
+    Core.Entities.Tag,
     UI.Helpers,
     UI.StateLoader,
     Vcl.Dialogs,
@@ -98,7 +100,6 @@ end;
 procedure TTagEditorForm.FormCreate(Sender: TObject);
 begin
     FChanges := TList<TTagChange>.Create;
-    // ��������� ���� ��� �������� �����, ���� ������ ��� �������
 end;
 
 procedure TTagEditorForm.FormDestroy(Sender: TObject);
@@ -161,49 +162,38 @@ var
     NewName: string;
     Item: TListItem;
 begin
-    if InputQuery(
+    if MessagesHandler.AskInput(
         TUIStateLoader.GetMessage('TagEditorForm.InputQueryTitle'),
         TUIStateLoader.GetMessage('TagEditorForm.InputQueryPrompt'),
         NewName) and (Trim(NewName) <> '') then
     begin
         NewName := Trim(NewName);
 
-        // ���������� ����������
         Item := lvTags.Items.Add;
         Item.Caption := NewName;
-        Item.Data := Pointer(0); // ID ���� ���, ����� �������� ��� ���������� � ApplyChangesToDB
+        Item.Data := Pointer(0);
         Item.Selected := True;
         Item.MakeVisible(False);
         Item.StateIndex := 0;
 
-        // ���������� � ����� ���������
         RecordChange(teaAdd, 0, NewName);
     end;
 end;
 
 procedure TTagEditorForm.DoDeleteTags;
 var
-    Dlg: TForm;
     I: Integer;
     TagID: Integer;
 begin
     if lvTags.SelCount = 0 then
         Exit;
 
-    // TODO: � ��������� �����, �����!
-    Dlg := CreateMessageDialog(
+    if not MessagesHandler.AskConfirmation(
         TUIStateLoader.GetMessage('TagEditorForm.DeleteConfirmFormat', [lvTags.SelCount]),
-        mtConfirmation, [mbYes, mbNo]
-    );
-    try
-        Dlg.Caption := TUIStateLoader.GetMessage('TagEditorForm.DeleteConfirmTitle');
-        if Dlg.ShowModal <> mrYes then
-            Exit;
-    finally
-        Dlg.Free;
-    end;
+        TUIStateLoader.GetMessage('TagEditorForm.DeleteConfirmTitle'),
+        MB_YESNO or MB_ICONQUESTION) then
+        Exit;
 
-    // �������� � �����, ����� ������� �� ��������
     for I := lvTags.Items.Count - 1 downto 0 do
     begin
         if lvTags.Items[I].Selected then
@@ -217,7 +207,6 @@ begin
         end;
     end;
 
-    // �������������� ������������ ������������ ������
     SendMessage(lvTags.Handle, LVM_ARRANGE, LVA_DEFAULT, 0);
 end;
 
@@ -241,7 +230,6 @@ var
 begin
     S := Trim(S);
 
-    // ���� ��� ������ ��� �� ���������� - ����������
     if (S = '') or (S = Item.Caption) then
     begin
         S := Item.Caption;
@@ -250,7 +238,6 @@ begin
 
     TagID := Integer(Item.Data);
 
-    // ���������� �������������� � ����� ������ ���� ��� ��� ���� � ��
     if TagID > 0 then
         RecordChange(teaRename, TagID, S)
     else
@@ -262,8 +249,6 @@ begin
                 FChanges[I] := Change;
                 Break;
             end;
-
-    // ��������� Caption ��������� �������������
 end;
 
 procedure TTagEditorForm.bOKClick(Sender: TObject);
@@ -273,13 +258,13 @@ begin
         ModalResult := mrOk;
     except
         on E: Exception do
-            MessageDlg(TUIStateLoader.GetMessage('TagEditorForm.SaveErrorFormat', [E.Message]), mtError, [mbOK], 0);
+            MessagesHandler.ShowError(
+                TUIStateLoader.GetMessage('TagEditorForm.SaveErrorFormat', [E.Message]));
     end;
 end;
 
 procedure TTagEditorForm.bCancelClick(Sender: TObject);
 begin
-    // ������ ���������, FChanges ����������� � FormDestroy ��� ����������
     ModalResult := mrCancel;
 end;
 
@@ -297,11 +282,9 @@ begin
         try
         case Change.Action of
             teaAdd:
-                // ������ ��� �������� ������������ � ������� �����
                 AppContext.TagService.CreateTag(Change.NewName);
 
             teaRename:
-                // �������� ID (� ����������� �����) � ����� ���
                 AppContext.TagService.RenameTag(Integer(Change.TagID), Change.NewName);
 
             teaDelete:

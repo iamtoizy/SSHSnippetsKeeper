@@ -1,4 +1,4 @@
-unit HotkeyService;
+﻿unit HotkeyService;
 
 interface
 
@@ -15,7 +15,7 @@ uses
 type
     THotkeyService = class(TInterfacedObject, IHotkeyService)
     private
-        // ������ ���� �������� � ����������
+        // Реестр всех действий в приложении
         FRegistry: TDictionary<string, TActionHotkeyInfo>;
 
         procedure InitDefaultRegistry;
@@ -29,6 +29,8 @@ type
         procedure SetActionShortCut(const ActionName: string; NewShortCut: TShortCut);
 
         function IsShortCutInUse(const ActionID: string; ShortCut: TShortCut; out ConflictingActionName: string): Boolean;
+
+        class function ShortCutInUseIn(const ActionID: string; ShortCut: TShortCut; const Actions: TArray<TActionHotkeyInfo>; out ConflictingActionName: string): Boolean; static;
 
         procedure ApplySettingsToForm(const Form: TComponent);
         procedure LoadFromSettings(const CustomShortCuts: TArray<TCustomShortCut>);
@@ -56,15 +58,15 @@ end;
 
 procedure THotkeyService.InitDefaultRegistry;
 begin
-    // ID ������ �����: "��������������.���������"
+    // ID строго равен: "ИмяКлассаФормы.ИмяЭкшена"
     //
-    // ID � ���� (1 ��������) - ����������.act...: 'TMainForm.act...'
-    // ���� � ������ (2 ��������) �������� ������: 'MainForm.Actions.Data.AddSnippet'
-    // ���� � ��������� (3 ��������) ��������� �� Caption ������: 'MainForm.Actions.Data.Caption'
+    // ID в коде (1 параметр) - КлассФормы.act...: 'TMainForm.act...'
+    // Путь к тексту (2 параметр) включает группу: 'MainForm.Actions.Data.AddSnippet'
+    // Путь к категории (3 параметр) указывает на Caption группы: 'MainForm.Actions.Data.Caption'
     //
     // TMainForm
     //
-    // --- ���� ������ (��������, ���������, ����) ---
+    // --- БЛОК ДАННЫХ (Сниппеты, Категории, Теги) ---
     RegisterAction('TMainForm.actAddSnippet',    'Actions.MainForm.Data.AddSnippet',    'Actions.MainForm.Data.Caption', 'Ctrl+Alt+A');
     RegisterAction('TMainForm.actDeleteSnippet', 'Actions.MainForm.Data.DeleteSnippet', 'Actions.MainForm.Data.Caption', 'Ctrl+Alt+D');
     RegisterAction('TMainForm.actEditSnippet',   'Actions.MainForm.Data.EditSnippet',   'Actions.MainForm.Data.Caption', 'Ctrl+Alt+E');
@@ -77,13 +79,13 @@ begin
     RegisterAction('TMainForm.actDeleteTag', 'Actions.MainForm.Data.DeleteTag', 'Actions.MainForm.Data.Caption', 'Ctrl+Shift+D');
     RegisterAction('TMainForm.actEditTag',   'Actions.MainForm.Data.EditTag',   'Actions.MainForm.Data.Caption', 'Ctrl+Shift+E');
 
-    // --- ���� ���� ������ ---
+    // --- БЛОК БАЗЫ ДАННЫХ ---
     RegisterAction('TMainForm.actCreateDatabase', 'Actions.MainForm.Database.CreateDatabase', 'Actions.MainForm.Database.Caption', 'Ctrl+N');
     RegisterAction('TMainForm.actOpenDatabase',   'Actions.MainForm.Database.OpenDatabase',   'Actions.MainForm.Database.Caption', 'Ctrl+O');
     RegisterAction('TMainForm.actCloseDatabase',  'Actions.MainForm.Database.CloseDatabase',  'Actions.MainForm.Database.Caption', 'Ctrl+Q');
     RegisterAction('TMainForm.actSyncDatabase',  'Actions.MainForm.Database.actSyncDatabase',  'Actions.MainForm.Database.Caption', 'Ctrl+Alt+Shift+E');
 
-    // --- ���� ������ ---
+    // --- БЛОК УТИЛИТ ---
     RegisterAction('TMainForm.actSearch',            'Actions.MainForm.Tools.Search',            'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+S');
     RegisterAction('TMainForm.actPasswordGenerator', 'Actions.MainForm.Tools.PasswordGenerator', 'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+G');
     RegisterAction('TMainForm.actCronGenerator',     'Actions.MainForm.Tools.CronGenerator',     'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+C');
@@ -92,7 +94,7 @@ begin
     RegisterAction('TMainForm.actChmodCalculator',   'Actions.MainForm.Tools.ChmodCalculator',   'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+M');
     RegisterAction('TMainForm.actArchiveBuilder',    'Actions.MainForm.Tools.ArchiveBuilder',    'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+Z');
 
-    // --- ������ ---
+    // --- ПРОЧЕЕ ---
     RegisterAction('TMainForm.actSettings', 'Actions.MainForm.Other.Settings', 'Actions.MainForm.Other.Caption', 'Ctrl+Alt+P');
     //
     // TAddEditSnippetForm
@@ -112,9 +114,9 @@ begin
     //
     // TTagEditor
     //
-    RegisterAction('TTagEditor.actAddTag',    'Actions.TagEditor.actAddTag',    'Actions.TagEditor.Caption', 'Ctrl+A');
-    RegisterAction('TTagEditor.actDeleteTag', 'Actions.TagEditor.actDeleteTag', 'Actions.TagEditor.Caption', 'Ctrl+D');
-    RegisterAction('TTagEditor.actEditTag',   'Actions.TagEditor.actEditTag',   'Actions.TagEditor.Caption', 'Ctrl+E');
+    RegisterAction('TTagEditorForm.actAddTag',    'Actions.TagEditor.actAddTag',    'Actions.TagEditor.Caption', 'Ctrl+A');
+    RegisterAction('TTagEditorForm.actDeleteTag', 'Actions.TagEditor.actDeleteTag', 'Actions.TagEditor.Caption', 'Ctrl+D');
+    RegisterAction('TTagEditorForm.actEditTag',   'Actions.TagEditor.actEditTag',   'Actions.TagEditor.Caption', 'Ctrl+E');
     //
     // TWorkspaceManagerForm
     //
@@ -132,7 +134,7 @@ begin
     Info.DisplayName := DisplayName;
     Info.Category := Category;
     Info.DefaultShortCut := TextToShortCut(Default);
-    Info.CurrentShortCut := Info.DefaultShortCut; // ���������� ������� ����� ����������
+    Info.CurrentShortCut := Info.DefaultShortCut; // Изначально текущий равен дефолтному
 
     FRegistry.Add(Name, Info);
 end;
@@ -159,11 +161,11 @@ begin
     if FRegistry.TryGetValue(ActionName, Info) then
     begin
         Info.CurrentShortCut := NewShortCut;
-        FRegistry.Items[ActionName] := Info; // ��������� � �������
+        FRegistry.Items[ActionName] := Info; // Обновляем в словаре
     end;
 end;
 
-function THotkeyService.IsShortCutInUse(const ActionID: string; ShortCut: TShortCut; out ConflictingActionName: string): Boolean;
+class function THotkeyService.ShortCutInUseIn(const ActionID: string; ShortCut: TShortCut; const Actions: TArray<TActionHotkeyInfo>; out ConflictingActionName: string): Boolean;
 var
     Info: TActionHotkeyInfo;
     TargetFormClass: string;
@@ -174,18 +176,14 @@ begin
     if ShortCut = 0 then
         Exit;
 
-    // ��������� ��� ����� �� ������������ ID (��������, �� 'TMainForm.actAdd' ������� 'TMainForm')
     TargetFormClass := ActionID.Split(['.'])[0];
 
-    for Info in FRegistry.Values do
+    for Info in Actions do
     begin
-        // ���� ������ ���������
         if Info.CurrentShortCut = ShortCut then
         begin
-            // ��������� ��� ����� �� ID �������� �������� � �����
             CurrentFormClass := Info.ActionName.Split(['.'])[0];
 
-            // ����������: ���� ��� ����� �� ����� � ��� �� �����, ������ ��� ��������!
             if SameText(TargetFormClass, CurrentFormClass) then
             begin
                 ConflictingActionName := Info.DisplayName;
@@ -195,7 +193,12 @@ begin
     end;
 end;
 
-// �������� �������� �� JSON (���������� ������ ��������)
+function THotkeyService.IsShortCutInUse(const ActionID: string; ShortCut: TShortCut; out ConflictingActionName: string): Boolean;
+begin
+    Result := ShortCutInUseIn(ActionID, ShortCut, FRegistry.Values.ToArray, ConflictingActionName);
+end;
+
+// Загрузка настроек из JSON (накатываем поверх дефолтов)
 procedure THotkeyService.LoadFromSettings(const CustomShortCuts: TArray<TCustomShortCut>);
 var
     CustomSC: TCustomShortCut;
@@ -211,7 +214,7 @@ begin
     end;
 end;
 
-// �������� ������ ��� �������, ������� ���������� �� ���������
+// Выгрузка только тех хоткеев, которые отличаются от дефолтных
 function THotkeyService.SaveToSettings: TArray<TCustomShortCut>;
 var
     Info: TActionHotkeyInfo;
@@ -244,28 +247,28 @@ var
     GeneratedActionID: string;
     Info: TActionHotkeyInfo;
 begin
-    // 1. ���������� ��� ����������, ��������� �� �����
+    // 1. Перебираем все компоненты, брошенные на форму
     for I := 0 to Form.ComponentCount - 1 do
     begin
         Comp := Form.Components[I];
 
-        // 2. ���� ����� TActionList...
+        // 2. Если нашли TActionList...
         if Comp is TActionList then
         begin
             ActList := TActionList(Comp);
 
-            // 3. ���������� ��� ������ ������ ����� ������
+            // 3. Перебираем все экшены внутри этого списка
             for J := 0 to ActList.ActionCount - 1 do
             begin
                 if ActList.Actions[J] is TCustomAction then
                 begin
                     Action := TCustomAction(ActList.Actions[J]);
 
-                    // 4. ���������� ���������� ID ��� �������� ������
-                    // ��������� �����: "TMainForm.actAddSnippet"
+                    // 4. Генерируем уникальный ID для текущего экшена
+                    // Результат будет: "TMainForm.actAddSnippet"
                     GeneratedActionID := Form.ClassName + '.' + Action.Name;
 
-                    // 5. ���� ���� ID � ����� �������. ���� ����� - ��������� ������
+                    // 5. Ищем этот ID в нашем реестре. Если нашли - применяем хоткей
                     if FRegistry.TryGetValue(GeneratedActionID, Info) then
                     begin
                         Action.ShortCut := Info.CurrentShortCut;

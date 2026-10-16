@@ -1,10 +1,11 @@
-unit ArchiveBuilderFormUI;
+п»їunit ArchiveBuilderFormUI;
 
 interface
 
 uses
     BaseFormUI,
     Core.Interfaces,
+    PresetData,
     System.Classes,
     System.Generics.Collections,
     Vcl.ComCtrls,
@@ -83,17 +84,16 @@ type
         procedure seSplitSizeChange(Sender: TObject);
     private
         type
-            TPresetData = class
-                FArchiveFormat: TArchiveFormat;
-                FExcludeMask: string;
-                FMaxComp: Boolean;
-                FIsCustom: Boolean;
-                FOriginalName: string;
-                constructor Create(Fmt: TArchiveFormat; const Excl: string; MaxC, IsCust: Boolean; const Name: string = '');
+            TArchivePresetData = class(TPresetData)
+            public
+                ArchiveFormat: TArchiveFormat;
+                ExcludeMask: string;
+                MaxCompression: Boolean;
+                constructor Create(AFormat: TArchiveFormat; const AExclude: string; AMaxCompression, AIsCustom: Boolean; const AName: string = '');
             end;
     private
         FUpdatingUI: Boolean;
-        FPresetDataList: TObjectList<TPresetData>;
+        FPresetDataList: TObjectList<TArchivePresetData>;
 
         procedure LoadPresetsToComboBox;
         procedure LoadHistoryToUI;
@@ -128,7 +128,7 @@ var
     SplitPipe: string;
     SafeSize: Integer;
 begin
-    // 1. Явная инициализация для защиты от неверного каста Enum из UI
+    // 1. РЇРІРЅР°СЏ РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РґР»СЏ Р·Р°С‰РёС‚С‹ РѕС‚ РЅРµРІРµСЂРЅРѕРіРѕ РєР°СЃС‚Р° Enum РёР· UI
     Cmd := '';
     SplitPipe := '';
 
@@ -139,10 +139,10 @@ begin
 
     Excludes := ExcludeStr.Trim.Split([#13, #10, ' '], TStringSplitOptions.ExcludeEmpty);
 
-    // 2. Безопасный парсинг размера тома (Fallback)
+    // 2. Р‘РµР·РѕРїР°СЃРЅС‹Р№ РїР°СЂСЃРёРЅРі СЂР°Р·РјРµСЂР° С‚РѕРјР° (Fallback)
     SafeSize := StrToIntDef(SplitSize, 2048);
     if SafeSize <= 0 then
-        SafeSize := 2048; // Защита от ввода нуля, отрицательных чисел или мусора
+        SafeSize := 2048; // Р—Р°С‰РёС‚Р° РѕС‚ РІРІРѕРґР° РЅСѓР»СЏ, РѕС‚СЂРёС†Р°С‚РµР»СЊРЅС‹С… С‡РёСЃРµР» РёР»Рё РјСѓСЃРѕСЂР°
 
     case ArchiveFmt of
         afZip:
@@ -152,7 +152,7 @@ begin
                 if MaxCompression then Cmd := Cmd + ' -9';
                 if Password <> '' then Cmd := Cmd + ' -P "' + Password + '"';
 
-                // 3. Добавлена поддержка разбивки на тома для ZIP
+                // 3. РџРѕРґРґРµСЂР¶РєР° СЂР°Р·Р±РёРІРєРё РЅР° С‚РѕРјР° РґР»СЏ ZIP
                 if SplitArchive then Cmd := Cmd + ' -s ' + SafeSize.ToString + 'm';
 
                 if RelativePath then Cmd := Cmd + ' ' + Dst + ' .' else Cmd := Cmd + ' ' + Dst + ' ' + Src;
@@ -164,7 +164,7 @@ begin
                 end;
             end;
 
-        afTarGz, afTarBz2, afTarXz, afTarZst, afTarLz4: // Семейство TAR
+        afTarGz, afTarBz2, afTarXz, afTarZst, afTarLz4: // РЎРµРјРµР№СЃС‚РІРѕ TAR
             begin
                 if MaxCompression then
                 begin
@@ -186,7 +186,7 @@ begin
                     afTarLz4: Cmd := Cmd + '-c -I lz4';
                 end;
 
-                // 4. Используем безопасный SafeSize вместо сырой строки SplitSize
+                // 4. РСЃРїРѕР»СЊР·СѓРµРј Р±РµР·РѕРїР°СЃРЅС‹Р№ SafeSize РІРјРµСЃС‚Рѕ СЃС‹СЂРѕР№ СЃС‚СЂРѕРєРё SplitSize
                 if SplitArchive then
                 begin
                     Cmd := Cmd + 'v - ';
@@ -209,7 +209,7 @@ begin
                 if MaxCompression then Cmd := Cmd + ' -mx=9';
                 if Password <> '' then Cmd := Cmd + ' -p"' + Password + '"';
 
-                // Используем безопасный SafeSize
+                // РСЃРїРѕР»СЊР·СѓРµРј Р±РµР·РѕРїР°СЃРЅС‹Р№ SafeSize
                 if SplitArchive then Cmd := Cmd + ' -v' + SafeSize.ToString + 'm';
 
                 if RelativePath then Cmd := Cmd + ' ' + Dst + ' .' else Cmd := Cmd + ' ' + Dst + ' ' + Src;
@@ -235,7 +235,7 @@ begin
 
     ResolvedFormat := ExtractFmt;
 
-    // Автоопределение по расширению
+    // РђРІС‚РѕРѕРїСЂРµРґРµР»РµРЅРёРµ РїРѕ СЂР°СЃС€РёСЂРµРЅРёСЋ
     if ResolvedFormat = efAuto then
     begin
         if Src.EndsWith('.zip', True) then ResolvedFormat := efZip
@@ -280,15 +280,12 @@ begin
     Result := Cmd;
 end;
 
-{ TArchiveBuilderForm.TPresetData }
-
-constructor TArchiveBuilderForm.TPresetData.Create(Fmt: TArchiveFormat; const Excl: string; MaxC, IsCust: Boolean; const Name: string);
+constructor TArchiveBuilderForm.TArchivePresetData.Create(AFormat: TArchiveFormat; const AExclude: string; AMaxCompression, AIsCustom: Boolean; const AName: string);
 begin
-    FArchiveFormat := Fmt;
-    FExcludeMask := Excl;
-    FMaxComp := MaxC;
-    FIsCustom := IsCust;
-    FOriginalName := Name;
+    inherited Create(AIsCustom, AName);
+    ArchiveFormat := AFormat;
+    ExcludeMask := AExclude;
+    MaxCompression := AMaxCompression;
 end;
 
 { TArchiveBuilderForm }
@@ -296,7 +293,7 @@ end;
 procedure TArchiveBuilderForm.FormCreate(Sender: TObject);
 begin
     inherited;
-    FPresetDataList := TObjectList<TPresetData>.Create(True);
+    FPresetDataList := TObjectList<TArchivePresetData>.Create(True);
     pcMain.ActivePage := tsCreate;
 end;
 
@@ -315,18 +312,18 @@ begin
     if Assigned(bDeletePreset) then
         bDeletePreset.Enabled := False;
 
-    // Загрузка сохраненного состояния
+    // Р—Р°РіСЂСѓР·РєР° СЃРѕС…СЂР°РЅРµРЅРЅРѕРіРѕ СЃРѕСЃС‚РѕСЏРЅРёСЏ
     Setts := AppContext.SettingsManager.Data;
 
-    // Блокируем UI, чтобы OnChange у поля ввода не перебил наши настройки
+    // Р‘Р»РѕРєРёСЂСѓРµРј UI, С‡С‚РѕР±С‹ OnChange Сѓ РїРѕР»СЏ РІРІРѕРґР° РЅРµ РїРµСЂРµР±РёР» РЅР°С€Рё РЅР°СЃС‚СЂРѕР№РєРё
     FUpdatingUI := True;
     try
-        // Если ArchiveSplitSize = 0, значит программа запущена впервые
+        // Р•СЃР»Рё ArchiveSplitSize = 0, Р·РЅР°С‡РёС‚ РїСЂРѕРіСЂР°РјРјР° Р·Р°РїСѓС‰РµРЅР° РІРїРµСЂРІС‹Рµ
         if Setts.ArchiveSplitSize = 0 then
         begin
             cbRelativePath.Checked := True;
             seSplitSize.Text := '2048';
-            cbSplit.Checked := False; // Явно отключаем при первом запуске
+            cbSplit.Checked := False; // РЇРІРЅРѕ РѕС‚РєР»СЋС‡Р°РµРј РїСЂРё РїРµСЂРІРѕРј Р·Р°РїСѓСЃРєРµ
             cbFormatCreate.ItemIndex := 1;  // tar.gz
         end
         else
@@ -334,7 +331,7 @@ begin
             cbRelativePath.Checked := Setts.ArchiveRelativePath;
             cbMaxCompression.Checked := Setts.ArchiveMaxCompression;
 
-            // Сначала пишем текст, затем ставим состояние галочки
+            // РЎРЅР°С‡Р°Р»Р° РїРёС€РµРј С‚РµРєСЃС‚, Р·Р°С‚РµРј СЃС‚Р°РІРёРј СЃРѕСЃС‚РѕСЏРЅРёРµ РіР°Р»РѕС‡РєРё
             seSplitSize.Text := Setts.ArchiveSplitSize.ToString;
             cbSplit.Checked := Setts.ArchiveSplit;
 
@@ -345,14 +342,14 @@ begin
         FUpdatingUI := False;
     end;
 
-    // Заполнение списка форматов для распаковки
+    // Р—Р°РїРѕР»РЅРµРЅРёРµ СЃРїРёСЃРєР° С„РѕСЂРјР°С‚РѕРІ РґР»СЏ СЂР°СЃРїР°РєРѕРІРєРё
     cbFormatExtract.Items.Add(TUIStateLoader.GetMessage('ArchiveBuilderForm.FormatPresets.AutoDetect'));
     cbFormatExtract.Items.Add(TUIStateLoader.GetMessage('ArchiveBuilderForm.FormatPresets.zip'));
     cbFormatExtract.Items.Add(TUIStateLoader.GetMessage('ArchiveBuilderForm.FormatPresets.tar'));
     cbFormatExtract.Items.Add(TUIStateLoader.GetMessage('ArchiveBuilderForm.FormatPresets.7z'));
     cbFormatExtract.ItemIndex := 0;
 
-    // Синхронизируем UI после загрузки данных
+    // РЎРёРЅС…СЂРѕРЅРёР·РёСЂСѓРµРј UI РїРѕСЃР»Рµ Р·Р°РіСЂСѓР·РєРё РґР°РЅРЅС‹С…
     UpdatePasswordState;
     ForceFormatExtensionSync;
     UpdateCommand;
@@ -375,16 +372,16 @@ var
 begin
     Setts := AppContext.SettingsManager.Data;
 
-    // Вкладка "Создать архив"
-    // Что архивируем (путь к директории/файлу) -> берем из истории путей
+    // Р’РєР»Р°РґРєР° "РЎРѕР·РґР°С‚СЊ Р°СЂС…РёРІ"
+    // Р§С‚Рѕ Р°СЂС…РёРІРёСЂСѓРµРј (РїСѓС‚СЊ Рє РґРёСЂРµРєС‚РѕСЂРёРё/С„Р°Р№Р»Сѓ) -> Р±РµСЂРµРј РёР· РёСЃС‚РѕСЂРёРё РїСѓС‚РµР№
     FillCB(cbSourcePath, Setts.HistoryArchivePaths);
-    // Имя архива (backup.tar.gz) -> берем из истории архивов
+    // РРјСЏ Р°СЂС…РёРІР° (backup.tar.gz) -> Р±РµСЂРµРј РёР· РёСЃС‚РѕСЂРёРё Р°СЂС…РёРІРѕРІ
     FillCB(cbDestPath, Setts.HistoryArchiveDests);
 
-    // Вкладка "Распаковать"
-    // Путь к архиву (backup.tar.gz) -> берем из истории архивов
+    // Р’РєР»Р°РґРєР° "Р Р°СЃРїР°РєРѕРІР°С‚СЊ"
+    // РџСѓС‚СЊ Рє Р°СЂС…РёРІСѓ (backup.tar.gz) -> Р±РµСЂРµРј РёР· РёСЃС‚РѕСЂРёРё Р°СЂС…РёРІРѕРІ
     FillCB(cbSourceExtract, Setts.HistoryArchiveDests);
-    // Куда распаковать (путь к директории) -> берем из истории путей
+    // РљСѓРґР° СЂР°СЃРїР°РєРѕРІР°С‚СЊ (РїСѓС‚СЊ Рє РґРёСЂРµРєС‚РѕСЂРёРё) -> Р±РµСЂРµРј РёР· РёСЃС‚РѕСЂРёРё РїСѓС‚РµР№
     FillCB(cbDestExtract, Setts.HistoryArchivePaths);
 end;
 
@@ -394,9 +391,9 @@ var
     UserPreset: TArchivePreset;
 
     procedure AddPreset(const DisplayName: string; Fmt: TArchiveFormat; const Excl: string; Max, IsCust: Boolean; const Orig: string = '');
-    var Data: TPresetData;
+    var Data: TArchivePresetData;
     begin
-        Data := TPresetData.Create(Fmt, Excl, Max, IsCust, Orig);
+        Data := TArchivePresetData.Create(Fmt, Excl, Max, IsCust, Orig);
         FPresetDataList.Add(Data);
         cbPresets.Items.AddObject(DisplayName, Data);
     end;
@@ -406,7 +403,7 @@ begin
     try
         cbPresets.Items.Clear;
 
-        // Пресеты
+        // РџСЂРµСЃРµС‚С‹
         AddPreset(TUIStateLoader.GetMessage('ArchiveBuilderForm.DefaultPresets.BitrixSite'),
             afTarGz,
             'bitrix/cache/*'#13#10'bitrix/managed_cache/*'#13#10'bitrix/html_pages/*'#13#10'upload/resize_cache/*',
@@ -462,7 +459,7 @@ begin
             cbPresets.Items.AddObject(TUIStateLoader.GetMessage('ArchiveBuilderForm.DefaultPresets.CustomDivider'), nil);
             for UserPreset in Setts.ArchivePresets do
             begin
-                // Кастуем сохраненный в JSON индекс обратно в Enum
+                // РљР°СЃС‚СѓРµРј СЃРѕС…СЂР°РЅРµРЅРЅС‹Р№ РІ JSON РёРЅРґРµРєСЃ РѕР±СЂР°С‚РЅРѕ РІ Enum
                 AddPreset(UserPreset.Name, TArchiveFormat(UserPreset.FormatIndex), UserPreset.ExcludeMask, UserPreset.MaxCompression, True, UserPreset.Name);
             end;
         end;
@@ -495,7 +492,7 @@ procedure TArchiveBuilderForm.OnUIChange(Sender: TObject);
 begin
     if FUpdatingUI then Exit;
 
-    // Сбрасываем пресет, только если UI меняет пользователь
+    // РЎР±СЂР°СЃС‹РІР°РµРј РїСЂРµСЃРµС‚, С‚РѕР»СЊРєРѕ РµСЃР»Рё UI РјРµРЅСЏРµС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ
     cbPresets.ItemIndex := -1;
     bDeletePreset.Enabled := False;
 
@@ -529,7 +526,7 @@ end;
 
 procedure TArchiveBuilderForm.UpdateCommand;
 begin
-    // Защита от пустого результата или сброшенного UI
+    // Р—Р°С‰РёС‚Р° РѕС‚ РїСѓСЃС‚РѕРіРѕ СЂРµР·СѓР»СЊС‚Р°С‚Р° РёР»Рё СЃР±СЂРѕС€РµРЅРЅРѕРіРѕ UI
     if (pcMain.ActivePage = tsCreate) and (cbFormatCreate.ItemIndex < 0) then
     begin
         ebCommand.Text := '';
@@ -542,7 +539,7 @@ begin
         Exit;
     end;
 
-    // Безопасный вызов сервисов
+    // Р‘РµР·РѕРїР°СЃРЅС‹Р№ РІС‹Р·РѕРІ СЃРµСЂРІРёСЃРѕРІ
     if pcMain.ActivePage = tsCreate then
         ebCommand.Text := TArchiveService.BuildCompressCommand(
             TArchiveFormat(cbFormatCreate.ItemIndex),
@@ -558,25 +555,25 @@ end;
 
 procedure TArchiveBuilderForm.cbPresetsChange(Sender: TObject);
 var
-    Data: TPresetData;
+    Data: TArchivePresetData;
 begin
     if cbPresets.ItemIndex < 0 then Exit;
-    Data := TPresetData(cbPresets.Items.Objects[cbPresets.ItemIndex]);
-    if not Assigned(Data) then Exit; // Разделитель
+    Data := TArchivePresetData(cbPresets.Items.Objects[cbPresets.ItemIndex]);
+    if not Assigned(Data) then Exit; // Р Р°Р·РґРµР»РёС‚РµР»СЊ
 
     FUpdatingUI := True;
     try
-        // Ord() Enum -> порядковый номер (0, 1, 2...)
-        cbFormatCreate.ItemIndex := Ord(Data.FArchiveFormat);
-        mExclude.Text := Data.FExcludeMask;
-        cbMaxCompression.Checked := Data.FMaxComp;
+        // Ord() Enum -> РїРѕСЂСЏРґРєРѕРІС‹Р№ РЅРѕРјРµСЂ (0, 1, 2...)
+        cbFormatCreate.ItemIndex := Ord(Data.ArchiveFormat);
+        mExclude.Text := Data.ExcludeMask;
+        cbMaxCompression.Checked := Data.MaxCompression;
 
-        ForceFormatExtensionSync; // Синхронизируем расширение файла безопасно
+        ForceFormatExtensionSync; // РЎРёРЅС…СЂРѕРЅРёР·РёСЂСѓРµРј СЂР°СЃС€РёСЂРµРЅРёРµ С„Р°Р№Р»Р° Р±РµР·РѕРїР°СЃРЅРѕ
     finally
         FUpdatingUI := False;
     end;
 
-    bDeletePreset.Enabled := Data.FIsCustom;
+    bDeletePreset.Enabled := Data.IsCustom;
     UpdatePasswordState;
     UpdateCommand;
 end;
@@ -637,7 +634,7 @@ begin
     Dest := string(cbDestPath.Text).Trim.ToLower;
     HasMatch := True;
 
-    // Авто-смена формата при ручном вводе расширения
+    // РђРІС‚Рѕ-СЃРјРµРЅР° С„РѕСЂРјР°С‚Р° РїСЂРё СЂСѓС‡РЅРѕРј РІРІРѕРґРµ СЂР°СЃС€РёСЂРµРЅРёСЏ
     if Dest.EndsWith('.zip') then NewFmt := afZip
     else if Dest.EndsWith('.tar.gz') or Dest.EndsWith('.tgz') then NewFmt := afTarGz
     else if Dest.EndsWith('.tar.bz2') or Dest.EndsWith('.tbz2') then NewFmt := afTarBz2
@@ -667,8 +664,8 @@ var
     NewPreset: TArchivePreset;
 begin
     if MessagesHandler.AskInput(
-        TUIStateLoader.GetMessage('ArchiveBuilder.Messages.SavePresetTitle'),
-        TUIStateLoader.GetMessage('ArchiveBuilder.Messages.SavePresetPrompt'),
+        TUIStateLoader.GetMessage('ArchiveBuilderForm.Messages.SavePresetTitle'),
+        TUIStateLoader.GetMessage('ArchiveBuilderForm.Messages.SavePresetPrompt'),
         PresetName) then
     begin
         PresetName := PresetName.Trim;
@@ -687,30 +684,30 @@ begin
         AppContext.SettingsManager.Save;
 
         LoadPresetsToComboBox;
-        ShowSimpleToast(TUIStateLoader.GetMessage('ArchiveBuilder.Messages.PresetSaved'));
+        ShowSimpleToast(TUIStateLoader.GetMessage('ArchiveBuilderForm.Messages.PresetSaved'));
     end;
 end;
 
 procedure TArchiveBuilderForm.bDeletePresetClick(Sender: TObject);
 var
-    Data: TPresetData;
+    Data: TArchivePresetData;
     Setts: TAppSettings;
     I, IndexToRemove: Integer;
 begin
     if cbPresets.ItemIndex < 0 then Exit;
-    Data := TPresetData(cbPresets.Items.Objects[cbPresets.ItemIndex]);
-    if not Assigned(Data) or not Data.FIsCustom then Exit;
+    Data := TArchivePresetData(cbPresets.Items.Objects[cbPresets.ItemIndex]);
+    if not Assigned(Data) or not Data.IsCustom then Exit;
 
     if not MessagesHandler.AskConfirmation(
-        Format(TUIStateLoader.GetMessage('ArchiveBuilder.Messages.DeletePresetConfirm'), [Data.FOriginalName]),
-        TUIStateLoader.GetMessage('ArchiveBuilder.Messages.DeleteTitle')
+        Format(TUIStateLoader.GetMessage('ArchiveBuilderForm.Messages.DeletePresetConfirm'), [Data.OriginalName]),
+        TUIStateLoader.GetMessage('ArchiveBuilderForm.Messages.DeleteTitle')
     ) then Exit;
 
     Setts := AppContext.SettingsManager.Data;
     IndexToRemove := -1;
     for I := Low(Setts.ArchivePresets) to High(Setts.ArchivePresets) do
     begin
-        if Setts.ArchivePresets[I].Name = Data.FOriginalName then
+        if Setts.ArchivePresets[I].Name = Data.OriginalName then
         begin
             IndexToRemove := I;
             Break;
@@ -740,10 +737,10 @@ begin
 
         if pcMain.ActivePage = tsCreate then
         begin
-            THistoryHelper.Add(Setts.HistoryArchivePaths, cbSourcePath.Text); // Сохраняем путь
-            THistoryHelper.Add(Setts.HistoryArchiveDests, cbDestPath.Text);   // Сохраняем имя архива
+            THistoryHelper.Add(Setts.HistoryArchivePaths, cbSourcePath.Text); // РЎРѕС…СЂР°РЅСЏРµРј РїСѓС‚СЊ
+            THistoryHelper.Add(Setts.HistoryArchiveDests, cbDestPath.Text);   // РЎРѕС…СЂР°РЅСЏРµРј РёРјСЏ Р°СЂС…РёРІР°
 
-            // Сохраняем состояние галочек
+            // РЎРѕС…СЂР°РЅСЏРµРј СЃРѕСЃС‚РѕСЏРЅРёРµ РіР°Р»РѕС‡РµРє
             Setts.ArchiveRelativePath := cbRelativePath.Checked;
             Setts.ArchiveMaxCompression := cbMaxCompression.Checked;
             Setts.ArchiveSplit := cbSplit.Checked;
@@ -752,9 +749,9 @@ begin
         end
         else
         begin
-            THistoryHelper.Add(Setts.HistoryArchiveDests, cbSourceExtract.Text); // Сохраняем имя архива
+            THistoryHelper.Add(Setts.HistoryArchiveDests, cbSourceExtract.Text);   // РЎРѕС…СЂР°РЅСЏРµРј РёРјСЏ Р°СЂС…РёРІР°
             if cbDestExtract.Text <> '' then
-                THistoryHelper.Add(Setts.HistoryArchivePaths, cbDestExtract.Text); // Сохраняем путь извлечения
+                THistoryHelper.Add(Setts.HistoryArchivePaths, cbDestExtract.Text); // РЎРѕС…СЂР°РЅСЏРµРј РїСѓС‚СЊ РёР·РІР»РµС‡РµРЅРёСЏ
         end;
 
         AppContext.SettingsManager.Data := Setts;

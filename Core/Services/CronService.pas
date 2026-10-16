@@ -24,6 +24,8 @@ type
         function ParseDaysOfWeek(const Part: string): string;
         function NormalizeDow(const Value: string): string;
     public
+        class function MonthName(M: Integer): string; static;
+        class function DowName(D: Integer): string; static;
         function ExpressionToHumanText(const Expression: string): string;
         function ValidateExpression(const Expression: string; out ErrorMsg: string): Boolean;
     end;
@@ -56,23 +58,23 @@ begin
     ];
 end;
 
-function TCronService.GetMonthsBase: TArray<string>;
+class function TCronService.MonthName(M: Integer): string;
 begin
-    Result := [
-        '',
-        TUIStateLoader.GetMessage('Cron.Month-1').ToLower,
-        TUIStateLoader.GetMessage('Cron.Month-2').ToLower,
-        TUIStateLoader.GetMessage('Cron.Month-3').ToLower,
-        TUIStateLoader.GetMessage('Cron.Month-4').ToLower,
-        TUIStateLoader.GetMessage('Cron.Month-5').ToLower,
-        TUIStateLoader.GetMessage('Cron.Month-6').ToLower,
-        TUIStateLoader.GetMessage('Cron.Month-7').ToLower,
-        TUIStateLoader.GetMessage('Cron.Month-8').ToLower,
-        TUIStateLoader.GetMessage('Cron.Month-9').ToLower,
-        TUIStateLoader.GetMessage('Cron.Month-10').ToLower,
-        TUIStateLoader.GetMessage('Cron.Month-11').ToLower,
-        TUIStateLoader.GetMessage('Cron.Month-12').ToLower
-    ];
+    Result := TUIStateLoader.GetMessage('Cron.Month-' + IntToStr(M));
+end;
+
+class function TCronService.DowName(D: Integer): string;
+begin
+    Result := TUIStateLoader.GetMessage('Cron.Dow-' + IntToStr(D));
+end;
+
+function TCronService.GetMonthsBase: TArray<string>;
+var
+    I: Integer;
+begin
+    Result := [''];
+    for I := 1 to 12 do
+        Result := Result + [MonthName(I).ToLower];
 end;
 
 function TCronService.GetDowPrep: TArray<string>;
@@ -90,17 +92,13 @@ begin
 end;
 
 function TCronService.GetDowBase: TArray<string>;
+var
+    I: Integer;
 begin
-    Result := [
-        TUIStateLoader.GetMessage('Cron.Dow-0').ToLower,
-        TUIStateLoader.GetMessage('Cron.Dow-1').ToLower,
-        TUIStateLoader.GetMessage('Cron.Dow-2').ToLower,
-        TUIStateLoader.GetMessage('Cron.Dow-3').ToLower,
-        TUIStateLoader.GetMessage('Cron.Dow-4').ToLower,
-        TUIStateLoader.GetMessage('Cron.Dow-5').ToLower,
-        TUIStateLoader.GetMessage('Cron.Dow-6').ToLower,
-        TUIStateLoader.GetMessage('Cron.Dow-0').ToLower  // 7 - Воскресенье
-    ];
+    SetLength(Result, 8);
+    for I := 0 to 6 do
+        Result[I] := DowName(I).ToLower;
+    Result[7] := DowName(0).ToLower;  // 7 - Воскресенье
 end;
 
 function TCronService.GetDeclension(Value: Integer; const W1, W2, W5: string): string;

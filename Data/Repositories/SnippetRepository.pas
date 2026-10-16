@@ -6,9 +6,10 @@ uses
     Core.Interfaces,
     FireDAC.Comp.Client,
     RepositoryBase,
-    Snippet,
+    Core.Entities.Snippet,
     System.Generics.Collections,
-    Tag
+
+    Core.Entities.Tag
     ;
 
 type
@@ -26,6 +27,7 @@ type
         procedure RecordRun(SnippetID: Integer; UserID: Integer);
         function GetSnippetTags(SnippetID: Integer): TArray<TTagDTO>;
         function GetSnippetsByTag(const TagID: Integer): TArray<TSnippetDTO>;
+        function GetSnippetsByTags(const TagIDs: TArray<Integer>; MatchAll: Boolean = False): TArray<TSnippetDTO>;
         function Search(const Query: string): TArray<TSnippetDTO>;
         function SearchByMaskFTS(const Mask: string; UserID: Integer = 0): TArray<TSnippetDTO>;
         function SearchByMaskSimple(const Mask: string; UserID: Integer = 0): TArray<TSnippetDTO>;
@@ -94,6 +96,23 @@ const
         'WHERE s.user_id = ? ' +
         'ORDER BY st.last_exec_at DESC ' +
         'LIMIT ?';
+    SQL_SELECT_SNIPPETS_BY_TAGS_ANY =
+        'SELECT DISTINCT s.id, s.user_id, s.title, s.content, s.comment, ' +
+        's.category_id, s.created_at, s.updated_at ' +
+        'FROM snippets s ' +
+        'JOIN snippet_tags st ON s.id = st.snippet_id ' +
+        'WHERE st.tag_id IN (%s) ' +
+        'ORDER BY s.title';
+
+    SQL_SELECT_SNIPPETS_BY_TAGS_ALL =
+        'SELECT s.id, s.user_id, s.title, s.content, s.comment, ' +
+        's.category_id, s.created_at, s.updated_at ' +
+        'FROM snippets s ' +
+        'JOIN snippet_tags st ON s.id = st.snippet_id ' +
+        'WHERE st.tag_id IN (%s) ' +
+        'GROUP BY s.id ' +
+        'HAVING COUNT(DISTINCT st.tag_id) = %d ' +
+        'ORDER BY s.title';
 
 function SanitizeFTS5(const Input: string): string;
 var
@@ -163,6 +182,38 @@ end;
 function TSnippetRepository.GetSnippetsByTag(const TagID: Integer): TArray<TSnippetDTO>;
 begin
     Result := InternalLoadSnippets(SQL_SELECT_SNIPPETS_BY_TAG, [TagID]);
+end;
+
+function TSnippetRepository.GetSnippetsByTags(const TagIDs: TArray<Integer>; MatchAll: Boolean = False): TArray<TSnippetDTO>;
+var
+    Sb: TStringBuilder;
+    i: Integer;
+    IDList, SQL: string;
+begin
+    if Length(TagIDs) = 0 then
+        Exit(nil);
+
+    // Собираем массив ID в строку через запятую для подстановки в IN (...)
+    Sb := TStringBuilder.Create;
+    try
+        for i := 0 to High(TagIDs) do
+        begin
+            Sb.Append(TagIDs[i]);
+            if i < High(TagIDs) then
+                Sb.Append(',');
+        end;
+        IDList := Sb.ToString;
+    finally
+        Sb.Free;
+    end;
+
+    // Формируем итоговый запрос с помощью Format
+    if MatchAll then
+        SQL := Format(SQL_SELECT_SNIPPETS_BY_TAGS_ALL, [IDList, Length(TagIDs)])
+    else
+        SQL := Format(SQL_SELECT_SNIPPETS_BY_TAGS_ANY, [IDList]);
+
+    Result := InternalLoadSnippets(SQL, []);
 end;
 
 function TSnippetRepository.GetSnippetTags(SnippetID: Integer): TArray<TTagDTO>;

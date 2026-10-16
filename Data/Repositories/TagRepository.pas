@@ -1,11 +1,12 @@
-unit TagRepository;
+п»їunit TagRepository;
 
 interface
 
 uses
     Core.Interfaces,
     RepositoryBase,
-    Tag
+
+    Core.Entities.Tag
     ;
 
 type
@@ -158,7 +159,7 @@ begin
     ExecuteSQL('DELETE FROM snippet_tags WHERE snippet_id = ?', [SnippetID]);
 end;
 
-// РЕАЛИЗАЦИЯ ПАКЕТНОЙ ВСТАВКИ (Array DML)
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ (Array DML)
 procedure TTagRepository.LinkTagsToSnippetBatch(SnippetID: Integer; const TagIDs: TArray<Integer>);
 var
     Q: TFDQuery;
@@ -171,17 +172,17 @@ begin
     try
         Q.SQL.Text := 'INSERT OR IGNORE INTO snippet_tags (snippet_id, tag_id) VALUES (:snip_id, :tag_id)';
 
-        // 1. Говорим FireDAC размер пакета
+        // 1. пїЅпїЅпїЅпїЅпїЅпїЅпїЅ FireDAC пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
         Q.Params.ArraySize := Length(TagIDs);
 
-        // 2. Заполняем массивы параметров
+        // 2. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         for I := 0 to High(TagIDs) do
         begin
             Q.ParamByName('snip_id').AsIntegers[I] := SnippetID;
             Q.ParamByName('tag_id').AsIntegers[I] := TagIDs[I];
         end;
 
-        // 3. Выполняем весь пакет одним разом
+        // 3. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
         Q.Execute(Q.Params.ArraySize);
     finally
         Q.Free;
@@ -192,7 +193,7 @@ function TTagRepository.ExistsByName(const Name: string): Boolean;
 var
     Count: Variant;
 begin
-    // Используем COLLATE NOCASE, чтобы 'Delphi' и 'delphi' считались одним тегом (если БД это поддерживает)
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ COLLATE NOCASE, пїЅпїЅпїЅпїЅпїЅ 'Delphi' пїЅ 'delphi' пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
     Count := ExecuteSQLScalar('SELECT COUNT(*) FROM tags WHERE name = ? COLLATE NOCASE', [Trim(Name)]);
     Result := Integer(Count) > 0;
 end;

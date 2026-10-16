@@ -1,19 +1,19 @@
-unit Core.Interfaces;
+п»їunit Core.Interfaces;
 
 interface
 
 uses
     ArrayHelper,
-    Category,
+    Core.Entities.Category,
     MacroInputTypes,
-    Snippet,
+    Core.Entities.Snippet,
     System.Classes,
-    Tag,
-    User,
+    Core.Entities.Tag,
+    Core.Entities.User,
     Winapi.Windows;
 
 type
-    // Domain Models настроек
+    // Domain Models РЅР°СЃС‚СЂРѕРµРє
     THelpButton = record
         HoverDelay: Integer;
         FadeDuration: Integer;
@@ -66,20 +66,20 @@ type
         Items: TArrayRecord<TAIItem>;
     end;
 
-    // Структура предустановок Chmod
+    // РЎС‚СЂСѓРєС‚СѓСЂР° РїСЂРµРґСѓСЃС‚Р°РЅРѕРІРѕРє Chmod
     TChmodPreset = record
         Name: string;
-        OctalBits: Integer; // Например 755 или 644
-        IsDir: Boolean;     // Нужно ли ставить галку "Это директория"
+        OctalBits: Integer; // РќР°РїСЂРёРјРµСЂ 755 РёР»Рё 644
+        IsDir: Boolean;     // РќСѓР¶РЅРѕ Р»Рё СЃС‚Р°РІРёС‚СЊ РіР°Р»РєСѓ "Р­С‚Рѕ РґРёСЂРµРєС‚РѕСЂРёСЏ"
     end;
 
-    // Элемент истории с весом
+    // Р­Р»РµРјРµРЅС‚ РёСЃС‚РѕСЂРёРё СЃ РІРµСЃРѕРј
     THistoryItem = record
         Value: string;
         UseCount: Integer;
     end;
 
-    // Структура предустановок архиватора
+    // РЎС‚СЂСѓРєС‚СѓСЂР° РїСЂРµРґСѓСЃС‚Р°РЅРѕРІРѕРє Р°СЂС…РёРІР°С‚РѕСЂР°
     TArchivePreset = record
         Name: string;
         FormatIndex: Integer; // 0=zip, 1=tar.gz, 2=tar.bz2, 3=tar.xz, 4=7z
@@ -87,45 +87,45 @@ type
         MaxCompression: Boolean;
     end;
 
-    // Конфигурация одной горячей клавиши
+    // РљРѕРЅС„РёРіСѓСЂР°С†РёСЏ РѕРґРЅРѕР№ РіРѕСЂСЏС‡РµР№ РєР»Р°РІРёС€Рё
     THotkeyConfig = record
-        Modifiers: Cardinal; // Битмаска Win32 MOD_ALT, MOD_CONTROL, MOD_SHIFT, MOD_WIN
-        Key: Cardinal;       // Virtual Key Code (например, VK_Q или Ord('Q'))
+        Modifiers: Cardinal; // Р‘РёС‚РјР°СЃРєР° Win32 MOD_ALT, MOD_CONTROL, MOD_SHIFT, MOD_WIN
+        Key: Cardinal;       // Virtual Key Code (РЅР°РїСЂРёРјРµСЂ, VK_Q РёР»Рё Ord('Q'))
         Enabled: Boolean;
     end;
 
-    // Настройки всех глобальных горячих клавиш программы
+    // РќР°СЃС‚СЂРѕР№РєРё РІСЃРµС… РіР»РѕР±Р°Р»СЊРЅС‹С… РіРѕСЂСЏС‡РёС… РєР»Р°РІРёС€ РїСЂРѕРіСЂР°РјРјС‹
     THotkeySettings = record
-        QuickSearch: THotkeyConfig; // HUD Быстрого поиска (Alt + Q)
-        PasswordGen: THotkeyConfig; // Генератор паролей (Ctrl + Alt + G)
+        QuickSearch: THotkeyConfig; // HUD Р‘С‹СЃС‚СЂРѕРіРѕ РїРѕРёСЃРєР° (Alt + Q)
+        PasswordGen: THotkeyConfig; // Р“РµРЅРµСЂР°С‚РѕСЂ РїР°СЂРѕР»РµР№ (Ctrl + Alt + G)
     end;
 
-    // В настройках храним только измененные юзером шорткаты
+    // Р’ РЅР°СЃС‚СЂРѕР№РєР°С… С…СЂР°РЅРёРј С‚РѕР»СЊРєРѕ РёР·РјРµРЅРµРЅРЅС‹Рµ СЋР·РµСЂРѕРј С€РѕСЂС‚РєР°С‚С‹
     TCustomShortCut = record
         ActionName: string;
         ShortCutValue: Integer;
     end;
 
-    // Описывает одно настраиваемое действие
+    // РћРїРёСЃС‹РІР°РµС‚ РѕРґРЅРѕ РЅР°СЃС‚СЂР°РёРІР°РµРјРѕРµ РґРµР№СЃС‚РІРёРµ
     TActionHotkeyInfo = record
-        ActionName: string;         // Уникальное имя (например, 'actSaveSnippet')
-        DisplayName: string;        // Текст для UI ('Сохранить сниппет')
-        Category: string;           // Группа ('Редактор сниппетов')
-        DefaultShortCut: TShortCut; // Дефолтный шорткат (например, Ctrl+S)
-        CurrentShortCut: TShortCut; // Текущий шорткат
+        ActionName: string;         // РЈРЅРёРєР°Р»СЊРЅРѕРµ РёРјСЏ (РЅР°РїСЂРёРјРµСЂ, 'actSaveSnippet')
+        DisplayName: string;        // РўРµРєСЃС‚ РґР»СЏ UI ('РЎРѕС…СЂР°РЅРёС‚СЊ СЃРЅРёРїРїРµС‚')
+        Category: string;           // Р“СЂСѓРїРїР° ('Р РµРґР°РєС‚РѕСЂ СЃРЅРёРїРїРµС‚РѕРІ')
+        DefaultShortCut: TShortCut; // Р”РµС„РѕР»С‚РЅС‹Р№ С€РѕСЂС‚РєР°С‚ (РЅР°РїСЂРёРјРµСЂ, Ctrl+S)
+        CurrentShortCut: TShortCut; // РўРµРєСѓС‰РёР№ С€РѕСЂС‚РєР°С‚
     end;
 
-    // Интерфейс сервиса горячих клавиш
+    // РРЅС‚РµСЂС„РµР№СЃ СЃРµСЂРІРёСЃР° РіРѕСЂСЏС‡РёС… РєР»Р°РІРёС€
     IHotkeyService = interface
         ['{7E54069A-5120-4B86-AC03-156435B99686}']
         function GetAllActions: TArray<TActionHotkeyInfo>;
         function GetActionShortCut(const ActionName: string): TShortCut;
         procedure SetActionShortCut(const ActionName: string; NewShortCut: TShortCut);
 
-        // Проверка на конфликты
+        // РџСЂРѕРІРµСЂРєР° РЅР° РєРѕРЅС„Р»РёРєС‚С‹
         function IsShortCutInUse(const ActionID: string; ShortCut: TShortCut; out ConflictingActionName: string): Boolean;
 
-        // Синхронизация с настройками и формами
+        // РЎРёРЅС…СЂРѕРЅРёР·Р°С†РёСЏ СЃ РЅР°СЃС‚СЂРѕР№РєР°РјРё Рё С„РѕСЂРјР°РјРё
         procedure ApplySettingsToForm(const Form: TComponent);
         procedure LoadFromSettings(const CustomShortCuts: TArray<TCustomShortCut>);
         function SaveToSettings: TArray<TCustomShortCut>;
@@ -140,35 +140,35 @@ type
         CurrentLanguage: string;
         ChmodPresets: TArray<TChmodPreset>;
 
-        // Массивы для истории Chmod
+        // РњР°СЃСЃРёРІС‹ РґР»СЏ РёСЃС‚РѕСЂРёРё Chmod
         HistoryUsers: TArray<THistoryItem>;
         HistoryGroups: TArray<THistoryItem>;
         HistoryFiles: TArray<THistoryItem>;
 
-        // Архивация
+        // РђСЂС…РёРІР°С†РёСЏ
         ArchivePresets: TArray<TArchivePreset>;
-        // История путей архивации
-        HistoryArchivePaths: TArray<THistoryItem>; // Для путей (Source)
-        HistoryArchiveDests: TArray<THistoryItem>; // Для имен архивов (Dest)
+        // РСЃС‚РѕСЂРёСЏ РїСѓС‚РµР№ Р°СЂС…РёРІР°С†РёРё
+        HistoryArchivePaths: TArray<THistoryItem>; // Р”Р»СЏ РїСѓС‚РµР№ (Source)
+        HistoryArchiveDests: TArray<THistoryItem>; // Р”Р»СЏ РёРјРµРЅ Р°СЂС…РёРІРѕРІ (Dest)
 
-        // Сохранение состояния контролов
+        // РЎРѕС…СЂР°РЅРµРЅРёРµ СЃРѕСЃС‚РѕСЏРЅРёСЏ РєРѕРЅС‚СЂРѕР»РѕРІ
         ArchiveLastFormat: Integer;
         ArchiveRelativePath: Boolean;
         ArchiveMaxCompression: Boolean;
         ArchiveSplit: Boolean;
         ArchiveSplitSize: Integer;
 
-        // Глобальные горячие клавиши
+        // Р“Р»РѕР±Р°Р»СЊРЅС‹Рµ РіРѕСЂСЏС‡РёРµ РєР»Р°РІРёС€Рё
         Hotkeys: THotkeySettings;
         CustomShortCuts: TArray<TCustomShortCut>;
 
-        // Синхронизация Markdown
+        // РЎРёРЅС…СЂРѕРЅРёР·Р°С†РёСЏ Markdown
         SyncDirectory: string;
         SyncOnStart: Boolean;
         SyncOnExit: Boolean;
     end;
 
-    // Интерфейс менеджера
+    // РРЅС‚РµСЂС„РµР№СЃ РјРµРЅРµРґР¶РµСЂР°
     ISettingsManager = interface
         ['{A1B2C3D4-E5F6-47A8-9B0C-1D2E3F4A5B6C}']
         function GetSettings: TAppSettings;
@@ -185,7 +185,7 @@ type
         property CurrentLanguage: string read GetCurrentLanguage write SetCurrentLanguage;
     end;
 
-    // Репозитории
+    // Р РµРїРѕР·РёС‚РѕСЂРёРё
     ISnippetRepository = interface
         ['{DD06967A-A691-4AE5-B0E0-44595ABC6A34}']
         function Add(const Snippet: TSnippetDTO): Integer;
@@ -196,6 +196,7 @@ type
         function GetAll(UserID: Integer = 0): TArray<TSnippetDTO>;
         function GetSnippetByCategory(const CategoryID, UserID: Integer): TArray<TSnippetDTO>;
         function GetSnippetsByTag(const TagID: Integer): TArray<TSnippetDTO>;
+        function GetSnippetsByTags(const TagIDs: TArray<Integer>; MatchAll: Boolean = False): TArray<TSnippetDTO>;
         function GetTopSnippets(UserID: Integer; Count: Integer): TArray<TSnippetDTO>;
         function GetRecentSnippets(UserID: Integer; Count: Integer): TArray<TSnippetDTO>;
         function SearchByMaskFTS(const Mask: string; UserID: Integer = 0): TArray<TSnippetDTO>;
@@ -248,7 +249,7 @@ type
         function TryGetByID(ID: Integer; out User: TUserDTO): Boolean;
     end;
 
-    // Сервисы
+    // РЎРµСЂРІРёСЃС‹
     ISnippetService = interface
         ['{A445FA2B-005B-4CEF-937C-C9A8413D46E6}']
         function CreateSnippet(const Snippet: TSnippetDTO; const TagIDs: TArray<Integer>): Integer;
@@ -258,6 +259,7 @@ type
         function GetAllSnippets(UserID: Integer = 0): TArray<TSnippetDTO>;
         function GetSnippetsByCategory(CategoryID, UserID: Integer): TArray<TSnippetDTO>;
         function GetSnippetsByTag(TagID: Integer): TArray<TSnippetDTO>;
+        function GetSnippetsByTags(const TagIDs: TArray<Integer>; MatchAll: Boolean = False): TArray<TSnippetDTO>;
         function GetTopSnippets(UserID: Integer; Count: Integer): TArray<TSnippetDTO>;
         function GetRecentSnippets(UserID: Integer; Count: Integer): TArray<TSnippetDTO>;
         function SearchSnippets(const Query: string; UseFTS: Boolean; UserID: Integer = 0): TArray<TSnippetDTO>;
@@ -280,7 +282,7 @@ type
         function CreateTag(const Name: string): Integer;
         procedure RenameTag(ID: Integer; const NewName: string);
         procedure DeleteTag(ID: Integer);
-        // новый метод для фоновой синхронизации
+        // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         function GetOrCreateTag(const Name: string): Integer;
     end;
 
@@ -313,43 +315,43 @@ type
     end;
 
     TPasswordPreset = (
-        // Базовые
-        wpStrictAlphaNumeric, // Только a-z, A-Z, 0-9
-        wpPinCode,            // Только цифры (для пин-кодов и простых локов)
-        wpHexToken,           // Шестнадцатеричный токен (a-f, 0-9) - для WPA, ключей шифрования
+        // Р‘Р°Р·РѕРІС‹Рµ
+        wpStrictAlphaNumeric, // РўРѕР»СЊРєРѕ a-z, A-Z, 0-9
+        wpPinCode,            // РўРѕР»СЊРєРѕ С†РёС„СЂС‹ (РґР»СЏ РїРёРЅ-РєРѕРґРѕРІ Рё РїСЂРѕСЃС‚С‹С… Р»РѕРєРѕРІ)
+        wpHexToken,           // РЁРµСЃС‚РЅР°РґС†Р°С‚РµСЂРёС‡РЅС‹Р№ С‚РѕРєРµРЅ (a-f, 0-9) - РґР»СЏ WPA, РєР»СЋС‡РµР№ С€РёС„СЂРѕРІР°РЅРёСЏ
 
-        // Инфраструктурные
-        wpBashSafe,           // Безопасно для терминала (без $, !, `, кавычек, слешей)
-        wpDockerEnvSafe,      // Безопасно для .env (без #, =, пробелов, кавычек, не с дефиса)
-        wpUrlSafe,            // Безопасно для URL (без &, ?, =, %, /, +, пробелов)
+        // РРЅС„СЂР°СЃС‚СЂСѓРєС‚СѓСЂРЅС‹Рµ
+        wpBashSafe,           // Р‘РµР·РѕРїР°СЃРЅРѕ РґР»СЏ С‚РµСЂРјРёРЅР°Р»Р° (Р±РµР· $, !, `, РєР°РІС‹С‡РµРє, СЃР»РµС€РµР№)
+        wpDockerEnvSafe,      // Р‘РµР·РѕРїР°СЃРЅРѕ РґР»СЏ .env (Р±РµР· #, =, РїСЂРѕР±РµР»РѕРІ, РєР°РІС‹С‡РµРє, РЅРµ СЃ РґРµС„РёСЃР°)
+        wpUrlSafe,            // Р‘РµР·РѕРїР°СЃРЅРѕ РґР»СЏ URL (Р±РµР· &, ?, =, %, /, +, РїСЂРѕР±РµР»РѕРІ)
 
-        // Специфичные для БД / Систем
-        wpBitrixDb,           // Буквы, цифры, и строго определенные знаки (!?()@#$-+=_)
-        wpOracleSafe,         // Специфика Oracle: ДОЛЖЕН начинаться с буквы, только _ $ #
-        wpActiveDirectory,    // Строго удовлетворяет сложности AD (мин 1 заглавная, 1 строчная, 1 цифра, 1 спец)
+        // РЎРїРµС†РёС„РёС‡РЅС‹Рµ РґР»СЏ Р‘Р” / РЎРёСЃС‚РµРј
+        wpBitrixDb,           // Р‘СѓРєРІС‹, С†РёС„СЂС‹, Рё СЃС‚СЂРѕРіРѕ РѕРїСЂРµРґРµР»РµРЅРЅС‹Рµ Р·РЅР°РєРё (!?()@#$-+=_)
+        wpOracleSafe,         // РЎРїРµС†РёС„РёРєР° Oracle: Р”РћР›Р–Р•Рќ РЅР°С‡РёРЅР°С‚СЊСЃСЏ СЃ Р±СѓРєРІС‹, С‚РѕР»СЊРєРѕ _ $ #
+        wpActiveDirectory,    // РЎС‚СЂРѕРіРѕ СѓРґРѕРІР»РµС‚РІРѕСЂСЏРµС‚ СЃР»РѕР¶РЅРѕСЃС‚Рё AD (РјРёРЅ 1 Р·Р°РіР»Р°РІРЅР°СЏ, 1 СЃС‚СЂРѕС‡РЅР°СЏ, 1 С†РёС„СЂР°, 1 СЃРїРµС†)
 
-        // Человекочитаемые
-        wpNoLookAlikes,       // Без похожих символов: (I, l, 1, O, 0) - чтобы диктовать по телефону / читать с экрана
+        // Р§РµР»РѕРІРµРєРѕС‡РёС‚Р°РµРјС‹Рµ
+        wpNoLookAlikes,       // Р‘РµР· РїРѕС…РѕР¶РёС… СЃРёРјРІРѕР»РѕРІ: (I, l, 1, O, 0) - С‡С‚РѕР±С‹ РґРёРєС‚РѕРІР°С‚СЊ РїРѕ С‚РµР»РµС„РѕРЅСѓ / С‡РёС‚Р°С‚СЊ СЃ СЌРєСЂР°РЅР°
 
-        // НОВЫЕ ШАБЛОНЫ
-        wpMacAddress,         // MAC-адрес (XX:XX:XX:XX:XX:XX)
+        // РќРћР’Р«Р• РЁРђР‘Р›РћРќР«
+        wpMacAddress,         // MAC-Р°РґСЂРµСЃ (XX:XX:XX:XX:XX:XX)
         wpUUIDv4,             // UUID v4
-        wpBase64Key,          // Base64 Ключ
-        wpWebStandard,        // Стандартный пароль для сайтов (A-Z, a-z, 0-9, !@#$%*?)
-        wpCustom              // Кастомный режим (KeePass-like)
+        wpBase64Key,          // Base64 РљР»СЋС‡
+        wpWebStandard,        // РЎС‚Р°РЅРґР°СЂС‚РЅС‹Р№ РїР°СЂРѕР»СЊ РґР»СЏ СЃР°Р№С‚РѕРІ (A-Z, a-z, 0-9, !@#$%*?)
+        wpCustom              // РљР°СЃС‚РѕРјРЅС‹Р№ СЂРµР¶РёРј (KeePass-like)
     );
 
-    // Настройки для кастомного режима
+    // РќР°СЃС‚СЂРѕР№РєРё РґР»СЏ РєР°СЃС‚РѕРјРЅРѕРіРѕ СЂРµР¶РёРјР°
     TCustomPasswordSettings = record
         UseLower: Boolean;
         UseUpper: Boolean;
         UseNumbers: Boolean;
         UseSymbols: Boolean;
-        IncludeChars: string; // Символы, которые ОБЯЗАТЕЛЬНО должны быть в пароле
-        ExcludeChars: string; // Символы, которых точно НЕ ДОЛЖНО быть
+        IncludeChars: string; // РЎРёРјРІРѕР»С‹, РєРѕС‚РѕСЂС‹Рµ РћР‘РЇР—РђРўР•Р›Р¬РќРћ РґРѕР»Р¶РЅС‹ Р±С‹С‚СЊ РІ РїР°СЂРѕР»Рµ
+        ExcludeChars: string; // РЎРёРјРІРѕР»С‹, РєРѕС‚РѕСЂС‹С… С‚РѕС‡РЅРѕ РќР• Р”РћР›Р–РќРћ Р±С‹С‚СЊ
     end;
 
-    // DTO для истории генераций
+    // DTO РґР»СЏ РёСЃС‚РѕСЂРёРё РіРµРЅРµСЂР°С†РёР№
     TPasswordHistoryItem = record
         Password: string;
         PresetName: string;
@@ -358,20 +360,20 @@ type
     end;
     IPasswordService = interface
         ['{C5F1AD9B-21B6-4B42-9267-6C2FF69DA6B6}']
-        // Генерирует пароль по выбранному шаблону. Принимает флаг UniqueChars
+        // Р“РµРЅРµСЂРёСЂСѓРµС‚ РїР°СЂРѕР»СЊ РїРѕ РІС‹Р±СЂР°РЅРЅРѕРјСѓ С€Р°Р±Р»РѕРЅСѓ. РџСЂРёРЅРёРјР°РµС‚ С„Р»Р°Рі UniqueChars
         function GeneratePassword(Preset: TPasswordPreset; Length: Integer; UniqueChars: Boolean): string;
         function GetPresetDescription(Preset: TPasswordPreset): string;
         function GetPoolSize(Preset: TPasswordPreset): Integer;
-        // Расчет размера пула для кастомного режима
+        // Р Р°СЃС‡РµС‚ СЂР°Р·РјРµСЂР° РїСѓР»Р° РґР»СЏ РєР°СЃС‚РѕРјРЅРѕРіРѕ СЂРµР¶РёРјР°
         function GetCustomPoolSize(const Settings: TCustomPasswordSettings): Integer;
         function CalculateEntropy(Length, PoolSize: Integer): Double;
-        // Методы для истории
+        // РњРµС‚РѕРґС‹ РґР»СЏ РёСЃС‚РѕСЂРёРё
         procedure AddToHistory(const Password: string; Preset: TPasswordPreset; PassLen: Integer);
         function GetHistory: TArray<TPasswordHistoryItem>;
         procedure ClearHistory;
-        // Генерация по кастомным правилам
+        // Р“РµРЅРµСЂР°С†РёСЏ РїРѕ РєР°СЃС‚РѕРјРЅС‹Рј РїСЂР°РІРёР»Р°Рј
         function GenerateCustomPassword(const Settings: TCustomPasswordSettings; Length: Integer; UniqueChars: Boolean): string;
-        // Перегруженный метод для истории, чтобы он принимал строку описания напрямую
+        // РџРµСЂРµРіСЂСѓР¶РµРЅРЅС‹Р№ РјРµС‚РѕРґ РґР»СЏ РёСЃС‚РѕСЂРёРё, С‡С‚РѕР±С‹ РѕРЅ РїСЂРёРЅРёРјР°Р» СЃС‚СЂРѕРєСѓ РѕРїРёСЃР°РЅРёСЏ РЅР°РїСЂСЏРјСѓСЋ
         procedure AddToHistoryCustom(const Password, CustomDescription: string; PassLen: Integer; Entropy: Double);
     end;
 
@@ -392,30 +394,30 @@ type
         function GetWindowInfo: TWindowHelperInfo;
     end;
 
-    // Структура для хранения найденного в логах таймстемпа
+    // РЎС‚СЂСѓРєС‚СѓСЂР° РґР»СЏ С…СЂР°РЅРµРЅРёСЏ РЅР°Р№РґРµРЅРЅРѕРіРѕ РІ Р»РѕРіР°С… С‚Р°Р№РјСЃС‚РµРјРїР°
     TEpochMatch = record
-        RawText: string;     // Сама строка (например, '1698245312')
-        FormatName: string;  // Название распознанного формата
-        UnixSeconds: Int64;  // Нормализованные секунды
-        LineIdx: Integer;    // Строка (1-based, идеально для SynEdit)
-        CharIdx: Integer;    // Позиция символа в строке (1-based)
-        PosLength: Integer;  // Длина таймстемпа
+        RawText: string;     // РЎР°РјР° СЃС‚СЂРѕРєР° (РЅР°РїСЂРёРјРµСЂ, '1698245312')
+        FormatName: string;  // РќР°Р·РІР°РЅРёРµ СЂР°СЃРїРѕР·РЅР°РЅРЅРѕРіРѕ С„РѕСЂРјР°С‚Р°
+        UnixSeconds: Int64;  // РќРѕСЂРјР°Р»РёР·РѕРІР°РЅРЅС‹Рµ СЃРµРєСѓРЅРґС‹
+        LineIdx: Integer;    // РЎС‚СЂРѕРєР° (1-based, РёРґРµР°Р»СЊРЅРѕ РґР»СЏ SynEdit)
+        CharIdx: Integer;    // РџРѕР·РёС†РёСЏ СЃРёРјРІРѕР»Р° РІ СЃС‚СЂРѕРєРµ (1-based)
+        PosLength: Integer;  // Р”Р»РёРЅР° С‚Р°Р№РјСЃС‚РµРјРїР°
     end;
 
     IEpochService = interface
         ['{395A784D-32ED-4C3E-A395-22BE4A89D2C2}']
-        // Умный парсинг (поддерживает секунды, миллисекунды и извлечение из текста)
+        // РЈРјРЅС‹Р№ РїР°СЂСЃРёРЅРі (РїРѕРґРґРµСЂР¶РёРІР°РµС‚ СЃРµРєСѓРЅРґС‹, РјРёР»Р»РёСЃРµРєСѓРЅРґС‹ Рё РёР·РІР»РµС‡РµРЅРёРµ РёР· С‚РµРєСЃС‚Р°)
         function ParseToUnixSeconds(const Input: string; out UnixSeconds: Int64): Boolean;
 
-        // Конвертация Unix -> DateTime
+        // РљРѕРЅРІРµСЂС‚Р°С†РёСЏ Unix -> DateTime
         function UnixToLocal(const UnixSeconds: Int64): TDateTime;
         function UnixToUTC(const UnixSeconds: Int64): TDateTime;
 
-        // Конвертация DateTime -> Unix
+        // РљРѕРЅРІРµСЂС‚Р°С†РёСЏ DateTime -> Unix
         function LocalToUnix(const LocalTime: TDateTime): Int64;
         function UTCToUnix(const UTCTime: TDateTime): Int64;
 
-        // Форматирование
+        // Р¤РѕСЂРјР°С‚РёСЂРѕРІР°РЅРёРµ
         function FormatISO8601(const ADateTime: TDateTime): string;
         function GetRelativeTimeHumanized(const ADateTime: TDateTime): string;
         function ExtractAllTimestamps(const Lines: TStrings): TArray<TEpochMatch>;
@@ -426,15 +428,15 @@ type
         procedure ApplyLanguage;
     end;
 
-    // Настройки для визуального конструктора Cron
+    // РќР°СЃС‚СЂРѕР№РєРё РґР»СЏ РІРёР·СѓР°Р»СЊРЅРѕРіРѕ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂР° Cron
     TCronSettings = record
         MinuteMode: (cmEveryMinute, cmIntervalMinute, cmCustomMinute);
-        MinuteInterval: Integer; // Для */N
-        MinuteCustom: string;    // Ручной ввод "0,15,30,45"
+        MinuteInterval: Integer; // Р”Р»СЏ */N
+        MinuteCustom: string;    // Р СѓС‡РЅРѕР№ РІРІРѕРґ "0,15,30,45"
 
         HourMode: (cmEveryHour, cmIntervalHour, cmCustomHour);
-        HourInterval: Integer;   // Для */N
-        HourCustom: string;      // Ручной ввод "2,4"
+        HourInterval: Integer;   // Р”Р»СЏ */N
+        HourCustom: string;      // Р СѓС‡РЅРѕР№ РІРІРѕРґ "2,4"
 
         DayOfMonthMode: (cmEveryDay, cmCustomDayOfMonth);
         DayOfMonthCustom: string;
@@ -448,9 +450,9 @@ type
 
     ICronService = interface
         ['{B1FE59DC-482B-4C01-9C73-02E6DF3F9E59}']
-        // Преобразует строку cron в правильный русский текст с учетом склонений
+        // РџСЂРµРѕР±СЂР°Р·СѓРµС‚ СЃС‚СЂРѕРєСѓ cron РІ РїСЂР°РІРёР»СЊРЅС‹Р№ СЂСѓСЃСЃРєРёР№ С‚РµРєСЃС‚ СЃ СѓС‡РµС‚РѕРј СЃРєР»РѕРЅРµРЅРёР№
         function ExpressionToHumanText(const Expression: string): string;
-        // Проверяет валидность структуры cron (5 компонентов)
+        // РџСЂРѕРІРµСЂСЏРµС‚ РІР°Р»РёРґРЅРѕСЃС‚СЊ СЃС‚СЂСѓРєС‚СѓСЂС‹ cron (5 РєРѕРјРїРѕРЅРµРЅС‚РѕРІ)
         function ValidateExpression(const Expression: string; out ErrorMsg: string): Boolean;
     end;
 
@@ -459,20 +461,20 @@ type
         function LoadModel(const GgufPath: string): Boolean;
         function IsModelLoaded: Boolean;
 
-        // Главный метод: отправляет промпт и возвращает ответ
+        // Р“Р»Р°РІРЅС‹Р№ РјРµС‚РѕРґ: РѕС‚РїСЂР°РІР»СЏРµС‚ РїСЂРѕРјРїС‚ Рё РІРѕР·РІСЂР°С‰Р°РµС‚ РѕС‚РІРµС‚
         function Ask(const SystemPrompt, UserPrompt: string): string;
 
-        // Проверяет, живой ли вообще интерпретатор
+        // РџСЂРѕРІРµСЂСЏРµС‚, Р¶РёРІРѕР№ Р»Рё РІРѕРѕР±С‰Рµ РёРЅС‚РµСЂРїСЂРµС‚Р°С‚РѕСЂ
         function IsPythonAvailable: Boolean;
 
-        // Проверяет, установлен ли модуль
+        // РџСЂРѕРІРµСЂСЏРµС‚, СѓСЃС‚Р°РЅРѕРІР»РµРЅ Р»Рё РјРѕРґСѓР»СЊ
         function IsLlamaModuleInstalled: Boolean;
 
-        // Выполняет установку пакета
+        // Р’С‹РїРѕР»РЅСЏРµС‚ СѓСЃС‚Р°РЅРѕРІРєСѓ РїР°РєРµС‚Р°
         function InstallLlamaModule(out Log: string): Boolean;
     end;
 
-    // Контейнер всех глобальных сервисов приложения
+    // РљРѕРЅС‚РµР№РЅРµСЂ РІСЃРµС… РіР»РѕР±Р°Р»СЊРЅС‹С… СЃРµСЂРІРёСЃРѕРІ РїСЂРёР»РѕР¶РµРЅРёСЏ
     IAppContext = interface
         ['{05B6A3A0-F265-4DF3-85A1-BF260B30957F}']
         function GetDatabaseManager: IDatabaseManager;
@@ -488,9 +490,9 @@ type
         function GetHotkeyService: IHotkeyService;
         function GetLocalAIService: ILocalAIService;
 
-        // Фабрика для фоновых потоков. Возвращает готовый сервис и ссылку на коннект для его очистки.
+        // Р¤Р°Р±СЂРёРєР° РґР»СЏ С„РѕРЅРѕРІС‹С… РїРѕС‚РѕРєРѕРІ. Р’РѕР·РІСЂР°С‰Р°РµС‚ РіРѕС‚РѕРІС‹Р№ СЃРµСЂРІРёСЃ Рё СЃСЃС‹Р»РєСѓ РЅР° РєРѕРЅРЅРµРєС‚ РґР»СЏ РµРіРѕ РѕС‡РёСЃС‚РєРё.
         function CreateIsolatedSnippetService(out BackgroundConnection: TComponent): ISnippetService;
-        // Создает полностью независимую копию контекста со своим подключением к БД
+        // РЎРѕР·РґР°РµС‚ РїРѕР»РЅРѕСЃС‚СЊСЋ РЅРµР·Р°РІРёСЃРёРјСѓСЋ РєРѕРїРёСЋ РєРѕРЅС‚РµРєСЃС‚Р° СЃРѕ СЃРІРѕРёРј РїРѕРґРєР»СЋС‡РµРЅРёРµРј Рє Р‘Р”
         function CreateIsolatedContext(out BackgroundConnection: TComponent): IAppContext;
 
         property DatabaseManager: IDatabaseManager read GetDatabaseManager;

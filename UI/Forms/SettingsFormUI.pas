@@ -69,7 +69,6 @@ type
         FLocalActions: TDictionary<string, TActionHotkeyInfo>;
         procedure LoadSettingsToUI;
         procedure PopulateHotkeysList(const FilterText: string = '');
-        function IsLocalShortCutInUse(const ActionID: string; ShortCut: TShortCut; out ConflictingActionName: string): Boolean;
     protected
         procedure DoInitialize; override;
     public
@@ -83,6 +82,7 @@ implementation
 
 uses
     CommonHelpers,
+    HotkeyService,
     System.IOUtils,
     UI.StateLoader,
     Vcl.FileCtrl,
@@ -222,33 +222,6 @@ begin
     pEditor.Enabled := True;
 end;
 
-function TSettingsForm.IsLocalShortCutInUse(const ActionID: string; ShortCut: TShortCut; out ConflictingActionName: string): Boolean;
-var
-    Info: TActionHotkeyInfo;
-    TargetFormClass: string;
-    CurrentFormClass: string;
-begin
-    Result := False;
-    ConflictingActionName := '';
-    if ShortCut = 0 then Exit;
-
-    TargetFormClass := ActionID.Split(['.'])[0];
-
-    for Info in FLocalActions.Values do
-    begin
-        if Info.CurrentShortCut = ShortCut then
-        begin
-            CurrentFormClass := Info.ActionName.Split(['.'])[0];
-
-            if SameText(TargetFormClass, CurrentFormClass) then
-            begin
-                ConflictingActionName := Info.DisplayName;
-                Exit(True);
-            end;
-        end;
-    end;
-end;
-
 procedure TSettingsForm.bApplyShortcutClick(Sender: TObject);
 var
     ActionID, ConflictName: string;
@@ -261,7 +234,7 @@ begin
 
     ActionID := THotkeyViewData(Item.Data).ActionID;
 
-    if IsLocalShortCutInUse(ActionID, hkEditor.HotKey, ConflictName) then
+    if THotkeyService.ShortCutInUseIn(ActionID, hkEditor.HotKey, FLocalActions.Values.ToArray, ConflictName) then
     begin
         if ConflictName <> FLocalActions[ActionID].DisplayName then
         begin

@@ -3,11 +3,11 @@ unit CategoryRepository;
 interface
 
 uses
-    Category,
+    Core.Entities.Category,
     Core.Interfaces,
     FireDAC.Comp.Client,
     RepositoryBase,
-    Snippet
+    Core.Entities.Snippet
     ;
 
 type
@@ -49,7 +49,7 @@ begin
     List := TList<TCategoryDTO>.Create;
     Query := CreateQuery;
     try
-        // sort_order и правильная сортировка
+        // sort_order пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         if UserID > 0 then
             Query.Open('SELECT id, user_id, name, parent_id, sort_order FROM snippet_categories WHERE user_id = ? ORDER BY parent_id, sort_order, name', [UserID])
         else
@@ -95,8 +95,8 @@ begin
             Result.ParentID := Q.FieldByName('parent_id').AsInteger;
 
             {$IFDEF DEBUG}
-            OutputDebugString(PChar(Format('CategoryRepository.GetByID: Found category ID=%d, UserID=%d, Name="%s"',
-                [Result.ID, Result.UserID, Result.Name])));
+            OutputDebugString(PChar(Format('CategoryRepository.GetByID: Found category ID=%d, UserID=%d',
+                [Result.ID, Result.UserID])));
             {$ENDIF}
         end
         else
@@ -153,7 +153,7 @@ var
     SiblingIDs: TList<Integer>;
     i, CurrentPos: Integer;
 begin
-    // === 1. Проверка владельца исходной категории ===
+    // === 1. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ===
     QGetOwner := CreateQuery;
     try
         QGetOwner.SQL.Text := 'SELECT user_id FROM snippet_categories WHERE id = :id';
@@ -168,7 +168,7 @@ begin
         QGetOwner.Free;
     end;
 
-    // === 2. Проверка владельца нового родителя (если указан) ===
+    // === 2. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ) ===
     if NewParentID > 0 then
     begin
         QGetOwner := CreateQuery;
@@ -185,7 +185,7 @@ begin
             QGetOwner.Free;
         end;
 
-        // Критичная проверка: пространства
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         if SourceUserID <> TargetUserID then
             raise Exception.Create(
                 TUIStateLoader.GetMessage('MoveToDifferentSpaceError')
@@ -193,13 +193,13 @@ begin
     end
     else
     begin
-        // NewParentID = 0 — перемещение в корень.
-        // Корень не имеет владельца, поэтому проверка не требуется.
-        // Но мы всё равно должны сохранить user_id исходной категории
-        // (он не меняется при перемещении).
+        // NewParentID = 0 пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.
+        // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
+        // пїЅпїЅ пїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ user_id пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+        // (пїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ).
     end;
 
-    // === 3. Получаем список siblings в НОВОЙ позиции ===
+    // === 3. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ siblings пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ ===
     SiblingIDs := TList<Integer>.Create;
     QGetSiblings := CreateQuery;
     try
@@ -231,7 +231,7 @@ begin
         QGetSiblings.Free;
     end;
 
-    // === 4. Вставляем ID в нужную позицию ===
+    // === 4. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ID пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ ===
     if Position < 0 then
         CurrentPos := SiblingIDs.Count
     else if Position > SiblingIDs.Count then
@@ -241,7 +241,7 @@ begin
 
     SiblingIDs.Insert(CurrentPos, ID);
 
-    // === 5. Обновляем parent_id и sort_order в транзакции ===
+    // === 5. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ parent_id пїЅ sort_order пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ===
     QUpd := CreateQuery;
     try
         FConnection.StartTransaction;
@@ -308,7 +308,7 @@ begin
         Q.Free;
     end;
 
-    // Получаем ID только что созданной записи
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ID пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
     Q := CreateQuery;
     try
         Q.Open('SELECT last_insert_rowid()');
@@ -339,7 +339,7 @@ var
 begin
     Q := CreateQuery;
     try
-        // Благодаря ON DELETE CASCADE в БД, удалятся вложенные категории и сниппеты
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ON DELETE CASCADE пїЅ пїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         Q.SQL.Text := 'DELETE FROM snippet_categories WHERE id = :id';
         Q.ParamByName('id').AsInteger := ID;
         Q.ExecSQL;
@@ -352,7 +352,7 @@ function TCategoryRepository.GetUserID(ID: Integer): Integer;
 var
     Query: TFDQuery;
 begin
-    Result := -1; // -1 означает "не найдено"
+    Result := -1; // -1 пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ "пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ"
     Query := CreateQuery;
     try
         Query.SQL.Text := 'SELECT user_id FROM snippet_categories WHERE id = :id';

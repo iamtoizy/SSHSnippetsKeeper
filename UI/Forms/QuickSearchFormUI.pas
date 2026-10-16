@@ -1,4 +1,4 @@
-unit QuickSearchFormUI;
+п»їunit QuickSearchFormUI;
 
 interface
 
@@ -32,7 +32,7 @@ type
         procedure lvQuickResultsDblClick(Sender: TObject);
         procedure lvQuickResultsEnter(Sender: TObject);
         procedure lvQuickResultsKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure lvQuickResultsDeletion(Sender: TObject; Item: TListItem);
+        procedure lvQuickResultsDeletion(Sender: TObject; Item: TListItem);
     private
         FSnippetService: ISnippetService;
         FUserService: IUserService;
@@ -40,12 +40,12 @@ type
         FUserID: Integer;
         FOldAppMessage: TMessageEvent;
         FWindowHelper: IWindowHelper;
-        // Глобальный перехватчик подсказок
+        // Р“Р»РѕР±Р°Р»СЊРЅС‹Р№ РїРµСЂРµС…РІР°С‚С‡РёРє РїРѕРґСЃРєР°Р·РѕРє
         FOldAppShowHint: TShowHintEvent;
         FDeactivateTimer: TTimer;
 
         procedure AppMessage(var Msg: TMsg; var Handled: Boolean);
-        // Генератор подсказок
+        // Р“РµРЅРµСЂР°С‚РѕСЂ РїРѕРґСЃРєР°Р·РѕРє
         procedure AppShowHint(var HintStr: string; var CanShow: Boolean; var HintInfo: VCL.Controls.THintInfo);
         procedure DeactivateTimerTick(Sender: TObject);
         procedure InsertSelectedSnippet;
@@ -70,12 +70,13 @@ var
 implementation
 
 uses
-    Snippet,
+    Core.Entities.Snippet,
     SnippetRunner,
     SnippetViewData,
     System.UITypes,
     UI.StateLoader,
-    User
+
+    Core.Entities.User
     ;
 
 {$R *.dfm}
@@ -85,10 +86,6 @@ const
 
 procedure TQuickSearchForm.FormDestroy(Sender: TObject);
 begin
-    // Restore Application handlers UNCONDITIONALLY: the default value of
-    // OnMessage/OnShowHint is nil, and the previous Assigned() check skipped
-    // the restore - after the form was freed, OnMessage kept pointing to the
-    // method of the dead object (AV at the very first message).
     Application.OnMessage := FOldAppMessage;
     FOldAppMessage := nil;
 
@@ -105,12 +102,12 @@ begin
     FOldAppMessage := Application.OnMessage;
     Application.OnMessage := AppMessage;
 
-    // Перехватываем генерацию подсказок на уровне всего приложения
+    // Р’РѕР·РІСЂР°С‰Р°РµРј СЃС‚Р°СЂС‹Р№ РѕР±СЂР°Р±РѕС‚С‡РёРє РїРѕРґСЃРєР°Р·РѕРє РЅР° РјРµСЃС‚Рѕ РїСЂРё Р·Р°РєСЂС‹С‚РёРё
     FOldAppShowHint := Application.OnShowHint;
     Application.OnShowHint := AppShowHint;
 
     Self.ShowHint := True;
-    lvQuickResults.ShowHint := True; // Обязательно включаем VCL-подсказки для списка
+    lvQuickResults.ShowHint := True; // РћР±СЏР·Р°С‚РµР»СЊРЅРѕ РІРєР»СЋС‡Р°РµРј VCL-РїРѕРґСЃРєР°Р·РєРё РґР»В¤ СЃРїРёСЃРєР°
     lvQuickResults.HideSelection := False;
 
     FDeactivateTimer := TTimer.Create(Self);
@@ -130,14 +127,14 @@ var
     MaxTipWidth: Integer;
     CurrentMonitor: TMonitor;
 begin
-    // Пропускаем вызов дальше, если были другие обработчики
+    // РџСЂРѕРїСѓСЃРєР°РµРј РІС‹Р·РѕРІ РґР°Р»СЊС€Рµ, РµСЃР»Рё Р±С‹Р»Рё РґСЂСѓРіРёРµ РѕР±СЂР°Р±РѕС‚С‡РёРєРё
     if Assigned(FOldAppShowHint) then
         FOldAppShowHint(HintStr, CanShow, HintInfo);
 
-    // Если система просит подсказку именно для нашего списка:
+    // Р•СЃР»Рё СЃРёСЃС‚РµРјР° РїСЂРѕСЃРёС‚ РїРѕРґСЃРєР°Р·РєСѓ РёРјРµРЅРЅРѕ РґР»В¤ РЅР°С€РµРіРѕ СЃРїРёСЃРєР°:
     if HintInfo.HintControl = lvQuickResults then
     begin
-        // Находим, над какой строчкой сейчас мышь
+        // РќР°С…РѕРґРёРј, РЅР°Рґ РєР°РєРѕР№ СЃС‚СЂРѕС‡РєРѕР№ СЃРµР№С‡Р°СЃ РјС‹С€СЊ
         Pt := lvQuickResults.ScreenToClient(Mouse.CursorPos);
         Item := lvQuickResults.GetItemAt(Pt.X, Pt.Y);
 
@@ -154,12 +151,12 @@ begin
             Exit;
         end;
 
-        // Говорим менеджеру подсказок: "Эта подсказка действительна только в границах этого Item-а".
-        // Пока мышь двигается внутри этих границ, VCL не будет перерисовывать окно и моргать.
-        // Как только мышь выйдет за границы Item-а, VCL сам скроет хинт и запросит новый.
+        // Р“РѕРІРѕСЂРёРј РјРµРЅРµРґР¶РµСЂСѓ РїРѕРґСЃРєР°Р·РѕРє: "РЃС‚Р° РїРѕРґСЃРєР°Р·РєР° РґРµР№СЃС‚РІРёС‚РµР»СЊРЅР° С‚РѕР»СЊРєРѕ РІ РіСЂР°РЅРёС†Р°С… СЌС‚РѕРіРѕ Item-Р°".
+        // РїРѕРєР° РјС‹С€СЊ РґРІРёРіР°РµС‚СЃВ¤ РІРЅСѓС‚СЂРё СЌС‚РёС… РіСЂР°РЅРёС†, VCL РЅРµ Р±СѓРґРµС‚ РїРµСЂРµСЂРёСЃРѕРІС‹РІР°С‚СЊ РѕРєРЅРѕ Рё РјРѕСЂРіР°С‚СЊ.
+        // РєР°Рє С‚РѕР»СЊРєРѕ РјС‹С€СЊ РІС‹Р№РґРµС‚ Р·Р° РіСЂР°РЅРёС†С‹ Item-Р°, VCL СЃР°Рј СЃРєСЂРѕРµС‚ С…РёРЅС‚ Рё Р·Р°РїСЂРѕСЃРёС‚ РЅРѕРІС‹Р№.
         HintInfo.CursorRect := Item.DisplayRect(drBounds);
 
-        // Динамический расчет ширины и формирование текста
+        // Р”РёРЅР°РјРёС‡РµСЃРєРёР№ СЂР°СЃС‡РµС‚ С€РёСЂРёРЅС‹ Рё С„РѕСЂРјРёСЂРѕРІР°РЅРёРµ С‚РµРєСЃС‚Р°
         CurrentMonitor := Screen.MonitorFromWindow(Handle);
         MaxTipWidth := Round(CurrentMonitor.Width * 0.40);
 
@@ -175,7 +172,7 @@ begin
             else
                 MaxLines := Lines.Count;
 
-            HintStr := ''; // Записываем прямо в системную переменную HintStr
+            HintStr := ''; // Р—Р°РїРёСЃС‹РІР°РµРј РїСЂСЏРјРѕ РІ СЃРёСЃС‚РµРјРЅСѓСЋ РїРµСЂРµРјРµРЅРЅСѓСЋ HintStr
 
             for I := 0 to MaxLines - 1 do
             begin
@@ -265,11 +262,6 @@ end;
 procedure TQuickSearchForm.DoClose(var Action: TCloseAction);
 begin
     inherited DoClose(Action);
-
-    // This form is an application-lifetime singleton (auto-create in .dpr,
-    // global QuickSearchForm var, global hotkey). TBaseForm.DoClose sets
-    // caFree for non-modal forms - after the first Close the global pointer
-    // and Application.OnMessage would reference a freed object. Always hide.
     Action := caHide;
 end;
 
@@ -479,9 +471,6 @@ var
     i: Integer;
     ForegroundThread, AppThread: DWORD;
 begin
-    // This form is auto-created and is never Initialized anywhere:
-    // without Initialize, FAppContext stays nil and snippet insertion
-    // crashes inside TSnippetRunner (nil interface access).
     if FAppContext = nil then
         Initialize(AppContext);
 
@@ -572,7 +561,9 @@ begin
             if ForeThread <> AppThread then
                 AttachThreadInput(AppThread, ForeThread, False);
         end;
-        Sleep(20);
+        var TickEnd := GetTickCount + 100;
+        while (GetForegroundWindow <> FTargetHWND) and (GetTickCount < TickEnd) do
+            Sleep(5);
     end;
 
     Hide;
@@ -593,7 +584,7 @@ var
     ViewData: TSnippetViewData;
     SelectedUserID: Integer;
 begin
-    // Принудительно гасим подсказку, если она висит, чтобы не было "призраков"
+    // РџСЂРёРЅСѓРґРёС‚РµР»СЊРЅРѕ РіР°СЃРёРј РїРѕРґСЃРєР°Р·РєСѓ, РµСЃР»Рё РѕРЅР° РІРёСЃРёС‚, С‡С‚РѕР±С‹ РЅРµ Р±С‹Р»Рѕ "РїСЂРёР·СЂР°РєРѕРІ"
     Application.CancelHint;
 
     SelectedUserID := 0;

@@ -1,11 +1,11 @@
-unit SnippetRunner;
+п»їunit SnippetRunner;
 
 interface
 
 uses
     Core.Interfaces,
     MacroInputTypes,
-    Snippet,
+    Core.Entities.Snippet,
     Winapi.Windows,
     WindowMonitor
     ;
@@ -34,7 +34,7 @@ uses
     Vcl.Controls
     ;
 
-{ Реализация TSnippetRunner }
+{ TSnippetRunner }
 
 constructor TSnippetRunner.Create(UserID: Integer; AppContext: IAppContext);
 begin
@@ -81,37 +81,37 @@ var
 begin
     Context := TMacroContext.Create;
     Context.Executor := FAppContext.WindowHelper;
-    Context.UserCancelled := False;
+    Context.UserCanceled := False;
     Context.SnippetID := SnippetID;
     Context.UserID := FUserID;
 
-    // Коллбэк для ввода
+    // РљРѕР»Р»Р±СЌРє РґР»СЏ РІРІРѕРґР°
     Context.OnInput :=
         function(const Prompt: string): string
         begin
-            Result := ''; // Здесь Result - это возвращаемая строка для OnInput
+            Result := ''; // Р—РґРµСЃСЊ Result - СЌС‚Рѕ РІРѕР·РІСЂР°С‰Р°РµРјР°СЏ СЃС‚СЂРѕРєР° РґР»СЏ OnInput
 
-            // Обращаемся к переменной Context из внешней области видимости
+            // РћР±СЂР°С‰Р°РµРјСЃСЏ Рє РїРµСЂРµРјРµРЅРЅРѕР№ Context РёР· РІРЅРµС€РЅРµР№ РѕР±Р»Р°СЃС‚Рё РІРёРґРёРјРѕСЃС‚Рё
             if ShowInputForm(Prompt, Context.CurrentDefaultValue, Context.CurrentInputType, FAppContext, Result) then
-                Context.UserCancelled := False
+                Context.UserCanceled := False
             else
             begin
-                Context.UserCancelled := True;
+                Context.UserCanceled := True;
                 Exit('');
             end;
         end;
 
-    // Коллбэк для подтверждения
+    // РљРѕР»Р»Р±СЌРє РґР»СЏ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ
     Context.OnConfirm :=
         function(const Prompt: string): Boolean
         begin
-            // Здесь Result - это возвращаемое значение (Boolean) для OnConfirm
-            Result := MessageBox(0, PChar(Prompt), 'Подтверждение', MB_YESNO or MB_ICONQUESTION or MB_TOPMOST) = IDYES;
+            // Р—РґРµСЃСЊ Result - СЌС‚Рѕ РІРѕР·РІСЂР°С‰Р°РµРјРѕРµ Р·РЅР°С‡РµРЅРёРµ (Boolean) РґР»СЏ OnConfirm
+            Result := MessageBox(0, PChar(Prompt), 'пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ', MB_YESNO or MB_ICONQUESTION or MB_TOPMOST) = IDYES;
             if not Result then
-                Context.UserCancelled := True;
+                Context.UserCanceled := True;
         end;
 
-    // Возвращаем готовый контекст из метода BuildMacroContext
+    // Р’РѕР·РІСЂР°С‰Р°РµРј РіРѕС‚РѕРІС‹Р№ РєРѕРЅС‚РµРєСЃС‚ РёР· РјРµС‚РѕРґР° BuildMacroContext
     Result := Context;
 end;
 
@@ -131,7 +131,7 @@ begin
         Exit;
     end;
 
-    // Анализ безопасности
+    // РђРЅР°Р»РёР· Р±РµР·РѕРїР°СЃРЅРѕСЃС‚Рё
     if not Snippet.IsSecurityCheckIgnored then
     begin
         Security := TSecurityScanner.Create;
@@ -140,7 +140,7 @@ begin
             WarningMsg :=
                 TUIStateLoader.GetMessage('Snippet.SensitiveDataFound', [WarningReason]);
 
-            // Если пользователь нажал "Нет" - прерываем.
+            // Р•СЃР»Рё РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РЅР°Р¶Р°Р» "РќРµС‚" - РїСЂРµСЂС‹РІР°РµРј.
             if not FAppContext.MessagesHandler.AskWarning(
                 WarningMsg,
                 TUIStateLoader.GetMessage('Common.Warning')
@@ -148,7 +148,7 @@ begin
         end;
     end;
 
-    // Выбор окна и подтверждение
+    // Р’С‹Р±РѕСЂ РѕРєРЅР° Рё РїРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ
     if not SelectTargetWindow(TargetWindow) then
         Exit;
 
@@ -162,7 +162,7 @@ begin
 
     if RequireConfirmation then
     begin
-        // Используем наш обычный диалог подтверждения
+        // РСЃРїРѕР»СЊР·СѓРµРј РЅР°С€ РѕР±С‹С‡РЅС‹Р№ РґРёР°Р»РѕРі РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ
         if not FAppContext.MessagesHandler.AskConfirmation(
             TUIStateLoader.GetMessage('Terminal.ConfirmTarget', [TargetWindow.WindowTitle]),
             TUIStateLoader.GetMessage('Common.Confirmation'),
@@ -170,17 +170,19 @@ begin
         ) then Exit;
     end;
 
-    // Выполнение макроса
+    // Р’С‹РїРѕР»РЅРµРЅРёРµ РјР°РєСЂРѕСЃР°
     IsExecuting := True;
 
-    // Блокируем смену фокуса для нашего процесса (ASFW_ANY = 2)
-    // Это не позволит MainForm "выпрыгнуть" вперед при переключении
+    // Р‘Р»РѕРєРёСЂСѓРµРј СЃРјРµРЅСѓ С„РѕРєСѓСЃР° РґР»СЏ РЅР°С€РµРіРѕ РїСЂРѕС†РµСЃСЃР° (ASFW_ANY = 2)
+    // Р­С‚Рѕ РЅРµ РїРѕР·РІРѕР»РёС‚ MainForm "РІС‹РїСЂС‹РіРЅСѓС‚СЊ" РІРїРµСЂРµРґ РїСЂРё РїРµСЂРµРєР»СЋС‡РµРЅРёРё
     try
         LockSetForegroundWindow(LSFW_LOCK);
         try
             Context := BuildMacroContext(Snippet.ID, TargetWindow.HWND);
             SetForegroundWindow(TargetWindow.HWND);
-            Sleep(50);
+            var TickEnd := GetTickCount + 100;
+            while (GetForegroundWindow <> TargetWindow.HWND) and (GetTickCount < TickEnd) do
+                Sleep(5);
             FAppContext.WindowHelper.SetTargetWindow(TargetWindow.HWND);
             FAppContext.WindowHelper.TypeTextIntoWindowWithContext(Snippet.Content, Context);
         finally

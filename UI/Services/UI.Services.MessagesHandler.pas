@@ -1,4 +1,4 @@
-unit UI.Services.MessagesHandler;
+﻿unit UI.Services.MessagesHandler;
 
 interface
 
@@ -11,7 +11,7 @@ uses
 type
     TUIMessagesHandler = class(TInterfacedObject, IUIMessagesHandler)
     private
-        // ��������������� ����� ��� ��������� ����������� ��������� ����
+        // Вспомогательный метод для получения правильного владельца окна
         function GetSafeHandle: HWND;
     public
         procedure ShowError(const Message: string);
@@ -34,7 +34,7 @@ uses
 
 function TUIMessagesHandler.GetSafeHandle: HWND;
 begin
-    // ���� ���� �������� �����, ����������� ������ � ���. ����� � Application.
+    // Если есть активная форма, привязываем диалог к ней. Иначе к Application.
     if Assigned(Screen.ActiveForm) then
         Result := Screen.ActiveForm.Handle
     else if Assigned(Application) then
@@ -45,8 +45,8 @@ end;
 
 procedure TUIMessagesHandler.ShowError(const Message: string);
 begin
-    // ����������� ��������� (Fire-and-forget) ���������� ����� TThread.Queue,
-    // ����� ��� �������������� ��������� � ������� ������ VCL, �� �������� ������� �����.
+    // Асинхронные сообщения (Fire-and-forget) отправляем через TThread.Queue,
+    // чтобы они гарантированно вызвались в главном потоке VCL, не блокируя фоновый поток.
     TThread.Queue(nil,
         procedure
         begin
@@ -84,15 +84,15 @@ function TUIMessagesHandler.AskConfirmation(const Message, Title: string; Flags:
 var
     DlgResult: Integer;
 begin
-    // ���� � �������� ������ ���������� ������� ����� � ��������� ������.
-    // ���������, ��������� �� �� ��� � ������� ������:
+    // Окно с вопросом ДОЛЖНО остановить фоновый поток и дождаться ответа.
+    // Проверяем, находимся ли мы уже в главном потоке:
     if TThread.CurrentThread.ThreadID = MainThreadID then
     begin
         Result := ConfirmationResultIsYes(MessageBox(GetSafeHandle, PChar(Message), PChar(Title), Flags));
     end
     else
     begin
-        // ���� �� � ���� (TTask), ���������� Synchronize ��� ���������� ��������� � ������ UI
+        // Если мы в фоне (TTask), используем Synchronize для безопасной остановки и показа UI
         TThread.Synchronize(nil,
             procedure
             begin
@@ -108,7 +108,7 @@ var
     DlgResult: Boolean;
     LValue: string;
 begin
-    LValue := Value; // ��������� ����� ��� ����������� ������� � ��������� �����
+    LValue := Value; // Локальная копия для безопасного захвата в анонимный метод
 
     if TThread.CurrentThread.ThreadID = MainThreadID then
     begin

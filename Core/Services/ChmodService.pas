@@ -1,4 +1,4 @@
-unit ChmodService;
+﻿unit ChmodService;
 
 interface
 
@@ -8,31 +8,31 @@ uses
     System.RegularExpressions;
 
 type
-    // ������� ����� ��� ���� (12 ���)
+    // Битовая маска для прав (12 бит)
     TChmodBits = set of 0..11;
 
     TChmodService = class
     public
-        // ��������� ����� (��� �������� ����������)
+        // Константы битов (для удобства читаемости)
         const
             BIT_O_X = 0; BIT_O_W = 1; BIT_O_R = 2; // Other (Public)
             BIT_G_X = 3; BIT_G_W = 4; BIT_G_R = 5; // Group
             BIT_U_X = 6; BIT_U_W = 7; BIT_U_R = 8; // User (Owner)
             BIT_STICKY = 9; BIT_SGID = 10; BIT_SUID = 11; // Special
 
-        // �� ������ ����� � ������ (����. "0755" ��� "755")
+        // Из набора битов в строку (напр. "0755" или "755")
         class function BitsToOctal(const Bits: TChmodBits): string;
 
-        // �� ������������ ������ � ����� �����
+        // Из восьмеричной строки в набор битов
         class function OctalToBits(const OctalStr: string): TChmodBits;
 
-        // �� ������ ����� � ���������� ������ (����. "rwxr-xr-x")
+        // Из набора битов в символьную строку (напр. "rwxr-xr-x")
         class function BitsToSymbolic(const Bits: TChmodBits; IsDirectory: Boolean): string;
 
-        // �� ���������� ������ � ����� �����
+        // Из символьной строки в набор битов
         class function SymbolicToBits(const SymbolicStr: string): TChmodBits;
 
-        // ��������� ������� bash �������
+        // Генерация готовой bash команды
         class function BuildCommand(
             const OctalBits, User, Group, FileName: string;
             IsDir, IsRecursive, IsSudo, IsSmartX, IsSeparateMode: Boolean): string;
@@ -69,7 +69,7 @@ begin
     if Special > 0 then
         Result := Format('%d%d%d%d', [Special, User, Group, Other])
     else
-        Result := Format('0%d%d%d', [User, Group, Other]); // ����������� ������� 0
+        Result := Format('0%d%d%d', [User, Group, Other]); // Стандартный префикс 0
 end;
 
 class function TChmodService.BitsToSymbolic(const Bits: TChmodBits; IsDirectory: Boolean): string;
@@ -119,10 +119,10 @@ begin
     Result := [];
     CleanStr := OctalStr.Trim;
     if CleanStr.StartsWith('0') and (Length(CleanStr) > 1) then
-        CleanStr := CleanStr.Substring(1); // ������� ������� '0'
+        CleanStr := CleanStr.Substring(1); // Убираем префикс '0'
 
-    // � ���������� ���������� ������� ������������
-    // ������� ������� ������ ������ ������
+    // В реальности правильнее парсить восьмеричное
+    // Напишем строгий парсер справа налево
     var Len := Length(CleanStr);
     if Len > 0 then
     begin
@@ -162,7 +162,7 @@ begin
     S := SymbolicStr.Trim;
     if S.Length < 9 then Exit;
 
-    // ���������� ������ ������ (d/-), ����� ��������� 9
+    // Игнорируем первый символ (d/-), берем последние 9
     S := S.Substring(S.Length - 9);
 
     if S[1] = 'r' then Include(Result, BIT_U_R);
@@ -210,14 +210,10 @@ begin
     if IsSudo then
         Prefix := 'sudo ';
 
-    // 1. ��������� ������� chown (���� ������ �������� ��� ������)
+    // 1. Формируем команду chown (если указан владелец или группа)
     CmdOwner := '';
     if (User.Trim <> '') or (Group.Trim <> '') then
     begin
-        CmdOwner := User.Trim;
-        if Group.Trim <> '' then
-            CmdOwner := CmdOwner + ':' + Group.Trim;
-
         CmdOwner := Prefix + 'chown ';
         if IsRecursive then
             CmdOwner := CmdOwner + '-R ';
@@ -229,43 +225,43 @@ begin
         CmdOwner := CmdOwner + ' ' + TargetPath;
     end;
 
-    // 2. ��������� ������� chmod
+    // 2. Формируем команду chmod
     CmdMode := '';
 
-    // �������� 1: ���������� ����� ��� ����������� (����� find)
+    // Сценарий 1: Раздельный режим для вебмастеров (через find)
     if IsSeparateMode and IsRecursive then
     begin
-        // � ���������� ������ �� ������ �������� ��������: ����� 755, ����� 644
-        // (��� ����� ����� OctalBits ��� ������, � ��� ����� ������������ ��������,
-        // �� ������ ����������� ����� ������ ��� ����)
+        // В раздельном режиме мы жестко зашиваем классику: Папки 755, Файлы 644
+        // (Или можно брать OctalBits для файлов, а для папок генерировать отдельно,
+        // но обычно вебмастерам нужна именно эта пара)
         CmdMode := Prefix + 'find ' + TargetPath + ' -type d -exec chmod 755 {} \;' + ' && ' +
                    Prefix + 'find ' + TargetPath + ' -type f -exec chmod 644 {} \;';
     end
-    // �������� 2: ����� X (+X)
+    // Сценарий 2: Умный X (+X)
     else if IsSmartX and IsRecursive then
     begin
-        SmartXStr := 'a+X'; // ������� ����� �� ���� � ����������
+        SmartXStr := 'a+X'; // Базовое право на вход в директории
 
-        // ������ � �����, ����� �� �������� �� ����, ���� �� ������� ���� (0755) ��� ��� (755)
+        // Читаем с конца, чтобы не зависеть от того, есть ли ведущий ноль (0755) или нет (755)
         var Len := Length(OctalBits);
         if Len >= 3 then
         begin
-            // ����� ��������� (User)
+            // Права владельца (User)
             if CharInSet(OctalBits[Len-2], ['6', '7']) then SmartXStr := SmartXStr + ',u+rw'
             else SmartXStr := SmartXStr + ',u+r';
 
-            // ����� ������ (Group)
+            // Права группы (Group)
             if CharInSet(OctalBits[Len-1], ['6', '7']) then SmartXStr := SmartXStr + ',g+rw'
             else if CharInSet(OctalBits[Len-1], ['4', '5']) then SmartXStr := SmartXStr + ',g+r';
 
-            // ��������� ����� (Other)
+            // Публичные права (Other)
             if CharInSet(OctalBits[Len],   ['6', '7']) then SmartXStr := SmartXStr + ',o+rw'
             else if CharInSet(OctalBits[Len],   ['4', '5']) then SmartXStr := SmartXStr + ',o+r';
         end;
 
         CmdMode := Prefix + 'chmod -R ' + SmartXStr + ' ' + TargetPath;
     end
-    // �������� 3: ������������ chmod
+    // Сценарий 3: Классический chmod
     else
     begin
         CmdMode := Prefix + 'chmod ';
@@ -274,7 +270,7 @@ begin
         CmdMode := CmdMode + OctalBits + ' ' + TargetPath;
     end;
 
-    // 3. ��������� ���������
+    // 3. Склеиваем результат
     if (CmdOwner <> '') and (CmdMode <> '') then
         Result := CmdOwner + ' && ' + CmdMode
     else if CmdOwner <> '' then

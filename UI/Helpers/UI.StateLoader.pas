@@ -1,4 +1,4 @@
-unit UI.StateLoader;
+﻿unit UI.StateLoader;
 
 interface
 
@@ -10,13 +10,13 @@ uses
 type
     TUIStateLoader = class
     public
-        // �������� ����� � ������ (���������� 1 ��� ��� ������ ����������)
+        // Загрузка файла в память (Вызывается 1 раз при старте приложения)
         class procedure LoadLanguageFile(const JsonFilePath: string);
 
-        // ���������� ������� � ����� � � �����������
+        // Применение текстов к форме и её компонентам
         class procedure ApplyTranslations(Form: TCustomForm);
 
-        // ��������� ������ ���������� ������ �� ����� (��� ������, ��������)
+        // Получение любого системного текста по ключу (для ошибок, диалогов)
         class function GetMessage(const MessageKey: string): string; overload;
         class function GetMessage(const MessageKey: string; const Args: array of const): string; overload;
 
@@ -34,7 +34,7 @@ uses
     Vcl.Dialogs;
 
 var
-    // ���������� ��� ��������� ����� � ����������� ������
+    // Глобальный кэш языкового файла в оперативной памяти
     GCachedLanguageData: TJSONObject = nil;
 
 class procedure TUIStateLoader.LoadLanguageFile(const JsonFilePath: string);
@@ -48,27 +48,27 @@ begin
     if Assigned(GCachedLanguageData) then
         FreeAndNil(GCachedLanguageData);
 
-    // 1. ������ ����
+    // 1. Читаем файл
     JsonText := TFile.ReadAllText(JsonFilePath, TEncoding.UTF8);
 
-    // 2. ������� ��������� BOM-������ � ������ ������� �� �����
+    // 2. Убираем невидимый BOM-символ и лишние пробелы по краям
     JsonText := JsonText.Replace(#$FEFF, '').Trim;
 
-    // 3. ������� ���������� � ������� TJSONValue
+    // 3. Пробуем распарсить в базовый TJSONValue
     ParsedValue := TJSONObject.ParseJSONValue(JsonText);
 
-    // ���� �������� nil, ������ � ����� ������ JSON ���� �������������� ������
+    // Если вернулся nil, значит в самом тексте JSON есть синтаксическая ошибка
     if not Assigned(ParsedValue) then
         raise Exception.Create('JSON syntax error! Please check the contents of ' + JsonFilePath + ' using jsonlint.com.');
 
-    // 4. ���������, ��� ������ ����� - ��� ������ ������ { ... }
+    // 4. Проверяем, что корень файла - это именно Объект { ... }
     if not (ParsedValue is TJSONObject) then
     begin
         ParsedValue.Free;
         raise Exception.Create('JSON parsed successfully, but the root element is not an object { }!');
     end;
 
-    // 5. �� �������, ��������
+    // 5. Всё отлично, кэшируем
     GCachedLanguageData := TJSONObject(ParsedValue);
 end;
 
@@ -79,7 +79,7 @@ var
     Comp: TComponent;
     ClassKey: string;
 
-    // ���������� ������� ��� ��������� ������� �� ��������� ���� (�������� "EditLabel.Caption")
+    // Внутренняя функция для установки свойств по точечному пути (например "EditLabel.Caption")
     procedure SetNestedPropValue(AObject: TObject; const Path: string; const Value: string);
     var
         Tokens: TArray<string>;
@@ -92,19 +92,19 @@ var
         Tokens := Path.Split(['.']);
         CurrentObj := AObject;
 
-        // ���������� �� ������ �������� (��������, ������� ����� ������ EditLabel)
+        // Спускаемся по дереву объектов (например, сначала берем объект EditLabel)
         for I := 0 to High(Tokens) - 1 do
         begin
             if not IsPublishedProp(CurrentObj, Tokens[I]) then Exit;
-            // �������� ������ �� ��������� ������
+            // Получаем ссылку на вложенный объект
             CurrentObj := GetObjectProp(CurrentObj, Tokens[I]);
             if not Assigned(CurrentObj) then Exit;
         end;
 
-        // ��������� �������� � ���������� �������� (��������, Caption)
+        // Применяем значение к последнему свойству (например, Caption)
         if IsPublishedProp(CurrentObj, Tokens[High(Tokens)]) then
         begin
-            // �������� ���� ��������: ������ ������ �������� �������� � ����� � �.�.
+            // Проверка типа свойства: строку нельзя напрямую впихнуть в число и т.д.
             PropInfo := GetPropInfo(CurrentObj, Tokens[High(Tokens)]);
             if Assigned(PropInfo) and (PropInfo^.PropType^.Kind in [tkString, tkLString, tkWString, tkUString]) then
                 SetPropValue(CurrentObj, Tokens[High(Tokens)], Value);
@@ -115,40 +115,40 @@ begin
     if not Assigned(GCachedLanguageData) then
         Exit;
 
-    // ����������� ��� ������ (��������, 'TAddEditSnippetForm' -> 'AddEditSnippetForm')
+    // Вытаскиваем имя класса (Например, 'TAddEditSnippetForm' -> 'AddEditSnippetForm')
     ClassKey := Form.ClassName;
     if ClassKey.StartsWith('T') then
         ClassKey := ClassKey.Substring(1);
 
-    // ���� ���� � ������ ����� ����� (��������, "MainForm")
-    // ���� ������� �� ����� ������ (�������!), ���� �� ����� - �� ����� ����������
+    // Ищем блок с именем нашей формы (например, "MainForm")
+    // Ищем сначала по имени класса (Надежно!), если не нашли - по имени экземпляра
     if GCachedLanguageData.TryGetValue<TJSONObject>(ClassKey, FormObj) or
        GCachedLanguageData.TryGetValue<TJSONObject>(Form.Name, FormObj) or
        GCachedLanguageData.TryGetValue<TJSONObject>(Form.ClassName, FormObj) then
     begin
-        // ���������� ������ �� �����, ������� ���� � JSON
+        // Перебираем только те ключи, которые есть в JSON
         for PropPair in FormObj do
         begin
-            // �������� �: �������� �������� ������� -> ��� �������� ����� ����� (��������, Caption)
+            // СЦЕНАРИЙ А: Значение является строкой -> Это свойство самой формы (например, Caption)
             if PropPair.JsonValue is TJSONString then
             begin
                 SetNestedPropValue(Form, PropPair.JsonString.Value, PropPair.JsonValue.Value);
             end
-            // �������� �: �������� �������� �������� -> ��� ��������� ���������� ����������
+            // СЦЕНАРИЙ Б: Значение является объектом -> Это настройки вложенного компонента
             else if PropPair.JsonValue is TJSONObject then
             begin
                 CompObj := TJSONObject(PropPair.JsonValue);
-                Comp := Form.FindComponent(PropPair.JsonString.Value); // ������� ����� ���������� �� �����
+                Comp := Form.FindComponent(PropPair.JsonString.Value); // Быстрый поиск компонента по имени
                 {$IFDEF DEBUG}
                 if not Assigned(Comp) then
                 begin
-                    raise Exception.Create('��������� �� ������ �� �����: ' + PropPair.JsonString.Value);
+                    raise Exception.Create('Компонент не найден на форме: ' + PropPair.JsonString.Value);
                 end;
                 {$ENDIF}
 
                 if Assigned(Comp) then
                 begin
-                    // ��������� ������� TListView ����� tag
+                    // Обработка колонок TListView через tag
                     if (Comp is TListView) and (CompObj.GetValue('Columns') is TJSONObject) then
                     begin
                         var ColObj := TJSONObject(CompObj.GetValue('Columns'));
@@ -166,12 +166,12 @@ begin
                         end;
                     end;
                     // ---------------------------------------------
-                    // ��������� ����������� �������� � ����������
+                    Применяем стандартные свойства к компоненту
                     for CompPropPair in CompObj do
                     begin
-                        if CompPropPair.JsonString.Value <> 'Columns' then // ���������� ���� �������
+                        if CompPropPair.JsonString.Value <> 'Columns' then // Игнорируем узел колонок
                         begin
-                            // ���������� ����� ������� ��� ���������� ��������
+                            // Используем новую функцию для применения свойства
                             SetNestedPropValue(Comp, CompPropPair.JsonString.Value, CompPropPair.JsonValue.Value);
                         end;
                     end;
@@ -188,7 +188,7 @@ var
     Tokens: TArray<string>;
     I: Integer;
 
-    // ��������� ������� ��� ����������� ���������� ����� � ������ ��������� \n
+    // Локальная функция для безопасного извлечения строк с учетом переносов \n
     function ExtractStr(Obj: TJSONObject; const PropName, DefaultVal: string): string;
     var
         Val: TJSONValue;
@@ -201,21 +201,21 @@ var
     end;
 
 begin
-    // ������ ���������� �������� �� ���������
+    // Задаем безопасные значения по умолчанию
     Title := 'Help';
     MainText := 'Help text not found.';
     ExpText := '';
 
     if not Assigned(GCachedLanguageData) then Exit;
 
-    // 1. ������ � ������ "Messages"
+    // 1. Входим в корень "Messages"
     MessagesVal := GCachedLanguageData.GetValue('Messages');
     if not (MessagesVal is TJSONObject) then Exit;
 
     CurrentObj := TJSONObject(MessagesVal);
     Tokens := BasePath.Split(['.']);
 
-    // 2. ���������� �� ������ �� ������ ����� (������ ���� ���� �� High(Tokens))
+    // 2. Спускаемся по дереву ДО САМОГО КОНЦА (теперь цикл идет до High(Tokens))
     for I := 0 to High(Tokens) do
     begin
         CurrentVal := CurrentObj.GetValue(Tokens[I]);
@@ -250,23 +250,23 @@ class function TUIStateLoader.GetMessage(const MessageKey: string; const Args: a
 var
     Mask: string;
 begin
-    // 1. �������� ����� ��� ����� ������
+    // 1. Получаем маску или текст ошибки
     Mask := GetMessage(MessageKey);
 
-    // 2. ������: ���� ����� ��� � JSON, ����� ���������� ������, �� ������� �������������
-    // (����� Format ��� �� ��������� �� ������������ ����������)
+    // 2. Защита: Если ключа нет в JSON, сразу возвращаем ошибку, не пытаясь форматировать
+    // (иначе Format мог бы ругнуться на несовпадение параметров)
     if Mask.StartsWith('[ERROR:') then
     begin
         Result := Mask;
         Exit;
     end;
 
-    // 3. �������� ���������� ���������
+    // 3. Пытаемся подставить параметры
     try
         Result := Format(Mask, Args);
     except
         on E: Exception do
-            // ���� ���������� ������ (��������, ������� %d ������ %s)
+            // Если переводчик ошибся (например, написал %d вместо %s)
             Result := '[FORMAT ERROR: ' + MessageKey + ']';
     end;
 end;
@@ -283,7 +283,7 @@ var
     I: Integer;
     ErrText: string;
 begin
-    // �� ��������� �������, ��� ����� ������ ���
+    // По умолчанию считаем, что ключа вообще нет
     Result := Format(ERR_KEY_NOT_FOUND, [MessageKey]);
 
     if not Assigned(GCachedLanguageData) then
@@ -292,7 +292,7 @@ begin
         Exit;
     end;
 
-    // 1. ������ � �������� ���� "Messages"
+    // 1. Входим в корневой узел "Messages"
     MessagesVal := GCachedLanguageData.GetValue('Messages');
     if not (MessagesVal is TJSONObject) then
     begin
@@ -302,19 +302,19 @@ begin
 
     CurrentObj := TJSONObject(MessagesVal);
 
-    // 2. ��������� ���� �� ������ �������
+    // 2. Разбираем ключ на массив токенов
     Tokens := MessageKey.Split(['.']);
     if Length(Tokens) = 0 then
         Exit;
 
-    // 3. ����������� ���������� �� ������ �������� �� �������������� ����
+    // 3. Динамически спускаемся по дереву объектов до предпоследнего узла
     for I := 0 to High(Tokens) - 1 do
     begin
         CurrentVal := CurrentObj.GetValue(Tokens[I]);
 
         if Assigned(CurrentVal) and (CurrentVal is TJSONString) then
         begin
-            // ������: �� ����� ������ (����� ���� ������ �� �����), � ��� ��������� ������!
+            // Ошибка: мы ждали объект (чтобы идти дальше по точке), а там оказалась строка!
             Result := Format('[ERROR: Token "%s" in key "%s" is a string, expected an object]', [Tokens[I], MessageKey]);
             Exit;
         end;
@@ -323,7 +323,7 @@ begin
             CurrentObj := TJSONObject(CurrentVal)
         else
         begin
-            // ������: ������ ������ ������ ��� � ���� �������
+            // Ошибка: такого токена вообще нет в этом объекте
             ErrText := Format(ERR_INVALID_STRUCTURE, [Tokens[I], MessageKey]);
             Result := ErrText;
             if TThread.CurrentThread.ThreadID <> MainThreadID then
@@ -338,12 +338,12 @@ begin
         end;
     end;
 
-    // 4. �� ����� �� �������� �������. ��������� �� ���� �������� ��������
+    // 4. Мы дошли до целевого объекта. Извлекаем из него конечное значение
     CurrentVal := CurrentObj.GetValue(Tokens[High(Tokens)]);
 
     if Assigned(CurrentVal) then
     begin
-        // ���� ����� ���� � �� �����, �������������� Result ���������� ���������
+        // Если дошли сюда — всё супер, перезаписываем Result правильным переводом
         if CurrentVal is TJSONString then
         begin
             Result := CurrentVal.Value;
@@ -356,14 +356,14 @@ begin
     begin
         Result := Format(ERR_KEY_NOT_FOUND, [MessageKey]);
     end;
-    // ���� CurrentVal = nil, �� ������ �� ������, � ����� �����������,
-    // ��������� Result � ������� ������.
+    // Если CurrentVal = nil, мы ничего не делаем, и метод завершается,
+    // возвращая Result с текстом ошибки.
 end;
 
 initialization
 
 finalization
-    // �������������� ������� ������ ��� ���������� ������ ���������
+    // Автоматическая очистка памяти при завершении работы программы
     if Assigned(GCachedLanguageData) then
         GCachedLanguageData.Free;
 

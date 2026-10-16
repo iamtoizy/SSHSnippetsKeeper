@@ -1,4 +1,4 @@
-unit WindowMonitor;
+п»їunit WindowMonitor;
 
 interface
 
@@ -26,7 +26,6 @@ type
         function GetWindowInfo(HWND: THandle): TWindowMonitorInfo;
         function IsProcessAllowed(const ExeName: string): Boolean;
         procedure AddToHistory(WindowInfo: TWindowMonitorInfo);
-        procedure RemoveFromHistory(HWND: THandle);
         procedure CleanupInvalidWindows;
         function GetAllowedWindowCount: Integer;
     public
@@ -64,7 +63,7 @@ uses
 
 const
     PROCESS_QUERY_LIMITED_INFORMATION = $1000;
-    MAX_HISTORY_SIZE = 50;  // Храним только последние 50 окон
+    MAX_HISTORY_SIZE = 50;  // РҐСЂР°РЅРёРј С‚РѕР»СЊРєРѕ РїРѕСЃР»РµРґРЅРёРµ 50 РѕРєРѕРЅ
 
 function QueryFullProcessImageName(hProcess: THandle; dwFlags: DWORD; lpExeName: PWideChar; var lpdwSize: DWORD): BOOL; stdcall; external 'kernel32' name 'QueryFullProcessImageNameW';
 
@@ -97,7 +96,7 @@ begin
     end;
 end;
 
-{ Глобальный колбэк - ведёт историю разрешённых окон }
+{ Р“Р»РѕР±Р°Р»СЊРЅС‹Р№ РєРѕР»Р±СЌРє - РІРµРґС‘С‚ РёСЃС‚РѕСЂРёСЋ СЂР°Р·СЂРµС€С‘РЅРЅС‹С… РѕРєРѕРЅ }
 procedure WinEventProc(hWinEventHook: THandle; eventType: DWORD; HWND: THandle; idObject, idChild: LONG; dwEventThread, dwmsEventTime: DWORD); stdcall;
 var
     ExeName: string;
@@ -113,7 +112,7 @@ begin
     if ExeName = '' then
         Exit;
 
-    // Добавляем в историю ТОЛЬКО разрешённые процессы
+    // Р”РѕР±Р°РІР»СЏРµРј РІ РёСЃС‚РѕСЂРёСЋ РўРћР›Р¬РљРћ СЂР°Р·СЂРµС€С‘РЅРЅС‹Рµ РїСЂРѕС†РµСЃСЃС‹
     if Assigned(WinMonitor) and WinMonitor.IsProcessAllowed(ExeName) then
     begin
         WindowMonitorInfo := WinMonitor.GetWindowInfo(HWND);
@@ -151,28 +150,28 @@ var
     I: Integer;
     ExistingWindow: TWindowMonitorInfo;
 begin
-    // Проверяем, есть ли это окно уже в истории
+    // РџСЂРѕРІРµСЂСЏРµРј, РµСЃС‚СЊ Р»Рё СЌС‚Рѕ РѕРєРЅРѕ СѓР¶Рµ РІ РёСЃС‚РѕСЂРёРё
     for I := 0 to FAllowedWindowHistory.Count - 1 do
     begin
         ExistingWindow := FAllowedWindowHistory[I];
         if ExistingWindow.HWND = WindowInfo.HWND then
         begin
-            // Окно уже в истории - удаляем его
+            // РћРєРЅРѕ СѓР¶Рµ РІ РёСЃС‚РѕСЂРёРё - СѓРґР°Р»СЏРµРј РµРіРѕ
             FAllowedWindowHistory.Delete(I);
             Break;
         end;
     end;
 
-    // Добавляем в конец списка
+    // Р”РѕР±Р°РІР»СЏРµРј РІ РєРѕРЅРµС† СЃРїРёСЃРєР°
     FAllowedWindowHistory.Add(WindowInfo);
 
-    // Удаляем старые записи, если превышен лимит
+    // РЈРґР°Р»СЏРµРј СЃС‚Р°СЂС‹Рµ Р·Р°РїРёСЃРё, РµСЃР»Рё РїСЂРµРІС‹С€РµРЅ Р»РёРјРёС‚
     while FAllowedWindowHistory.Count > MAX_HISTORY_SIZE do
     begin
         {$IFDEF DEBUG}
         OutputDebugString(PChar(Format('[WinMonitor] Removed old entry: HWND=%d', [FAllowedWindowHistory[0].HWND])));
         {$ENDIF}
-        FAllowedWindowHistory.Delete(0);  // Удаляем самое старое
+        FAllowedWindowHistory.Delete(0);  // РЈРґР°Р»СЏРµРј СЃР°РјРѕРµ СЃС‚Р°СЂРѕРµ
     end;
 
     {$IFDEF DEBUG}
@@ -180,25 +179,11 @@ begin
     {$ENDIF}
 end;
 
-procedure TWindowMonitor.RemoveFromHistory(HWND: THandle);
-var
-    I: Integer;
-begin
-    for I := FAllowedWindowHistory.Count - 1 downto 0 do
-    begin
-        if FAllowedWindowHistory[I].HWND = HWND then
-        begin
-            FAllowedWindowHistory.Delete(I);
-            Break;
-        end;
-    end;
-end;
-
 procedure TWindowMonitor.CleanupInvalidWindows;
 var
     I: Integer;
 begin
-    // Удаляем из истории окна, которые больше не существуют
+    // РЈРґР°Р»СЏРµРј РёР· РёСЃС‚РѕСЂРёРё РѕРєРЅР°, РєРѕС‚РѕСЂС‹Рµ Р±РѕР»СЊС€Рµ РЅРµ СЃСѓС‰РµСЃС‚РІСѓСЋС‚
     for I := FAllowedWindowHistory.Count - 1 downto 0 do
     begin
         if not IsWindow(FAllowedWindowHistory[I].HWND) then
@@ -282,10 +267,10 @@ end;
 
 function TWindowMonitor.GetLastAllowedWindow: TWindowMonitorInfo;
 begin
-    // Сначала чистим историю от закрытых окон
+    // РЎРЅР°С‡Р°Р»Р° С‡РёСЃС‚РёРј РёСЃС‚РѕСЂРёСЋ РѕС‚ Р·Р°РєСЂС‹С‚С‹С… РѕРєРѕРЅ
     CleanupInvalidWindows;
 
-    // Возвращаем последний элемент истории (самый недавний)
+    // Р’РѕР·РІСЂР°С‰Р°РµРј РїРѕСЃР»РµРґРЅРёР№ СЌР»РµРјРµРЅС‚ РёСЃС‚РѕСЂРёРё (СЃР°РјС‹Р№ РЅРµРґР°РІРЅРёР№)
     if FAllowedWindowHistory.Count > 0 then
         Result := FAllowedWindowHistory[FAllowedWindowHistory.Count - 1]
     else
@@ -301,7 +286,7 @@ end;
 
 function TWindowMonitor.GetAllowedWindowsHistory: TArray<TWindowMonitorInfo>;
 begin
-    // Чистим историю перед возвратом
+    // Р§РёСЃС‚РёРј РёСЃС‚РѕСЂРёСЋ РїРµСЂРµРґ РІРѕР·РІСЂР°С‚РѕРј
     CleanupInvalidWindows;
     Result := FAllowedWindowHistory.Items;
 end;
@@ -323,7 +308,7 @@ var
 begin
     CleanupInvalidWindows;
 
-    // Можно вводить, если в истории есть хотя бы одно разрешённое окно
+    // РњРѕР¶РЅРѕ РІРІРѕРґРёС‚СЊ, РµСЃР»Рё РІ РёСЃС‚РѕСЂРёРё РµСЃС‚СЊ С…РѕС‚СЏ Р±С‹ РѕРґРЅРѕ СЂР°Р·СЂРµС€С‘РЅРЅРѕРµ РѕРєРЅРѕ
     Result := FAllowedWindowHistory.Count > 0;
 
     if Result then
@@ -348,17 +333,17 @@ begin
     if (AWindowInfo.HWND = 0) or (not IsWindow(AWindowInfo.HWND)) then
         Exit;
 
-    // Если окно свёрнуто - восстанавливаем
+    // Р•СЃР»Рё РѕРєРЅРѕ СЃРІС‘СЂРЅСѓС‚Рѕ - РІРѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµРј
     if IsIconic(AWindowInfo.HWND) then
         ShowWindow(AWindowInfo.HWND, SW_RESTORE);
 
-    // Попытка 1: стандартная активация
+    // РџРѕРїС‹С‚РєР° 1: СЃС‚Р°РЅРґР°СЂС‚РЅР°СЏ Р°РєС‚РёРІР°С†РёСЏ
     SetForegroundWindow(AWindowInfo.HWND);
 
     if GetForegroundWindow = AWindowInfo.HWND then
         Exit(True);
 
-    // Попытка 2: через AttachThreadInput (для обхода ограничений Windows)
+    // РџРѕРїС‹С‚РєР° 2: С‡РµСЂРµР· AttachThreadInput (РґР»СЏ РѕР±С…РѕРґР° РѕРіСЂР°РЅРёС‡РµРЅРёР№ Windows)
     ForegroundThread := GetWindowThreadProcessId(GetForegroundWindow, nil);
     CurrentThread := GetCurrentThreadId;
 
@@ -403,7 +388,7 @@ begin
             TUIStateLoader.GetMessage('Common.WinEventHookError', [SysErrorMessage(GetLastError)])
         );
 
-    // Добавляем текущее окно в историю, если оно разрешено
+    // Р”РѕР±Р°РІР»СЏРµРј С‚РµРєСѓС‰РµРµ РѕРєРЅРѕ РІ РёСЃС‚РѕСЂРёСЋ, РµСЃР»Рё РѕРЅРѕ СЂР°Р·СЂРµС€РµРЅРѕ
     if IsProcessAllowed(GetExeNameFromHWND(GetForegroundWindow)) then
     begin
         var WindowMonitorInfo := GetWindowInfo(GetForegroundWindow);

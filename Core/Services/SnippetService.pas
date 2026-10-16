@@ -1,15 +1,15 @@
-unit SnippetService;
+п»їunit SnippetService;
 
 interface
 
 uses
     Core.Interfaces,
-    Snippet,
+    Core.Entities.Snippet,
     System.SysUtils
     ;
 
 type
-    // Доменные исключения
+    // Р”РѕРјРµРЅРЅС‹Рµ РёСЃРєР»СЋС‡РµРЅРёСЏ
     ESnippetValidationException = class(Exception);
     EAccessDeniedException = class(Exception);
 
@@ -34,15 +34,16 @@ type
         procedure UpdateSnippet(const Snippet: TSnippetDTO; const TagIDs: TArray<Integer>);
         procedure DeleteSnippet(const SnippetID: Integer);
 
-        // Методы для UI
+        // РњРµС‚РѕРґС‹ РґР»СЏ UI
         function GetSnippetByID(SnippetID: Integer): TSnippetDTO;
         function GetAllSnippets(UserID: Integer = 0): TArray<TSnippetDTO>;
         function GetSnippetsByCategory(CategoryID, UserID: Integer): TArray<TSnippetDTO>;
         function GetSnippetsByTag(TagID: Integer): TArray<TSnippetDTO>;
+        function GetSnippetsByTags(const TagIDs: TArray<Integer>; MatchAll: Boolean = False): TArray<TSnippetDTO>;
         function GetTopSnippets(UserID: Integer; Count: Integer): TArray<TSnippetDTO>;
         function GetRecentSnippets(UserID: Integer; Count: Integer): TArray<TSnippetDTO>;
 
-        // Обновленный метод поиска с учетом пространства
+        // РћР±РЅРѕРІР»РµРЅРЅС‹Р№ РјРµС‚РѕРґ РїРѕРёСЃРєР° СЃ СѓС‡РµС‚РѕРј РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІР°
         function SearchSnippets(const Query: string; UseFTS: Boolean; UserID: Integer = 0): TArray<TSnippetDTO>;
     end;
 
@@ -149,6 +150,11 @@ begin
         TUIStateLoader.GetMessage('Tag.InvalidIdError')
     );
     Result := FSnippetRepo.GetSnippetsByTag(TagID);
+end;
+
+function TSnippetService.GetSnippetsByTags(const TagIDs: TArray<Integer>; MatchAll: Boolean): TArray<TSnippetDTO>;
+begin
+    Result := FSnippetRepo.GetSnippetsByTags(TagIDs, MatchAll);
 end;
 
 function TSnippetService.GetTopSnippets(UserID: Integer; Count: Integer): TArray<TSnippetDTO>;

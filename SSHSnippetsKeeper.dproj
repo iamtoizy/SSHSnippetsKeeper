@@ -152,18 +152,18 @@
             <Form>MainForm</Form>
         </DCCReference>
         <DCCReference Include="ThirdParty\JSONSerializer.pas"/>
-        <DCCReference Include="Common\Settings.pas"/>
-        <DCCReference Include="Data\DataModule.pas">
+        <DCCReference Include="Common\Common.Settings.pas"/>
+        <DCCReference Include="Data\Data.Database.pas">
             <Form>AppDatabase</Form>
             <DesignClass>TDataModule</DesignClass>
         </DCCReference>
-        <DCCReference Include="Core\Entities\Snippet.pas"/>
+        <DCCReference Include="Core\Entities\Core.Entities.Snippet.pas"/>
         <DCCReference Include="Data\Repositories\SnippetRepository.pas"/>
-        <DCCReference Include="Core\Entities\Tag.pas"/>
-        <DCCReference Include="Core\Entities\Category.pas"/>
+        <DCCReference Include="Core\Entities\Core.Entities.Tag.pas"/>
+        <DCCReference Include="Core\Entities\Core.Entities.Category.pas"/>
         <DCCReference Include="Data\Repositories\CategoryRepository.pas"/>
         <DCCReference Include="Data\Repositories\UserRepository.pas"/>
-        <DCCReference Include="Core\Entities\User.pas"/>
+        <DCCReference Include="Core\Entities\Core.Entities.User.pas"/>
         <DCCReference Include="Data\Repositories\TagRepository.pas"/>
         <DCCReference Include="Data\RepositoryBase.pas"/>
         <DCCReference Include="ThirdParty\ArrayHelper.pas"/>
@@ -178,6 +178,7 @@
         <DCCReference Include="UI\Helpers\UI.Helpers.pas"/>
         <DCCReference Include="UI\Helpers\UI.TreeViewSearchHelper.pas"/>
         <DCCReference Include="UI\ViewModels\SnippetViewData.pas"/>
+        <DCCReference Include="UI\ViewModels\PresetData.pas"/>
         <DCCReference Include="MacroEngine\MacroActions.pas"/>
         <DCCReference Include="MacroEngine\MacroThread.pas"/>
         <DCCReference Include="MacroEngine\MacroEngine.pas"/>

@@ -1,11 +1,12 @@
-unit TagService;
+п»їunit TagService;
 
 interface
 
 uses
     Core.Interfaces,
     System.SysUtils,
-    Tag
+
+    Core.Entities.Tag
     ;
 
 type
@@ -51,7 +52,7 @@ end;
 
 function TTagService.GetSnippetTags(SnippetID: Integer): TArray<TTagDTO>;
 begin
-    // ID не может быть нулевым или отрицательным
+    // ID РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ РЅСѓР»РµРІС‹Рј РёР»Рё РѕС‚СЂРёС†Р°С‚РµР»СЊРЅС‹Рј
     if SnippetID <= 0 then
         Exit(nil);
 

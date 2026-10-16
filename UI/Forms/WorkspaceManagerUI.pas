@@ -1,4 +1,4 @@
-unit WorkspaceManagerUI;
+п»їunit WorkspaceManagerUI;
 
 interface
 
@@ -24,10 +24,10 @@ type
         nWorkspaceAdd: TMenuItem;
         nWorkspaceDelete: TMenuItem;
         nWorkspaceRename: TMenuItem;
-    ActionList: TActionList;
-    actAddWorkspace: TAction;
-    actDeleteWorkspace: TAction;
-    actEditWorkspace: TAction;
+        ActionList: TActionList;
+        actAddWorkspace: TAction;
+        actDeleteWorkspace: TAction;
+        actEditWorkspace: TAction;
         procedure actAddWorkspaceExecute(Sender: TObject);
         procedure actDeleteWorkspaceExecute(Sender: TObject);
         procedure actEditWorkspaceExecute(Sender: TObject);
@@ -56,7 +56,7 @@ implementation
 uses
     System.SysUtils,
     UI.StateLoader,
-    User,
+    Core.Entities.User,
     Vcl.Dialogs,
     Vcl.Forms,
     Winapi.CommCtrl,
@@ -108,7 +108,7 @@ var
     Item: TListItem;
     NewID: Integer;
 begin
-    if not InputQuery(
+    if not MessagesHandler.AskInput(
         TUIStateLoader.GetMessage('WorkspaceManagerForm.NewWorkspaceCaption'),
         TUIStateLoader.GetMessage('WorkspaceManagerForm.NewWorkspaceName'),
         NewName) then Exit;
@@ -121,7 +121,7 @@ begin
         UserDTO := Default(TUserDTO);
         UserDTO.Name := NewName;
 
-        // Получаем ID новой записи из сервиса (а не пытаемся прочитать UserDTO.ID)
+        // РџРѕР»СѓС‡Р°РµРј ID РЅРѕРІРѕР№ Р·Р°РїРёСЃРё РёР· СЃРµСЂРІРёСЃР° (Р° РЅРµ РїС‹С‚Р°РµРјСЃВ¤ РїСЂРѕС‡РёС‚Р°С‚СЊ UserDTO.ID)
         NewID := AppContext.UserService.AddUser(UserDTO);
 
         Item := lvWorkspaces.Items.Add;
@@ -155,7 +155,7 @@ begin
         MB_YESNO or MB_ICONWARNING) <> IDYES then Exit;
 
     try
-        // Бизнес-проверка "ID=1" теперь выполняется внутри сервиса
+        // Р‘РёР·РЅРµСЃ-РїСЂРѕРІРµСЂРєР° "ID=1" С‚РµРїРµСЂСЊ РІС‹РїРѕР»РЅВ¤РµС‚СЃВ¤ РІРЅСѓС‚СЂРё СЃРµСЂРІРёСЃР°
         AppContext.UserService.DeleteUser(UserID);
         Item.Delete;
     except
@@ -231,8 +231,8 @@ procedure TWorkspaceManagerForm.AdjustColumnWidth;
 begin
     if not Assigned(lvWorkspaces) or (lvWorkspaces.Handle = 0) then
         Exit;
-    // Константа LVSCW_AUTOSIZE_USEHEADER (-2) приказывает Windows автоматически растянуть
-    // последнюю колонку на всё доступное пространство.
+    // РљРѕРЅСЃС‚Р°РЅС‚Р° LVSCW_AUTOSIZE_USEHEADER (-2) РїСЂРёРєР°Р·С‹РІР°РµС‚ Windows Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё СЂР°СЃС‚В¤РЅСѓС‚СЊ
+    // РїРѕСЃР»РµРґРЅСЋСЋ РєРѕР»РѕРЅРєСѓ РЅР° РІСЃР„ РґРѕСЃС‚СѓРїРЅРѕРµ РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІРѕ.
     lvWorkspaces.Columns[0].Width := LVSCW_AUTOSIZE_USEHEADER;
 end;
 

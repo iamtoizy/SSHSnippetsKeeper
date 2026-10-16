@@ -1,4 +1,4 @@
-unit CronGenFormUI;
+п»їunit CronGenFormUI;
 
 interface
 
@@ -12,19 +12,26 @@ uses
     Vcl.Controls,
     Vcl.ExtCtrls,
     Vcl.Forms,
+    System.SysUtils,
     Vcl.StdCtrls,
-    Winapi.Messages // Обязательно для TMessage
+    Winapi.Messages
     ;
 
 type
     // =========================================================================
-    // Класс-перехватчик.
-    // Лечит внутренний баг Delphi (EListError / ExtractWrapper) путем
-    // жесткой блокировки мусорных координат от встроенного автоскролла Windows.
+    // РљР»Р°СЃСЃ-РїРµСЂРµС…РІР°С‚С‡РёРє.
+    // Р›РµС‡РёС‚ РІРЅСѓС‚СЂРµРЅРЅРёР№ Р±Р°Рі Delphi (EListError / ExtractWrapper) РїСѓС‚РµРј
+    // Р¶РµСЃС‚РєРѕР№ Р±Р»РѕРєРёСЂРѕРІРєРё РјСѓСЃРѕСЂРЅС‹С… РєРѕРѕСЂРґРёРЅР°С‚ РѕС‚ РІСЃС‚СЂРѕРµРЅРЅРѕРіРѕ Р°РІС‚РѕСЃРєСЂРѕР»Р»Р° Windows.
     // =========================================================================
     TCheckListBox = class(Vcl.CheckLst.TCheckListBox)
+    private
+        FOnBrushReleased: TProc;
+        FOnBrushMove: TProc<Integer, Integer>;
     protected
         procedure WndProc(var Message: TMessage); override;
+    public
+        property OnBrushReleased: TProc read FOnBrushReleased write FOnBrushReleased;
+        property OnBrushMove: TProc<Integer, Integer> read FOnBrushMove write FOnBrushMove;
     end;
 
     TCronGenForm = class(TBaseForm)
@@ -34,14 +41,14 @@ type
         bCopy: TButton;
         pgcBuilder: TPageControl;
 
-        // Вкладки
+        // Р’РєР»Р°РґРєРё
         tsMinutes: TTabSheet;
         tsHours: TTabSheet;
         tsDaysOfMonth: TTabSheet;
         tsMonths: TTabSheet;
         tsDaysOfWeek: TTabSheet;
 
-        // Минуты
+        // РњРёРЅСѓС‚С‹
         rbMinEvery: TRadioButton;
         rbMinStep: TRadioButton;
         cboMinStep: TComboBox;
@@ -51,7 +58,7 @@ type
         rbMinSpec: TRadioButton;
         clbMin: TCheckListBox;
 
-        // Часы
+        // Р§Р°СЃС‹
         rbHourEvery: TRadioButton;
         rbHourStep: TRadioButton;
         cboHourStep: TComboBox;
@@ -61,7 +68,7 @@ type
         rbHourSpec: TRadioButton;
         clbHour: TCheckListBox;
 
-        // Дни месяца
+        // Р”РЅРё РјРµСЃСЏС†Р°
         rbDomEvery: TRadioButton;
         rbDomStep: TRadioButton;
         cboDomStep: TComboBox;
@@ -71,7 +78,7 @@ type
         rbDomSpec: TRadioButton;
         clbDom: TCheckListBox;
 
-        // Месяцы
+        // РњРµСЃСЏС†С‹
         rbMonEvery: TRadioButton;
         rbMonStep: TRadioButton;
         cboMonStep: TComboBox;
@@ -80,7 +87,7 @@ type
         cboMonRange2: TComboBox;
         rbMonSpec: TRadioButton;
 
-        // Дни недели
+        // Р”РЅРё РЅРµРґРµР»Рё
         rbDowEvery: TRadioButton;
         rbDowStep: TRadioButton;
         cboDowStep: TComboBox;
@@ -98,23 +105,33 @@ type
         procedure bCopyClick(Sender: TObject);
         procedure FormShow(Sender: TObject);
 
-        // Обработчики Drag-to-Check
+        // РћР±СЂР°Р±РѕС‚С‡РёРєРё Drag-to-Check
         procedure clbMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
         procedure clbMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
         procedure clbClickCheck(Sender: TObject);
     private
+        type
+            TFieldGroup = record
+                rbEvery, rbStep, rbRange, rbSpec: TRadioButton;
+                ComboStep, ComboR1, ComboR2: TComboBox;
+                CLB: TCheckListBox;
+            end;
+
+    private
         FCronService: ICronService;
         FUpdatingUI: Boolean;
+        FGroups: TArray<TFieldGroup>;
 
-        // Переменные для умной "кисти" чекбоксов (Через таймер)
-        FBrushTimer: TTimer;
+        // РџРµСЂРµРјРµРЅРЅС‹Рµ РґР»СЏ СѓРјРЅРѕР№ "РєРёСЃС‚Рё" С‡РµРєР±РѕРєСЃРѕРІ (Р§РµСЂРµР· С‚Р°Р№РјРµСЂ)
         FActiveCLB: TCheckListBox;
         FBrushMode: Integer; // 1 = Check, 2 = Uncheck, 3 = Invert
         FLastBrushIdx: Integer;
         FStartBrushIdx: Integer;
         FBrushItemToggled: Boolean;
 
-        procedure OnBrushTimerTick(Sender: TObject);
+        procedure HandleBrushRelease;
+        procedure HandleBrushMove(X, Y: Integer);
+        procedure ApplyBrushAt(ACL: TCheckListBox; Idx: Integer);
 
         procedure PopulateLists;
         procedure FillCheckList(CLB: TCheckListBox; Start, Stop: Integer; const Names: TArray<string> = []);
@@ -127,7 +144,12 @@ type
 
         procedure AssignEvents;
         procedure UpdateCronUI;
+        procedure InitFieldGroups;
+        function MakeGroup(rbEvery, rbStep, rbRange, rbSpec: TRadioButton; cboStep, cboR1, cboR2: TComboBox; ACLB: TCheckListBox): TFieldGroup;
+        function FindGroupByControl(Sender: TObject; out Group: TFieldGroup): Boolean;
+        function FindGroupBySpecRadio(Sender: TObject; out Group: TFieldGroup): Boolean;
     public
+        procedure DoInitialize; override;
     end;
 
 var
@@ -138,7 +160,6 @@ implementation
 uses
     CommonHelpers,
     CronService,
-    System.SysUtils,
     UI.HoverHelpManager,
     UI.StateLoader,
     Vcl.Clipbrd,
@@ -149,32 +170,42 @@ uses
 {$R *.dfm}
 
 // =========================================================================
-// Реализация перехватчика TCheckListBox
+// Р РµР°Р»РёР·Р°С†РёСЏ РїРµСЂРµС…РІР°С‚С‡РёРєР° TCheckListBox
 // =========================================================================
 procedure TCheckListBox.WndProc(var Message: TMessage);
 var
-    X, Y: SmallInt;
-begin
-    // Перехватываем системные сообщения движения мыши и отпускания кнопки
+        X, Y: SmallInt;
+    begin
+        if (Message.Msg = WM_MOUSEMOVE) and
+            (TWMMouse(Message).Keys and MK_LBUTTON <> 0) and not MouseCapture then
+            SetCapture(Handle);
+
+        if (Message.Msg = WM_MOUSEMOVE) and Assigned(FOnBrushMove) and
+            (TWMMouse(Message).Keys and MK_LBUTTON <> 0) then
+            FOnBrushMove(TWMMouse(Message).XPos, TWMMouse(Message).YPos);
+
+    // РџРµСЂРµС…РІР°С‚С‹РІР°РµРј СЃРёСЃС‚РµРјРЅС‹Рµ СЃРѕРѕР±С‰РµРЅРёСЏ РґРІРёР¶РµРЅРёСЏ РјС‹С€Рё Рё РѕС‚РїСѓСЃРєР°РЅРёСЏ РєРЅРѕРїРєРё
     if (Message.Msg = WM_MOUSEMOVE) or (Message.Msg = WM_LBUTTONUP) then
     begin
-        // Если левая кнопка зажата (или это сообщение об её отпускании)
+        // Р•СЃР»Рё Р»РµРІР°СЏ РєРЅРѕРїРєР° Р·Р°Р¶Р°С‚Р° (РёР»Рё СЌС‚Рѕ СЃРѕРѕР±С‰РµРЅРёРµ РѕР± РµС‘ РѕС‚РїСѓСЃРєР°РЅРёРё)
         if (Message.Msg = WM_LBUTTONUP) or (TWMMouse(Message).Keys and MK_LBUTTON <> 0) then
         begin
             X := TWMMouse(Message).XPos;
             Y := TWMMouse(Message).YPos;
 
-            // Если координаты вылетели за границы клиентской части контрола
+            // Р•СЃР»Рё РєРѕРѕСЂРґРёРЅР°С‚С‹ РІС‹Р»РµС‚РµР»Рё Р·Р° РіСЂР°РЅРёС†С‹ РєР»РёРµРЅС‚СЃРєРѕР№ С‡Р°СЃС‚Рё РєРѕРЅС‚СЂРѕР»Р°
             if (X < 0) or (Y < 0) or (X > ClientWidth) or (Y > ClientHeight) then
             begin
-                // Корректно снимаем системный захват (чтобы мышь не "залипла")
+                // РљРѕСЂСЂРµРєС‚РЅРѕ СЃРЅРёРјР°РµРј СЃРёСЃС‚РµРјРЅС‹Р№ Р·Р°С…РІР°С‚ (С‡С‚РѕР±С‹ РјС‹С€СЊ РЅРµ "Р·Р°Р»РёРїР»Р°")
                 if (Message.Msg = WM_LBUTTONUP) and MouseCapture then
                     ReleaseCapture;
 
-                // БЛОКИРУЕМ ПЕРЕДАЧУ СООБЩЕНИЯ ДАЛЬШЕ.
-                // VCL никогда не узнает, что мы вышли за границы, и не запустит
-                // багованную функцию, приводящую к EListError (-5, -8, -18).
+                // Р‘Р›РћРљРР РЈР•Рњ РџР•Р Р•Р”РђР§РЈ РЎРћРћР‘Р©Р•РќРРЇ Р”РђР›Р¬РЁР•.
+                // VCL РЅРёРєРѕРіРґР° РЅРµ СѓР·РЅР°РµС‚, С‡С‚Рѕ РјС‹ РІС‹С€Р»Рё Р·Р° РіСЂР°РЅРёС†С‹, Рё РЅРµ Р·Р°РїСѓСЃС‚РёС‚
+                // Р±Р°РіРѕРІР°РЅРЅСѓСЋ С„СѓРЅРєС†РёСЋ, РїСЂРёРІРѕРґСЏС‰СѓСЋ Рє EListError (-5, -8, -18).
                 Message.Result := 0;
+                if (Message.Msg = WM_LBUTTONUP) and Assigned(FOnBrushReleased) then
+                    FOnBrushReleased();
                 Exit;
             end;
         end;
@@ -184,7 +215,7 @@ begin
 end;
 
 // =========================================================================
-// ОСНОВНОЙ КОД ФОРМЫ
+// РћРЎРќРћР’РќРћР™ РљРћР” Р¤РћР РњР«
 // =========================================================================
 
 procedure TCronGenForm.FormCreate(Sender: TObject);
@@ -197,15 +228,15 @@ begin
     RegisterHelp(clbMon,  hipBottomRight, 'Help.CronGenForm.CheckListBox', hkCustomForm);
     RegisterHelp(clbDow,  hipBottomRight, 'Help.CronGenForm.CheckListBox', hkCustomForm);
 
-    FCronService := TCronService.Create;
-
     pgcBuilder.DoubleBuffered := True;
+end;
 
-    // Таймер для надежной аппаратной кисти
-    FBrushTimer := TTimer.Create(Self);
-    FBrushTimer.Interval := 15;
-    FBrushTimer.Enabled := False;
-    FBrushTimer.OnTimer := OnBrushTimerTick;
+procedure TCronGenForm.DoInitialize;
+begin
+    inherited;
+
+    FCronService := TCronService.Create;
+    InitFieldGroups;
 
     FUpdatingUI := True;
     try
@@ -220,8 +251,108 @@ begin
     UpdateHumanTranslation;
 end;
 
+procedure TCronGenForm.InitFieldGroups;
+begin
+    FGroups := [
+        MakeGroup(rbMinEvery,  rbMinStep,  rbMinRange,  rbMinSpec,  cboMinStep,  cboMinRange1,  cboMinRange2,  clbMin),
+        MakeGroup(rbHourEvery, rbHourStep, rbHourRange, rbHourSpec, cboHourStep, cboHourRange1, cboHourRange2, clbHour),
+        MakeGroup(rbDomEvery,  rbDomStep,  rbDomRange,  rbDomSpec,  cboDomStep,  cboDomRange1,  cboDomRange2,  clbDom),
+        MakeGroup(rbMonEvery,  rbMonStep,  rbMonRange,  rbMonSpec,  cboMonStep,  cboMonRange1,  cboMonRange2,  clbMon),
+        MakeGroup(rbDowEvery,  rbDowStep,  rbDowRange,  rbDowSpec,  cboDowStep,  cboDowRange1,  cboDowRange2,  clbDow)
+    ];
+end;
+
+function TCronGenForm.MakeGroup(rbEvery, rbStep, rbRange, rbSpec: TRadioButton; cboStep, cboR1, cboR2: TComboBox; ACLB: TCheckListBox): TFieldGroup;
+begin
+    Result.rbEvery := rbEvery;
+    Result.rbStep := rbStep;
+    Result.rbRange := rbRange;
+    Result.rbSpec := rbSpec;
+    Result.ComboStep := cboStep;
+    Result.ComboR1 := cboR1;
+    Result.ComboR2 := cboR2;
+    Result.CLB := ACLB;
+end;
+
+function TCronGenForm.FindGroupByControl(Sender: TObject; out Group: TFieldGroup): Boolean;
+var
+    G: TFieldGroup;
+begin
+    for G in FGroups do
+        if (Sender = G.ComboStep) or (Sender = G.ComboR1) or
+            (Sender = G.ComboR2) or (Sender = G.CLB) then
+        begin
+            Group := G;
+            Exit(True);
+        end;
+    Result := False;
+end;
+
+function TCronGenForm.FindGroupBySpecRadio(Sender: TObject; out Group: TFieldGroup): Boolean;
+var
+    G: TFieldGroup;
+begin
+    for G in FGroups do
+        if Sender = G.rbSpec then
+        begin
+            Group := G;
+            Exit(True);
+        end;
+    Result := False;
+end;
+
+procedure TCronGenForm.HandleBrushRelease;
+begin
+    if (FBrushMode <> 0) and Assigned(FActiveCLB) then
+        clbMouseUp(FActiveCLB, mbLeft, [], 0, 0);
+end;
+
+procedure TCronGenForm.HandleBrushMove(X, Y: Integer);
+var
+    Idx: Integer;
+begin
+    if not Assigned(FActiveCLB) or (FBrushMode = 0) then
+        Exit;
+
+    Idx := FActiveCLB.ItemAtPos(Point(X, Y), True);
+
+    if (Idx >= 0) and (Idx < FActiveCLB.Items.Count) and (Idx <> FLastBrushIdx) then
+    begin
+        if not FBrushItemToggled then
+        begin
+            ApplyBrushAt(FActiveCLB, FStartBrushIdx);
+            FBrushItemToggled := True;
+        end;
+
+        FLastBrushIdx := Idx;
+        ApplyBrushAt(FActiveCLB, Idx);
+        OnBuilderControlChange(FActiveCLB);
+    end;
+end;
+
+procedure TCronGenForm.ApplyBrushAt(ACL: TCheckListBox; Idx: Integer);
+begin
+    if (Idx < 0) or (Idx >= ACL.Items.Count) then
+        Exit;
+    if FBrushMode = 3 then
+        ACL.Checked[Idx] := not ACL.Checked[Idx]
+    else
+        ACL.Checked[Idx] := (FBrushMode = 1);
+end;
+
 procedure TCronGenForm.AssignEvents;
 begin
+    clbMin.OnBrushReleased  := HandleBrushRelease;
+    clbMin.OnBrushMove      := HandleBrushMove;
+    clbHour.OnBrushReleased := HandleBrushRelease;
+    clbHour.OnBrushMove     := HandleBrushMove;
+    clbDom.OnBrushReleased  := HandleBrushRelease;
+    clbDom.OnBrushMove      := HandleBrushMove;
+    clbMon.OnBrushReleased  := HandleBrushRelease;
+    clbMon.OnBrushMove      := HandleBrushMove;
+    clbDow.OnBrushReleased  := HandleBrushRelease;
+    clbDow.OnBrushMove      := HandleBrushMove;
+
     cboMinStep.OnEnter    := OnBuilderControlChange;
     cboMinRange1.OnEnter  := OnBuilderControlChange;
     cboMinRange2.OnEnter  := OnBuilderControlChange;
@@ -267,6 +398,7 @@ end;
 procedure TCronGenForm.UpdateCronUI;
 var
     InactiveColor: TColor;
+    Group: TFieldGroup;
 
     procedure SyncState(RB: TRadioButton; const Ctrls: array of TControl);
     var
@@ -300,30 +432,13 @@ var
 begin
     InactiveColor := $00F0F0F0;
 
-    SyncState(rbMinEvery,  []);
-    SyncState(rbMinStep,   [cboMinStep]);
-    SyncState(rbMinRange,  [cboMinRange1,  cboMinRange2]);
-    SyncState(rbMinSpec,   [clbMin]);
-
-    SyncState(rbHourEvery, []);
-    SyncState(rbHourStep,  [cboHourStep]);
-    SyncState(rbHourRange, [cboHourRange1, cboHourRange2]);
-    SyncState(rbHourSpec,  [clbHour]);
-
-    SyncState(rbDomEvery,  []);
-    SyncState(rbDomStep,   [cboDomStep]);
-    SyncState(rbDomRange,  [cboDomRange1,  cboDomRange2]);
-    SyncState(rbDomSpec,   [clbDom]);
-
-    SyncState(rbMonEvery,  []);
-    SyncState(rbMonStep,   [cboMonStep]);
-    SyncState(rbMonRange,  [cboMonRange1,  cboMonRange2]);
-    SyncState(rbMonSpec,   [clbMon]);
-
-    SyncState(rbDowEvery,  []);
-    SyncState(rbDowStep,   [cboDowStep]);
-    SyncState(rbDowRange,  [cboDowRange1,  cboDowRange2]);
-    SyncState(rbDowSpec,   [clbDow]);
+    for Group in FGroups do
+    begin
+        SyncState(Group.rbEvery, []);
+        SyncState(Group.rbStep,  [Group.ComboStep]);
+        SyncState(Group.rbRange, [Group.ComboR1, Group.ComboR2]);
+        SyncState(Group.rbSpec,  [Group.CLB]);
+    end;
 end;
 
 procedure TCronGenForm.FillCheckList(CLB: TCheckListBox; Start, Stop: Integer; const Names: TArray<string> = []);
@@ -368,32 +483,16 @@ end;
 
 procedure TCronGenForm.PopulateLists;
 var
+    I: Integer;
     MonthNames, DowNames: TArray<string>;
 begin
-    MonthNames := [
-        TUIStateLoader.GetMessage('Cron.Month-1'),
-        TUIStateLoader.GetMessage('Cron.Month-2'),
-        TUIStateLoader.GetMessage('Cron.Month-3'),
-        TUIStateLoader.GetMessage('Cron.Month-4'),
-        TUIStateLoader.GetMessage('Cron.Month-5'),
-        TUIStateLoader.GetMessage('Cron.Month-6'),
-        TUIStateLoader.GetMessage('Cron.Month-7'),
-        TUIStateLoader.GetMessage('Cron.Month-8'),
-        TUIStateLoader.GetMessage('Cron.Month-9'),
-        TUIStateLoader.GetMessage('Cron.Month-10'),
-        TUIStateLoader.GetMessage('Cron.Month-11'),
-        TUIStateLoader.GetMessage('Cron.Month-12')
-    ];
+    SetLength(MonthNames, 12);
+    for I := 1 to 12 do
+        MonthNames[I - 1] := TCronService.MonthName(I);
 
-    DowNames := [
-        TUIStateLoader.GetMessage('Cron.Dow-0'),
-        TUIStateLoader.GetMessage('Cron.Dow-1'),
-        TUIStateLoader.GetMessage('Cron.Dow-2'),
-        TUIStateLoader.GetMessage('Cron.Dow-3'),
-        TUIStateLoader.GetMessage('Cron.Dow-4'),
-        TUIStateLoader.GetMessage('Cron.Dow-5'),
-        TUIStateLoader.GetMessage('Cron.Dow-6')
-    ];
+    SetLength(DowNames, 7);
+    for I := 0 to 6 do
+        DowNames[I] := TCronService.DowName(I);
 
     clbMin.Columns  := 10;
     clbHour.Columns := 6;
@@ -573,71 +672,30 @@ begin
 end;
 
 procedure TCronGenForm.OnBuilderControlChange(Sender: TObject);
+var
+    Group: TFieldGroup;
 begin
     if FUpdatingUI then Exit;
 
     FUpdatingUI := True;
     try
-        if Sender = cboMinStep then rbMinStep.Checked := True
-        else if (Sender = cboMinRange1) or (Sender = cboMinRange2) then rbMinRange.Checked := True
-        else if Sender = clbMin then
+        if FindGroupByControl(Sender, Group) then
         begin
-            rbMinSpec.Checked := True;
-            if clbMin.ItemIndex < 0 then clbMin.ItemIndex := 0;
-        end
-        else if Sender = cboHourStep then rbHourStep.Checked := True
-        else if (Sender = cboHourRange1) or (Sender = cboHourRange2) then rbHourRange.Checked := True
-        else if Sender = clbHour then
-        begin
-            rbHourSpec.Checked := True;
-            if clbHour.ItemIndex < 0 then clbHour.ItemIndex := 0;
-        end
-        else if Sender = cboDomStep then rbDomStep.Checked := True
-        else if (Sender = cboDomRange1) or (Sender = cboDomRange2) then rbDomRange.Checked := True
-        else if Sender = clbDom then
-        begin
-            rbDomSpec.Checked := True;
-            if clbDom.ItemIndex < 0 then clbDom.ItemIndex := 0;
-        end
-        else if Sender = cboMonStep then rbMonStep.Checked := True
-        else if (Sender = cboMonRange1) or (Sender = cboMonRange2) then rbMonRange.Checked := True
-        else if Sender = clbMon then
-        begin
-            rbMonSpec.Checked := True;
-            if clbMon.ItemIndex < 0 then clbMon.ItemIndex := 0;
-        end
-        else if Sender = cboDowStep then rbDowStep.Checked := True
-        else if (Sender = cboDowRange1) or (Sender = cboDowRange2) then rbDowRange.Checked := True
-        else if Sender = clbDow then
-        begin
-            rbDowSpec.Checked := True;
-            if clbDow.ItemIndex < 0 then clbDow.ItemIndex := 0;
+            if Sender = Group.CLB then
+            begin
+                Group.rbSpec.Checked := True;
+                if Group.CLB.ItemIndex < 0 then Group.CLB.ItemIndex := 0;
+            end
+            else if (Sender = Group.ComboR1) or (Sender = Group.ComboR2) then
+                Group.rbRange.Checked := True
+            else
+                Group.rbStep.Checked := True;
         end;
 
-        if (Sender = rbMinSpec) and clbMin.CanFocus then
+        if FindGroupBySpecRadio(Sender, Group) and Group.CLB.CanFocus then
         begin
-            clbMin.SetFocus;
-            if clbMin.ItemIndex < 0 then clbMin.ItemIndex := 0;
-        end
-        else if (Sender = rbHourSpec) and clbHour.CanFocus then
-        begin
-            clbHour.SetFocus;
-            if clbHour.ItemIndex < 0 then clbHour.ItemIndex := 0;
-        end
-        else if (Sender = rbDomSpec) and clbDom.CanFocus then
-        begin
-            clbDom.SetFocus;
-            if clbDom.ItemIndex < 0 then clbDom.ItemIndex := 0;
-        end
-        else if (Sender = rbMonSpec) and clbMon.CanFocus then
-        begin
-            clbMon.SetFocus;
-            if clbMon.ItemIndex < 0 then clbMon.ItemIndex := 0;
-        end
-        else if (Sender = rbDowSpec) and clbDow.CanFocus then
-        begin
-            clbDow.SetFocus;
-            if clbDow.ItemIndex < 0 then clbDow.ItemIndex := 0;
+            Group.CLB.SetFocus;
+            if Group.CLB.ItemIndex < 0 then Group.CLB.ItemIndex := 0;
         end;
 
     finally
@@ -654,7 +712,7 @@ begin
 end;
 
 // =========================================================================
-// Машина состояний для выделения чекбоксов (Надежная реализация через Таймер)
+// РњР°С€РёРЅР° СЃРѕСЃС‚РѕСЏРЅРёР№ РґР»СЏ РІС‹РґРµР»РµРЅРёСЏ С‡РµРєР±РѕРєСЃРѕРІ (РќР°РґРµР¶РЅР°СЏ СЂРµР°Р»РёР·Р°С†РёСЏ С‡РµСЂРµР· РўР°Р№РјРµСЂ)
 // =========================================================================
 
 procedure TCronGenForm.clbClickCheck(Sender: TObject);
@@ -699,56 +757,6 @@ begin
         FLastBrushIdx := Idx;
         FStartBrushIdx := Idx;
         FBrushItemToggled := False;
-
-        FBrushTimer.Enabled := True;
-    end;
-end;
-
-procedure TCronGenForm.OnBrushTimerTick(Sender: TObject);
-var
-    Pt: TPoint;
-    Idx: Integer;
-begin
-    if not Assigned(FActiveCLB) or (FBrushMode = 0) then
-    begin
-        FBrushTimer.Enabled := False;
-        Exit;
-    end;
-
-    // Функция возвращает отрицательное число (< 0), если кнопка зажата.
-    // Если результат >= 0, значит кнопка отпущена (юзер бросил мышку).
-    if GetAsyncKeyState(VK_LBUTTON) >= 0 then
-    begin
-        clbMouseUp(FActiveCLB, mbLeft, [], 0, 0);
-        Exit;
-    end;
-
-    Pt := FActiveCLB.ScreenToClient(Mouse.CursorPos);
-
-    if (Pt.X < 0) or (Pt.Y < 0) or (Pt.X > FActiveCLB.ClientWidth) or (Pt.Y > FActiveCLB.ClientHeight) then
-        Exit;
-
-    Idx := FActiveCLB.ItemAtPos(Pt, True);
-
-    if (Idx >= 0) and (Idx < FActiveCLB.Items.Count) and (Idx <> FLastBrushIdx) then
-    begin
-        if not FBrushItemToggled then
-        begin
-            if FBrushMode = 3 then
-                FActiveCLB.Checked[FStartBrushIdx] := not FActiveCLB.Checked[FStartBrushIdx]
-            else
-                FActiveCLB.Checked[FStartBrushIdx] := (FBrushMode = 1);
-            FBrushItemToggled := True;
-        end;
-
-        FLastBrushIdx := Idx;
-
-        if FBrushMode = 3 then
-            FActiveCLB.Checked[Idx] := not FActiveCLB.Checked[Idx]
-        else
-            FActiveCLB.Checked[Idx] := (FBrushMode = 1);
-
-        OnBuilderControlChange(FActiveCLB);
     end;
 end;
 
@@ -756,21 +764,13 @@ procedure TCronGenForm.clbMouseUp(Sender: TObject; Button: TMouseButton; Shift: 
 begin
     if (Button = mbLeft) and (FBrushMode <> 0) and Assigned(FActiveCLB) then
     begin
-        FBrushTimer.Enabled := False;
-
         if not FBrushItemToggled then
-        begin
             if (FStartBrushIdx >= 0) and (FStartBrushIdx < FActiveCLB.Items.Count) then
             begin
-                if FBrushMode = 3 then
-                    FActiveCLB.Checked[FStartBrushIdx] := not FActiveCLB.Checked[FStartBrushIdx]
-                else
-                    FActiveCLB.Checked[FStartBrushIdx] := (FBrushMode = 1);
-
+                ApplyBrushAt(FActiveCLB, FStartBrushIdx);
                 FBrushItemToggled := True;
                 OnBuilderControlChange(FActiveCLB);
             end;
-        end;
 
         FBrushMode := 0;
         FActiveCLB := nil;

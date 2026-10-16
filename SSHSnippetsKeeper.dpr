@@ -1,40 +1,40 @@
 program SSHSnippetsKeeper;
 
-// TODO: [Feature] Редактор горячих клавиш
-// TODO: [Feature] Горячая клавиша для повторного ввода сниппета
-// TODO: [Refactor] Добавить интерфейсы для юнит-тестирования
-// TODO: [Feature] Добавить юнит-тесты
+// TODO: [Feature] пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+// TODO: [Feature] пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+// TODO: [Refactor] пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+// TODO: [Feature] пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅ
 
 {$R '000_schema_init.res' 'Database\Schema\000_schema_init.rc'}
 {$R *.dres}
 
 {$IFDEF RELEASE}
-  // Включает максимальную оптимизацию кода компилятором (вырезает "мертвый" код, упрощает циклы и вычисления).
-  // Аналог настройки Project -> Options -> Delphi Compiler -> Compiling -> Optimization
+  // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ "пїЅпїЅпїЅпїЅпїЅпїЅпїЅ" пїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ).
+  // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Project -> Options -> Delphi Compiler -> Compiling -> Optimization
   {$OPTIMIZATION ON}
 
-  // Отключает генерацию отладочной информации (номера строк, имена переменных) внутри скомпилированных файлов.
-  // Аналог настройки Project -> Options -> Delphi Compiler -> Compiling -> Debug information
+  // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ) пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.
+  // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Project -> Options -> Delphi Compiler -> Compiling -> Debug information
   {$DEBUGINFO OFF}
 
-  // Отключает сохранение локальных символов (имен локальных переменных внутри процедур/функций).
-  // Без этого отладчик не сможет показать значения переменных, но размер exe уменьшится.
-  // Аналог настройки Project -> Options -> Delphi Compiler -> Compiling -> Local symbols
+  // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ/пїЅпїЅпїЅпїЅпїЅпїЅпїЅ).
+  // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ exe пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
+  // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Project -> Options -> Delphi Compiler -> Compiling -> Local symbols
   {$LOCALSYMBOLS OFF}
 
-  // Отключает генерацию информации о перекрестных ссылках символов (Symbol Reference Info).
-  // Это информация нужна IDE для навигации по коду (Ctrl+Click), в релизном exe она не нужна.
+  // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (Symbol Reference Info).
+  // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ IDE пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ (Ctrl+Click), пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ exe пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ.
   {$DEFINITIONINFO OFF}
 
-  // Умное связывание RTTI (Run-Time Type Information).
-  // Заставляет компилятор/линковщик "выбрасывать" метаданные о типах и классах, которые
-  // скомпилированы, но реально нигде в вашем коде не вызываются и не используются.
+  // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ RTTI (Run-Time Type Information).
+  // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ/пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ" пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+  // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
   {$WEAKLINKRTTI ON}
 
-  // Жестко отключает генерацию расширенного RTTI для методов, свойств и полей
-  // для всех классов в проекте (если только они явно не потребуют обратного через {$RTTI EXPLICIT...}).
-  // В новых версиях Delphi RTTI генерируется по умолчанию для всего подряд и сильно раздувает exe.
-  // Эта директива - главный инструмент для радикального "похудения" приложения.
+  // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ RTTI пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ
+  // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ {$RTTI EXPLICIT...}).
+  // пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ Delphi RTTI пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ exe.
+  // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ" пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
   {$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
 {$ENDIF}
 
@@ -51,15 +51,15 @@ uses
   System.SysUtils,
   MainFormUI in 'UI\Forms\MainFormUI.pas' {MainForm},
   JSONSerializer in 'ThirdParty\JSONSerializer.pas',
-  Settings in 'Common\Settings.pas',
-  DataModule in 'Data\DataModule.pas' {AppDatabase: TDataModule},
-  Snippet in 'Core\Entities\Snippet.pas',
+   Common.Settings in 'Common\Common.Settings.pas',
+   Data.Database in 'Data\Data.Database.pas' {AppDatabase: TDataModule},
+   Core.Entities.Snippet in 'Core\Entities\Core.Entities.Snippet.pas',
   SnippetRepository in 'Data\Repositories\SnippetRepository.pas',
-  Tag in 'Core\Entities\Tag.pas',
-  Category in 'Core\Entities\Category.pas',
+   Core.Entities.Tag in 'Core\Entities\Core.Entities.Tag.pas',
+   Core.Entities.Category in 'Core\Entities\Core.Entities.Category.pas',
   CategoryRepository in 'Data\Repositories\CategoryRepository.pas',
   UserRepository in 'Data\Repositories\UserRepository.pas',
-  User in 'Core\Entities\User.pas',
+   Core.Entities.User in 'Core\Entities\Core.Entities.User.pas',
   TagRepository in 'Data\Repositories\TagRepository.pas',
   RepositoryBase in 'Data\RepositoryBase.pas',
   ArrayHelper in 'ThirdParty\ArrayHelper.pas',
@@ -71,7 +71,8 @@ uses
   AppStateManager in 'UI\Services\AppStateManager.pas',
   UI.Helpers in 'UI\Helpers\UI.Helpers.pas',
   UI.TreeViewSearchHelper in 'UI\Helpers\UI.TreeViewSearchHelper.pas',
-  SnippetViewData in 'UI\ViewModels\SnippetViewData.pas',
+   SnippetViewData in 'UI\ViewModels\SnippetViewData.pas',
+   PresetData in 'UI\ViewModels\PresetData.pas',
   MacroActions in 'MacroEngine\MacroActions.pas',
   MacroThread in 'MacroEngine\MacroThread.pas',
   MacroEngine in 'MacroEngine\MacroEngine.pas',
@@ -133,17 +134,17 @@ var
     AppContext: IAppContext;
     ErrorHandler: IUIMessagesHandler;
 
-// Callback-функция, которая перебирает все окна в системе
+// Callback-пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 function EnumWindowsProc(Wnd: HWND; lParam: LParam): BOOL; stdcall;
 begin
-    Result := True; // Продолжаем перебор по умолчанию
+    Result := True; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 
-    // Проверяем, есть ли у проверяемого окна наше уникальное свойство
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     if GetProp(Wnd, PChar(UNIQUE_APP_STR)) <> 0 then
     begin
-        // Мы нашли окно первой копии!
+        // пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ!
         FoundWnd := Wnd;
-        Result := False; // Прерываем перебор
+        Result := False; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     end;
 end;
 
@@ -152,35 +153,35 @@ begin
 ReportMemoryLeaksOnShutdown := True;
 {$ENDIF}
 
-    // Создаем мьютекс
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     hMutex := CreateMutex(nil, False, PChar(UNIQUE_APP_STR + '_Mutex'));
 
     if GetLastError = ERROR_ALREADY_EXISTS then
     begin
-        // Программа уже запущена. Ищем её окно.
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ.
         FoundWnd := 0;
-        // Функция EnumWindows вызовет EnumWindowsProc для каждого окна на рабочем столе
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ EnumWindows пїЅпїЅпїЅпїЅпїЅпїЅпїЅ EnumWindowsProc пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
         EnumWindows(@EnumWindowsProc, 0);
 
         if FoundWnd <> 0 then
         begin
-            // Восстанавливаем и показываем первую копию
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
             if IsIconic(FoundWnd) then
                 ShowWindow(FoundWnd, SW_RESTORE);
 
-            // Иногда SetForegroundWindow не срабатывает из-за защиты Windows (Focus Stealing).
-            // Чтобы пробить эту защиту, сначала "прикрепляем" наш поток к потоку того окна.
+            // пїЅпїЅпїЅпїЅпїЅпїЅ SetForegroundWindow пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ-пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ Windows (Focus Stealing).
+            // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ" пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ.
             SetForegroundWindow(FoundWnd);
         end;
 
-        // Завершаем вторую копию
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
         Exit;
     end;
 
     SettingsManager := TSettingsManager.Create;
     SettingsManager.Load;
 
-    // --- Глобальная загрузка языка до создания окон ---
+    // --- пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ ---
     var GlobalLang: string := SettingsManager.Data.CurrentLanguage;
     if GlobalLang = '' then
         GlobalLang := 'ru';
@@ -203,9 +204,9 @@ ReportMemoryLeaksOnShutdown := True;
   Application.CreateForm(TInputForm, InputForm);
   //-----------------------------------
     AppContext := TAppContext.Create(
-        AppDatabase,               // Реализует IDatabaseManager
-        AppDatabase.FDConnection,  // Ссылка на компонент подключения
-        SettingsManager,           // Настройки
+        AppDatabase,               // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ IDatabaseManager
+        AppDatabase.FDConnection,  // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+        SettingsManager,           // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         WindowHelper,              //
         ErrorHandler               //
     );
@@ -224,7 +225,7 @@ ReportMemoryLeaksOnShutdown := True;
     AppContext := nil;
     SettingsManager := nil;
 
-    // Освобождаем мьютекс при закрытии программы
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     if hMutex <> 0 then
     begin
         ReleaseMutex(hMutex);
