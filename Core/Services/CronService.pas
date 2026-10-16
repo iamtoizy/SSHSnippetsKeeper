@@ -22,6 +22,7 @@ type
         function ParseDaysOfMonth(const Part: string): string;
         function ParseMonths(const Part: string): string;
         function ParseDaysOfWeek(const Part: string): string;
+        function NormalizeDow(const Value: string): string;
     public
         function ExpressionToHumanText(const Expression: string): string;
         function ValidateExpression(const Expression: string; out ErrorMsg: string): Boolean;
@@ -274,6 +275,18 @@ begin
     Result := TUIStateLoader.GetMessage('Cron.Prefix-DaysOfWeek', [Res]);
 end;
 
+function TCronService.NormalizeDow(const Value: string): string;
+var
+    Tokens: TArray<string>;
+    I: Integer;
+begin
+    Tokens := Value.Split([',']);
+    for I := 0 to High(Tokens) do
+        if Tokens[I].Trim = '0' then
+            Tokens[I] := '7';
+    Result := string.Join(',', Tokens);
+end;
+
 function TCronService.ExpressionToHumanText(const Expression: string): string;
 var
     Parts: TArray<string>;
@@ -292,7 +305,7 @@ begin
         Sb.AppendLine(' • ' + ParseHours(Parts[1]));
         Sb.AppendLine(' • ' + ParseDaysOfMonth(Parts[2]));
         Sb.AppendLine(' • ' + ParseMonths(Parts[3]));
-        Sb.AppendLine(' • ' + ParseDaysOfWeek(Parts[4].Replace('0', '7')));
+        Sb.AppendLine(' • ' + ParseDaysOfWeek(NormalizeDow(Parts[4])));
 
         Result := Sb.ToString;
     finally

@@ -106,7 +106,7 @@ begin
         function(const Prompt: string): Boolean
         begin
             // Здесь Result - это возвращаемое значение (Boolean) для OnConfirm
-            Result := MessageBox(TargetHWND, PChar(Prompt), 'Подтверждение', MB_YESNO or MB_ICONQUESTION or MB_TOPMOST) = IDYES;
+            Result := MessageBox(0, PChar(Prompt), 'Подтверждение', MB_YESNO or MB_ICONQUESTION or MB_TOPMOST) = IDYES;
             if not Result then
                 Context.UserCancelled := True;
         end;
@@ -164,8 +164,8 @@ begin
     begin
         // Используем наш обычный диалог подтверждения
         if not FAppContext.MessagesHandler.AskConfirmation(
-            TUIStateLoader.GetMessage('', [TargetWindow.WindowTitle]),
-            TUIStateLoader.GetMessage('Common.Warning', [TargetWindow.WindowTitle]),
+            TUIStateLoader.GetMessage('Terminal.ConfirmTarget', [TargetWindow.WindowTitle]),
+            TUIStateLoader.GetMessage('Common.Confirmation'),
             MB_YESNO or MB_ICONQUESTION
         ) then Exit;
     end;

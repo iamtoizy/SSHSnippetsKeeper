@@ -232,7 +232,10 @@ begin
 
         try
             ClearClipboardAfterDelay(FLastCopiedText, 0);
-        except end;
+        except
+            on E: Exception do
+                LogException('TPasswordGenForm.tmrClipboardTimer', E);
+        end;
 
         // Безопасно удаляем пароль с экрана
         WipeVCLControlText(ebPassword);
@@ -343,9 +346,14 @@ procedure TPasswordGenForm.DoGenerate(BulkGenerate: Boolean = False; BulkCount: 
 var
     Settings: TCustomPasswordSettings;
     Count: Integer;
+    PassLen: Integer;
+    UniqueChars: Boolean;
 begin
     if FSelectedPreset = wpCustom then
         Settings := GetCustomSettingsFromUI();
+
+    PassLen := seLength.Value;
+    UniqueChars := cbUnique.Checked;
 
     if BulkGenerate then Count := BulkCount else Count := 1;
 
@@ -370,10 +378,12 @@ begin
             LastUIUpdate: UInt64;
             Writer: TStreamWriter;
             IsDirectToFile: Boolean;
+            ErrMsg: string;
         begin
             IsDirectToFile := (ExportFileName <> '');
             TempList := nil;
             Writer := nil;
+            try
             try
                 if IsDirectToFile then
                     Writer := TStreamWriter.Create(ExportFileName, False, TEncoding.UTF8)
@@ -387,9 +397,9 @@ begin
                     if FCancellationToken then Break;
 
                     if FSelectedPreset = wpCustom then
-                        RawPassword := FPasswordService.GenerateCustomPassword(Settings, seLength.Value, cbUnique.Checked)
+                        RawPassword := FPasswordService.GenerateCustomPassword(Settings, PassLen, UniqueChars)
                     else
-                        RawPassword := FPasswordService.GeneratePassword(FSelectedPreset, seLength.Value, cbUnique.Checked);
+                        RawPassword := FPasswordService.GeneratePassword(FSelectedPreset, PassLen, UniqueChars);
 
                     if IsDirectToFile then
                         Writer.WriteLine(RawPassword)
@@ -484,6 +494,21 @@ begin
                     TempList.Free; // Уничтожаем сам объект списка
                 end;
                 if Assigned(Writer) then Writer.Free;
+            end;
+            except
+                on E: Exception do
+                begin
+                    ErrMsg := E.Message;
+                    TThread.Synchronize(nil,
+                        procedure
+                        begin
+                            FIsGenerating := False;
+                            bBulkGenerate.Caption := TUIStateLoader.GetMessage('PasswordGenForm.MassGenerationCaption');
+                            SetControlsState(True);
+                            pbBulkProgress.Visible := False;
+                            MessageDlg(ErrMsg, mtError, [mbOK], 0);
+                        end);
+                end;
             end;
         end);
 end;
@@ -740,8 +765,12 @@ begin
                         SetForegroundWindow(TargetWnd);
                         Sleep(100); // Небольшая пауза для гарантированного переключения фокуса Windows
 
-                        // Эмулируем ввод символов
-                        Frm.SendStringViaInput(PasswordToType);
+                        // Набираем пароль ТОЛЬКО если целевое окно реально получило фокус,
+                        // иначе секрет уйдёт в то окно, которое активно сейчас
+                        if GetForegroundWindow = TargetWnd then
+                            Frm.SendStringViaInput(PasswordToType)
+                        else
+                            ShowSimpleToast(TUIStateLoader.GetMessage('PasswordGenForm.FocusLostError'));
                     end;
                 end
                 else
@@ -1092,7 +1121,9 @@ begin
 
     if CleanPass = '' then
     begin
-        MessagesHandler.ShowWarning('Сначала сгенерируйте пароль!');
+        MessagesHandler.ShowWarning(
+          TUIStateLoader.GetMessage('PasswordGenForm.NoPasswordGenerated')
+        );
         Exit;
     end;
 

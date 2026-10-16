@@ -54,6 +54,7 @@ type
         procedure WMActivate(var Msg: TWMActivate); message WM_ACTIVATE;
     protected
         procedure CreateParams(var Params: TCreateParams); override;
+        procedure DoClose(var Action: TCloseAction); override;
     public
         procedure ShowWithService(
             Sender: TObject;
@@ -84,18 +85,17 @@ const
 
 procedure TQuickSearchForm.FormDestroy(Sender: TObject);
 begin
-    if Assigned(FOldAppMessage) then
-    begin
-        Application.OnMessage := FOldAppMessage;
-        FOldAppMessage := nil;
-    end;
+    // Restore Application handlers UNCONDITIONALLY: the default value of
+    // OnMessage/OnShowHint is nil, and the previous Assigned() check skipped
+    // the restore - after the form was freed, OnMessage kept pointing to the
+    // method of the dead object (AV at the very first message).
+    Application.OnMessage := FOldAppMessage;
+    FOldAppMessage := nil;
 
-    // Возвращаем старый обработчик подсказок на место при закрытии
-    if Assigned(FOldAppShowHint) then
-    begin
-        Application.OnShowHint := FOldAppShowHint;
-        FOldAppShowHint := nil;
-    end;
+    Application.OnShowHint := FOldAppShowHint;
+    FOldAppShowHint := nil;
+
+    lvQuickResults.Items.Clear;
 
     inherited;
 end;
@@ -260,6 +260,17 @@ begin
     Params.Style := WS_POPUP or WS_CLIPCHILDREN;
     Params.ExStyle := Params.ExStyle or WS_EX_TOPMOST or WS_EX_TOOLWINDOW or WS_EX_NOACTIVATE;
     Params.WndParent := GetDesktopWindow;
+end;
+
+procedure TQuickSearchForm.DoClose(var Action: TCloseAction);
+begin
+    inherited DoClose(Action);
+
+    // This form is an application-lifetime singleton (auto-create in .dpr,
+    // global QuickSearchForm var, global hotkey). TBaseForm.DoClose sets
+    // caFree for non-modal forms - after the first Close the global pointer
+    // and Application.OnMessage would reference a freed object. Always hide.
+    Action := caHide;
 end;
 
 procedure TQuickSearchForm.AppMessage(var Msg: TMsg; var Handled: Boolean);
@@ -468,6 +479,12 @@ var
     i: Integer;
     ForegroundThread, AppThread: DWORD;
 begin
+    // This form is auto-created and is never Initialized anywhere:
+    // without Initialize, FAppContext stays nil and snippet insertion
+    // crashes inside TSnippetRunner (nil interface access).
+    if FAppContext = nil then
+        Initialize(AppContext);
+
     FSnippetService := AppContext.SnippetService;
     FUserService := AppContext.UserService;
     FTargetHWND := CurrentHWND;

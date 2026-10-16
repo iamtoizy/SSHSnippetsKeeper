@@ -15,7 +15,7 @@ uses
 type
     THotkeyService = class(TInterfacedObject, IHotkeyService)
     private
-        // Реестр всех действий в приложении
+        // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         FRegistry: TDictionary<string, TActionHotkeyInfo>;
 
         procedure InitDefaultRegistry;
@@ -56,15 +56,15 @@ end;
 
 procedure THotkeyService.InitDefaultRegistry;
 begin
-    // ID строго равен: "ИмяКлассаФормы.ИмяЭкшена"
+    // ID пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ: "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ"
     //
-    // ID в коде (1 параметр) - КлассФормы.act...: 'TMainForm.act...'
-    // Путь к тексту (2 параметр) включает группу: 'MainForm.Actions.Data.AddSnippet'
-    // Путь к категории (3 параметр) указывает на Caption группы: 'MainForm.Actions.Data.Caption'
+    // ID пїЅ пїЅпїЅпїЅпїЅ (1 пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ) - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.act...: 'TMainForm.act...'
+    // пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ (2 пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ) пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ: 'MainForm.Actions.Data.AddSnippet'
+    // пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (3 пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ) пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ Caption пїЅпїЅпїЅпїЅпїЅпїЅ: 'MainForm.Actions.Data.Caption'
     //
     // TMainForm
     //
-    // --- БЛОК ДАННЫХ (Сниппеты, Категории, Теги) ---
+    // --- пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ) ---
     RegisterAction('TMainForm.actAddSnippet',    'Actions.MainForm.Data.AddSnippet',    'Actions.MainForm.Data.Caption', 'Ctrl+Alt+A');
     RegisterAction('TMainForm.actDeleteSnippet', 'Actions.MainForm.Data.DeleteSnippet', 'Actions.MainForm.Data.Caption', 'Ctrl+Alt+D');
     RegisterAction('TMainForm.actEditSnippet',   'Actions.MainForm.Data.EditSnippet',   'Actions.MainForm.Data.Caption', 'Ctrl+Alt+E');
@@ -77,13 +77,13 @@ begin
     RegisterAction('TMainForm.actDeleteTag', 'Actions.MainForm.Data.DeleteTag', 'Actions.MainForm.Data.Caption', 'Ctrl+Shift+D');
     RegisterAction('TMainForm.actEditTag',   'Actions.MainForm.Data.EditTag',   'Actions.MainForm.Data.Caption', 'Ctrl+Shift+E');
 
-    // --- БЛОК БАЗЫ ДАННЫХ ---
+    // --- пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ ---
     RegisterAction('TMainForm.actCreateDatabase', 'Actions.MainForm.Database.CreateDatabase', 'Actions.MainForm.Database.Caption', 'Ctrl+N');
     RegisterAction('TMainForm.actOpenDatabase',   'Actions.MainForm.Database.OpenDatabase',   'Actions.MainForm.Database.Caption', 'Ctrl+O');
     RegisterAction('TMainForm.actCloseDatabase',  'Actions.MainForm.Database.CloseDatabase',  'Actions.MainForm.Database.Caption', 'Ctrl+Q');
     RegisterAction('TMainForm.actSyncDatabase',  'Actions.MainForm.Database.actSyncDatabase',  'Actions.MainForm.Database.Caption', 'Ctrl+Alt+Shift+E');
 
-    // --- БЛОК УТИЛИТ ---
+    // --- пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ ---
     RegisterAction('TMainForm.actSearch',            'Actions.MainForm.Tools.Search',            'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+S');
     RegisterAction('TMainForm.actPasswordGenerator', 'Actions.MainForm.Tools.PasswordGenerator', 'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+G');
     RegisterAction('TMainForm.actCronGenerator',     'Actions.MainForm.Tools.CronGenerator',     'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+C');
@@ -92,7 +92,7 @@ begin
     RegisterAction('TMainForm.actChmodCalculator',   'Actions.MainForm.Tools.ChmodCalculator',   'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+M');
     RegisterAction('TMainForm.actArchiveBuilder',    'Actions.MainForm.Tools.ArchiveBuilder',    'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+Z');
 
-    // --- ПРОЧЕЕ ---
+    // --- пїЅпїЅпїЅпїЅпїЅпїЅ ---
     RegisterAction('TMainForm.actSettings', 'Actions.MainForm.Other.Settings', 'Actions.MainForm.Other.Caption', 'Ctrl+Alt+P');
     //
     // TAddEditSnippetForm
@@ -132,7 +132,7 @@ begin
     Info.DisplayName := DisplayName;
     Info.Category := Category;
     Info.DefaultShortCut := TextToShortCut(Default);
-    Info.CurrentShortCut := Info.DefaultShortCut; // Изначально текущий равен дефолтному
+    Info.CurrentShortCut := Info.DefaultShortCut; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 
     FRegistry.Add(Name, Info);
 end;
@@ -159,7 +159,7 @@ begin
     if FRegistry.TryGetValue(ActionName, Info) then
     begin
         Info.CurrentShortCut := NewShortCut;
-        FRegistry.Items[ActionName] := Info; // Обновляем в словаре
+        FRegistry.Items[ActionName] := Info; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     end;
 end;
 
@@ -174,18 +174,18 @@ begin
     if ShortCut = 0 then
         Exit;
 
-    // Извлекаем имя формы из проверяемого ID (например, из 'TMainForm.actAdd' достаем 'TMainForm')
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ID (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ 'TMainForm.actAdd' пїЅпїЅпїЅпїЅпїЅпїЅпїЅ 'TMainForm')
     TargetFormClass := ActionID.Split(['.'])[0];
 
     for Info in FRegistry.Values do
     begin
-        // Если хоткей совпадает
+        // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         if Info.CurrentShortCut = ShortCut then
         begin
-            // Извлекаем имя формы из ID текущего элемента в цикле
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ ID пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ
             CurrentFormClass := Info.ActionName.Split(['.'])[0];
 
-            // Сравниваем: если они лежат на ОДНОЙ И ТОЙ ЖЕ ФОРМЕ, значит это конфликт!
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ!
             if SameText(TargetFormClass, CurrentFormClass) then
             begin
                 ConflictingActionName := Info.DisplayName;
@@ -195,7 +195,7 @@ begin
     end;
 end;
 
-// Загрузка настроек из JSON (накатываем поверх дефолтов)
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ JSON (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
 procedure THotkeyService.LoadFromSettings(const CustomShortCuts: TArray<TCustomShortCut>);
 var
     CustomSC: TCustomShortCut;
@@ -211,7 +211,7 @@ begin
     end;
 end;
 
-// Выгрузка только тех хоткеев, которые отличаются от дефолтных
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 function THotkeyService.SaveToSettings: TArray<TCustomShortCut>;
 var
     Info: TActionHotkeyInfo;
@@ -244,36 +244,32 @@ var
     GeneratedActionID: string;
     Info: TActionHotkeyInfo;
 begin
-    // 1. Перебираем все компоненты, брошенные на форму
+    // 1. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
     for I := 0 to Form.ComponentCount - 1 do
     begin
         Comp := Form.Components[I];
 
-        // 2. Если нашли TActionList...
+        // 2. пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ TActionList...
         if Comp is TActionList then
         begin
             ActList := TActionList(Comp);
 
-            // 3. Перебираем все экшены внутри этого списка
+            // 3. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
             for J := 0 to ActList.ActionCount - 1 do
             begin
                 if ActList.Actions[J] is TCustomAction then
                 begin
                     Action := TCustomAction(ActList.Actions[J]);
 
-                    // 4. Генерируем уникальный ID для текущего экшена
-                    // Результат будет: "TMainForm.actAddSnippet"
+                    // 4. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ID пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
+                    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ: "TMainForm.actAddSnippet"
                     GeneratedActionID := Form.ClassName + '.' + Action.Name;
 
-                    // 5. Ищем этот ID в нашем реестре. Если нашли - применяем хоткей
+                    // 5. пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ ID пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
                     if FRegistry.TryGetValue(GeneratedActionID, Info) then
                     begin
                         Action.ShortCut := Info.CurrentShortCut;
-                    end
-                    {$IFDEF DEBUG}
-                    else
-                        raise Exception.Create('Could not find action named"' + GeneratedActionID + '"');
-                    {$ENDIF}
+                    end;
                 end;
             end;
         end;

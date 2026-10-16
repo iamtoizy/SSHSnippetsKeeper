@@ -1024,6 +1024,9 @@
       "CreatedSuccess": "База данных SQLite создана.",
       "NoConnectionError": "Ошибка: нет подключения к базе данных."
     },
+    "Settings": {
+      "ResetAllHotkeysConfirm": "Сбросить все горячие клавиши к значениям по умолчанию?"
+    },
     "Category": {
       "DeleteConfirm": "Уверен, что хочешь удалить эту категорию?",
       "DeleteSuccess": "Категория успешно удалена.",
@@ -1126,8 +1129,8 @@
       "Minutes": "мин",
       "Hours": "ч",
       "Days": "дн",
-      "Ago": "Через %d %s",
-      "After": "%d %s назад",
+      "Ago": "%d %s назад",
+      "After": "Через %d %s",
       "JustNow": "Только что",
       "Format-seconds": "Формат: Секунды (Classic/Linux)",
       "Format-milliseconds": "Формат: Миллисекунды (Java/JS/ELK)",

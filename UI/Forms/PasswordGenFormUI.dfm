@@ -147,6 +147,7 @@ object PasswordGenForm: TPasswordGenForm
             Tag = 4
             Width = 80
           end>
+        Items.ItemData = {060000000000000000}
         ReadOnly = True
         RowSelect = True
         TabOrder = 0

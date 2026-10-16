@@ -239,7 +239,6 @@ object MainForm: TMainForm
         TabOrder = 0
         ViewStyle = vsList
         OnClick = lvTagsClick
-        OnDblClick = lvTagsDblClick
         OnEdited = lvTagsEdited
       end
     end

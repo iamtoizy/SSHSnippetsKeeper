@@ -298,7 +298,7 @@ var
     Info: TActionHotkeyInfo;
 begin
     if not MessagesHandler.AskConfirmation(
-        TUIStateLoader.GetMessage('Category.SelectPrompt'),
+        TUIStateLoader.GetMessage('Settings.ResetAllHotkeysConfirm'),
         TUIStateLoader.GetMessage('Common.Confirmation')
     ) then Exit;
 

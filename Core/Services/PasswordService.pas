@@ -10,17 +10,17 @@ uses
     ;
 
 const
-    // Константы для Windows DPAPI (RAM Encryption)
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ Windows DPAPI (RAM Encryption)
     CRYPTPROTECTMEMORY_BLOCK_SIZE = 16;
     CRYPTPROTECTMEMORY_SAME_PROCESS = 0;
 
-// Импорт криптографических функций для шифрования и очистки памяти
+// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 function CryptProtectMemory(pDataIn: Pointer; cbDataIn: Cardinal; dwFlags: Cardinal): BOOL; stdcall; external 'Crypt32.dll';
 function CryptUnprotectMemory(pDataIn: Pointer; cbDataIn: Cardinal; dwFlags: Cardinal): BOOL; stdcall; external 'Crypt32.dll';
 function RtlGenRandom(RandomBuffer: Pointer; RandomBufferLength: ULONG): BOOLEAN; stdcall; external 'advapi32.dll' name 'SystemFunction036';
 
 type
-    // Внутренняя структура: пароль надежно зашифрован в RAM
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ RAM
     TEncryptedHistoryItem = record
         EncryptedPassword: TBytes;
         OriginalLen: Integer;
@@ -29,7 +29,7 @@ type
         CreatedAt: TDateTime;
     end;
 
-    // Буфер для хранения паролей с автоудалением старых
+    // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
     TPasswordHistoryBuffer = class
     private
         FItems: TArray<TEncryptedHistoryItem>;
@@ -65,7 +65,7 @@ type
         FHistory: TPasswordHistoryBuffer;
         FHistoryLock: TCriticalSection;
 
-        // DPAPI Helpers (Скрыты от внешнего мира)
+        // DPAPI Helpers (пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ)
         function ProtectString(const S: string; out OriginalBytes: Integer): TBytes;
         function DecryptHistoryItem(const Item: TEncryptedHistoryItem): string;
 
@@ -94,7 +94,7 @@ type
         function CalculateEntropy(Length, PoolSize: Integer): Double;
         function GenerateCustomPassword(const Settings: TCustomPasswordSettings; Length: Integer; UniqueChars: Boolean): string;
 
-        // История возвращает стандартный интерфейсный DTO
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ DTO
         function GetHistory: TArray<TPasswordHistoryItem>;
         procedure ClearHistory;
     end;
@@ -133,7 +133,7 @@ end;
 
 { TPasswordService }
 
-// DPAPI: Шифрование RAM
+// DPAPI: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ RAM
 function TPasswordService.ProtectString(const S: string; out OriginalBytes: Integer): TBytes;
 var
     RawBytes: TBytes;
@@ -156,7 +156,8 @@ begin
         SecureZeroMemory(@RawBytes[0], Length(RawBytes));
 
     if Length(Result) > 0 then
-        CryptProtectMemory(@Result[0], PaddedLen, CRYPTPROTECTMEMORY_SAME_PROCESS);
+        if not CryptProtectMemory(@Result[0], PaddedLen, CRYPTPROTECTMEMORY_SAME_PROCESS) then
+            RaiseLastOSError;
 end;
 
 function TPasswordService.DecryptHistoryItem(const Item: TEncryptedHistoryItem): string;
@@ -168,7 +169,8 @@ begin
     SetLength(TempData, Length(Item.EncryptedPassword));
     Move(Item.EncryptedPassword[0], TempData[0], Length(Item.EncryptedPassword));
 
-    CryptUnprotectMemory(@TempData[0], Length(TempData), CRYPTPROTECTMEMORY_SAME_PROCESS);
+    if not CryptUnprotectMemory(@TempData[0], Length(TempData), CRYPTPROTECTMEMORY_SAME_PROCESS) then
+        RaiseLastOSError;
     Result := TEncoding.UTF8.GetString(TempData, 0, Item.OriginalLen);
 
     SecureZeroMemory(@TempData[0], Length(TempData));
@@ -186,7 +188,7 @@ begin
         FHistoryLock.Release;
     end;
 
-    // Распаковываем зашифрованные элементы в интерфейсный формат для UI
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ UI
     SetLength(Result, Length(EncryptedItems));
     for I := 0 to High(EncryptedItems) do
     begin
@@ -290,7 +292,7 @@ begin
     Result := Length(DummyPool);
 end;
 
-// Генераторы
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 function TPasswordService.GenerateStandardSequence(const FullPool, FirstCharPool: string; Length: Integer): string;
 var I: Integer;
 begin

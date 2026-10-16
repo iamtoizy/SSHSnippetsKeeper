@@ -1024,6 +1024,9 @@
       "CreatedSuccess": "База данных SQLite создана.",
       "NoConnectionError": "Ошибка: нет подключения к базе данных."
     },
+    "Settings": {
+      "ResetAllHotkeysConfirm": "Сбросить все горячие клавиши к значениям по умолчанию?"
+    },
     "Category": {
       "DeleteConfirm": "Уверен, что хочешь удалить эту категорию?",
       "DeleteSuccess": "Категория успешно удалена.",
@@ -1088,7 +1091,8 @@
       "Column.WindowTitle": "Заголовок окна",
       "Column.ExeName": "Исполняемый файл",
       "Column.ActivatedAt": "Время активности",
-      "WindowNoLongerExists": "Выбранное окно больше не существует."
+      "WindowNoLongerExists": "Выбранное окно больше не существует.",
+      "ConfirmTarget": "Вставить сниппет в окно «%s»?"
     },
     "Workspace": {
       "AllSpaces": "Все пространства",
@@ -1126,8 +1130,8 @@
       "Minutes": "мин",
       "Hours": "ч",
       "Days": "дн",
-      "Ago": "Через %d %s",
-      "After": "%d %s назад",
+      "Ago": "%d %s назад",
+      "After": "Через %d %s",
       "JustNow": "Только что",
       "Format-seconds": "Формат: Секунды (Classic/Linux)",
       "Format-milliseconds": "Формат: Миллисекунды (Java/JS/ELK)",
@@ -1247,6 +1251,7 @@
       "PresetMath": "Математические символы",
       "MemoryClearConfirm": "Удалить все пароли из памяти?",
       "MemoryCleared": "Память паролей очищена.",
+      "FocusLostError": "Не удалось вернуть фокус в целевое окно — пароль не введён.",
       "ClipboardCleared": "Буфер обмена безопасно очищен.",
       "PasswordCopied": "Пароль скопирован. Буфер будет очищен через 15 сек.",
       "HtPasswdTitle": "Nginx .htpasswd",

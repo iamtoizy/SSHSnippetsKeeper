@@ -6,7 +6,8 @@ uses
     SynEdit,
     System.Classes,
     Vcl.Graphics,
-    Winapi.Messages
+    Winapi.Messages,
+    Winapi.Windows
     ;
 
 type
@@ -14,7 +15,11 @@ type
     // Он доступен всем формам, которые подключат этот модуль.
     TSynEdit = class(SynEdit.TSynEdit)
         private
+        FCacheBrush: HBRUSH;
+        FCacheColor: TColor;
         procedure WMEraseBkgnd(var Message: TWmEraseBkgnd); message WM_ERASEBKGND;
+    public
+        destructor Destroy; override;
     end;
 
     TSynPalette = record
@@ -47,8 +52,7 @@ uses
     SynEditHighlighter,
     System.SysUtils,
     Vcl.Forms,
-    Vcl.Themes,
-    Winapi.Windows
+    Vcl.Themes
     ;
 
 { TSynThemeAdapter }
@@ -177,17 +181,26 @@ end;
 
 procedure TSynEdit.WMEraseBkgnd(var Message: TWmEraseBkgnd);
 var
-    LBrush: HBRUSH;
     LRect: TRect;
 begin
     Winapi.Windows.GetClientRect(Handle, LRect);
-    LBrush := CreateSolidBrush(ColorToRGB(Self.Color));
-    try
-        FillRect(Message.DC, LRect, LBrush);
-    finally
-        DeleteObject(LBrush);
+    // The brush is cached: recreating a solid brush on every WM_ERASEBKGND is expensive
+    if (FCacheBrush = 0) or (FCacheColor <> Self.Color) then
+    begin
+        if FCacheBrush <> 0 then
+            DeleteObject(FCacheBrush);
+        FCacheBrush := CreateSolidBrush(ColorToRGB(Self.Color));
+        FCacheColor := Self.Color;
     end;
+    FillRect(Message.DC, LRect, FCacheBrush);
     Message.Result := 1;
+end;
+
+destructor TSynEdit.Destroy;
+begin
+    if FCacheBrush <> 0 then
+        DeleteObject(FCacheBrush);
+    inherited;
 end;
 
 initialization

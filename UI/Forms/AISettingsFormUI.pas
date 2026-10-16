@@ -16,7 +16,7 @@ uses
     ;
 
 type
-    // Указатели типов для хранения в свойстве Data узлов TreeView
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Data пїЅпїЅпїЅпїЅпїЅ TreeView
     TNodeType = (ntHub, ntModel);
 
     PNodeData = ^TNodeData;
@@ -24,7 +24,7 @@ type
     TNodeData = record
         NodeType: TNodeType;
         HubIndex: Integer;
-        ModelIndex: Integer; // Равен -1, если это сам Хаб
+        ModelIndex: Integer; // пїЅпїЅпїЅпїЅпїЅ -1, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅ
     end;
 
     TAISettingsForm = class(TBaseForm)
@@ -86,12 +86,13 @@ type
         procedure FormDestroy(Sender: TObject);
         procedure tvAIStructureChange(Sender: TObject; Node: TTreeNode);
     private
-        FLocalSettings: TAppSettings; // Локальная копия для работы без порчи основного конфига до сохранения
+        FLocalSettings: TAppSettings; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         procedure LoadStructureToTree;
         procedure ClearTreeData;
         procedure SaveCurrentEditorData;
-        function CreateNodeData(AType: TNodeType; AHub, AModel: Integer): PNodeData;
-    public
+    function CreateNodeData(AType: TNodeType; AHub, AModel: Integer): PNodeData;
+    function FindHubNode(HubIdx: Integer): TTreeNode;
+public
         procedure DoInitialize; override;
     end;
 
@@ -114,6 +115,7 @@ var
     NewModel: TAIItem;
     HubIdx: Integer;
     NewNode: TTreeNode;
+    HubNode: TTreeNode;
 begin
     ActiveNode := tvAIStructure.Selected;
     if ActiveNode = nil then Exit;
@@ -121,7 +123,7 @@ begin
     SaveCurrentEditorData;
     Data := PNodeData(ActiveNode.Data);
 
-    // Модель всегда добавляется в хаб (независимо от того, стоим мы на хабе или на соседней модели)
+    // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ)
     HubIdx := Data^.HubIndex;
 
     NewModel := Default(TAIItem);
@@ -133,14 +135,11 @@ begin
 
     LoadStructureToTree;
 
-    // Находим хаб и фокусируемся на только что созданной модели внутри него
-    NewNode := tvAIStructure.Items[0]; // Безопасный фоллбэк
-    if HubIdx < tvAIStructure.Items.Count then
-    begin
-        var HubNode := tvAIStructure.Items[HubIdx];
-        if HubNode.Count > 0 then
-            NewNode := HubNode.Item[HubNode.Count - 1]; // Последний ребенок
-    end;
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
+    NewNode := tvAIStructure.Items[0]; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+    HubNode := FindHubNode(HubIdx);
+    if (HubNode <> nil) and (HubNode.Count > 0) then
+            NewNode := HubNode.Item[HubNode.Count - 1]; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 
     NewNode.Selected := True;
     ebModelName.SetFocus;
@@ -150,16 +149,16 @@ procedure TAISettingsForm.actCreateProviderExecute(Sender: TObject);
 var
     NewHub: TAIHub;
 begin
-    SaveCurrentEditorData; // Сохраняем то, что открыто сейчас
+    SaveCurrentEditorData; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 
     NewHub := Default(TAIHub);
     NewHub.Name := TUIStateLoader.GetMessage('AISettingsForm.AddHubPrompt');
     FLocalSettings.AISettings.Add(NewHub);
 
     LoadStructureToTree;
-    // Фокусируемся на последнем созданном хабе (корневой узел)
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ)
     tvAIStructure.Items[tvAIStructure.Items.Count - 1].Selected := True;
-    ebHubName.SetFocus; // Сразу ставим фокус для переименования
+    ebHubName.SetFocus; // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 end;
 
 procedure TAISettingsForm.actDeleteModelExecute(Sender: TObject);
@@ -172,11 +171,11 @@ begin
 
     Data := PNodeData(ActiveNode.Data);
 
-    // Защита: удаляем только если это Модель
+    // пїЅпїЅпїЅпїЅпїЅпїЅ: пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
     if Data^.NodeType = ntModel then
     begin
         if MessagesHandler.AskConfirmation(
-            // Не забудьте добавить 'AISettingsForm.DeleteModelConfirm' в JSON!
+            // пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ 'AISettingsForm.DeleteModelConfirm' пїЅ JSON!
             TUIStateLoader.GetMessage('AISettingsForm.DeleteModelConfirm'),
             TUIStateLoader.GetMessage('Common.Confirmation'),
             MB_YESNO or MB_ICONWARNING) then
@@ -197,7 +196,7 @@ begin
 
     Data := PNodeData(ActiveNode.Data);
 
-    // Защита: удаляем только если это Хаб
+    // пїЅпїЅпїЅпїЅпїЅпїЅ: пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅ
     if Data^.NodeType = ntHub then
     begin
         if MessagesHandler.AskConfirmation(
@@ -229,19 +228,19 @@ begin
     if tvAIStructure.Selected = nil then Exit;
     Data := PNodeData(tvAIStructure.Selected.Data);
 
-    // Действие "Редактировать" просто переводит курсор в поле имени
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ" пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
     if Data^.NodeType = ntHub then
         ebHubName.SetFocus;
 end;
 
 procedure TAISettingsForm.actSaveExecute(Sender: TObject);
 begin
-    SaveCurrentEditorData; // Сохраняем то, что открыто в редакторе прямо сейчас
+    SaveCurrentEditorData; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 
-    // Переносим изменения из локальной структуры в глобальную
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     AppContext.SettingsManager.Data := FLocalSettings;
 
-    // Записываем обновленный JSON на диск
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ JSON пїЅпїЅ пїЅпїЅпїЅпїЅ
     AppContext.SettingsManager.Save;
 
     ModalResult := mrOk;
@@ -276,9 +275,41 @@ begin
     Result^.ModelIndex := AModel;
 end;
 
+function TAISettingsForm.FindHubNode(HubIdx: Integer): TTreeNode;
+var
+    Node: TTreeNode;
+    NodeData: PNodeData;
+begin
+    Result := nil;
+    Node := tvAIStructure.Items.GetFirstNode;
+    while Node <> nil do
+    begin
+        if Node.Data <> nil then
+        begin
+            NodeData := PNodeData(Node.Data);
+            if (NodeData^.NodeType = ntHub) and (NodeData^.HubIndex = HubIdx) then
+                Exit(Node);
+        end;
+        Node := Node.GetNextSibling;
+    end;
+end;
+
 procedure TAISettingsForm.DoInitialize;
+var
+    I, J: Integer;
 begin
     FLocalSettings := AppContext.SettingsManager.Data;
+
+    SetLength(FLocalSettings.AISettings.Items, Length(AppContext.SettingsManager.Data.AISettings.Items));
+    for I := 0 to High(AppContext.SettingsManager.Data.AISettings.Items) do
+    begin
+        FLocalSettings.AISettings.Items[I] := AppContext.SettingsManager.Data.AISettings.Items[I];
+        SetLength(FLocalSettings.AISettings.Items[I].Items.Items, Length(AppContext.SettingsManager.Data.AISettings.Items[I].Items.Items));
+        for J := 0 to High(AppContext.SettingsManager.Data.AISettings.Items[I].Items.Items) do
+            FLocalSettings.AISettings.Items[I].Items.Items[J] := AppContext.SettingsManager.Data.AISettings.Items[I].Items.Items[J];
+    end;
+
+    LoadStructureToTree;
 end;
 
 procedure TAISettingsForm.LoadStructureToTree;
@@ -303,10 +334,10 @@ begin
             end;
         end;
 
-        tvAIStructure.FullExpand; // Раскрываем все ветки, чтобы было красиво
+        tvAIStructure.FullExpand; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 
         if tvAIStructure.Items.Count > 0 then
-            tvAIStructure.Items[0].Selected := True; // Выделяем первый элемент
+            tvAIStructure.Items[0].Selected := True; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     finally
         tvAIStructure.Items.EndUpdate;
     end;
@@ -326,7 +357,7 @@ begin
 
     if Data^.NodeType = ntHub then
     begin
-        // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Сначала копируем Хаб, чтобы не потерять его Items!
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ Items!
         AIHub := FLocalSettings.AISettings[Data^.HubIndex];
 
         AIHub.Name :=  ebHubName.Text;
@@ -334,14 +365,14 @@ begin
         AIHub.Comment :=  mHubComment.Text;
 
         FLocalSettings.AISettings[Data^.HubIndex] := AIHub;
-        ActiveNode.Text := ebHubName.Text; // Синхронизируем имя в дереве
+        ActiveNode.Text := ebHubName.Text; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
     end
     else
     begin
         var HubIdx := Data^.HubIndex;
         var ModIdx := Data^.ModelIndex;
 
-        // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Сначала копируем Модель!
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ!
         AIItem := FLocalSettings.AISettings[HubIdx].Items[ModIdx];
 
         AIItem.Name := ebModelName.Text;

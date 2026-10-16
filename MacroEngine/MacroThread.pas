@@ -13,6 +13,7 @@ type
     private
         FActions: TArray<IScriptAction>;
         FContext: TMacroContext;
+        FCancelled: Integer;
         // Добавляем поле для коллбэка
         FOnRecordRun: TProc<Integer, Integer>;
     protected
@@ -26,6 +27,7 @@ type
 implementation
 
 uses
+    CommonHelpers,
     System.StrUtils,
     System.SyncObjs,
     Winapi.Windows
@@ -37,15 +39,16 @@ begin
     FContext := Context;
     FOnRecordRun := OnRecordRun; // Сохраняем коллбэк
 
-    inherited Create(False);
-
+    // FreeOnTerminate обязан быть установлен ДО запуска потока:
+    // поток может завершиться раньше, чем выполнится присвоение после Create
     FreeOnTerminate := True;
+
+    inherited Create(False);
 end;
 
 procedure TMacroThread.Cancel;
 begin
-    if Assigned(FContext) then
-        TInterlocked.Exchange(FContext.Cancelled, 1);
+    TInterlocked.Exchange(FCancelled, 1);
     Terminate;
 end;
 
@@ -63,13 +66,25 @@ begin
                 CompletedSuccessfully := False;
                 Break;
             end;
-            if Assigned(FContext) and (TInterlocked.Add(FContext.Cancelled, 0) <> 0) then
+            if (TInterlocked.Add(FCancelled, 0) <> 0) or
+                (Assigned(FContext) and (TInterlocked.Add(FContext.Cancelled, 0) <> 0)) then
             begin
                 CompletedSuccessfully := False;
                 Break;
             end;
 
-            A.Execute;
+            try
+                A.Execute;
+            except
+                // Необработанное исключение в потоке убивает процесс (RTE 216):
+                // логируем, помечаем макрос как незавершённый и прерываем цикл
+                on E: Exception do
+                begin
+                    CompletedSuccessfully := False;
+                    LogException('TMacroThread.Execute', E);
+                    Break;
+                end;
+            end;
         end;
     finally
         if CompletedSuccessfully and Assigned(FContext) and (FContext.SnippetID > 0) then

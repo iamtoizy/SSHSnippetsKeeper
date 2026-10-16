@@ -14,6 +14,8 @@ type
         FDefaultValue: string;
         FPreCollectedValue: string;
         FHasPreCollectedValue: Boolean;
+        function PromptUser(const APrompt: string): string;
+        function ConfirmUser(const APrompt: string): Boolean;
     public
         constructor Create(Context: TMacroContext; const Prompt: string; InputType: TMacroInputType; const DefaultValue: string);
         procedure SetPreCollectedValue(const Value: string);
@@ -26,6 +28,7 @@ type
 implementation
 
 uses
+    System.Classes,
     System.SyncObjs
     ;
 
@@ -61,6 +64,34 @@ begin
     Result := FPrompt;
 end;
 
+function TInputAction.PromptUser(const APrompt: string): string;
+var
+    Res: string;
+begin
+    if TThread.CurrentThread.ThreadID = MainThreadID then
+        Exit(FContext.OnInput(APrompt));
+    TThread.Synchronize(nil,
+        procedure
+        begin
+            Res := FContext.OnInput(APrompt);
+        end);
+    Result := Res;
+end;
+
+function TInputAction.ConfirmUser(const APrompt: string): Boolean;
+var
+    Res: Boolean;
+begin
+    if TThread.CurrentThread.ThreadID = MainThreadID then
+        Exit(FContext.OnConfirm(APrompt));
+    TThread.Synchronize(nil,
+        procedure
+        begin
+            Res := FContext.OnConfirm(APrompt);
+        end);
+    Result := Res;
+end;
+
 procedure TInputAction.Execute;
 var
     S: string;
@@ -79,7 +110,7 @@ begin
             // Fallback: спрашиваем прямо во время выполнения
             if Assigned(FContext.OnConfirm) then
             begin
-                if not FContext.OnConfirm(FPrompt) then
+                if not ConfirmUser(FPrompt) then
                     TInterlocked.Exchange(FContext.Cancelled, 1);
             end;
         end;
@@ -97,7 +128,7 @@ begin
         if not Assigned(FContext.OnInput) then
             Exit;
 
-        S := FContext.OnInput(FPrompt);
+        S := PromptUser(FPrompt);
         if Assigned(FContext.Executor) then
             FContext.Executor.TypeRawText(S);
     end;

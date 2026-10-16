@@ -49,6 +49,7 @@ type
 implementation
 
 uses
+    CommonHelpers,
     System.Classes,
     System.SysUtils
     ;
@@ -70,31 +71,21 @@ begin
     begin
         FMacroThread.Cancel;
 
-        // Ждём завершения потока
+        // Grace period for the running macro
         WaitResult := WaitForSingleObject(FMacroThread.Handle, 2000);
 
         if WaitResult = WAIT_OBJECT_0 then
         begin
-            // Поток завершился нормально - FreeOnTerminate уже уничтожил объект
-            // Просто обнуляем указатель
+            // Thread finished - the object frees itself (FreeOnTerminate), just drop the reference
             FMacroThread := nil;
         end
         else
         begin
-            // Поток НЕ завершился за 2 секунды
-            // Принудительно завершаем и уничтожаем
-            {$IFDEF DEBUG}
-            OutputDebugString('[WindowHelper] WARNING: Macro thread did not terminate in 2s, forcing cleanup');
-            {$ENDIF}
-
-            // TerminateThread - опасная операция, но в деструкторе это единственный вариант
-            // Поток завис и не реагирует на Cancel
-            TerminateThread(FMacroThread.Handle, 1);
-
-            // После TerminateThread поток мёртв, но объект TMacroThread ещё жив
-            // (FreeOnTerminate не сработал, потому что поток не завершился нормально)
-            // Уничтожаем объект вручную
-            FMacroThread.Free;
+            // TerminateThread/Free of a still running thread is unsafe (AV, loader lock).
+            // Detach instead: Cancel was requested, the thread will finish on its own
+            // and free itself via FreeOnTerminate.
+            LogMsg('TWindowHelper.Destroy: macro thread did not stop in 2s, detached (FreeOnTerminate)');
+            FMacroThread.FreeOnTerminate := True;
             FMacroThread := nil;
         end;
     end;

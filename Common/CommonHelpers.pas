@@ -1,4 +1,4 @@
-unit CommonHelpers;
+п»їunit CommonHelpers;
 
 interface
 
@@ -10,42 +10,47 @@ uses
     Vcl.ComCtrls,
     Vcl.Controls,
     Vcl.Menus,
-    Vcl.StdCtrls
+    Vcl.StdCtrls,
+    System.SysUtils
     ;
 
 type
-    // Статический класс-помощник для работы с историей ввода (MRU)
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ (MRU)
     THistoryHelper = class
     public
         class procedure Add(var History: TArray<THistoryItem>; const NewValue: string; MaxItems: Integer = 15);
     end;
 
-{ Показать тост-уведомление }
+{ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ }
 procedure ShowSimpleToast(const Text: string; const Title: string = '');
-{ Поиск конкретного файла конфигурации или БД (Для TUIStateLoader и SQLite) }
+{ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅ (пїЅпїЅпїЅ TUIStateLoader пїЅ SQLite) }
 function ResolvePath(const PathName: string; IsDirectory: Boolean = False): string;
-{ Получение базовой папки для диалогов открытия/сохранения }
+{ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ/пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ }
 function GetDefaultDataDir: string;
-{ Безопасное удаление содержимого TListView }
+{ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ TListView }
 procedure WipeListViewPasswords(ListView: TListView);
-{ Безопасное удаление содержимого TCustomEdit }
+{ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ TCustomEdit }
 procedure WipeVCLControlText(Control: TCustomEdit);
-{ Затирание блока памяти нулями }
+{ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ }
 procedure SecureZeroMemory(Ptr: Pointer; Size: NativeUInt);
-{ Безопасное копирование в буфер обмена }
+{ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ }
 procedure CopyToClipboardSecure(const Text: string);
-{ Безопасное уничтожение локальных строк в RAM }
+{ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ RAM }
 procedure WipeString(var S: string);
-{ Конвертация из Win32 (RegisterHotKey) в VCL (THotKey) }
+{ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ Win32 (RegisterHotKey) пїЅ VCL (THotKey) }
 procedure Win32HotkeyToVCL(const Config: THotkeyConfig; HotKeyCtrl: THotKey);
-{ Конвертация из VCL (THotKey) в Win32 (RegisterHotKey) }
+{ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ VCL (THotKey) пїЅ Win32 (RegisterHotKey) }
 function VCLHotkeyToWin32(HotKeyCtrl: THotKey; Enabled: Boolean = True): THotkeyConfig;
-{ Преобразование комбинации в красивую строку для интерфейса (например "Ctrl + Alt + Q") }
+{ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ "Ctrl + Alt + Q") }
 function HotkeyToString(const Config: THotkeyConfig): string;
-{ Функция для генерации заголовка Basic Auth }
+{ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Basic Auth }
 function GenerateHtpasswdString(const Username, Password: string): string;
-{ Запуск pip }
-function RunCmdCommand(const WorkingDir, Command: string; out Output: string): Boolean;
+{ пїЅпїЅпїЅпїЅпїЅпїЅ pip }
+function RunCmdCommand(const WorkingDir, Command: string; out Output: string; TimeoutMs: Cardinal = 300000): Boolean;
+{ Single point of logging: appends a timestamped line to the log file }
+procedure LogMsg(const Msg: string);
+{ Logs an exception (class + message) with the given operation context }
+procedure LogException(const Context: string; E: Exception);
 
 implementation
 
@@ -54,7 +59,7 @@ uses
     System.Hash,
     System.NetEncoding,
     System.Notification,
-    System.SysUtils,
+    System.SyncObjs,
     UI.StateLoader,
     Vcl.Clipbrd,
     Winapi.Windows
@@ -62,8 +67,9 @@ uses
 
 var
     NotificationCenter: TNotificationCenter;
+    GLogLock: TCriticalSection;
 
-{ Показать тост-уведомление }
+{ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ }
 procedure ShowSimpleToast(const Text: string; const Title: string = '');
 var
     Notification: TNotification;
@@ -85,7 +91,7 @@ begin
     end;
 end;
 
-{ Поиск конкретного файла конфигурации или БД (Для TUIStateLoader и SQLite) }
+{ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅ (пїЅпїЅпїЅ TUIStateLoader пїЅ SQLite) }
 function ResolvePath(const PathName: string; IsDirectory: Boolean = False): string;
 var
     ExePath, DevPath, TargetDir: string;
@@ -93,7 +99,7 @@ var
     function NonEmptyDirOrFileExists(const APath: string): Boolean;
     begin
         if IsDirectory then
-            // Папка существует И в ней есть файлы
+            // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
             Result := DirectoryExists(APath) and (Length(TDirectory.GetFileSystemEntries(APath)) > 0)
         else
             Result := FileExists(APath);
@@ -101,12 +107,12 @@ var
 begin
     ExePath := ExtractFilePath(ParamStr(0));
 
-    // 1. Проверяем папку у пользователя (рядом с .exe)
+    // 1. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅ пїЅ .exe)
     Result := TPath.Combine(ExePath, PathName);
     if NonEmptyDirOrFileExists(Result) then
         Exit;
 
-    // 2. Ищем в папке разработчика (Assets\ExeData\...)
+    // 2. пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (Assets\ExeData\...)
     DevPath := ExpandFileName(TPath.Combine(ExePath, '..\..\..\Assets\ExeData'));
     DevPath := TPath.Combine(DevPath, PathName);
     if NonEmptyDirOrFileExists(DevPath) then
@@ -115,7 +121,7 @@ begin
         Exit;
     end;
 
-    // 3. Если ничего не нашли, возвращаем путь рядом с .exe
+    // 3. пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ .exe
     Result := TPath.Combine(ExePath, PathName);
     if IsDirectory then
         TargetDir := Result
@@ -126,21 +132,21 @@ begin
         ForceDirectories(TargetDir);
 end;
 
-{ Получение базовой папки для диалогов открытия/сохранения }
+{ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ/пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ }
 function GetDefaultDataDir: string;
 var
     ExePath, DevPath: string;
 begin
     ExePath := ExtractFilePath(ParamStr(0));
 
-    // Формируем путь к папке разработчика
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     DevPath := ExpandFileName(TPath.Combine(ExePath, '..\..\..\Assets\ExeData'));
 
-    // Проверяем, существует ли такая ДИРЕКТОРИЯ (а не файл)
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ)
     if TDirectory.Exists(DevPath) then
         Result := DevPath
     else
-        Result := ExePath; // Если папки нет, возвращаем директорию с .exe
+        Result := ExePath; // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ .exe
 end;
 
 procedure WipeListViewPasswords(ListView: TListView);
@@ -151,43 +157,43 @@ var
 begin
     if not Assigned(ListView) then Exit;
 
-    // Пробегаемся по всем строкам таблицы
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     for I := 0 to ListView.Items.Count - 1 do
     begin
-        // Пароль хранится во второй колонке (индекс 1)
+        // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅ 1)
         if ListView.Items[I].SubItems.Count > 1 then
         begin
-            // Получаем прямую ссылку на блок памяти со строкой
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             S := ListView.Items[I].SubItems[1];
             if S <> '' then
             begin
-                // Берем прямой указатель на первый символ
+                // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
                 P := PChar(S);
-                // Физически затираем байты в куче (heap) нулями.
-                // Поскольку мы обращаемся по указателю, мы "ломаем" строку
-                // прямо внутри самой структуры TListView!
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ (heap) пїЅпїЅпїЅпїЅпїЅпїЅ.
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ "пїЅпїЅпїЅпїЅпїЅпїЅ" пїЅпїЅпїЅпїЅпїЅпїЅ
+                // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ TListView!
                 SecureZeroMemory(P, Length(S) * SizeOf(Char));
             end;
         end;
     end;
 
-    // Теперь, когда в памяти таблицы лежат только нули, можно безопасно
-    // отдать эти блоки обратно системе
+    // пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+    // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     ListView.Items.Clear;
 end;
 
 procedure WipeVCLControlText(Control: TCustomEdit);
 begin
     if not Assigned(Control) or (Control.GetTextLen = 0) then Exit;
-    // Физически перезаписываем участок памяти контрола нулями,
-    // прежде чем освободить строку
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ,
+    // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
     Control.Text := StringOfChar('0', Control.GetTextLen);
     Control.Text := '';
 end;
 
 procedure SecureZeroMemory(Ptr: Pointer; Size: NativeUInt);
 begin
-    // Не стоит ли затирать рандомными данными?
+    // пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ?
     if (Ptr <> nil) and (Size > 0) then
         FillChar(Ptr^, Size, 0);
 end;
@@ -197,15 +203,15 @@ var
     ExcludeFormat: UINT;
     MemBlock: HGLOBAL;
 begin
-    // 1. Регистрируем спец. формат Windows 10/11 для пропуска истории буфера обмена (Win+V)
-    // Любой нормальный менеджер буфера обмена (и сама ОС) проигнорирует этот текст
+    // 1. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅпїЅпїЅ Windows 10/11 пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ (Win+V)
+    // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ (пїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ) пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
     ExcludeFormat := RegisterClipboardFormat('ExcludeClipboardContentFromMonitor');
 
     Vcl.Clipbrd.Clipboard.Open;
     try
         Vcl.Clipbrd.Clipboard.AsText := Text;
 
-        // Говорим системе не вести лог этого копирования
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         if ExcludeFormat <> 0 then
         begin
             MemBlock := GlobalAlloc(GMEM_MOVEABLE or GMEM_ZEROINIT, 1);
@@ -219,14 +225,41 @@ end;
 
 procedure WipeString(var S: string);
 begin
-    // StringRefCount возвращает -1 для строковых констант (литералов в коде).
-    // Попытка затереть константу вызовет краш (Access Violation).
+    // StringRefCount пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ -1 пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ).
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ (Access Violation).
     if (S <> '') and (StringRefCount(S) = 1) then
     begin
-        // Физически затираем оригинальный блок памяти нулями
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
         SecureZeroMemory(PChar(S), Length(S) * SizeOf(Char));
     end;
-    S := ''; // Обнуляем указатель
+    S := ''; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+end;
+
+procedure LogMsg(const Msg: string);
+begin
+    if not Assigned(GLogLock) then
+        Exit;
+    try
+        GLogLock.Enter;
+        try
+            TFile.AppendAllText(
+                ResolvePath('SSHSnippetsKeeper.log'),
+                FormatDateTime('yyyy-mm-dd hh:nn:ss.zzz', Now) + ' [TID ' +
+                IntToStr(GetCurrentThreadId) + '] ' + Msg + sLineBreak,
+                TEncoding.UTF8);
+        finally
+            GLogLock.Leave;
+        end;
+    except
+        // Logging must never raise
+    end;
+end;
+
+procedure LogException(const Context: string; E: Exception);
+begin
+    if E = nil then
+        Exit;
+    LogMsg('EXCEPTION in ' + Context + ': ' + E.ClassName + ': ' + E.Message);
 end;
 
 { THistoryHelper }
@@ -239,7 +272,7 @@ begin
     if NewValue.Trim = '' then Exit;
 
     Found := False;
-    // 1. Ищем элемент. Если нашли — увеличиваем вес
+    // 1. пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ
     for I := Low(History) to High(History) do
     begin
         if SameText(History[I].Value, NewValue) then
@@ -250,7 +283,7 @@ begin
         end;
     end;
 
-    // 2. Если не нашли — добавляем новый с весом 1
+    // 2. пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ 1
     if not Found then
     begin
         SetLength(History, Length(History) + 1);
@@ -258,14 +291,14 @@ begin
         History[High(History)].UseCount := 1;
     end;
 
-    // 3. Сортируем массив по весу (UseCount) по убыванию (от частых к редким)
+    // 3. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ (UseCount) пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ)
     TArray.Sort<THistoryItem>(History, TComparer<THistoryItem>.Construct(
         function(const Left, Right: THistoryItem): Integer
         begin
-            Result := Right.UseCount - Left.UseCount; // Сортировка по убыванию
+            Result := Right.UseCount - Left.UseCount; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         end));
 
-    // 4. Ограничиваем размер истории (обрезаем хвост из самых редких)
+    // 4. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ)
     if Length(History) > MaxItems then
         SetLength(History, MaxItems);
 end;
@@ -275,7 +308,7 @@ var
     ShiftState: TShiftState;
 begin
     ShiftState := [];
-    // Собираем стандартный VCL TShiftState из Win32 флагов
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ VCL TShiftState пїЅпїЅ Win32 пїЅпїЅпїЅпїЅпїЅпїЅ
     if (Config.Modifiers and MOD_ALT) <> 0 then
         Include(ShiftState, ssAlt);
     if (Config.Modifiers and MOD_CONTROL) <> 0 then
@@ -283,8 +316,8 @@ begin
     if (Config.Modifiers and MOD_SHIFT) <> 0 then
         Include(ShiftState, ssShift);
 
-    // Vcl.Menus.ShortCut сам соберет правильный Integer (TShortCut),
-    // а компонент THotKey автоматически обновит свои визуальные Modifiers
+    // Vcl.Menus.ShortCut пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Integer (TShortCut),
+    // пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ THotKey пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Modifiers
     HotKeyCtrl.HotKey := Vcl.Menus.ShortCut(Config.Key, ShiftState);
 end;
 
@@ -294,11 +327,11 @@ var
     ShiftState: TShiftState;
     WinModifiers: Cardinal;
 begin
-    // Расщепляем TShortCut обратно на кнопку и стандартный TShiftState
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ TShortCut пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ TShiftState
     Vcl.Menus.ShortCutToKey(HotKeyCtrl.HotKey, Key, ShiftState);
 
     WinModifiers := 0;
-    // Собираем флаги Win32
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ Win32
     if ssAlt in ShiftState then
         WinModifiers := WinModifiers or MOD_ALT;
     if ssCtrl in ShiftState then
@@ -318,7 +351,7 @@ var
     ScanCode: UINT;
 begin
     if not Config.Enabled or (Config.Key = 0) then
-        Exit('Нет');
+        Exit('пїЅпїЅпїЅ');
 
     Parts := '';
     if (Config.Modifiers and MOD_CONTROL) <> 0 then Parts := Parts + 'Ctrl + ';
@@ -340,29 +373,31 @@ var
     HashBytes: TBytes;
     Base64Str: string;
 begin
-    // 1. Получаем SHA-1 хэш от пароля в виде "сырых" байтов (не HEX-строку!)
+    // 1. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ SHA-1 пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ "пїЅпїЅпїЅпїЅпїЅ" пїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅ HEX-пїЅпїЅпїЅпїЅпїЅпїЅ!)
     HashBytes := THashSHA1.GetHashBytes(Password);
 
-    // 2. Кодируем эти байты в стандартный Base64
+    // 2. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Base64
     Base64Str := TNetEncoding.Base64.EncodeBytesToString(HashBytes);
 
-    // 3. На всякий случай удаляем возможные переносы строк (Base64 иногда их вставляет)
+    // 3. пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ (Base64 пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
     Base64Str := Base64Str.Replace(#13#10, '', [rfReplaceAll]);
 
-    // 4. Возвращаем готовую строку для вставки в файл .htpasswd
+    // 4. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ .htpasswd
     Result := Format('%s:{SHA}%s', [Username, Base64Str]);
 end;
 
-function RunCmdCommand(const WorkingDir, Command: string; out Output: string): Boolean;
+function RunCmdCommand(const WorkingDir, Command: string; out Output: string; TimeoutMs: Cardinal): Boolean;
 var
     SecurityAttr: TSecurityAttributes;
     ReadPipe, WritePipe: THandle;
     StartInfo: TStartupInfo;
     ProcInfo: TProcessInformation;
-    Buffer: array[0..2047] of AnsiChar; // Увеличенный буфер
-    BytesRead: DWORD;
+    Buffer: array[0..2047] of AnsiChar;
+    BytesRead, BytesAvail: DWORD;
     FullCommand: string;
     WorkDirPtr: PChar;
+    StartTime: DWORD;
+    WaitResult: DWORD;
 begin
     Result := False;
     Output := '';
@@ -371,58 +406,91 @@ begin
     SecurityAttr.nLength := SizeOf(SecurityAttr);
     SecurityAttr.bInheritHandle := True;
 
-    // 1. Создаем Pipe
+    // 1. РЎРѕР·РґР°РµРј Pipe
     if not CreatePipe(ReadPipe, WritePipe, @SecurityAttr, 0) then
         Exit;
 
     FillChar(StartInfo, SizeOf(StartInfo), 0);
     StartInfo.cb := SizeOf(StartInfo);
     StartInfo.dwFlags := STARTF_USESHOWWINDOW or STARTF_USESTDHANDLES;
-    StartInfo.wShowWindow := SW_HIDE; // Прячем черное окно
+    StartInfo.wShowWindow := SW_HIDE; // РЎРєСЂС‹РІР°РµРј РѕРєРЅРѕ
     StartInfo.hStdOutput := WritePipe;
-    StartInfo.hStdError := WritePipe; // Перехватываем и ошибки тоже
+    StartInfo.hStdError := WritePipe; // РџРµСЂРµРЅР°РїСЂР°РІР»СЏРµРј РѕС€РёР±РєРё РІ С‚РѕС‚ Р¶Рµ РїРѕС‚РѕРє
 
-    // Оборачиваем команду в вызов интерпретатора CMD
+    // Р¤РѕСЂРјРёСЂСѓРµРј РєРѕРјР°РЅРґСѓ РґР»СЏ cmd
     FullCommand := 'cmd.exe /c ' + Command;
 
-    // Если рабочая директория не указана, передаем nil
+    // РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј СЂР°Р±РѕС‡СѓСЋ РґРёСЂРµРєС‚РѕСЂРёСЋ
     if WorkingDir <> '' then
         WorkDirPtr := PChar(WorkingDir)
     else
         WorkDirPtr := nil;
 
-    // 2. Запускаем процесс. Передаем WorkingDir прямо в API Windows
+    // 2. Р—Р°РїСѓСЃРєР°РµРј РїСЂРѕС†РµСЃСЃ
     if CreateProcess(nil, PChar(FullCommand), nil, nil, True, CREATE_NO_WINDOW, nil, WorkDirPtr, StartInfo, ProcInfo) then
     begin
-        // ВАЖНО (Защита от Deadlock):
-        // Мы должны закрыть НАШ (родительский) дескриптор на запись ПЕРЕД чтением.
-        // Копия этого дескриптора уже передана дочернему процессу.
-        // Если этого не сделать, ReadFile никогда не вернет False, так как будет
-        // считать, что кто-то (мы сами) еще может что-то записать.
+        // РћР±СЏР·Р°С‚РµР»СЊРЅРѕ Р·Р°РєСЂС‹РІР°РµРј WritePipe СЃРѕ СЃС‚РѕСЂРѕРЅС‹ СЂРѕРґРёС‚РµР»СЏ, РёРЅР°С‡Рµ ReadFile РјРѕР¶РµС‚ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°С‚СЊСЃСЏ
         CloseHandle(WritePipe);
 
-        // 3. Читаем данные по мере их поступления в цикле
-        while ReadFile(ReadPipe, Buffer, SizeOf(Buffer) - 1, BytesRead, nil) and (BytesRead > 0) do
+        StartTime := GetTickCount;
+        Result := True;
+
+        // 3. Р“Р»Р°РІРЅС‹Р№ С†РёРєР»: С‡С‚РµРЅРёРµ + РїСЂРѕРІРµСЂРєР° С‚Р°Р№РјР°СѓС‚Р° + РїСЂРѕРІРµСЂРєР° СЃРѕСЃС‚РѕСЏРЅРёСЏ РїСЂРѕС†РµСЃСЃР°
+        while True do
         begin
-            Buffer[BytesRead] := #0;
+            // РџСЂРѕРІРµСЂРєР° С‚Р°Р№РјР°СѓС‚Р° (Cardinal-Р°СЂРёС„РјРµС‚РёРєР° Р·Р°С‰РёС‰Р°РµС‚ РѕС‚ РїРµСЂРµРїРѕР»РЅРµРЅРёСЏ GetTickCount)
+            if (TimeoutMs <> INFINITE) and (Cardinal(GetTickCount - StartTime) > TimeoutMs) then
+            begin
+                TerminateProcess(ProcInfo.hProcess, UINT(1));
+                WaitForSingleObject(ProcInfo.hProcess, 1000); // Р”Р°РµРј РІСЂРµРјСЏ РЅР° Р·Р°РІРµСЂС€РµРЅРёРµ
+                Result := False;
+                Break;
+            end;
 
-            // Перекодируем OEM (консольную CP866) в ANSI (системную CP1251),
-            // чтобы русские буквы из CMD отображались корректно
-            OemToCharA(Buffer, Buffer);
+            // РџСЂРѕРІРµСЂСЏРµРј РЅР°Р»РёС‡РёРµ РґР°РЅРЅС‹С… РІ РїР°Р№РїРµ Р±РµР· Р±Р»РѕРєРёСЂРѕРІРєРё РїРѕС‚РѕРєР°
+            BytesAvail := 0;
+            if PeekNamedPipe(ReadPipe, nil, 0, nil, @BytesAvail, nil) and (BytesAvail > 0) then
+            begin
+                // Р§РёС‚Р°РµРј РґРѕСЃС‚СѓРїРЅС‹Рµ РґР°РЅРЅС‹Рµ
+                if ReadFile(ReadPipe, Buffer, SizeOf(Buffer) - 1, BytesRead, nil) and (BytesRead > 0) then
+                begin
+                    Buffer[BytesRead] := #0;
+                    // РљРѕРЅРІРµСЂС‚РёСЂСѓРµРј РІС‹РІРѕРґ CMD (РѕР±С‹С‡РЅРѕ CP866) РІ СЃРёСЃС‚РµРјРЅСѓСЋ ANSI
+                    OemToCharA(Buffer, Buffer);
+                    Output := Output + string(AnsiString(Buffer));
+                end;
+            end
+            else
+            begin
+                // Р•СЃР»Рё РґР°РЅРЅС‹С… РїРѕРєР° РЅРµС‚, РїСЂРѕРІРµСЂСЏРµРј, Р¶РёРІ Р»Рё РїСЂРѕС†РµСЃСЃ (Р¶РґРµРј 50 РјСЃ, С‡С‚РѕР±С‹ РЅРµ РіСЂСѓР·РёС‚СЊ CPU)
+                WaitResult := WaitForSingleObject(ProcInfo.hProcess, 50);
 
-            Output := Output + string(AnsiString(Buffer));
+                if WaitResult = WAIT_OBJECT_0 then
+                begin
+                    // РџСЂРѕС†РµСЃСЃ Р·Р°РІРµСЂС€РёР»СЃСЏ, РґРѕС‡РёС‚С‹РІР°РµРј РѕСЃС‚Р°С‚РєРё РёР· РїР°Р№РїР°, РµСЃР»Рё РѕРЅРё РµСЃС‚СЊ
+                    while PeekNamedPipe(ReadPipe, nil, 0, nil, @BytesAvail, nil) and (BytesAvail > 0) do
+                    begin
+                        if ReadFile(ReadPipe, Buffer, SizeOf(Buffer) - 1, BytesRead, nil) and (BytesRead > 0) then
+                        begin
+                            Buffer[BytesRead] := #0;
+                            OemToCharA(Buffer, Buffer);
+                            Output := Output + string(AnsiString(Buffer));
+                        end
+                        else
+                            Break;
+                    end;
+
+                    Break; // Р’С‹С…РѕРґРёРј РёР· РіР»Р°РІРЅРѕРіРѕ С†РёРєР»Р°
+                end;
+            end;
         end;
-
-        // Ждем окончательного закрытия процесса (теперь это мгновенно)
-        WaitForSingleObject(ProcInfo.hProcess, INFINITE);
 
         CloseHandle(ProcInfo.hProcess);
         CloseHandle(ProcInfo.hThread);
-        Result := True;
     end
     else
     begin
-        // Если процесс не запустился, закрываем WritePipe
+        // Р•СЃР»Рё РїСЂРѕС†РµСЃСЃ РЅРµ Р·Р°РїСѓСЃС‚РёР»СЃСЏ, РЅСѓР¶РЅРѕ Р·Р°РєСЂС‹С‚СЊ WritePipe РґР»СЏ РїСЂРµРґРѕС‚РІСЂР°С‰РµРЅРёСЏ СѓС‚РµС‡РµРє
         CloseHandle(WritePipe);
     end;
 
@@ -431,10 +499,12 @@ end;
 
 initialization
     NotificationCenter := TNotificationCenter.Create(nil);
+    GLogLock := TCriticalSection.Create;
 
 
 finalization
-    NotificationCenter.Free;
+    FreeAndNil(NotificationCenter);
+    FreeAndNil(GLogLock);
 
 end.
 

@@ -174,7 +174,6 @@ object AddEditSnippetForm: TAddEditSnippetForm
       Align = alTop
       BevelOuter = bvNone
       TabOrder = 0
-      ExplicitWidth = 423
       object spTopLeft: TSplitter
         Left = 240
         Top = 0

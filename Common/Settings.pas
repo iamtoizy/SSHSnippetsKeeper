@@ -231,6 +231,8 @@ begin
     try
         FBashAutocomplete.LoadFromFile(Path, TEncoding.UTF8);
     except
+        on E: Exception do
+            LogException('TSettingsManager.Load(BashAutocomplete)', E);
     end;
 
     Path := GetSettingsPath;
@@ -289,6 +291,8 @@ begin
     except
         on E: Exception do
         begin
+            // Настройки восстанавливаются к дефолту, но причина сбоя не должна теряться
+            LogException('TSettingsManager.Load(settings.json)', E);
             ApplyDefaults;
         end;
     end;
@@ -302,7 +306,9 @@ begin
         JsonString := DSON.toJson<TAppSettings>(FSettings);
         TFile.WriteAllText(GetSettingsPath, JsonString, TEncoding.UTF8);
     except
-        // Обработка ошибки, если нет прав на запись в папку
+        // Без логирования пользователь молча потерял бы все изменения
+        on E: Exception do
+            LogException('TSettingsManager.Save', E);
     end;
 end;
 

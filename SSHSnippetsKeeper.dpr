@@ -164,12 +164,12 @@ ReportMemoryLeaksOnShutdown := True;
 
         if FoundWnd <> 0 then
         begin
-        // ¬осстанавливаем и показываем первую копию
+            // ¬осстанавливаем и показываем первую копию
             if IsIconic(FoundWnd) then
                 ShowWindow(FoundWnd, SW_RESTORE);
 
-        // »ногда SetForegroundWindow не срабатывает из-за защиты Windows (Focus Stealing).
-        // „тобы пробить эту защиту, сначала "прикрепл€ем" наш поток к потоку того окна.
+            // »ногда SetForegroundWindow не срабатывает из-за защиты Windows (Focus Stealing).
+            // „тобы пробить эту защиту, сначала "прикрепл€ем" наш поток к потоку того окна.
             SetForegroundWindow(FoundWnd);
         end;
 
@@ -193,7 +193,7 @@ ReportMemoryLeaksOnShutdown := True;
 
     Application.Initialize;
     Application.MainFormOnTaskbar := True;
-    TStyleManager.TrySetStyle('Glow');
+//    TStyleManager.TrySetStyle('Glow');
 //    TStyleManager.UseParentPaintBuffers := True;
     Application.Title := 'SSH Snippets Keeper';
     Application.CreateForm(TAppDatabase, AppDatabase);

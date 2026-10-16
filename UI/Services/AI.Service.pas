@@ -145,6 +145,9 @@ var
 begin
     Result := '';
     Client := TNetHTTPClient.Create(nil);
+    // The AI overlay cannot be cancelled - never let a request hang forever
+    Client.ConnectionTimeout := 15000;
+    Client.ResponseTimeout := 60000;
     RequestJSON := TJSONObject.Create;
     StringStream := TStringStream.Create('', TEncoding.UTF8);
     try

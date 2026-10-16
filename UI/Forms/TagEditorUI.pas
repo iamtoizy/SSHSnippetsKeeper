@@ -19,8 +19,8 @@ type
 
     TTagChange = record
         Action: TTagEditAction;
-        TagID: Integer;      // Для Rename/Delete
-        NewName: string;     // Для Add/Rename
+        TagID: Integer;      // пїЅпїЅпїЅ Rename/Delete
+        NewName: string;     // пїЅпїЅпїЅ Add/Rename
     end;
 
     TTagEditorForm = class(TBaseForm)
@@ -45,11 +45,15 @@ type
         procedure lvTagsEdited(Sender: TObject; Item: TListItem; var S: string);
         procedure FormCreate(Sender: TObject);
         procedure FormDestroy(Sender: TObject);
+    protected
+        procedure DoInitialize; override;
     private
         FChanges: TList<TTagChange>;
 
         procedure ApplyChangesToDB;
+        procedure ValidateNoDuplicates;
         procedure RecordChange(Action: TTagEditAction; TagID: Integer; const NewName: string = '');
+        procedure RemovePendingAdd(const AName: string);
         procedure DoAddTag;
         procedure DoDeleteTags;
         procedure DoRenameTag;
@@ -94,13 +98,18 @@ end;
 procedure TTagEditorForm.FormCreate(Sender: TObject);
 begin
     FChanges := TList<TTagChange>.Create;
-    // Загружаем теги при создании формы, если сервис уже передан
-    RefreshTagList;
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 end;
 
 procedure TTagEditorForm.FormDestroy(Sender: TObject);
 begin
     FChanges.Free;
+end;
+
+procedure TTagEditorForm.DoInitialize;
+begin
+    inherited;
+    RefreshTagList;
 end;
 
 procedure TTagEditorForm.RefreshTagList;
@@ -124,6 +133,29 @@ begin
     FChanges.Add(Change);
 end;
 
+procedure TTagEditorForm.RemovePendingAdd(const AName: string);
+var
+    I: Integer;
+begin
+    for I := FChanges.Count - 1 downto 0 do
+        if (FChanges[I].Action = teaAdd) and SameText(FChanges[I].NewName, AName) then
+        begin
+            FChanges.Delete(I);
+            Break;
+        end;
+end;
+
+procedure TTagEditorForm.ValidateNoDuplicates;
+var
+    I, J: Integer;
+begin
+    for I := 0 to lvTags.Items.Count - 1 do
+        for J := I + 1 to lvTags.Items.Count - 1 do
+            if SameText(lvTags.Items[I].Caption, lvTags.Items[J].Caption) then
+                raise Exception.Create(
+                    TUIStateLoader.GetMessage('Tag.DuplicateNameError', [lvTags.Items[I].Caption]));
+end;
+
 procedure TTagEditorForm.DoAddTag;
 var
     NewName: string;
@@ -136,15 +168,15 @@ begin
     begin
         NewName := Trim(NewName);
 
-        // Визуальное добавление
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         Item := lvTags.Items.Add;
         Item.Caption := NewName;
-        Item.Data := Pointer(0); // ID пока нет, будет присвоен при сохранении в ApplyChangesToDB
+        Item.Data := Pointer(0); // ID пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ ApplyChangesToDB
         Item.Selected := True;
         Item.MakeVisible(False);
         Item.StateIndex := 0;
 
-        // Записываем в буфер изменений
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         RecordChange(teaAdd, 0, NewName);
     end;
 end;
@@ -158,7 +190,7 @@ begin
     if lvTags.SelCount = 0 then
         Exit;
 
-    // TODO: В отдельный класс, блять!
+    // TODO: пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ!
     Dlg := CreateMessageDialog(
         TUIStateLoader.GetMessage('TagEditorForm.DeleteConfirmFormat', [lvTags.SelCount]),
         mtConfirmation, [mbYes, mbNo]
@@ -171,19 +203,21 @@ begin
         Dlg.Free;
     end;
 
-    // Удаление с конца, чтобы индексы не съезжали
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     for I := lvTags.Items.Count - 1 downto 0 do
     begin
         if lvTags.Items[I].Selected then
         begin
             TagID := Integer(lvTags.Items[I].Data);
             if TagID > 0 then
-                RecordChange(teaDelete, TagID);
+                RecordChange(teaDelete, TagID)
+            else
+                RemovePendingAdd(lvTags.Items[I].Caption);
             lvTags.Items.Delete(I);
         end;
     end;
 
-    // Принудительное перестроение расположения иконок
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
     SendMessage(lvTags.Handle, LVM_ARRANGE, LVA_DEFAULT, 0);
 end;
 
@@ -202,10 +236,12 @@ end;
 procedure TTagEditorForm.lvTagsEdited(Sender: TObject; Item: TListItem; var S: string);
 var
     TagID: Integer;
+    I: Integer;
+    Change: TTagChange;
 begin
     S := Trim(S);
 
-    // Если имя пустое или не изменилось - откатываем
+    // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     if (S = '') or (S = Item.Caption) then
     begin
         S := Item.Caption;
@@ -214,11 +250,20 @@ begin
 
     TagID := Integer(Item.Data);
 
-    // Записываем переименование в буфер только если тег уже есть в БД
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅ
     if TagID > 0 then
-        RecordChange(teaRename, TagID, S);
+        RecordChange(teaRename, TagID, S)
+    else
+        for I := FChanges.Count - 1 downto 0 do
+            if (FChanges[I].Action = teaAdd) and SameText(FChanges[I].NewName, Item.Caption) then
+            begin
+                Change := FChanges[I];
+                Change.NewName := S;
+                FChanges[I] := Change;
+                Break;
+            end;
 
-    // Визуально Caption обновится автоматически
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Caption пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 end;
 
 procedure TTagEditorForm.bOKClick(Sender: TObject);
@@ -234,28 +279,42 @@ end;
 
 procedure TTagEditorForm.bCancelClick(Sender: TObject);
 begin
-    // Просто закрываем, FChanges уничтожится в FormDestroy без применения
+    // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, FChanges пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ FormDestroy пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     ModalResult := mrCancel;
 end;
 
 procedure TTagEditorForm.ApplyChangesToDB;
 var
+    I: Integer;
     Change: TTagChange;
 begin
-    for Change in FChanges do
+    ValidateNoDuplicates;
+
+    I := 0;
+    while I < FChanges.Count do
     begin
+        Change := FChanges[I];
+        try
         case Change.Action of
             teaAdd:
-                // Сервис сам проверит уникальность и пустоту имени
+                // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
                 AppContext.TagService.CreateTag(Change.NewName);
 
             teaRename:
-                // Передаем ID (с приведением типов) и новое имя
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ID (пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ) пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ
                 AppContext.TagService.RenameTag(Integer(Change.TagID), Change.NewName);
 
             teaDelete:
                 AppContext.TagService.DeleteTag(Integer(Change.TagID));
         end;
+        except
+            on E: Exception do
+            begin
+                FChanges.DeleteRange(0, I);
+                raise;
+            end;
+        end;
+        Inc(I);
     end;
 
     FChanges.Clear;

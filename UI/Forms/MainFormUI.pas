@@ -157,7 +157,6 @@ type
         procedure lvSnippetsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
         procedure lvTagsClick(Sender: TObject);
         procedure nTagEditorClick(Sender: TObject);
-        procedure lvTagsDblClick(Sender: TObject);
         procedure lvTagsEdited(Sender: TObject; Item: TListItem; var S: string);
         procedure nExitClick(Sender: TObject);
         procedure nTerminalsClick(Sender: TObject);
@@ -1335,20 +1334,6 @@ begin
         tmrAutoSync.Enabled := True;
 end;
 
-procedure TMainForm.lvTagsDblClick(Sender: TObject);
-var
-    Item: TListItem;
-begin
-    Item := lvTags.Selected;
-    if Item = nil then
-        Exit;
-
-    if FFilterByTagID = Integer(IntPtr(Item.Data)) then
-        ClearTagFilter
-    else
-        ApplyTagFilter(Integer(IntPtr(Item.Data)), Item.Caption);
-end;
-
 procedure TMainForm.ApplyTagFilter(TagID: Integer; const TagName: string);
 begin
     FFilterByTagID := TagID;
@@ -1616,8 +1601,19 @@ begin
 end;
 
 procedure TMainForm.lvTagsClick(Sender: TObject);
+var
+    Item: TListItem;
 begin
     UpdateMenuState;
+
+    Item := lvTags.Selected;
+    if Item = nil then
+        Exit;
+
+    if FFilterByTagID = Integer(IntPtr(Item.Data)) then
+        ClearTagFilter
+    else
+        ApplyTagFilter(Integer(IntPtr(Item.Data)), Item.Caption);
 end;
 
 procedure TMainForm.nExitClick(Sender: TObject);
@@ -1753,7 +1749,8 @@ begin
                         BgConnection.Free;
                 end;
             except
-                // ... обработка ошибок (без изменений) ...
+                on E: Exception do
+                    LogException('TMainForm.PerformSearchAsync', E);
             end;
         end
     );

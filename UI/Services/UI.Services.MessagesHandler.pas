@@ -11,7 +11,7 @@ uses
 type
     TUIMessagesHandler = class(TInterfacedObject, IUIMessagesHandler)
     private
-        // Вспомогательный метод для получения правильного владельца окна
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
         function GetSafeHandle: HWND;
     public
         procedure ShowError(const Message: string);
@@ -34,7 +34,7 @@ uses
 
 function TUIMessagesHandler.GetSafeHandle: HWND;
 begin
-    // Если есть активная форма, привязываем диалог к ней. Иначе к Application.
+    // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅ. пїЅпїЅпїЅпїЅпїЅ пїЅ Application.
     if Assigned(Screen.ActiveForm) then
         Result := Screen.ActiveForm.Handle
     else if Assigned(Application) then
@@ -45,8 +45,8 @@ end;
 
 procedure TUIMessagesHandler.ShowError(const Message: string);
 begin
-    // Асинхронные сообщения (Fire-and-forget) отправляем через TThread.Queue,
-    // чтобы они гарантированно вызвались в главном потоке VCL, не блокируя фоновый поток.
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (Fire-and-forget) пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ TThread.Queue,
+    // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ VCL, пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ.
     TThread.Queue(nil,
         procedure
         begin
@@ -75,26 +75,31 @@ begin
     );
 end;
 
+function ConfirmationResultIsYes(AResult: Integer): Boolean;
+begin
+    Result := (AResult = IDYES) or (AResult = IDOK) or (AResult = IDRETRY);
+end;
+
 function TUIMessagesHandler.AskConfirmation(const Message, Title: string; Flags: Cardinal): Boolean;
 var
     DlgResult: Integer;
 begin
-    // Окно с вопросом ДОЛЖНО остановить фоновый поток и дождаться ответа.
-    // Проверяем, находимся ли мы уже в главном потоке:
+    // пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ:
     if TThread.CurrentThread.ThreadID = MainThreadID then
     begin
-        Result := MessageBox(GetSafeHandle, PChar(Message), PChar(Title), Flags) = IDYES;
+        Result := ConfirmationResultIsYes(MessageBox(GetSafeHandle, PChar(Message), PChar(Title), Flags));
     end
     else
     begin
-        // Если мы в фоне (TTask), используем Synchronize для безопасной остановки и показа UI
+        // пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ (TTask), пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Synchronize пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ UI
         TThread.Synchronize(nil,
             procedure
             begin
                 DlgResult := MessageBox(GetSafeHandle, PChar(Message), PChar(Title), Flags);
             end
         );
-        Result := (DlgResult = IDYES);
+        Result := ConfirmationResultIsYes(DlgResult);
     end;
 end;
 
@@ -103,7 +108,7 @@ var
     DlgResult: Boolean;
     LValue: string;
 begin
-    LValue := Value; // Локальная копия для безопасного захвата в анонимный метод
+    LValue := Value; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 
     if TThread.CurrentThread.ThreadID = MainThreadID then
     begin
@@ -139,7 +144,7 @@ begin
                 DlgResult := MessageBox(GetSafeHandle, PChar(Message), PChar(Title), MB_YESNO or MB_ICONWARNING or MB_DEFBUTTON2);
             end
         );
-        Result := (DlgResult = IDYES);
+        Result := ConfirmationResultIsYes(DlgResult);
     end;
 end;
 

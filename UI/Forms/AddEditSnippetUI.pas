@@ -61,7 +61,7 @@ type
         cbIgnoreSecurityChecks: TCheckBox;
         tmrSecurityScan: TTimer;
         sbBottom: TStatusBar;
-    pClient: TPanel;
+        pClient: TPanel;
         pTop: TPanel;
         bAISettings: TButton;
         cbAIModel: TComboBox;
@@ -94,6 +94,7 @@ type
         procedure cbAIModelChange(Sender: TObject);
         procedure cbIgnoreSecurityChecksClick(Sender: TObject);
         procedure FormClose(Sender: TObject; var Action: TCloseAction);
+        procedure FormCloseQueryAI(Sender: TObject; var CanClose: Boolean);
         procedure lvAllTagsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
         procedure lvAllTagsDragOver(Sender, Source: TObject; X, Y: Integer; State: TDragState; var Accept: Boolean);
         procedure lvAllTagsDragDrop(Sender, Source: TObject; X, Y: Integer);
@@ -121,6 +122,8 @@ type
         FCurrentHighlighter: TCustomBashSyn;
         FCompletionEngine: TBashCompletionEngine;
         FAIService: IAIService;
+        FAIThread: TThread;
+        FAIInProgress: Boolean;
 
         procedure ShowAIOverlay;
         procedure ExecuteAICommand;
@@ -130,6 +133,7 @@ type
         procedure PopulateHubs;
         procedure PopulateModels(HubIndex: Integer);
         procedure UpdateSecurityStatusUI(IsSafe: Boolean; const Reason: string);
+        procedure AIThreadTerminated(Sender: TObject);
     public
         procedure Prepare(IsEditMode: Boolean; const Snippet: TSnippetDTO; CatID, UserID: Integer);
 
@@ -194,6 +198,13 @@ begin
     ShowAIOverlay;
 end;
 
+procedure TAddEditSnippetForm.AIThreadTerminated(Sender: TObject);
+begin
+    // Этот код выполняется в главном потоке, когда фоновый поток завершился сам
+    if Sender = FAIThread then
+        FreeAndNil(FAIThread);
+end;
+
 procedure TAddEditSnippetForm.bAISettingsClick(Sender: TObject);
 begin
     TAISettingsForm.ExecuteGlobal(Application, AppContext);
@@ -213,6 +224,27 @@ begin
 
     if Assigned(FCompletionEngine) then
         FCompletionEngine.Free;
+
+    FIsAICanceled := True; // Сигнал потоку остановиться
+
+    if Assigned(FAIThread) then
+    begin
+        // Отвязываем событие, чтобы оно не "выстрелило" после ручного удаления потока
+        FAIThread.OnTerminate := nil;
+
+        // ВАЖНО: Если у вашего FAIService есть метод прерывания HTTP-запроса
+        // (например, Abort, Disconnect или Cancel), обязательно вызовите его здесь!
+        // Иначе WaitFor заморозит форму, пока не истечет таймаут сети.
+        // FAIService.Abort;
+
+        // Очищаем очередь UI-задач (Queue) этого потока,
+        // чтобы они не попытались обратиться к уничтоженным контролам.
+        TThread.RemoveQueuedEvents(FAIThread);
+
+        // Дожидаемся корректного завершения и освобождаем память
+        FAIThread.WaitFor;
+        FreeAndNil(FAIThread);
+    end;
 end;
 
 procedure TAddEditSnippetForm.DoInitialize;
@@ -477,8 +509,9 @@ begin
     pbLoading.Visible := True;
     mAIPrompt.Enabled := False;
     FIsAICanceled := False; // Сброс перед стартом
+    FAIInProgress := True;
 
-    TThread.CreateAnonymousThread(
+    FAIThread := TThread.CreateAnonymousThread(
         procedure
         var
             NewCode: string;
@@ -496,10 +529,12 @@ begin
 
             TThread.Synchronize(nil, TThreadProcedure(
                 procedure
-                begin
-                    if FIsAICanceled then Exit;
+                 begin
+                     FAIInProgress := False;
 
-                    pbLoading.Visible := False;
+                     if FIsAICanceled then Exit;
+
+                     pbLoading.Visible := False;
                     mAIPrompt.Enabled := True;
                     pAIOverlay.Visible := False;
 
@@ -530,7 +565,15 @@ begin
                     end;
                     mContent.SetFocus;
                 end));
-        end).Start;
+        end);
+    // 3. Отключаем автоматическое удаление
+    FAIThread.FreeOnTerminate := False;
+
+    // 4. Назначаем обработчик для штатного завершения
+    FAIThread.OnTerminate := AIThreadTerminated;
+
+    // 5. Теперь запускаем
+    FAIThread.Start;
 end;
 
 class function TAddEditSnippetForm.ExecuteEdit(Owner: TComponent; AppContext: IAppContext; var SnippetToEdit: TSnippetDTO): Boolean;
@@ -558,6 +601,15 @@ begin
     FIsAICanceled := True;
 end;
 
+procedure TAddEditSnippetForm.FormCloseQueryAI(Sender: TObject; var CanClose: Boolean);
+begin
+    // Фоновый AI-поток захватывает Self и через Synchronize трогает контролы:
+    // закрытие формы во время запроса = обращение к освобождённой форме
+    CanClose := not FAIInProgress;
+    if not CanClose then
+        MessageBeep(MB_ICONWARNING);
+end;
+
 procedure TAddEditSnippetForm.FormCreate(Sender: TObject);
 begin
     FFirstShow := True;
@@ -572,6 +624,9 @@ begin
     lvAllTags.StateImages := MainFormUI.MainForm.vilTags;
 
     SynCompletionProposal.Options := SynCompletionProposal.Options + [scoUseInsertList];
+
+    // Закрытие блокируется, пока выполняется AI-запрос (см. FormCloseQueryAI)
+    OnCloseQuery := FormCloseQueryAI;
 end;
 
 procedure TAddEditSnippetForm.FormShow(Sender: TObject);
