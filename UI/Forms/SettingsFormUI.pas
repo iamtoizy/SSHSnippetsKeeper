@@ -4,7 +4,10 @@ interface
 
 uses
     BaseFormUI,
-    Core.Interfaces,
+    Core.Interfaces.App,
+    Core.Interfaces.Services,
+    Core.Interfaces.Settings,
+    Core.Interfaces.UI,
     System.Classes,
     System.Generics.Collections,
     System.SysUtils,
@@ -15,9 +18,10 @@ uses
     Vcl.ExtCtrls,
     Vcl.Forms,
     Vcl.Graphics,
+    Vcl.Mask,
     Vcl.StdCtrls,
     Winapi.Messages,
-    Winapi.Windows, Vcl.Mask
+    Winapi.Windows
     ;
 
 type
@@ -84,7 +88,7 @@ uses
     CommonHelpers,
     HotkeyService,
     System.IOUtils,
-    UI.StateLoader,
+    Common.Localization,
     Vcl.FileCtrl,
     Vcl.Menus
     ;

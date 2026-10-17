@@ -7,6 +7,7 @@ type
     TMacroInputType = (mitString, mitNumber, mitHex, mitFloat, mitPassword, mitDate, mitConfirm);
     TInputCallback = reference to function(const Prompt: string): string;
     TConfirmCallback = reference to function(const Prompt: string): Boolean;
+    TRecordRunCallback = reference to procedure(SnippetID, UserID: Integer);
 
     ITextExecutor = interface
         ['{65C96380-78F5-4B0B-9D15-65C99E3C4D4A}']
@@ -20,6 +21,7 @@ type
         Executor: ITextExecutor;
         OnInput: TInputCallback;
         OnConfirm: TConfirmCallback;
+        OnRecordRun: TRecordRunCallback;
         Canceled: Integer;
         CurrentInputType: TMacroInputType;
         CurrentDefaultValue: string;

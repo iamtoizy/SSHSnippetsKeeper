@@ -15,7 +15,7 @@ object CronGenForm: TCronGenForm
   OnCreate = FormCreate
   OnShow = FormShow
   TextHeight = 15
-  object pTop: TPanel
+  object pnlTop: TPanel
     Left = 0
     Top = 0
     Width = 650
@@ -157,7 +157,7 @@ object CronGenForm: TCronGenForm
         Height = 216
         Anchors = [akLeft, akTop, akRight, akBottom]
         Columns = 10
-        ItemHeight = 18
+        ItemHeight = 17
         ParentShowHint = False
         ShowHint = False
         TabOrder = 7

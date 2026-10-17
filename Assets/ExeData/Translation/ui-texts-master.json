@@ -946,7 +946,8 @@
           "Caption": "База данных",
           "CreateDatabase": "Создать БД",
           "OpenDatabase": "Открыть БД",
-          "CloseDatabase": "Закрыть БД"
+          "CloseDatabase": "Закрыть БД",
+          "SyncDatabase": "Синхронизировать базу данных"
         },
         "Tools": {
           "Caption": "Утилиты",

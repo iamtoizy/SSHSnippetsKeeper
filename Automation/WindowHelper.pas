@@ -3,7 +3,7 @@
 interface
 
 uses
-    Core.Interfaces,
+    Core.Interfaces.Settings, Core.Interfaces.Automation,
     MacroEngine,
     MacroInputTypes,
     MacroThread,
@@ -65,28 +65,16 @@ begin
 end;
 
 destructor TWindowHelper.Destroy;
-var
-    WaitResult: DWORD;
 begin
     if Assigned(FMacroThread) then
     begin
         FMacroThread.Cancel;
 
-        // Ждём завершения потока
-        WaitResult := WaitForSingleObject(FMacroThread.Handle, 2000);
-
-        if WaitResult = WAIT_OBJECT_0 then
-        begin
-            // Поток завершился нормально - FreeOnTerminate уже уничтожил объект
-            // Просто обнуляем указатель
-            FMacroThread := nil;
-        end
-        else
-        begin
-            LogMsg('TWindowHelper.Destroy: macro thread did not stop in 2s, detached (FreeOnTerminate)');
-            FMacroThread.FreeOnTerminate := True;
-            FMacroThread := nil;
-        end;
+        // TThread.WaitFor безопасен из главного потока: он обрабатывает
+        // очередь Synchronize, поэтому дедлока с OnTerminate не возникает.
+        // FreeOnTerminate = True: после WaitFor объект уже самоосвободился.
+        FMacroThread.WaitFor;
+        FMacroThread := nil;
     end;
 
     FMacroEngine.Free;
@@ -282,9 +270,12 @@ begin
         OutputDebugString('[WinHelper] Pre-collection completed successfully');
         {$ENDIF}
 
-        // Создаём и запускаем поток только если ввод не был отменён
-        FMacroThread := TMacroThread.Create(Actions, Context);
+        // Создаём и запускаем поток только если ввод не был отменён.
+        // Поток стартует подвешенным: OnTerminate привязывается до запуска,
+        // иначе поток может завершиться до привязки и FMacroThread зависнет
+        FMacroThread := TMacroThread.Create(Actions, Context, Context.OnRecordRun, True);
         FMacroThread.OnTerminate := OnMacroTerminate;
+        FMacroThread.Start;
 
         {$IFDEF DEBUG}
         OutputDebugString('[WinHelper] Thread started');
@@ -312,8 +303,10 @@ begin
 
     Actions := FMacroEngine.Parse(Text, Context);
 
-    FMacroThread := TMacroThread.Create(Actions, Context);
+    // Поток стартует подвешенным: OnTerminate привязывается до запуска
+    FMacroThread := TMacroThread.Create(Actions, Context, Context.OnRecordRun, True);
     FMacroThread.OnTerminate := OnMacroTerminate;
+    FMacroThread.Start;
 end;
 
 function TWindowHelper._AddRef: Integer;

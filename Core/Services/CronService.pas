@@ -3,7 +3,7 @@
 interface
 
 uses
-    Core.Interfaces
+    Core.Interfaces.Passwords, Core.Interfaces.Tools
     ;
 
 type
@@ -33,7 +33,7 @@ type
 implementation
 
 uses
-    UI.StateLoader,
+    Common.Localization,
     System.SysUtils
     ;
 

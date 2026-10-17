@@ -4,7 +4,9 @@ interface
 
 uses
     BaseFormUI,
-    Core.Interfaces,
+    Core.Interfaces.App,
+    Core.Interfaces.Services,
+    Core.Interfaces.UI,
     System.Actions,
     System.Classes,
     System.Generics.Collections,
@@ -75,7 +77,7 @@ uses
     System.UITypes,
     Core.Entities.Tag,
     UI.Helpers,
-    UI.StateLoader,
+    Common.Localization,
     Vcl.Dialogs,
     Vcl.Forms,
     Winapi.CommCtrl,
@@ -236,7 +238,7 @@ begin
         Exit;
     end;
 
-    TagID := Integer(Item.Data);
+    TagID := Integer(IntPtr(Item.Data));
 
     if TagID > 0 then
         RecordChange(teaRename, TagID, S)

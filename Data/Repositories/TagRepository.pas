@@ -3,10 +3,9 @@
 interface
 
 uses
-    Core.Interfaces,
-    RepositoryBase,
-
-    Core.Entities.Tag
+    Core.Entities.Tag,
+    Core.Interfaces.Data,
+    RepositoryBase
     ;
 
 type
@@ -100,8 +99,10 @@ end;
 
 function TTagRepository.Add(const Tag: TTagDTO): Integer;
 begin
-    ExecuteSQL('INSERT INTO tags(name) VALUES(?)', [Tag.Name]);
-    Result := ExecuteSQLScalar('SELECT last_insert_rowid()', []);
+    Result := FConnection.ExecSQLScalar(
+        'INSERT INTO tags(name) VALUES(?) RETURNING id',
+        [Tag.Name]
+    );
 end;
 
 procedure TTagRepository.Update(const Tag: TTagDTO);

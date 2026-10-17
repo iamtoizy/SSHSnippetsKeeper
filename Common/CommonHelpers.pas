@@ -3,7 +3,7 @@
 interface
 
 uses
-    Core.Interfaces,
+    Core.Interfaces.Settings, Core.Interfaces.Passwords,
     System.Classes,
     System.Generics.Collections,
     System.Generics.Defaults,
@@ -60,22 +60,22 @@ uses
     System.NetEncoding,
     System.Notification,
     System.SyncObjs,
-    UI.StateLoader,
+    Common.Localization,
     Vcl.Clipbrd,
     Winapi.Windows
     ;
 
 var
-    NotificationCenter: TNotificationCenter;
+    GNotificationCenter: TNotificationCenter;
     GLogLock: TCriticalSection;
 
 procedure ShowSimpleToast(const Text: string; const Title: string = '');
 var
     Notification: TNotification;
 begin
-    if NotificationCenter.Supported then
+    if GNotificationCenter.Supported then
     begin
-        Notification := NotificationCenter.CreateNotification;
+        Notification := GNotificationCenter.CreateNotification;
         try
             Notification.Name := 'SnippetNotification';
             if (Title.IsEmpty) then
@@ -83,7 +83,7 @@ begin
             else
                 Notification.Title := Title;
             Notification.AlertBody := Text;
-            NotificationCenter.PresentNotification(Notification);
+            GNotificationCenter.PresentNotification(Notification);
         finally
             Notification.Free;
         end;
@@ -180,11 +180,15 @@ begin
 end;
 
 procedure WipeVCLControlText(Control: TCustomEdit);
+var
+    S: string;
 begin
     if not Assigned(Control) or (Control.GetTextLen = 0) then Exit;
     // Физически перезаписываем участок памяти контрола нулями,
     // прежде чем освободить строку
-    Control.Text := StringOfChar('0', Control.GetTextLen);
+    S := Control.Text;
+    if StringRefCount(S) = 1 then
+        SecureZeroMemory(PChar(S), Length(S) * SizeOf(Char));
     Control.Text := '';
 end;
 
@@ -395,112 +399,118 @@ var
     WorkDirPtr: PChar;
     StartTime: DWORD;
     WaitResult: DWORD;
+    SB: TStringBuilder;
 begin
     Result := False;
     Output := '';
+    SB := TStringBuilder.Create;
+    try
+        FillChar(SecurityAttr, SizeOf(SecurityAttr), 0);
+        SecurityAttr.nLength := SizeOf(SecurityAttr);
+        SecurityAttr.bInheritHandle := True;
 
-    FillChar(SecurityAttr, SizeOf(SecurityAttr), 0);
-    SecurityAttr.nLength := SizeOf(SecurityAttr);
-    SecurityAttr.bInheritHandle := True;
+        // 1. Создаем Pipe
+        if not CreatePipe(ReadPipe, WritePipe, @SecurityAttr, 0) then
+            Exit;
 
-    // 1. Создаем Pipe
-    if not CreatePipe(ReadPipe, WritePipe, @SecurityAttr, 0) then
-        Exit;
+        FillChar(StartInfo, SizeOf(StartInfo), 0);
+        StartInfo.cb := SizeOf(StartInfo);
+        StartInfo.dwFlags := STARTF_USESHOWWINDOW or STARTF_USESTDHANDLES;
+        StartInfo.wShowWindow := SW_HIDE; // Скрываем окно
+        StartInfo.hStdOutput := WritePipe;
+        StartInfo.hStdError := WritePipe; // Перенаправляем ошибки в тот же поток
 
-    FillChar(StartInfo, SizeOf(StartInfo), 0);
-    StartInfo.cb := SizeOf(StartInfo);
-    StartInfo.dwFlags := STARTF_USESHOWWINDOW or STARTF_USESTDHANDLES;
-    StartInfo.wShowWindow := SW_HIDE; // Скрываем окно
-    StartInfo.hStdOutput := WritePipe;
-    StartInfo.hStdError := WritePipe; // Перенаправляем ошибки в тот же поток
+        // Формируем команду для cmd
+        FullCommand := 'cmd.exe /c ' + Command;
 
-    // Формируем команду для cmd
-    FullCommand := 'cmd.exe /c ' + Command;
+        // Устанавливаем рабочую директорию
+        if WorkingDir <> '' then
+            WorkDirPtr := PChar(WorkingDir)
+        else
+            WorkDirPtr := nil;
 
-    // Устанавливаем рабочую директорию
-    if WorkingDir <> '' then
-        WorkDirPtr := PChar(WorkingDir)
-    else
-        WorkDirPtr := nil;
-
-    // 2. Запускаем процесс
-    if CreateProcess(nil, PChar(FullCommand), nil, nil, True, CREATE_NO_WINDOW, nil, WorkDirPtr, StartInfo, ProcInfo) then
-    begin
-        // Обязательно закрываем WritePipe со стороны родителя, иначе ReadFile может заблокироваться
-        CloseHandle(WritePipe);
-
-        StartTime := GetTickCount;
-        Result := True;
-
-        // 3. Главный цикл: чтение + проверка таймаута + проверка состояния процесса
-        while True do
+        // 2. Запускаем процесс
+        if CreateProcess(nil, PChar(FullCommand), nil, nil, True, CREATE_NO_WINDOW, nil, WorkDirPtr, StartInfo, ProcInfo) then
         begin
-            // Проверка таймаута (Cardinal-арифметика защищает от переполнения GetTickCount)
-            if (TimeoutMs <> INFINITE) and (Cardinal(GetTickCount - StartTime) > TimeoutMs) then
-            begin
-                TerminateProcess(ProcInfo.hProcess, UINT(1));
-                WaitForSingleObject(ProcInfo.hProcess, 1000); // Даем время на завершение
-                Result := False;
-                Break;
-            end;
+            // Обязательно закрываем WritePipe со стороны родителя, иначе ReadFile может заблокироваться
+            CloseHandle(WritePipe);
 
-            // Проверяем наличие данных в пайпе без блокировки потока
-            BytesAvail := 0;
-            if PeekNamedPipe(ReadPipe, nil, 0, nil, @BytesAvail, nil) and (BytesAvail > 0) then
+            StartTime := GetTickCount;
+            Result := True;
+
+            // 3. Главный цикл: чтение + проверка таймаута + проверка состояния процесса
+            while True do
             begin
-                // Читаем доступные данные
-                if ReadFile(ReadPipe, Buffer, SizeOf(Buffer) - 1, BytesRead, nil) and (BytesRead > 0) then
+                // Проверка таймаута (Cardinal-арифметика защищает от переполнения GetTickCount)
+                if (TimeoutMs <> INFINITE) and (Cardinal(GetTickCount - StartTime) > TimeoutMs) then
                 begin
-                    Buffer[BytesRead] := #0;
-                    // Конвертируем вывод CMD (обычно CP866) в системную ANSI
-                    OemToCharA(Buffer, Buffer);
-                    Output := Output + string(AnsiString(Buffer));
+                    TerminateProcess(ProcInfo.hProcess, UINT(1));
+                    WaitForSingleObject(ProcInfo.hProcess, 1000); // Даем время на завершение
+                    Result := False;
+                    Break;
                 end;
-            end
-            else
-            begin
-                // Если данных пока нет, проверяем, жив ли процесс (ждем 50 мс, чтобы не грузить CPU)
-                WaitResult := WaitForSingleObject(ProcInfo.hProcess, 50);
 
-                if WaitResult = WAIT_OBJECT_0 then
+                // Проверяем наличие данных в пайпе без блокировки потока
+                BytesAvail := 0;
+                if PeekNamedPipe(ReadPipe, nil, 0, nil, @BytesAvail, nil) and (BytesAvail > 0) then
                 begin
-                    // Процесс завершился, дочитываем остатки из пайпа, если они есть
-                    while PeekNamedPipe(ReadPipe, nil, 0, nil, @BytesAvail, nil) and (BytesAvail > 0) do
+                    // Читаем доступные данные
+                    if ReadFile(ReadPipe, Buffer, SizeOf(Buffer) - 1, BytesRead, nil) and (BytesRead > 0) then
                     begin
-                        if ReadFile(ReadPipe, Buffer, SizeOf(Buffer) - 1, BytesRead, nil) and (BytesRead > 0) then
-                        begin
-                            Buffer[BytesRead] := #0;
-                            OemToCharA(Buffer, Buffer);
-                            Output := Output + string(AnsiString(Buffer));
-                        end
-                        else
-                            Break;
+                        Buffer[BytesRead] := #0;
+                        // Конвертируем вывод CMD (обычно CP866) в системную ANSI
+                        OemToCharA(Buffer, Buffer);
+                        SB.Append(string(AnsiString(Buffer)));
                     end;
+                end
+                else
+                begin
+                    // Если данных пока нет, проверяем, жив ли процесс (ждем 50 мс, чтобы не грузить CPU)
+                    WaitResult := WaitForSingleObject(ProcInfo.hProcess, 50);
 
-                    Break; // Выходим из главного цикла
+                    if WaitResult = WAIT_OBJECT_0 then
+                    begin
+                        // Процесс завершился, дочитываем остатки из пайпа, если они есть
+                        while PeekNamedPipe(ReadPipe, nil, 0, nil, @BytesAvail, nil) and (BytesAvail > 0) do
+                        begin
+                            if ReadFile(ReadPipe, Buffer, SizeOf(Buffer) - 1, BytesRead, nil) and (BytesRead > 0) then
+                            begin
+                                Buffer[BytesRead] := #0;
+                                OemToCharA(Buffer, Buffer);
+                                SB.Append(string(AnsiString(Buffer)));
+                            end
+                            else
+                                Break;
+                        end;
+
+                        Break; // Выходим из главного цикла
+                    end;
                 end;
             end;
+
+            CloseHandle(ProcInfo.hProcess);
+            CloseHandle(ProcInfo.hThread);
+        end
+        else
+        begin
+            // Если процесс не запустился, нужно закрыть WritePipe для предотвращения утечек
+            CloseHandle(WritePipe);
         end;
 
-        CloseHandle(ProcInfo.hProcess);
-        CloseHandle(ProcInfo.hThread);
-    end
-    else
-    begin
-        // Если процесс не запустился, нужно закрыть WritePipe для предотвращения утечек
-        CloseHandle(WritePipe);
+        CloseHandle(ReadPipe);
+        Output := SB.ToString;
+    finally
+        SB.Free;
     end;
-
-    CloseHandle(ReadPipe);
 end;
 
 initialization
-    NotificationCenter := TNotificationCenter.Create(nil);
+    GNotificationCenter := TNotificationCenter.Create(nil);
     GLogLock := TCriticalSection.Create;
 
 
 finalization
-    FreeAndNil(NotificationCenter);
+    FreeAndNil(GNotificationCenter);
     FreeAndNil(GLogLock);
 
 end.

@@ -38,7 +38,7 @@ uses
     CommonHelpers,
     System.RegularExpressions,
     System.SysUtils,
-    UI.StateLoader,
+    Common.Localization,
     Vcl.Clipbrd,
     Vcl.Themes
     ;

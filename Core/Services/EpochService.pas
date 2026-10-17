@@ -3,7 +3,7 @@
 interface
 
 uses
-    Core.Interfaces,
+    Core.Interfaces.Tools,
     System.Classes,
     System.SysUtils,
     System.TimeSpan
@@ -44,7 +44,7 @@ uses
     System.Generics.Collections,
     System.DateUtils,
     System.RegularExpressions,
-    UI.StateLoader
+    Common.Localization
     ;
 
 { TEpochService }
@@ -55,7 +55,7 @@ begin
     // Логи чаще всего на английском (Jan, Feb, Oct), поэтому создаем независимые от ОС настройки
     FEngFormat := TFormatSettings.Create('en-US');
 
-    / БЫЛО: FLocalFormat := TFormatSettings.Create(GetUserDefaultLCID);
+    // БЫЛО: FLocalFormat := TFormatSettings.Create(GetUserDefaultLCID);
     // СТАЛО: Берем локаль по умолчанию без вызова WinAPI
     FLocalFormat := TFormatSettings.Create;
 end;

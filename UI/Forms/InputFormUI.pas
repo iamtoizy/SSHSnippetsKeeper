@@ -4,7 +4,7 @@ interface
 
 uses
     BaseFormUI,
-    Core.Interfaces,
+    Core.Interfaces.App,
     MacroInputTypes,
     System.Classes,
     Vcl.ComCtrls,
@@ -47,7 +47,7 @@ implementation
 
 uses
     System.SysUtils,
-    UI.StateLoader
+    Common.Localization
     ;
 
 const

@@ -3,7 +3,10 @@ unit BaseFormUI;
 interface
 
 uses
-    Core.Interfaces,
+    Core.Interfaces.App,
+    Core.Interfaces.Services,
+    Core.Interfaces.Settings,
+    Core.Interfaces.UI,
     CustomHelpFormUI,
     System.Classes,
     System.Generics.Collections,
@@ -76,7 +79,7 @@ implementation
 
 uses
     System.SysUtils,
-    UI.StateLoader,
+    Common.Localization,
     Vcl.Dialogs,
     Winapi.Windows
     ;

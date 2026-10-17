@@ -3,7 +3,8 @@ unit UI.HoverHelpManager;
 interface
 
 uses
-    Core.Interfaces,
+    Core.Interfaces.Passwords,
+    Core.Interfaces.Settings,
     System.Classes,
     System.Diagnostics,
     System.Generics.Collections,
@@ -13,7 +14,8 @@ uses
     Vcl.Forms,
     Vcl.StdCtrls,
     Winapi.Messages,
-    Winapi.Windows;
+    Winapi.Windows
+    ;
 
 type
     THelpIconPosition = (

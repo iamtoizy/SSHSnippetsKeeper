@@ -273,7 +273,7 @@ object NetworkForm: TNetworkForm
           MaxValue = 0
           MinValue = 32
           TabOrder = 0
-          Value = 32
+          Value = 0
           OnChange = seVLSMChange
         end
         object bCopyVLSM: TButton

@@ -3,7 +3,7 @@
 interface
 
 uses
-    Core.Interfaces,
+    Core.Interfaces.Data, Core.Interfaces.Services,
     System.SysUtils,
     Core.Entities.User
     ;
@@ -25,7 +25,7 @@ type
 implementation
 
 uses
-    UI.StateLoader
+    Common.Localization
     ;
 
 constructor TUserService.Create(UserRepo: IUserRepository);

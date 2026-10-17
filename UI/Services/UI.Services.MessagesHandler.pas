@@ -3,7 +3,7 @@
 interface
 
 uses
-    Core.Interfaces,
+    Core.Interfaces.UI,
     System.Classes,
     Winapi.Windows
     ;
@@ -25,7 +25,7 @@ type
 implementation
 
 uses
-    UI.StateLoader,
+    Common.Localization,
     Vcl.Dialogs,
     Vcl.Forms
     ;

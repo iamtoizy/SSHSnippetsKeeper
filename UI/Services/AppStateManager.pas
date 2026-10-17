@@ -13,11 +13,11 @@ type
         FState: TBaseFormState;
         procedure ChangeState(const State: TBaseFormState);
     protected
-        constructor Create; // скрытый конструктор
+        constructor Create; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     public
         destructor Destroy; override;
 
-        // Основная точка доступа
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         class function Instance: TStateMgr; static;
 
         procedure FirstRun;
@@ -35,7 +35,7 @@ uses
     ;
 
 var
-    _StateMgrInstance: TStateMgr = nil; // Синглтон
+    GStateMgrInstance: TStateMgr = nil; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 
 constructor TStateMgr.Create;
 begin
@@ -50,9 +50,9 @@ end;
 
 class function TStateMgr.Instance: TStateMgr;
 begin
-    if _StateMgrInstance = nil then
-        _StateMgrInstance := TStateMgr.Create;
-    Result := _StateMgrInstance;
+    if GStateMgrInstance = nil then
+        GStateMgrInstance := TStateMgr.Create;
+    Result := GStateMgrInstance;
 end;
 
 procedure TStateMgr.ChangeState(const State: TBaseFormState);
@@ -61,7 +61,7 @@ begin
     begin
         FState := State;
 
-        // Обновляем все открытые формы, наследующиеся от TBaseForm
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ TBaseForm
         for var i := 0 to Screen.FormCount - 1 do
             if Screen.Forms[i] is TBaseForm then
                 TBaseForm(Screen.Forms[i]).UpdateUI(State);
@@ -90,11 +90,11 @@ end;
 
 initialization
 
-// Пусто - экземпляр создаётся лениво при первом вызове Instance
+// пїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ Instance
 
 finalization
 
-_StateMgrInstance.Free;
-_StateMgrInstance := nil; // на всякий случай
+GStateMgrInstance.Free;
+GStateMgrInstance := nil; // пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 
 end.

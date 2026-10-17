@@ -1,10 +1,12 @@
-unit SnippetViewData;
+п»їunit SnippetViewData;
 
 interface
 
 type
     TSnippetViewData = class
         ID: Integer;
+        UserID: Integer;
+        CategoryID: Integer;
         Title: string;
         Content: string;
         Comment: string;
@@ -12,9 +14,9 @@ type
 
 implementation
 
-// TODO: Применить словарь и ленивую загрузку:
-//В Item.Data хранить только ID (Integer). Создать словарь FHintCache: TDictionary<Integer, string>.
-//В OnInfoTip проверяем: если в кэше нет ключа, загружаем комментарий по ID из БД и сохраняем в словарь.
-//При очистке списка очищаем словарь.
+// TODO: РџСЂРёРјРµРЅРёС‚СЊ СЃР»РѕРІР°СЂСЊ Рё Р»РµРЅРёРІСѓСЋ Р·Р°РіСЂСѓР·РєСѓ:
+//Р’ Item.Data С…СЂР°РЅРёС‚СЊ С‚РѕР»СЊРєРѕ ID (Integer). РЎРѕР·РґР°С‚СЊ СЃР»РѕРІР°СЂСЊ FHintCache: TDictionary<Integer, string>.
+//Р’ OnInfoTip РїСЂРѕРІРµСЂСЏРµРј: РµСЃР»Рё РІ РєСЌС€Рµ РЅРµС‚ РєР»СЋС‡Р°, Р·Р°РіСЂСѓР¶Р°РµРј РєРѕРјРјРµРЅС‚Р°СЂРёР№ РїРѕ ID РёР· Р‘Р” Рё СЃРѕС…СЂР°РЅСЏРµРј РІ СЃР»РѕРІР°СЂСЊ.
+//РџСЂРё РѕС‡РёСЃС‚РєРµ СЃРїРёСЃРєР° РѕС‡РёС‰Р°РµРј СЃР»РѕРІР°СЂСЊ.
 
 end.

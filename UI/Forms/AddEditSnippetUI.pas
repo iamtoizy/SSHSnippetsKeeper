@@ -6,9 +6,12 @@ uses
     AI.Service,
     BaseFormUI,
     BashCompletionEngine,
-    Core.Interfaces,
-    CustomBashSyn,
     Core.Entities.Snippet,
+    Core.Interfaces.App,
+    Core.Interfaces.Services,
+    Core.Interfaces.Settings,
+    Core.Interfaces.UI,
+    CustomBashSyn,
     SynCompletionProposal,
     SynEdit,
     SynEditHighlighter,
@@ -62,7 +65,7 @@ type
         tmrSecurityScan: TTimer;
         sbBottom: TStatusBar;
         pClient: TPanel;
-        pTop: TPanel;
+        pnlTop: TPanel;
         bAISettings: TButton;
         cbAIModel: TComboBox;
         cbAIHub: TComboBox;
@@ -153,7 +156,9 @@ implementation
 uses
     AI.TextCleaner,
     AISettingsFormUI,
+    Common.Localization,
     CommonHelpers,
+    Core.Entities.Tag,
     MainFormUI,
     SecurityScanner,
     SynEditKeyCmds,
@@ -161,10 +166,8 @@ uses
     System.DateUtils,
     System.Generics.Collections,
     System.SysUtils,
-    Core.Entities.Tag,
     UI.Helpers,
     UI.HoverHelpManager,
-    UI.StateLoader,
     Winapi.ActiveX,
     Winapi.Windows
     ;
@@ -302,7 +305,7 @@ procedure TAddEditSnippetForm.bOKClick(Sender: TObject);
 var
     Snippet: TSnippetDTO;
     TagIDs: TList<Integer>;
-    i: Integer;
+    I: Integer;
     TagArr: TArray<Integer>;
     UnixText: string;
 begin
@@ -679,7 +682,7 @@ procedure TAddEditSnippetForm.lvAllTagsDragDrop(Sender, Source: TObject; X, Y: I
 var
     SrcLV, DstLV: TListView;
     Item, NewItem: TListItem;
-    i: Integer;
+    I: Integer;
     ItemsToMove: TList<TListItem>;
 begin
     SrcLV := Source as TListView;
@@ -823,7 +826,7 @@ end;
 
 procedure TAddEditSnippetForm.Prepare(IsEditMode: Boolean; const Snippet: TSnippetDTO; CatID, UserID: Integer);
 var
-    i: Integer;
+    I: Integer;
     SnippetTags: TArray<TTagDTO>;
     AllTags: TArray<TTagDTO>;
     Tag: TTagDTO;

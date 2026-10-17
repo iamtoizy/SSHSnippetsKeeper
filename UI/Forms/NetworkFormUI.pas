@@ -4,7 +4,6 @@ interface
 
 uses
     BaseFormUI,
-    Core.Interfaces,
     NetworkCalcService,
     System.Classes,
     System.SysUtils,
@@ -100,7 +99,7 @@ uses
     CommonHelpers,
     System.StrUtils,
     UI.HoverHelpManager,
-    UI.StateLoader,
+    Common.Localization,
     Vcl.Clipbrd,
     Vcl.Themes,
     Winapi.CommCtrl
@@ -109,7 +108,7 @@ uses
 {$R *.dfm}
 
 var
-    SessionIPHistory: TStringList;
+    GSessionIPHistory: TStringList;
 
 function TNetworkForm.GetDefaultTextColor: TColor;
 begin
@@ -242,7 +241,7 @@ begin
 
     pcMain.ActivePage := tsInfo;
 
-    cbIPInput.Items.Assign(SessionIPHistory);
+    cbIPInput.Items.Assign(GSessionIPHistory);
 end;
 
 procedure TNetworkForm.cbIPInputChange(Sender: TObject);
@@ -484,7 +483,7 @@ begin
     while cbIPInput.Items.Count > 10 do
         cbIPInput.Items.Delete(cbIPInput.Items.Count - 1);
 
-    SessionIPHistory.Assign(cbIPInput.Items);
+    GSessionIPHistory.Assign(cbIPInput.Items);
 
     if cbIPInput.Text <> OldText then
         cbIPInput.Text := OldText;
@@ -672,7 +671,7 @@ begin
 end;
 
 initialization
-    SessionIPHistory := TStringList.Create;
+    GSessionIPHistory := TStringList.Create;
 finalization
-    SessionIPHistory.Free;
+    GSessionIPHistory.Free;
 end.

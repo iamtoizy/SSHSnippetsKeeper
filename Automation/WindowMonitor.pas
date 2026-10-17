@@ -50,7 +50,7 @@ type
     end;
 
 var
-    WinMonitor: TWindowMonitor;
+    GWinMonitor: TWindowMonitor;
 
 procedure WinEventProc(hWinEventHook: THandle; eventType: DWORD; HWND: THandle; idObject, idChild: LONG; dwEventThread, dwmsEventTime: DWORD); stdcall;
 
@@ -58,7 +58,7 @@ implementation
 
 uses
     System.SysUtils,
-    UI.StateLoader
+    Common.Localization
     ;
 
 const
@@ -113,11 +113,11 @@ begin
         Exit;
 
     // Добавляем в историю ТОЛЬКО разрешённые процессы
-    if Assigned(WinMonitor) and WinMonitor.IsProcessAllowed(ExeName) then
+    if Assigned(GWinMonitor) and GWinMonitor.IsProcessAllowed(ExeName) then
     begin
-        WindowMonitorInfo := WinMonitor.GetWindowInfo(HWND);
+        WindowMonitorInfo := GWinMonitor.GetWindowInfo(HWND);
         WindowMonitorInfo.ActivatedAt := Now;
-        WinMonitor.AddToHistory(WindowMonitorInfo);
+        GWinMonitor.AddToHistory(WindowMonitorInfo);
 
         {$IFDEF DEBUG}
         OutputDebugString(PChar(Format('[WinMonitor] Added to history: HWND=%d, Exe=%s, Title=%s', [HWND, ExeName, WindowMonitorInfo.WindowTitle])));
@@ -407,11 +407,11 @@ begin
 end;
 
 initialization
-    WinMonitor := TWindowMonitor.Create;
+    GWinMonitor := TWindowMonitor.Create;
 
 
 finalization
-    WinMonitor.Free;
+    GWinMonitor.Free;
 
 end.
 

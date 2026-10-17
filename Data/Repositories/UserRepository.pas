@@ -3,11 +3,10 @@
 interface
 
 uses
-    Core.Interfaces,
+    Core.Entities.User,
+    Core.Interfaces.Data,
     RepositoryBase,
-    System.Generics.Collections,
-
-    Core.Entities.User
+    System.Generics.Collections
     ;
 
 type
@@ -28,12 +27,12 @@ type
 implementation
 
 uses
+    Common.Localization,
     FireDAC.Comp.Client,
     FireDAC.Stan.Param,
     System.Classes,
     System.SysUtils,
-    System.Variants,
-    UI.StateLoader
+    System.Variants
     ;
 
 function TUserRepository.InternalLoadUsers(const SQL: string; const Params: array of Variant): TArray<TUserDTO>;
@@ -41,7 +40,7 @@ var
     Query: TFDQuery;
     List: TList<TUserDTO>;
     User: TUserDTO;
-    i: Integer;
+    I: Integer;
 begin
     if not Assigned(FConnection) or (FConnection.Connected = False) then
         raise Exception.Create(

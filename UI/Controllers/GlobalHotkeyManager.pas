@@ -5,16 +5,21 @@ unit GlobalHotkeyManager;
 interface
 
 uses
-    Winapi.Windows,
-    Winapi.Messages,
-    System.SysUtils,
-    Vcl.Forms,
-    Vcl.Controls,
-    WindowMonitor,
-    Core.Interfaces,
+    Core.AppContext,
+    Core.Interfaces.App,
+    Core.Interfaces.Automation,
+    Core.Interfaces.Data,
+    Core.Interfaces.Passwords,
+    Core.Interfaces.Settings,
+    Core.Interfaces.UI,
     PasswordGenFormUI,
+    System.SysUtils,
+    Vcl.Controls,
+    Vcl.Forms,
+    Winapi.Messages,
+    Winapi.Windows,
     WindowHelper,
-    Core.AppContext
+    WindowMonitor
     ;
 
 type
@@ -38,15 +43,16 @@ type
 
         procedure StartListening;
         procedure StopListening;
-        procedure ReloadHotkeys; // Перерегистрация при изменении настроек в UI
+        procedure ReloadHotkeys; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ UI
     end;
 
 implementation
 
 uses
+    Common.Localization,
     QuickSearchFormUI,
-    System.Classes,
-    UI.StateLoader;
+    System.Classes
+    ;
 
 constructor TGlobalHotkeyManager.Create(AppContext: IAppContext);
 begin
@@ -67,17 +73,17 @@ procedure TGlobalHotkeyManager.RegisterSingleHotkey(ID: Integer; const Config: T
 var
     Flags: Cardinal;
 begin
-    // Сначала обязательно снимаем старую регистрацию
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     Winapi.Windows.UnregisterHotKey(FWindowHandle, ID);
 
     if Config.Enabled and (Config.Key <> 0) then
     begin
-        // Добавляем MOD_NOREPEAT, чтобы убрать автоповтор при зажатии клавиши
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ MOD_NOREPEAT, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         Flags := Config.Modifiers or MOD_NOREPEAT;
 
         if not Winapi.Windows.RegisterHotKey(FWindowHandle, ID, Flags, Config.Key) then
         begin
-            // Если комбинация занята другой программой в Windows
+            // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ Windows
             if Assigned(FAppContext) and Assigned(FAppContext.MessagesHandler) then
                 FAppContext.MessagesHandler.ShowWarning(
                     TUIStateLoader.GetMessage('Common.HotkeyRegistrationError', [ID])
@@ -94,7 +100,7 @@ begin
 
     Settings := FAppContext.SettingsManager.Data;
 
-    // Регистрируем динамические значения из настроек
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     RegisterSingleHotkey(HOTKEY_ID_HUD, Settings.Hotkeys.QuickSearch);
     RegisterSingleHotkey(HOTKEY_ID_PASSGEN, Settings.Hotkeys.PasswordGen);
 
@@ -110,7 +116,7 @@ end;
 
 procedure TGlobalHotkeyManager.ReloadHotkeys;
 begin
-    // Перезагрузка горячих клавиш на лету при сохранении настроек
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     StopListening;
     StartListening;
 end;
@@ -143,7 +149,7 @@ var
     ActiveWindowInfo: TWindowMonitorInfo;
 begin
     CurrentHWND := Winapi.Windows.GetForegroundWindow;
-    ActiveWindowInfo := WinMonitor.GetLastAllowedWindow;
+    ActiveWindowInfo := GWinMonitor.GetLastAllowedWindow;
 
     if QuickSearchForm.Visible then
     begin

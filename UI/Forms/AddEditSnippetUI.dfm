@@ -166,7 +166,7 @@ object AddEditSnippetForm: TAddEditSnippetForm
     BevelOuter = bvNone
     ParentBackground = False
     TabOrder = 3
-    object pTop: TPanel
+    object pnlTop: TPanel
       Left = 0
       Top = 0
       Width = 529

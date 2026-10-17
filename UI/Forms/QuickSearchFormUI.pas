@@ -4,7 +4,10 @@ interface
 
 uses
     BaseFormUI,
-    Core.Interfaces,
+    Core.Interfaces.App,
+    Core.Interfaces.Automation,
+    Core.Interfaces.Passwords,
+    Core.Interfaces.Services,
     System.Classes,
     System.SysUtils,
     Vcl.ComCtrls,
@@ -43,11 +46,13 @@ type
         // Глобальный перехватчик подсказок
         FOldAppShowHint: TShowHintEvent;
         FDeactivateTimer: TTimer;
+        FSearchTimer: TTimer;
 
         procedure AppMessage(var Msg: TMsg; var Handled: Boolean);
         // Генератор подсказок
         procedure AppShowHint(var HintStr: string; var CanShow: Boolean; var HintInfo: VCL.Controls.THintInfo);
         procedure DeactivateTimerTick(Sender: TObject);
+        procedure SearchTimerTick(Sender: TObject);
         procedure InsertSelectedSnippet;
         procedure UpdateResults;
         procedure LoadUsersToComboBox;
@@ -74,7 +79,7 @@ uses
     SnippetRunner,
     SnippetViewData,
     System.UITypes,
-    UI.StateLoader,
+    Common.Localization,
 
     Core.Entities.User
     ;
@@ -114,6 +119,11 @@ begin
     FDeactivateTimer.Interval := 30;
     FDeactivateTimer.Enabled := False;
     FDeactivateTimer.OnTimer := DeactivateTimerTick;
+
+    FSearchTimer := TTimer.Create(Self);
+    FSearchTimer.Interval := 250;
+    FSearchTimer.Enabled := False;
+    FSearchTimer.OnTimer := SearchTimerTick;
 end;
 
 procedure TQuickSearchForm.AppShowHint(var HintStr: string; var CanShow: Boolean; var HintInfo: VCL.Controls.THintInfo);
@@ -409,12 +419,20 @@ end;
 
 procedure TQuickSearchForm.ebQuickSearchChange(Sender: TObject);
 begin
+    FSearchTimer.Enabled := False;
+    FSearchTimer.Enabled := True;
+end;
+
+procedure TQuickSearchForm.SearchTimerTick(Sender: TObject);
+begin
+    FSearchTimer.Enabled := False;
     UpdateResults;
 end;
 
 procedure TQuickSearchForm.FormHide(Sender: TObject);
 begin
     FDeactivateTimer.Enabled := False;
+    FSearchTimer.Enabled := False;
 end;
 
 procedure TQuickSearchForm.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -468,7 +486,7 @@ procedure TQuickSearchForm.ShowWithService(
     CurrentHWND: HWND
 );
 var
-    i: Integer;
+    I: Integer;
     ForegroundThread, AppThread: DWORD;
 begin
     if FAppContext = nil then

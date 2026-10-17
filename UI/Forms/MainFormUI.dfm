@@ -81,7 +81,7 @@ object MainForm: TMainForm
     OnMouseDown = sbBottomMouseDown
     OnResize = sbBottomResize
   end
-  object pTop: TPanel
+  object pnlTop: TPanel
     Left = 0
     Top = 0
     Width = 808

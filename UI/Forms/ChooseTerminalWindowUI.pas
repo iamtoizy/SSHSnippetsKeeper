@@ -4,7 +4,6 @@ interface
 
 uses
     BaseFormUI,
-    Core.Interfaces,
     System.Classes,
     Vcl.ComCtrls,
     Vcl.Controls,
@@ -33,7 +32,7 @@ implementation
 
 uses
     System.SysUtils,
-    UI.StateLoader
+    Common.Localization
     ;
 
 {$R *.dfm}
@@ -57,7 +56,7 @@ procedure TChooseTerminalWindow.lvTerminalListDblClick(Sender: TObject);
 var
     Index: Integer;
 begin
-    // Подтверждение выбора здесь...
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ...
     if lvTerminalList.Selected <> nil then
     begin
         Index := Integer(lvTerminalList.Selected.Data);
@@ -73,7 +72,7 @@ var
     WindowInfo: TWindowMonitorInfo;
 begin
     lvTerminalList.Clear;
-    FWindows := WinMonitor.GetAllowedWindowsHistory;
+    FWindows := GWinMonitor.GetAllowedWindowsHistory;
 
     if Length(FWindows) = 0 then
     begin
@@ -83,7 +82,7 @@ begin
 
     sbBottom.SimpleText := TUIStateLoader.GetMessage('Terminal.WindowsFound', [Length(FWindows)]);
 
-    // Заполняем список (от новых к старым)
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ)
     for I := Length(FWindows) - 1 downto 0 do
     begin
         WindowInfo := FWindows[I];
@@ -91,7 +90,7 @@ begin
         Item.Caption := WindowInfo.WindowTitle;
         Item.SubItems.Add(WindowInfo.ExeName);
         Item.SubItems.Add(FormatDateTime('hh:nn:ss', WindowInfo.ActivatedAt));
-        Item.Data := Pointer(I);  // Сохраняем индекс для быстрого доступа
+        Item.Data := Pointer(I);  // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     end;
 end;
 

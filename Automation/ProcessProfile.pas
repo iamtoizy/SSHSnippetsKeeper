@@ -41,7 +41,7 @@ type
     end;
 
 var
-    ProfileManager: TProfileManager;
+    GProfileManager: TProfileManager;
 
 implementation
 
@@ -56,7 +56,7 @@ constructor TProcessProfile.Create(const ExeName: string);
 begin
     inherited Create;
     FExeName := ExeName;
-    FTitleIncludeRegex := '.*'; // По умолчанию разрешаем все заголовки
+    FTitleIncludeRegex := '.*'; // пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     FTitleExcludeRegex := '';
     FEnabled := True;
 end;
@@ -70,7 +70,7 @@ begin
     if not FEnabled then
         Exit;
 
-    // Проверяем Include regex
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Include regex
     if FTitleIncludeRegex <> '' then
     begin
         IncludeMatch := TRegEx.IsMatch(Title, FTitleIncludeRegex, [roIgnoreCase]);
@@ -78,7 +78,7 @@ begin
             Exit;
     end;
 
-    // Проверяем Exclude regex
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ Exclude regex
     if FTitleExcludeRegex <> '' then
     begin
         ExcludeMatch := TRegEx.IsMatch(Title, FTitleExcludeRegex, [roIgnoreCase]);
@@ -140,11 +140,11 @@ begin
 end;
 
 initialization
-    ProfileManager := TProfileManager.Create;
+    GProfileManager := TProfileManager.Create;
 
 
 finalization
-    ProfileManager.Free;
+    GProfileManager.Free;
 
 end.
 

@@ -4,13 +4,17 @@ interface
 
 uses
     BaseFormUI,
-    Core.Interfaces,
+    Core.Interfaces.App,
+    Core.Interfaces.Services,
+    Core.Interfaces.UI,
+    System.Actions,
     System.Classes,
+    Vcl.ActnList,
     Vcl.ComCtrls,
     Vcl.Controls,
     Vcl.ExtCtrls,
     Vcl.Menus,
-    Vcl.StdCtrls, System.Actions, Vcl.ActnList
+    Vcl.StdCtrls
     ;
 
 type
@@ -55,7 +59,7 @@ implementation
 
 uses
     System.SysUtils,
-    UI.StateLoader,
+    Common.Localization,
     Core.Entities.User,
     Vcl.Dialogs,
     Vcl.Forms,

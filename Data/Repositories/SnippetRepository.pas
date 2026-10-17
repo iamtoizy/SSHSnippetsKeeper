@@ -3,13 +3,12 @@
 interface
 
 uses
-    Core.Interfaces,
+    Core.Entities.Snippet,
+    Core.Entities.Tag,
+    Core.Interfaces.Data,
     FireDAC.Comp.Client,
     RepositoryBase,
-    Core.Entities.Snippet,
-    System.Generics.Collections,
-
-    Core.Entities.Tag
+    System.Generics.Collections
     ;
 
 type
@@ -80,6 +79,7 @@ const
 //        'JOIN snippets s ON s.rowid = snippet_fts.rowid ' + // В FTS5 rowid совпадает с ID сниппета
 //        'WHERE snippet_fts MATCH :term ' + 'ORDER BY rank ASC'; // Чем меньше rank, тем точнее совпадение;
     SQL_RECORD_RUN = 'INSERT INTO snippet_runs (snippet_id, run_at, executed_by_user_id) VALUES (?, strftime(''%s'', ''now''), ?)';
+    SQL_RECORD_RUN_NO_USER = 'INSERT INTO snippet_runs (snippet_id, run_at, executed_by_user_id) VALUES (?, strftime(''%s'', ''now''), NULL)';
     SQL_GET_SNIPPET_BY_CATEGORY_ID_WITH_USER_ID = 'SELECT category_id, COUNT(*) AS cnt FROM snippets WHERE user_id = ? GROUP BY category_id';
     SQL_GET_SNIPPET_BY_CATEGORY_ID_NO_USER_ID = 'SELECT category_id, COUNT(*) AS cnt FROM snippets GROUP BY category_id';
     SQL_GET_TOP_SNIPPETS =
@@ -187,7 +187,7 @@ end;
 function TSnippetRepository.GetSnippetsByTags(const TagIDs: TArray<Integer>; MatchAll: Boolean = False): TArray<TSnippetDTO>;
 var
     Sb: TStringBuilder;
-    i: Integer;
+    I: Integer;
     IDList, SQL: string;
 begin
     if Length(TagIDs) = 0 then
@@ -343,7 +343,7 @@ var
     IDList: TList<Integer>;
     TagMap: TDictionary<Integer, TArray<TTagDTO>>;
     Snip: TSnippetDTO;
-    i: Integer;
+    I: Integer;
 begin
     Result := [];
 
@@ -576,7 +576,13 @@ end;
 
 procedure TSnippetRepository.RecordRun(SnippetID: Integer; UserID: Integer);
 begin
-    FConnection.ExecSQL(SQL_RECORD_RUN, [SnippetID, UserID]);
+    // UserID <= 0 - пользователь не определён (запуск через глобальный хоткей).
+    // executed_by_user_id nullable (ON DELETE SET NULL): отдельный SQL с литеральным NULL,
+    // т.к. FireDAC не выводит тип параметра из нетипизированного Null (ошибка -335).
+    if UserID > 0 then
+        FConnection.ExecSQL(SQL_RECORD_RUN, [SnippetID, UserID])
+    else
+        FConnection.ExecSQL(SQL_RECORD_RUN_NO_USER, [SnippetID]);
 end;
 
 function TSnippetRepository.GetSnippetByCategory(const CategoryID, UserID: Integer): TArray<TSnippetDTO>;

@@ -20,7 +20,8 @@ type
         procedure Execute; override;
     public
         // Внедряем коллбэк через конструктор (по умолчанию nil, чтобы не ломать старый код, если где-то он вызывается без него)
-        constructor Create(const Actions: TArray<IScriptAction>; Context: TMacroContext; OnRecordRun: TProc<Integer, Integer> = nil);
+        // Suspended = True позволяет привязать OnTerminate до фактического запуска потока
+        constructor Create(const Actions: TArray<IScriptAction>; Context: TMacroContext; OnRecordRun: TProc<Integer, Integer> = nil; Suspended: Boolean = False);
         procedure Cancel;
     end;
 
@@ -33,7 +34,7 @@ uses
     Winapi.Windows
     ;
 
-constructor TMacroThread.Create(const Actions: TArray<IScriptAction>; Context: TMacroContext; OnRecordRun: TProc<Integer, Integer> = nil);
+constructor TMacroThread.Create(const Actions: TArray<IScriptAction>; Context: TMacroContext; OnRecordRun: TProc<Integer, Integer> = nil; Suspended: Boolean = False);
 begin
     FActions := Actions;
     FContext := Context;
@@ -43,7 +44,7 @@ begin
     // поток может завершиться раньше, чем выполнится присвоение после Create
     FreeOnTerminate := True;
 
-    inherited Create(False);
+    inherited Create(Suspended);
 end;
 
 procedure TMacroThread.Cancel;

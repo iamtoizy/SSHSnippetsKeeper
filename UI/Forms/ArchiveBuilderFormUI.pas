@@ -4,7 +4,10 @@ interface
 
 uses
     BaseFormUI,
-    Core.Interfaces,
+    Core.Interfaces.App,
+    Core.Interfaces.Passwords,
+    Core.Interfaces.Settings,
+    Core.Interfaces.UI,
     PresetData,
     System.Classes,
     System.Generics.Collections,
@@ -110,7 +113,7 @@ uses
     CommonHelpers,
     System.SysUtils,
     UI.HoverHelpManager,
-    UI.StateLoader,
+    Common.Localization,
     Vcl.Clipbrd
     ;
 

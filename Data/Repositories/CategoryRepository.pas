@@ -1,13 +1,14 @@
-unit CategoryRepository;
+﻿unit CategoryRepository;
 
 interface
 
 uses
     Core.Entities.Category,
-    Core.Interfaces,
+    Core.Entities.Snippet,
+    Core.Interfaces.Data,
+    Core.Interfaces.Passwords,
     FireDAC.Comp.Client,
-    RepositoryBase,
-    Core.Entities.Snippet
+    RepositoryBase
     ;
 
 type
@@ -28,11 +29,11 @@ type
 implementation
 
 uses
+    Common.Localization,
     Data.DB,
     FireDAC.Stan.Param,
     System.Generics.Collections,
     System.SysUtils,
-    UI.StateLoader,
     Winapi.Windows
     ;
 
@@ -216,9 +217,11 @@ begin
                 'ORDER BY sort_order, id';
             QGetSiblings.ParamByName('pid').AsInteger := NewParentID;
         end;
-        QGetSiblings.ParamByName('uid').DataType := ftInteger;
         if NewParentID = 0 then
+        begin
+            QGetSiblings.ParamByName('uid').DataType := ftInteger;
             QGetSiblings.ParamByName('uid').AsInteger := SourceUserID;
+        end;
         QGetSiblings.ParamByName('self_id').AsInteger := ID;
         QGetSiblings.Open;
 
@@ -277,44 +280,43 @@ var
     Q, QMax: TFDQuery;
     MaxOrder: Integer;
 begin
-    QMax := CreateQuery;
+    FConnection.StartTransaction;
     try
-        if ParentID = 0 then
-            QMax.SQL.Text := 'SELECT COALESCE(MAX(sort_order), -1) FROM snippet_categories WHERE parent_id IS NULL'
-        else begin
-            QMax.SQL.Text := 'SELECT COALESCE(MAX(sort_order), -1) FROM snippet_categories WHERE parent_id = :pid';
-            QMax.ParamByName('pid').AsInteger := ParentID;
+        QMax := CreateQuery;
+        try
+            if ParentID = 0 then
+                QMax.SQL.Text := 'SELECT COALESCE(MAX(sort_order), -1) FROM snippet_categories WHERE parent_id IS NULL'
+            else begin
+                QMax.SQL.Text := 'SELECT COALESCE(MAX(sort_order), -1) FROM snippet_categories WHERE parent_id = :pid';
+                QMax.ParamByName('pid').AsInteger := ParentID;
+            end;
+            QMax.Open;
+            MaxOrder := QMax.Fields[0].AsInteger + 1;
+        finally
+            QMax.Free;
         end;
-        QMax.Open;
-        MaxOrder := QMax.Fields[0].AsInteger + 1;
-    finally
-        QMax.Free;
-    end;
 
-    Q := CreateQuery;
-    try
-        Q.SQL.Text := 'INSERT INTO snippet_categories (user_id, name, parent_id, sort_order) VALUES (:uid, :name, :pid, :ord)';
-        Q.ParamByName('uid').AsInteger := UserID;
-        Q.ParamByName('name').AsString := Name;
-        Q.ParamByName('pid').DataType := ftInteger;
-        if ParentID = 0 then
-            Q.ParamByName('pid').Clear
-        else
-            Q.ParamByName('pid').AsInteger := ParentID;
+        Q := CreateQuery;
+        try
+            Q.SQL.Text := 'INSERT INTO snippet_categories (user_id, name, parent_id, sort_order) VALUES (:uid, :name, :pid, :ord) RETURNING id';
+            Q.ParamByName('uid').AsInteger := UserID;
+            Q.ParamByName('name').AsString := Name;
+            Q.ParamByName('pid').DataType := ftInteger;
+            if ParentID = 0 then
+                Q.ParamByName('pid').Clear
+            else
+                Q.ParamByName('pid').AsInteger := ParentID;
+            Q.ParamByName('ord').AsInteger := MaxOrder;
+            Q.Open;
+            Result := Q.Fields[0].AsInteger;
+        finally
+            Q.Free;
+        end;
 
-        Q.ParamByName('ord').AsInteger := MaxOrder;
-        Q.ExecSQL;
-    finally
-        Q.Free;
-    end;
-
-    // �������� ID ������ ��� ��������� ������
-    Q := CreateQuery;
-    try
-        Q.Open('SELECT last_insert_rowid()');
-        Result := Q.Fields[0].AsInteger;
-    finally
-        Q.Free;
+        FConnection.Commit;
+    except
+        FConnection.Rollback;
+        raise;
     end;
 end;
 

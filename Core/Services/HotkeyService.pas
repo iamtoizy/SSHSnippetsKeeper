@@ -3,7 +3,7 @@
 interface
 
 uses
-    Core.Interfaces,
+    Core.Interfaces.Settings, Core.Interfaces.Services,
     System.Actions,
     System.Classes,
     System.Generics.Collections,
@@ -20,6 +20,11 @@ type
 
         procedure InitDefaultRegistry;
         procedure RegisterAction(const Name, DisplayName, Category: string; Default: string);
+{$IFDEF DEBUG}
+        procedure ValidateDefaultRegistry;
+        procedure ValidateLocalizationKeys;
+        procedure ValidateCurrentShortCuts;
+{$ENDIF}
     public
         constructor Create;
         destructor Destroy; override;
@@ -41,6 +46,9 @@ implementation
 
 uses
     Winapi.Windows
+{$IFDEF DEBUG}
+    , Common.Localization
+{$ENDIF}
     ;
 
 constructor THotkeyService.Create;
@@ -48,6 +56,9 @@ begin
     inherited Create;
     FRegistry := TDictionary<string, TActionHotkeyInfo>.Create;
     InitDefaultRegistry;
+{$IFDEF DEBUG}
+    ValidateDefaultRegistry;
+{$ENDIF}
 end;
 
 destructor THotkeyService.Destroy;
@@ -83,7 +94,7 @@ begin
     RegisterAction('TMainForm.actCreateDatabase', 'Actions.MainForm.Database.CreateDatabase', 'Actions.MainForm.Database.Caption', 'Ctrl+N');
     RegisterAction('TMainForm.actOpenDatabase',   'Actions.MainForm.Database.OpenDatabase',   'Actions.MainForm.Database.Caption', 'Ctrl+O');
     RegisterAction('TMainForm.actCloseDatabase',  'Actions.MainForm.Database.CloseDatabase',  'Actions.MainForm.Database.Caption', 'Ctrl+Q');
-    RegisterAction('TMainForm.actSyncDatabase',  'Actions.MainForm.Database.actSyncDatabase',  'Actions.MainForm.Database.Caption', 'Ctrl+Alt+Shift+E');
+    RegisterAction('TMainForm.actSyncDatabase',  'Actions.MainForm.Database.SyncDatabase',  'Actions.MainForm.Database.Caption', 'Ctrl+Alt+Shift+E');
 
     // --- БЛОК УТИЛИТ ---
     RegisterAction('TMainForm.actSearch',            'Actions.MainForm.Tools.Search',            'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+S');
@@ -141,6 +152,9 @@ end;
 
 function THotkeyService.GetAllActions: TArray<TActionHotkeyInfo>;
 begin
+{$IFDEF DEBUG}
+    ValidateLocalizationKeys;
+{$ENDIF}
     Result := FRegistry.Values.ToArray;
 end;
 
@@ -163,6 +177,10 @@ begin
         Info.CurrentShortCut := NewShortCut;
         FRegistry.Items[ActionName] := Info; // Обновляем в словаре
     end;
+
+{$IFDEF DEBUG}
+    ValidateCurrentShortCuts;
+{$ENDIF}
 end;
 
 class function THotkeyService.ShortCutInUseIn(const ActionID: string; ShortCut: TShortCut; const Actions: TArray<TActionHotkeyInfo>; out ConflictingActionName: string): Boolean;
@@ -212,6 +230,10 @@ begin
             FRegistry.Items[CustomSC.ActionName] := Info;
         end;
     end;
+
+{$IFDEF DEBUG}
+    ValidateCurrentShortCuts;
+{$ENDIF}
 end;
 
 // Выгрузка только тех хоткеев, которые отличаются от дефолтных
@@ -278,6 +300,86 @@ begin
         end;
     end;
 end;
+
+{$IFDEF DEBUG}
+procedure THotkeyService.ValidateDefaultRegistry;
+var
+    Info: TActionHotkeyInfo;
+    Parts: TArray<string>;
+    ComboOwners: TDictionary<string, string>;
+    Combo: string;
+begin
+    ComboOwners := TDictionary<string, string>.Create;
+    try
+        for Info in FRegistry.Values do
+        begin
+            Parts := Info.ActionName.Split(['.']);
+            if (Length(Parts) < 2) or (not Parts[0].StartsWith('T')) then
+                raise Exception.Create('THotkeyService: invalid action ID "' + Info.ActionName + '" (expected "TFormClass.actName")');
+            if Info.DefaultShortCut = 0 then
+                raise Exception.Create('THotkeyService: DefaultShortCut parse failed for "' + Info.ActionName + '"');
+            if Info.DisplayName.IsEmpty or Info.Category.IsEmpty then
+                raise Exception.Create('THotkeyService: empty DisplayName/Category for "' + Info.ActionName + '"');
+            Combo := Parts[0] + '|' + IntToStr(Ord(Info.DefaultShortCut));
+            if ComboOwners.ContainsKey(Combo) then
+                raise Exception.Create('THotkeyService: duplicate default shortcut in ' + Parts[0] + ': "' + ComboOwners[Combo] + '" and "' + Info.ActionName + '"');
+            ComboOwners.Add(Combo, Info.ActionName);
+        end;
+    finally
+        ComboOwners.Free;
+    end;
+end;
+
+procedure THotkeyService.ValidateLocalizationKeys;
+var
+    Info: TActionHotkeyInfo;
+begin
+    for Info in FRegistry.Values do
+    begin
+        if TUIStateLoader.GetMessage(Info.DisplayName).StartsWith('[') then
+            raise Exception.Create('THotkeyService: missing localization key "' + Info.DisplayName + '" for "' + Info.ActionName + '"');
+        if TUIStateLoader.GetMessage(Info.Category).StartsWith('[') then
+            raise Exception.Create('THotkeyService: missing localization key "' + Info.Category + '" for "' + Info.ActionName + '"');
+    end;
+end;
+
+// Валидация реестра после мутаций (LoadFromSettings/SetActionShortCut):
+// битовый состав TShortCut и уникальность хоткеев в рамках одной формы
+procedure THotkeyService.ValidateCurrentShortCuts;
+const
+    SC_KEY_MASK = $00FF;
+    SC_FLAG_MASK = SC_KEY_MASK or scShift or scCtrl or scAlt; // $E0FF: Key + scShift($2000)/scCtrl($4000)/scAlt($8000)
+var
+    Info: TActionHotkeyInfo;
+    Parts: TArray<string>;
+    ComboOwners: TDictionary<string, string>;
+    Combo: string;
+    SC: Word;
+begin
+    ComboOwners := TDictionary<string, string>.Create;
+    try
+        for Info in FRegistry.Values do
+        begin
+            SC := Info.CurrentShortCut;
+            if SC = 0 then
+                Continue;
+            if (SC and SC_KEY_MASK) = 0 then
+                raise Exception.Create('THotkeyService: shortcut without key for "' + Info.ActionName + '"');
+            if (SC and (not SC_FLAG_MASK)) <> 0 then
+                raise Exception.Create('THotkeyService: unknown flag bits in shortcut for "' + Info.ActionName + '"');
+            Parts := Info.ActionName.Split(['.']);
+            if Length(Parts) = 0 then
+                raise Exception.Create('THotkeyService: invalid action ID "' + Info.ActionName + '"');
+            Combo := Parts[0] + '|' + IntToStr(SC);
+            if ComboOwners.ContainsKey(Combo) then
+                raise Exception.Create('THotkeyService: duplicate shortcut in ' + Parts[0] + ': "' + ComboOwners[Combo] + '" and "' + Info.ActionName + '"');
+            ComboOwners.Add(Combo, Info.ActionName);
+        end;
+    finally
+        ComboOwners.Free;
+    end;
+end;
+{$ENDIF}
 
 end.
 

@@ -4,7 +4,8 @@ interface
 
 uses
     BaseFormUI,
-    Core.Interfaces,
+    Core.Interfaces.App,
+    Core.Interfaces.Tools,
     SynEdit,
     System.Classes,
     Vcl.ComCtrls,
@@ -105,7 +106,7 @@ uses
     System.SysUtils,
     System.Types,
     UI.HoverHelpManager,
-    UI.StateLoader,
+    Common.Localization,
     Vcl.Clipbrd,
     Winapi.ActiveX,
     Winapi.CommCtrl,

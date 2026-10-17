@@ -36,7 +36,7 @@ implementation
 uses
     System.Generics.Collections,
     System.Math,
-    UI.StateLoader
+    Common.Localization
     ;
 
 { TSecurityScanner }

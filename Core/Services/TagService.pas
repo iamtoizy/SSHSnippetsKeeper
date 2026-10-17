@@ -3,7 +3,7 @@
 interface
 
 uses
-    Core.Interfaces,
+    Core.Interfaces.Data, Core.Interfaces.Services,
     System.SysUtils,
 
     Core.Entities.Tag
@@ -26,7 +26,7 @@ type
 implementation
 
 uses
-    UI.StateLoader
+    Common.Localization
     ;
 
 constructor TTagService.Create(TagRepo: ITagRepository);

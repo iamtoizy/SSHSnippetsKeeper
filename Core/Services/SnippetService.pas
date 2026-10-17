@@ -3,7 +3,7 @@
 interface
 
 uses
-    Core.Interfaces,
+    Core.Interfaces.Data, Core.Interfaces.Services,
     Core.Entities.Snippet,
     System.SysUtils
     ;
@@ -45,12 +45,14 @@ type
 
         // Обновленный метод поиска с учетом пространства
         function SearchSnippets(const Query: string; UseFTS: Boolean; UserID: Integer = 0): TArray<TSnippetDTO>;
+
+        procedure RecordRun(SnippetID, UserID: Integer);
     end;
 
 implementation
 
 uses
-    UI.StateLoader
+    Common.Localization
     ;
 
 { TSnippetService }
@@ -186,6 +188,11 @@ begin
         Result := FSnippetRepo.SearchByMaskFTS(CleanQuery, UserID)
     else
         Result := FSnippetRepo.SearchByMaskSimple(CleanQuery, UserID);
+end;
+
+procedure TSnippetService.RecordRun(SnippetID, UserID: Integer);
+begin
+    FSnippetRepo.RecordRun(SnippetID, UserID);
 end;
 
 end.

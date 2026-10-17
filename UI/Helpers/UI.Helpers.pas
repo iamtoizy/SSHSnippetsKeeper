@@ -32,7 +32,7 @@ implementation
 
 uses
     System.Generics.Collections,
-    UI.StateLoader
+    Common.Localization
     ;
 
 { TUIHelpers }

@@ -4,7 +4,7 @@ interface
 
 uses
     Core.Entities.Category,
-    Core.Interfaces,
+    Core.Interfaces.Data, Core.Interfaces.Services, Core.Interfaces.Passwords,
     System.SysUtils
     ;
 
@@ -27,7 +27,7 @@ type
 implementation
 
 uses
-    UI.StateLoader
+    Common.Localization
     ;
 
 constructor TCategoryService.Create(CategoryRepo: ICategoryRepository);

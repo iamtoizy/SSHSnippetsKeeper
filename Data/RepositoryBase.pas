@@ -15,7 +15,7 @@ type
         function CreateQuery: TFDQuery;
         procedure SetQueryParams(Query: TFDQuery; const Params: array of Variant);
 
-        // Централизованный метод для выполнения запросов с автоочисткой памяти
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
         procedure ExecuteQuery(const SQL: string; const Params: array of Variant; Proc: TProc<TFDQuery>);
         function ExecuteSQL(const SQL: string; const Params: array of Variant): Integer;
         function ExecuteSQLScalar(const SQL: string; const Params: array of Variant): Variant;
@@ -42,29 +42,21 @@ function TRepositoryBase.CreateQuery: TFDQuery;
 begin
     Result := TFDQuery.Create(nil);
     Result.Connection := FConnection;
-    // Настройки для оптимизации выборок
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     Result.FetchOptions.Unidirectional := True;
 end;
 
 procedure TRepositoryBase.ExecuteQuery(const SQL: string; const Params: array of Variant; Proc: TProc<TFDQuery>);
 var
     Query: TFDQuery;
-    i: Integer;
 begin
-    Query := TFDQuery.Create(nil);
+    // Единая точка настройки запроса - CreateQuery, заполнение параметров - SetQueryParams
+    Query := CreateQuery;
     try
-        Query.Connection := FConnection;
-        // Настройки для оптимизации больших выборок
-        Query.FetchOptions.Unidirectional := True;
-
         Query.SQL.Text := SQL;
-        for i := 0 to High(Params) do
-            Query.Params[i].Value := Params[i];
-
-        // Передаем готовый к работе Query в анонимный метод
+        SetQueryParams(Query, Params);
         Proc(Query);
     finally
-        // Гарантированно освобождаем память
         Query.Free;
     end;
 end;
@@ -81,10 +73,10 @@ end;
 
 procedure TRepositoryBase.SetQueryParams(Query: TFDQuery; const Params: array of Variant);
 var
-    i: Integer;
+    I: Integer;
 begin
-    for i := 0 to High(Params) do
-        Query.Params[i].Value := Params[i];
+    for I := 0 to High(Params) do
+        Query.Params[I].Value := Params[I];
 end;
 
 end.

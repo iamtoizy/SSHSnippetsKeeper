@@ -3,7 +3,7 @@
 interface
 
 uses
-    Core.Interfaces,
+    Core.Interfaces.Settings, Core.Interfaces.Passwords,
     System.SyncObjs,
     System.SysUtils,
     Winapi.Windows
@@ -72,6 +72,7 @@ type
         function FilterForbiddenChars(const Source, Forbidden: string): string;
         function ShuffleString(const Source: string): string;
 
+        function PoolForPreset(Preset: TPasswordPreset): string;
         function GenerateUniqueSequence(const FullPool, FirstCharPool: string; Length: Integer): string;
         function GenerateStandardSequence(const FullPool, FirstCharPool: string; Length: Integer): string;
 
@@ -106,7 +107,7 @@ uses
     System.Generics.Collections,
     System.Hash,
     System.Math,
-    UI.StateLoader
+    Common.Localization
     ;
 
 function SecureRandom(Max: Integer): Integer;
@@ -268,28 +269,30 @@ begin
     Result := Pool.Length;
 end;
 
-function TPasswordService.GetPoolSize(Preset: TPasswordPreset): Integer;
-var
-    DummyPool: string;
+function TPasswordService.PoolForPreset(Preset: TPasswordPreset): string;
 begin
     case Preset of
-        wpStrictAlphaNumeric:   DummyPool := ALPHA_LOWER + ALPHA_UPPER + NUMBERS;
-        wpPinCode:              DummyPool := NUMBERS;
-        wpHexToken:             DummyPool := HEX_CHARS;
-        wpBashSafe:             DummyPool := ALPHA_LOWER + ALPHA_UPPER + NUMBERS + '@%^&*()-_=+[{]};:,.<>/?';
-        wpDockerEnvSafe:        DummyPool := ALPHA_LOWER + ALPHA_UPPER + NUMBERS + '_+-@%^&*()[]{}|;:,.<>/?';
-        wpUrlSafe:              DummyPool := POOL_URL_SAFE;
-        wpBitrixDb:             DummyPool := POOL_BITRIX;
-        wpOracleSafe:           DummyPool := POOL_ORACLE;
-        wpActiveDirectory:      DummyPool := ALPHA_LOWER + ALPHA_UPPER + NUMBERS + SYMBOLS_STD;
-        wpNoLookAlikes:         DummyPool := POOL_NO_LOOK_ALIKES;
-        wpMacAddress, wpUUIDv4: DummyPool := HEX_CHARS;
-        wpBase64Key:            DummyPool := POOL_BASE64;
-        wpWebStandard:          DummyPool := POOL_WEB_STD;
+        wpStrictAlphaNumeric:   Result := ALPHA_LOWER + ALPHA_UPPER + NUMBERS;
+        wpPinCode:              Result := NUMBERS;
+        wpHexToken:             Result := HEX_CHARS;
+        wpBashSafe:             Result := ALPHA_LOWER + ALPHA_UPPER + NUMBERS + '@%^&*()-_=+[{]};:,.<>/?';
+        wpDockerEnvSafe:        Result := ALPHA_LOWER + ALPHA_UPPER + NUMBERS + '_+-@%^&*()[]{}|;:,.<>/?';
+        wpUrlSafe:              Result := POOL_URL_SAFE;
+        wpBitrixDb:             Result := POOL_BITRIX;
+        wpOracleSafe:           Result := POOL_ORACLE;
+        wpActiveDirectory:      Result := ALPHA_LOWER + ALPHA_UPPER + NUMBERS + SYMBOLS_STD;
+        wpNoLookAlikes:         Result := POOL_NO_LOOK_ALIKES;
+        wpMacAddress, wpUUIDv4: Result := HEX_CHARS;
+        wpBase64Key:            Result := POOL_BASE64;
+        wpWebStandard:          Result := POOL_WEB_STD;
     else
-        DummyPool := ALPHA_LOWER + ALPHA_UPPER + NUMBERS;
+        Result := ALPHA_LOWER + ALPHA_UPPER + NUMBERS;
     end;
-    Result := Length(DummyPool);
+end;
+
+function TPasswordService.GetPoolSize(Preset: TPasswordPreset): Integer;
+begin
+    Result := Length(PoolForPreset(Preset));
 end;
 
 // Генераторы
@@ -480,22 +483,7 @@ begin
     if Preset = wpUUIDv4 then Exit(GenerateUUIDv4);
     if Length <= 0 then Exit('');
 
-    case Preset of
-        wpStrictAlphaNumeric: FullPool := ALPHA_LOWER + ALPHA_UPPER + NUMBERS;
-        wpPinCode:            FullPool := NUMBERS;
-        wpHexToken:           FullPool := HEX_CHARS;
-        wpUrlSafe:            FullPool := POOL_URL_SAFE;
-        wpBitrixDb:           FullPool := POOL_BITRIX;
-        wpOracleSafe:         FullPool := POOL_ORACLE;
-        wpNoLookAlikes:       FullPool := POOL_NO_LOOK_ALIKES;
-        wpActiveDirectory:    FullPool := ALPHA_LOWER + ALPHA_UPPER + NUMBERS + SYMBOLS_STD;
-        wpBashSafe:           FullPool := ALPHA_LOWER + ALPHA_UPPER + NUMBERS + '@%^&*()-_=+[{]};:,.<>/?';
-        wpDockerEnvSafe:      FullPool := ALPHA_LOWER + ALPHA_UPPER + NUMBERS + '_+-@%^&*()[]{}|;:,.<>/?';
-        wpBase64Key:          FullPool := POOL_BASE64;
-        wpWebStandard:        FullPool := POOL_WEB_STD;
-    else
-        FullPool := ALPHA_LOWER + ALPHA_UPPER + NUMBERS;
-    end;
+    FullPool := PoolForPreset(Preset);
 
     FirstCharPool := FullPool;
     case Preset of

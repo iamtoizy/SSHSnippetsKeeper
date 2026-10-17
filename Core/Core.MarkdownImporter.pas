@@ -4,17 +4,16 @@ interface
 
 uses
     Core.Entities.Category,
-    Core.Interfaces,
-
     Core.Entities.Snippet,
+    Core.Entities.Tag,
+    Core.Entities.User,
+    Core.Interfaces.App,
+    Core.Interfaces.Services,
     System.Classes,
     System.DateUtils,
     System.Generics.Collections,
     System.IOUtils,
-    System.SysUtils,
-    Core.Entities.Tag,
-
-    Core.Entities.User
+    System.SysUtils
     ;
 
 type

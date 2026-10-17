@@ -3,9 +3,12 @@
 interface
 
 uses
-    Core.Interfaces,
-    MacroInputTypes,
     Core.Entities.Snippet,
+    Core.Interfaces.App,
+    Core.Interfaces.Automation,
+    Core.Interfaces.Services,
+    Core.Interfaces.UI,
+    MacroInputTypes,
     Winapi.Windows,
     WindowMonitor
     ;
@@ -27,10 +30,10 @@ implementation
 
 uses
     ChooseTerminalWindowUI,
+    Common.Localization,
     InputFormUI,
     SecurityScanner,
     System.SysUtils,
-    UI.StateLoader,
     Vcl.Controls
     ;
 
@@ -45,7 +48,7 @@ end;
 function TSnippetRunner.SelectTargetWindow(out TargetWindow: TWindowMonitorInfo): Boolean;
 begin
     Result := False;
-    if not WinMonitor.CanAutoType then
+    if not GWinMonitor.CanAutoType then
     begin
         MessageBeep(MB_ICONHAND);
         FAppContext.MessagesHandler.ShowInfo(
@@ -54,9 +57,9 @@ begin
         Exit;
     end;
 
-    if WinMonitor.AllowedWindowCount = 1 then
+    if GWinMonitor.AllowedWindowCount = 1 then
     begin
-        TargetWindow := WinMonitor.GetLastAllowedWindow;
+        TargetWindow := GWinMonitor.GetLastAllowedWindow;
         Result := True;
     end
     else
@@ -78,12 +81,26 @@ end;
 function TSnippetRunner.BuildMacroContext(SnippetID: Integer; TargetHWND: HWND): TMacroContext;
 var
     Context: TMacroContext;
+    AppContext: IAppContext;
+    SnippetService: ISnippetService;
 begin
     Context := TMacroContext.Create;
+    // Коллбэки ниже живут дольше этого объекта: TMacroThread выполняет макрос
+    // асинхронно, а TSnippetRunner освобождается сразу после ExecuteSnippet.
+    // Захватывать Self (FAppContext) в замыкания нельзя - после Free это
+    // висячий указатель. Фиксируем интерфейсы в локальных переменных:
+    // подсчёт ссылок удержит их, пока живы замыкания.
+    AppContext := FAppContext;
+    SnippetService := FAppContext.SnippetService;
     Context.Executor := FAppContext.WindowHelper;
     Context.UserCanceled := False;
     Context.SnippetID := SnippetID;
     Context.UserID := FUserID;
+    Context.OnRecordRun :=
+        procedure(SnippetID, AUserID: Integer)
+        begin
+            SnippetService.RecordRun(SnippetID, AUserID);
+        end;
 
     // Коллбэк для ввода
     Context.OnInput :=
@@ -92,7 +109,7 @@ begin
             Result := ''; // Здесь Result - это возвращаемая строка для OnInput
 
             // Обращаемся к переменной Context из внешней области видимости
-            if ShowInputForm(Prompt, Context.CurrentDefaultValue, Context.CurrentInputType, FAppContext, Result) then
+            if ShowInputForm(Prompt, Context.CurrentDefaultValue, Context.CurrentInputType, AppContext, Result) then
                 Context.UserCanceled := False
             else
             begin

@@ -42,7 +42,7 @@ uses
     System.Net.URLClient,
     System.RegularExpressions,
     System.SysUtils,
-    UI.StateLoader
+    Common.Localization
     ;
 
 { TAITextCleaner }

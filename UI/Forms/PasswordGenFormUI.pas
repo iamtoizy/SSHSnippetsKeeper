@@ -4,7 +4,9 @@ interface
 
 uses
     BaseFormUI,
-    Core.Interfaces,
+    Core.Interfaces.App,
+    Core.Interfaces.Passwords,
+    Core.Interfaces.UI,
     System.Classes,
     System.SyncObjs,
     Vcl.Buttons,
@@ -161,7 +163,7 @@ uses
     System.Types,
     System.UITypes,
     UI.HoverHelpManager,
-    UI.StateLoader,
+    Common.Localization,
     Vcl.Clipbrd,
     Winapi.CommCtrl
     ;

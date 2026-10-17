@@ -873,7 +873,8 @@
           "Caption": "Database",
           "CreateDatabase": "Create Database",
           "OpenDatabase": "Open Database",
-          "CloseDatabase": "Close Database"
+          "CloseDatabase": "Close Database",
+          "SyncDatabase": "Sync Database"
         },
         "Tools": {
           "Caption": "DevOps Utilities",

@@ -4,7 +4,7 @@ interface
 
 uses
     BaseFormUI,
-    Core.Interfaces,
+    Core.Interfaces.Tools,
     System.Classes,
     System.Types,
     Vcl.CheckLst,
@@ -35,7 +35,7 @@ type
     end;
 
     TCronGenForm = class(TBaseForm)
-    pTop: TPanel;
+        pnlTop: TPanel;
         lbTitle: TLabel;
         ebCronExpression: TEdit;
         bCopy: TButton;
@@ -161,7 +161,7 @@ uses
     CommonHelpers,
     CronService,
     UI.HoverHelpManager,
-    UI.StateLoader,
+    Common.Localization,
     Vcl.Clipbrd,
     Vcl.Graphics,
     Winapi.Windows

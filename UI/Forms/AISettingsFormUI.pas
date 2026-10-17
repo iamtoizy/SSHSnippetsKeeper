@@ -4,15 +4,19 @@ interface
 
 uses
     BaseFormUI,
-    Core.Interfaces,
+    Core.Interfaces.App,
+    Core.Interfaces.Settings,
+    Core.Interfaces.UI,
+    System.Actions,
     System.Classes,
+    Vcl.ActnList,
     Vcl.ComCtrls,
     Vcl.Controls,
     Vcl.ExtCtrls,
     Vcl.Forms,
     Vcl.Menus,
     Vcl.StdCtrls,
-    Winapi.Windows, System.Actions, Vcl.ActnList
+    Winapi.Windows
     ;
 
 type
@@ -90,11 +94,11 @@ type
         procedure LoadStructureToTree;
         procedure ClearTreeData;
         procedure SaveCurrentEditorData;
-    function CreateNodeData(AType: TNodeType; AHub, AModel: Integer): PNodeData;
-    function FindHubNode(HubIdx: Integer): TTreeNode;
-public
-        procedure DoInitialize; override;
-    end;
+        function CreateNodeData(AType: TNodeType; AHub, AModel: Integer): PNodeData;
+        function FindHubNode(HubIdx: Integer): TTreeNode;
+    public
+            procedure DoInitialize; override;
+        end;
 
 var
     AISettingsForm: TAISettingsForm;
@@ -102,8 +106,8 @@ var
 implementation
 
 uses
-    System.SysUtils,
-    UI.StateLoader
+    Common.Localization,
+    System.SysUtils
     ;
 
 {$R *.dfm}

@@ -206,8 +206,20 @@
         <DCCReference Include="Core\Services\TagService.pas"/>
         <DCCReference Include="Core\Services\CategoryService.pas"/>
         <DCCReference Include="Core\Services\UserService.pas"/>
-        <DCCReference Include="Core\Core.Interfaces.pas"/>
+        <DCCReference Include="Core\Core.Interfaces.Settings.pas"/>
+        <DCCReference Include="Core\Core.Interfaces.Data.pas"/>
+        <DCCReference Include="Core\Core.Interfaces.Services.pas"/>
+        <DCCReference Include="Core\Core.Interfaces.Automation.pas"/>
+        <DCCReference Include="Core\Core.Interfaces.Passwords.pas"/>
+        <DCCReference Include="Core\Core.Interfaces.Tools.pas"/>
+        <DCCReference Include="Core\Core.Interfaces.UI.pas"/>
+        <DCCReference Include="Core\Core.Interfaces.App.pas"/>
         <DCCReference Include="UI\Controllers\SnippetRunner.pas"/>
+        <DCCReference Include="UI\Controllers\SyncController.pas"/>
+        <DCCReference Include="UI\Controllers\SearchController.pas"/>
+        <DCCReference Include="UI\Controllers\CategoryTreeController.pas"/>
+        <DCCReference Include="UI\Controllers\LanguageMenuController.pas"/>
+        <DCCReference Include="UI\Controllers\TagListController.pas"/>
         <DCCReference Include="UI\Forms\QuickSearchFormUI.pas">
             <Form>QuickSearchForm</Form>
         </DCCReference>
@@ -224,7 +236,7 @@
             <Form>PasswordGenForm</Form>
         </DCCReference>
         <DCCReference Include="Core\Core.AppContext.pas"/>
-        <DCCReference Include="UI\Helpers\UI.StateLoader.pas"/>
+        <DCCReference Include="Common\Common.Localization.pas"/>
         <DCCReference Include="UI\Helpers\UI.HoverHelpManager.pas"/>
         <DCCReference Include="UI\Forms\CustomHelpFormUI.pas">
             <Form>CustomHelpForm</Form>
@@ -307,10 +319,7 @@
                 <DeployFile LocalName="Assets\Images\main-icon\main-icon.png" Configuration="Debug" Class="UWP_DelphiLogo44"/>
                 <DeployFile LocalName="Binary\Win32\Debug\SSHSnippetsKeeper.exe" Configuration="Debug" Class="ProjectOutput"/>
                 <DeployFile LocalName="Binary\Win64\Debug\SSHSnippetsKeeper.exe" Configuration="Debug" Class="ProjectOutput"/>
-                <DeployFile LocalName="Binary\Win64\Debug\SSHSnippetsKeeper.exe" Configuration="Debug" Class="ProjectOutput"/>
                 <DeployFile LocalName="Database\Schema\000_schema_init.sql" Configuration="Debug" Class="ProjectFile"/>
-                <DeployFile LocalName="Database\Schema\000_schema_init.sql" Configuration="Debug" Class="ProjectFile"/>
-                <DeployFile LocalName="Database\Schema\000_seed_data_full.sql" Configuration="Debug" Class="ProjectFile"/>
                 <DeployFile LocalName="Database\Schema\000_seed_data_full.sql" Configuration="Debug" Class="ProjectFile"/>
                 <DeployClass Name="AdditionalDebugSymbols">
                     <Platform Name="iOSSimulator">
