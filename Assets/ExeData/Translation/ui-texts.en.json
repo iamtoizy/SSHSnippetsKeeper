@@ -719,6 +719,12 @@
     },
     "cbSyncOnExit": {
       "Caption": "Sync on database close"
+    },
+    "tsGeneral": {
+      "Caption": "General"
+    },
+    "cbTagsMatchAll": {
+      "Caption": "Show only snippets containing all selected tags"
     }
   },
   "CustomHelpForm": {
@@ -740,7 +746,7 @@
         "lvTags": {
           "Title": "Tag List",
           "Main": "Displays a complete list of all tags in the database. For convenience, tags already assigned to the selected snippet are automatically pinned at the top of the list and highlighted in green.",
-          "Expanded": "💡 <b>Navigation and Hotkeys:</b><br><b>Double-click</b> — instantly filter snippets by the selected tag.<br><br><code>CTRL+ALT+A</code> — add a new tag.<br><code>CTRL+ALT+E</code> — edit tag name.<br><code>CTRL+ALT+D</code> — delete the selected tag from the database."
+          "Expanded": "💡 <b>Navigation and Hotkeys:</b><br><b>Click a tag</b> — filter snippets by the selected tag.<br><b>CTRL+click / SHIFT+click</b> — select several tags: snippets are shown for all checked ones.<br>The match mode — all tags or any of them — is switched on the General tab in Settings.<br><b>Click on empty space or ESC</b> — reset the filter.<br><br><code>CTRL+ALT+A</code> — add a new tag.<br><code>CTRL+ALT+E</code> — edit tag name.<br><code>CTRL+ALT+D</code> — delete the selected tag from the database."
         },
         "ebSearch": {
           "Title": "Search Bar",
@@ -1008,6 +1014,8 @@
       "RenameError": "Error renaming tag: %s",
       "RenamedMsg": "Tag renamed: \"%s\" → \"%s\"",
       "FilterPrefix": "Filter by tag: \"%s\"",
+      "FilterPrefixAny": "Filter by tags (any): \"%s\"",
+      "FilterPrefixAll": "Filter by tags (all): \"%s\"",
       "FilterReset": "Filter reset.",
       "InvalidIdError": "Invalid identifier for the tag.",
       "EmptyNameError": "Tag name cannot be empty.",

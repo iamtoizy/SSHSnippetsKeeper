@@ -57,6 +57,7 @@ type
         bSelectVaultPath: TButton;
         cbSyncOnStart: TCheckBox;
         cbSyncOnExit: TCheckBox;
+        cbTagsMatchAll: TCheckBox;
 
         procedure bSaveClick(Sender: TObject);
         procedure bCancelClick(Sender: TObject);
@@ -137,6 +138,8 @@ begin
     cbSyncOnStart.Checked := Setts.SyncOnStart;
     cbSyncOnExit.Checked := Setts.SyncOnExit;
     // -----------------------------------
+
+    cbTagsMatchAll.Checked := Setts.TagsMatchAll;
 
     FLocalActions.Clear;
     Actions := AppContext.HotkeyService.GetAllActions;
@@ -308,6 +311,8 @@ begin
     Setts.SyncOnStart := cbSyncOnStart.Checked;
     Setts.SyncOnExit := cbSyncOnExit.Checked;
     // -----------------------------------------
+
+    Setts.TagsMatchAll := cbTagsMatchAll.Checked;
 
     for Info in FLocalActions.Values do
         AppContext.HotkeyService.SetActionShortCut(Info.ActionName, Info.CurrentShortCut);

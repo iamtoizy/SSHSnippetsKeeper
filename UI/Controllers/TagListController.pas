@@ -264,12 +264,14 @@ procedure TTagListController.ApplyFilter(const TagIDs: TArray<Integer>; const Ta
 begin
     FFilterByTagIDs := TagIDs;
 
-    // MatchAll = True показывал бы сниппеты со СТРОГО ВСЕМИ выбранными тегами.
-    // False показывает сниппеты с ЛЮБЫМ из тегов.
+    // MatchAll: True - сниппеты, содержащие ВСЕ выбранные теги; False - ЛЮБОЙ из тегов (настройка, вкладка "Общие")
     if Assigned(FOnShowSnippets) then
-        FOnShowSnippets(FContext.SnippetService.GetSnippetsByTags(TagIDs, False));
+        FOnShowSnippets(FContext.SnippetService.GetSnippetsByTags(TagIDs, FContext.SettingsManager.Data.TagsMatchAll));
 
-    FStatusBar.Panels[0].Text := TUIStateLoader.GetMessage('Tag.FilterPrefix', [TagNames]);
+    if FContext.SettingsManager.Data.TagsMatchAll then
+        FStatusBar.Panels[0].Text := TUIStateLoader.GetMessage('Tag.FilterPrefixAll', [TagNames])
+    else
+        FStatusBar.Panels[0].Text := TUIStateLoader.GetMessage('Tag.FilterPrefixAny', [TagNames]);
 end;
 
 procedure TTagListController.ClearTagSelection;

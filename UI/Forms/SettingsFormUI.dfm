@@ -226,6 +226,17 @@ object SettingsForm: TSettingsForm
         TabOrder = 3
       end
     end
+    object tsGeneral: TTabSheet
+      Caption = #1054#1073#1097#1080#1077
+      object cbTagsMatchAll: TCheckBox
+        Left = 3
+        Top = 3
+        Width = 610
+        Height = 17
+        Caption = #1055#1086#1082#1072#1079#1099#1074#1072#1090#1100#32#1090#1086#1083#1100#1082#1086#32#1089#1085#1080#1087#1087#1077#1090#1099#44#32#1089#1086#1076#1077#1088#1078#1072#1097#1080#1077#32#1074#1089#1077#32#1074#1099#1073#1088#1072#1085#1085#1099#1077#32#1090#1077#1075#1080
+        TabOrder = 0
+      end
+    end
   end
   object pBottom: TPanel
     Left = 0

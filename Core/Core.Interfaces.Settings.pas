@@ -136,6 +136,9 @@ type
         SyncDirectory: string;
         SyncOnStart: Boolean;
         SyncOnExit: Boolean;
+
+        // Фильтр по тегам: True = сниппет должен иметь все выбранные теги
+        TagsMatchAll: Boolean;
     end;
 
     // Интерфейс менеджера
