@@ -103,7 +103,7 @@ type
 implementation
 
 uses
-    CommonHelpers,
+    Common.Helpers,
     System.Generics.Collections,
     System.Hash,
     System.Math,

@@ -15,26 +15,26 @@ type
         FContext: TMacroContext;
         FCanceled: Integer;
         // Добавляем поле для коллбэка
-        FOnRecordRun: TProc<Integer, Integer>;
+        FOnRecordRun: TRecordRunCallback;
     protected
         procedure Execute; override;
     public
         // Внедряем коллбэк через конструктор (по умолчанию nil, чтобы не ломать старый код, если где-то он вызывается без него)
         // Suspended = True позволяет привязать OnTerminate до фактического запуска потока
-        constructor Create(const Actions: TArray<IScriptAction>; Context: TMacroContext; OnRecordRun: TProc<Integer, Integer> = nil; Suspended: Boolean = False);
+        constructor Create(const Actions: TArray<IScriptAction>; Context: TMacroContext; OnRecordRun: TRecordRunCallback = nil; Suspended: Boolean = False);
         procedure Cancel;
     end;
 
 implementation
 
 uses
-    CommonHelpers,
+    Common.Helpers,
     System.StrUtils,
     System.SyncObjs,
     Winapi.Windows
     ;
 
-constructor TMacroThread.Create(const Actions: TArray<IScriptAction>; Context: TMacroContext; OnRecordRun: TProc<Integer, Integer> = nil; Suspended: Boolean = False);
+constructor TMacroThread.Create(const Actions: TArray<IScriptAction>; Context: TMacroContext; OnRecordRun: TRecordRunCallback = nil; Suspended: Boolean = False);
 begin
     FActions := Actions;
     FContext := Context;

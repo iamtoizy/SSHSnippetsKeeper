@@ -64,7 +64,7 @@ uses
   HintTextEdit in 'UI\Controls\HintTextEdit.pas',
   HintTextMemo in 'UI\Controls\HintTextMemo.pas',
   BaseFormUI in 'UI\Forms\BaseFormUI.pas',
-  AppStateManager in 'UI\Services\AppStateManager.pas',
+  UI.Services.AppStateManager in 'UI\Services\UI.Services.AppStateManager.pas',
   UI.Helpers in 'UI\Helpers\UI.Helpers.pas',
   UI.TreeViewSearchHelper in 'UI\Helpers\UI.TreeViewSearchHelper.pas',
    SnippetViewData in 'UI\ViewModels\SnippetViewData.pas',
@@ -81,9 +81,9 @@ uses
   WorkspaceManagerUI in 'UI\Forms\WorkspaceManagerUI.pas' {WorkspaceManagerForm},
   SynThemeAdapter in 'UI\Controls\SynThemeAdapter.pas',
   CustomBashSyn in 'UI\Controls\CustomBashSyn.pas',
-  BashCompletionEngine in 'Core\BashCompletionEngine.pas',
-  CommonConsts in 'Common\CommonConsts.pas',
-  CommonHelpers in 'Common\CommonHelpers.pas',
+  Core.BashCompletionEngine in 'Core\Core.BashCompletionEngine.pas',
+  Common.Consts in 'Common\Common.Consts.pas',
+  Common.Helpers in 'Common\Common.Helpers.pas',
   SnippetService in 'Core\Services\SnippetService.pas',
   TagService in 'Core\Services\TagService.pas',
   CategoryService in 'Core\Services\CategoryService.pas',
@@ -130,7 +130,7 @@ uses
   Bcrypt in 'ThirdParty\Bcrypt.pas',
   Core.MarkdownExporter in 'Core\Core.MarkdownExporter.pas',
   Core.MarkdownImporter in 'Core\Core.MarkdownImporter.pas',
-  LocalAIService in 'Core\LocalAIService.pas';
+  Core.LocalAIService in 'Core\Core.LocalAIService.pas';
 
 {$R *.res}
 

@@ -97,7 +97,7 @@ var
 implementation
 
 uses
-    CommonHelpers,
+    Common.Helpers,
     SynEditKeyCmds,
     SynEditTypes,
     SynFunc,

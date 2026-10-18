@@ -96,7 +96,7 @@ var
 implementation
 
 uses
-    CommonHelpers,
+    Common.Helpers,
     System.StrUtils,
     UI.HoverHelpManager,
     Common.Localization,

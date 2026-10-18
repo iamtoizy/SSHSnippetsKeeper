@@ -50,7 +50,7 @@ type
 implementation
 
 uses
-    CommonHelpers,
+    Common.Helpers,
     System.Classes,
     System.SysUtils
     ;

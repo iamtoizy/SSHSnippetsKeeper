@@ -158,7 +158,7 @@ var
 implementation
 
 uses
-    CommonHelpers,
+    Common.Helpers,
     CronService,
     UI.HoverHelpManager,
     Common.Localization,

@@ -90,7 +90,7 @@ type
 implementation
 
 uses
-    LocalAIService
+    Core.LocalAIService
     ;
 
 { TAppContext }

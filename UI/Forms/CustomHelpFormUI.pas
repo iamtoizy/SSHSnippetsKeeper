@@ -35,7 +35,7 @@ var
 implementation
 
 uses
-    CommonHelpers,
+    Common.Helpers,
     System.RegularExpressions,
     System.SysUtils,
     Common.Localization,

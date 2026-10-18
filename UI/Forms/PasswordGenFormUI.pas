@@ -156,7 +156,7 @@ implementation
 
 uses
     Bcrypt,
-    CommonHelpers,
+    Common.Helpers,
     System.Hash,
     System.SysUtils,
     System.Threading,

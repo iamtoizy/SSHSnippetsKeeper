@@ -5,7 +5,7 @@ interface
 uses
     AI.Service,
     BaseFormUI,
-    BashCompletionEngine,
+    Core.BashCompletionEngine,
     Core.Entities.Snippet,
     Core.Interfaces.App,
     Core.Interfaces.Services,
@@ -157,7 +157,7 @@ uses
     AI.TextCleaner,
     AISettingsFormUI,
     Common.Localization,
-    CommonHelpers,
+    Common.Helpers,
     Core.Entities.Tag,
     MainFormUI,
     SecurityScanner,

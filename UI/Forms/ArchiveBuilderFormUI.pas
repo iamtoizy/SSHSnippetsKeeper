@@ -110,7 +110,7 @@ type
 implementation
 
 uses
-    CommonHelpers,
+    Common.Helpers,
     System.SysUtils,
     UI.HoverHelpManager,
     Common.Localization,

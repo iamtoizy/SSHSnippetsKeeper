@@ -85,7 +85,7 @@ implementation
 {$R *.dfm}
 
 uses
-    CommonHelpers,
+    Common.Helpers,
     HotkeyService,
     System.IOUtils,
     Common.Localization,

@@ -1,4 +1,4 @@
-unit BashCompletionEngine;
+unit Core.BashCompletionEngine;
 
 interface
 
