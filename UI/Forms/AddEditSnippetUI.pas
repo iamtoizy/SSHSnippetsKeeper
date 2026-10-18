@@ -1,0 +1,1004 @@
+﻿unit AddEditSnippetUI;
+
+interface
+
+uses
+    AI.Service,
+    BaseFormUI,
+    BashCompletionEngine,
+    Core.Entities.Snippet,
+    Core.Interfaces.App,
+    Core.Interfaces.Services,
+    Core.Interfaces.Settings,
+    Core.Interfaces.UI,
+    CustomBashSyn,
+    SynCompletionProposal,
+    SynEdit,
+    SynEditHighlighter,
+    SynEditMiscClasses,
+    SynEditRegexSearch,
+    SynEditTypes,
+    SynHighlighterMarkdown,
+    SynHighlighterUNIXShellScript,
+    System.Classes,
+    Vcl.ComCtrls,
+    Vcl.Controls,
+    Vcl.ExtCtrls,
+    Vcl.Forms,
+    Vcl.Menus,
+    Vcl.StdCtrls,
+    // Подцепляем последним:
+    HintTextEdit,
+    System.Actions,
+    Vcl.ActnList
+    ;
+
+type
+    TOriginalSnippet = record
+        Title: string;
+        Content: string;
+        Comment: string;
+        Tags: string;
+    end;
+
+    TAddEditSnippetForm = class(TBaseForm)
+        pLeft: TPanel;
+        lbCaption: TLabel;
+        ebTitle: TEdit;
+        lbAllTags: TLabel;
+        lbSelectedTags: TLabel;
+        lvSelectedTags: TListView;
+        pBottom: TPanel;
+        bOK: TButton;
+        bCancel: TButton;
+        lvAllTags: TListView;
+        SynUNIXShellScriptSyn: TSynUNIXShellScriptSyn;
+        SynEditRegexSearch: TSynEditRegexSearch;
+        SynCompletionProposal: TSynCompletionProposal;
+        tmrReloadCommands: TTimer;
+        SynMarkdownSyn: TSynMarkdownSyn;
+        MainMenu: TMainMenu;
+        nAI: TMenuItem;
+        nShowAIPrompt: TMenuItem;
+        nAISettings: TMenuItem;
+        cbIgnoreSecurityChecks: TCheckBox;
+        tmrSecurityScan: TTimer;
+        sbBottom: TStatusBar;
+        pClient: TPanel;
+        pnlTop: TPanel;
+        bAISettings: TButton;
+        cbAIModel: TComboBox;
+        cbAIHub: TComboBox;
+        pcSnippet: TPageControl;
+        tsSnippet: TTabSheet;
+        sMiddle: TSplitter;
+        pAIOverlay: TPanel;
+        pbLoading: TProgressBar;
+        mAIPrompt: TSynEdit;
+        mComment: TSynEdit;
+        tsMacros: TTabSheet;
+        mInfo: TMemo;
+        spTopLeft: TSplitter;
+        mContent: TSynEdit;
+        ActionList: TActionList;
+        actShowAIForm: TAction;
+        actConfigureAI: TAction;
+        procedure actConfigureAIExecute(Sender: TObject);
+        procedure actShowAIFormExecute(Sender: TObject);
+        procedure bAISettingsClick(Sender: TObject);
+        procedure FormDestroy(Sender: TObject);
+        procedure FormCreate(Sender: TObject);
+        function GetSnippet: TSnippetDTO;
+        procedure FormShow(Sender: TObject);
+        procedure ebCategorySearchChange(Sender: TObject);
+        procedure bOKClick(Sender: TObject);
+        procedure bCancelClick(Sender: TObject);
+        procedure cbAIHubChange(Sender: TObject);
+        procedure cbAIModelChange(Sender: TObject);
+        procedure cbIgnoreSecurityChecksClick(Sender: TObject);
+        procedure FormClose(Sender: TObject; var Action: TCloseAction);
+        procedure FormCloseQueryAI(Sender: TObject; var CanClose: Boolean);
+        procedure lvAllTagsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+        procedure lvAllTagsDragOver(Sender, Source: TObject; X, Y: Integer; State: TDragState; var Accept: Boolean);
+        procedure lvAllTagsDragDrop(Sender, Source: TObject; X, Y: Integer);
+        procedure lvAllTagsDblClick(Sender: TObject);
+        procedure mAIPromptKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+        procedure mContentChange(Sender: TObject);
+        procedure mContentKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+        procedure mContentProcessCommand(Sender: TObject; var Command: TSynEditorCommand; var Char: WideChar; Data: Pointer);
+        procedure SynCompletionProposalExecute(Kind: SynCompletionType; Sender: TObject; var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
+        procedure tmrReloadCommandsTimer(Sender: TObject);
+        procedure tmrSecurityScanTimer(Sender: TObject);
+    protected
+        procedure Loaded; override;
+    private
+        FIsAICanceled: Boolean;
+        FFirstShow: Boolean;
+
+        FSnippet: TSnippetDTO;
+        FOriginalSnippet: TOriginalSnippet;
+        FCategoryID: Integer;
+        FUserID: Integer;
+        FIsEditMode: Boolean;
+        FBasicCommands: TStringList;
+        FBlockEnter: Boolean;
+        FCurrentHighlighter: TCustomBashSyn;
+        FCompletionEngine: TBashCompletionEngine;
+        FAIService: IAIService;
+        FAIThread: TThread;
+        FAIInProgress: Boolean;
+
+        procedure ShowAIOverlay;
+        procedure ExecuteAICommand;
+        function IsAutocompleteVisible: Boolean;
+        function IsSnippetChanged: Boolean;
+        procedure SetSyntax;
+        procedure PopulateHubs;
+        procedure PopulateModels(HubIndex: Integer);
+        procedure UpdateSecurityStatusUI(IsSafe: Boolean; const Reason: string);
+        procedure AIThreadTerminated(Sender: TObject);
+    public
+        procedure Prepare(IsEditMode: Boolean; const Snippet: TSnippetDTO; CatID, UserID: Integer);
+
+        property Snippet: TSnippetDTO read FSnippet write FSnippet;
+        property CategoryID: Integer read FCategoryID write FCategoryID;
+        property UserID: Integer read FUserID write FUserID;
+
+        constructor Create(Owner: TComponent); override;
+        procedure DoInitialize; override;
+
+        class function ExecuteAdd(Owner: TComponent; AppContext: IAppContext; CategoryID, UserID: Integer): Boolean;
+        class function ExecuteEdit(Owner: TComponent; AppContext: IAppContext; var SnippetToEdit: TSnippetDTO): Boolean;
+    end;
+
+implementation
+
+uses
+    AI.TextCleaner,
+    AISettingsFormUI,
+    Common.Localization,
+    CommonHelpers,
+    Core.Entities.Tag,
+    MainFormUI,
+    SecurityScanner,
+    SynEditKeyCmds,
+    SynThemeAdapter,
+    System.DateUtils,
+    System.Generics.Collections,
+    System.SysUtils,
+    UI.Helpers,
+    UI.HoverHelpManager,
+    Winapi.ActiveX,
+    Winapi.Windows
+    ;
+
+{$R *.dfm}
+
+constructor TAddEditSnippetForm.Create(Owner: TComponent);
+begin
+    inherited Create(Owner);
+//    if Assigned(FSettingsManager) then
+//        FBasicCommands := FSettingsManager.BashAutocomplete;
+//
+//    // Теперь VCL может безопасно создавать форму и вызывать FormCreate/Loaded
+//    inherited Create(Owner);
+//
+//    // Создаем движок автокомплита
+//    FCompletionEngine := TBashCompletionEngine.Create(FBasicCommands);
+//    FCompletionEngine.LoadFromJsonFile(ResolvePath('extra-commands.json'));
+//
+//    // Сразу применяем подсветку синтаксиса до показа формы (не ждем таймер)
+//    SetSyntax;
+end;
+
+procedure TAddEditSnippetForm.actConfigureAIExecute(Sender: TObject);
+begin
+    bAISettingsClick(bAISettings);
+end;
+
+procedure TAddEditSnippetForm.actShowAIFormExecute(Sender: TObject);
+begin
+    ShowAIOverlay;
+end;
+
+procedure TAddEditSnippetForm.AIThreadTerminated(Sender: TObject);
+begin
+    // Этот код выполняется в главном потоке, когда фоновый поток завершился сам
+    if Sender = FAIThread then
+        FreeAndNil(FAIThread);
+end;
+
+procedure TAddEditSnippetForm.bAISettingsClick(Sender: TObject);
+begin
+    TAISettingsForm.ExecuteGlobal(Application, AppContext);
+    PopulateHubs;
+end;
+
+procedure TAddEditSnippetForm.FormDestroy(Sender: TObject);
+begin
+    // Исправление утечки TSynDropTarget:
+    // Принудительно отключаем OLE Drag&Drop до того, как уничтожатся Handle окон.
+    if mContent.HandleAllocated then RevokeDragDrop(mContent.Handle);
+    if mComment.HandleAllocated then RevokeDragDrop(mComment.Handle);
+    if mAIPrompt.HandleAllocated then RevokeDragDrop(mAIPrompt.Handle);
+
+    if Assigned(FCurrentHighlighter) then
+        FCurrentHighlighter.Free;
+
+    if Assigned(FCompletionEngine) then
+        FCompletionEngine.Free;
+
+    FIsAICanceled := True; // Сигнал потоку остановиться
+
+    if Assigned(FAIThread) then
+    begin
+        // Отвязываем событие, чтобы оно не "выстрелило" после ручного удаления потока
+        FAIThread.OnTerminate := nil;
+
+        // ВАЖНО: Если у FAIService есть метод прерывания HTTP-запроса
+        // (например, Abort, Disconnect или Cancel), обязательно вызвать его здесь!
+        // Иначе WaitFor заморозит форму, пока не истечет таймаут сети.
+        // FAIService.Abort;
+
+        // Очищаем очередь UI-задач (Queue) этого потока,
+        // чтобы они не попытались обратиться к уничтоженным контролам.
+        TThread.RemoveQueuedEvents(FAIThread);
+
+        // Дожидаемся корректного завершения и освобождаем память
+        FAIThread.WaitFor;
+        FreeAndNil(FAIThread);
+    end;
+end;
+
+procedure TAddEditSnippetForm.DoInitialize;
+begin
+    FBasicCommands := AppContext.SettingsManager.BashAutocomplete;
+
+    // Создаем движок автокомплита
+    FCompletionEngine := TBashCompletionEngine.Create(FBasicCommands);
+    FCompletionEngine.LoadFromJsonFile(ResolvePath('extra-commands.json'));
+
+    // Сразу применяем подсветку синтаксиса до показа формы (не ждем таймер)
+    SetSyntax;
+
+    // Регистрация подсказок
+    RegisterHelp(mContent, hipTopRight, 'Help.AddEditSnippet.mContent', hkCustomForm);
+    RegisterHelp(mComment, hipTopRight, 'Help.AddEditSnippet.mComment', hkCustomForm);
+    RegisterHelp(lvAllTags, hipTopRight, 'Help.AddEditSnippet.lvAllTags', hkCustomForm);
+    RegisterHelp(lvSelectedTags, hipTopRight, 'Help.AddEditSnippet.lvAllTags', hkCustomForm);
+end;
+
+function TAddEditSnippetForm.IsAutocompleteVisible: Boolean;
+begin
+    Result := Assigned(SynCompletionProposal.Form) and SynCompletionProposal.Form.Visible;
+end;
+
+function TAddEditSnippetForm.IsSnippetChanged: Boolean;
+var
+    TagsStr: string;
+    I: Integer;
+begin
+    TagsStr := '';
+    for I := 0 to lvSelectedTags.Items.Count - 1 do
+        TagsStr := TagsStr + ';' + lvSelectedTags.Items[I].Caption;
+
+    Result :=
+        (ebTitle.Text <> FOriginalSnippet.Title) or
+        (mContent.Text <> FOriginalSnippet.Content) or
+        (mComment.Text <> FOriginalSnippet.Comment) or
+        (TagsStr <> FOriginalSnippet.Tags);
+end;
+
+procedure TAddEditSnippetForm.bCancelClick(Sender: TObject);
+begin
+    if FIsEditMode and
+        IsSnippetChanged and
+        (Application.MessageBox(
+            PChar(TUIStateLoader.GetMessage('AddEditSnippet.CloseConfirmText')),
+            PChar(TUIStateLoader.GetMessage('Common.Warning')),
+            MB_YESNO) = IDNO ) then Exit;
+
+    ModalResult := mrCancel;
+end;
+
+procedure TAddEditSnippetForm.bOKClick(Sender: TObject);
+var
+    Snippet: TSnippetDTO;
+    TagIDs: TList<Integer>;
+    I: Integer;
+    TagArr: TArray<Integer>;
+    UnixText: string;
+begin
+    if Trim(ebTitle.Text) = '' then
+    begin
+        MessagesHandler.ShowInfo(TUIStateLoader.GetMessage('Snippet.TitleEmptyError'));
+        ModalResult := mrNone;
+        Exit;
+    end;
+
+    TagIDs := TList<Integer>.Create;
+    try
+        for i := 0 to lvSelectedTags.Items.Count - 1 do
+        begin
+            var TagID := Integer(lvSelectedTags.Items[i].Data);
+            if TagID > 0 then
+                TagIDs.Add(TagID);
+        end;
+        TagArr := TagIDs.ToArray;
+    finally
+        TagIDs.Free;
+    end;
+
+    UnixText := StringReplace(mContent.Text, #13#10, #10, [rfReplaceAll]);
+
+    Snippet := Default(TSnippetDTO);
+    Snippet.UserID := FUserID;
+    Snippet.CategoryID := FCategoryID;
+    Snippet.Title := ebTitle.Text;
+    Snippet.Content := UnixText;
+    Snippet.Comment := mComment.Text;
+    Snippet.IsSecurityCheckIgnored := cbIgnoreSecurityChecks.Checked;
+
+    try
+        if FIsEditMode then
+        begin
+            Snippet.ID := FSnippet.ID;
+            Snippet.CreatedAt := FSnippet.CreatedAt;
+            Snippet.UpdatedAt := DateTimeToUnix(Now);
+
+            // Передаем TagArr вместо пустых скобок []
+            AppContext.SnippetService.UpdateSnippet(Snippet, TagArr);
+            ModalResult := mrOk;
+        end
+        else
+        begin
+            Snippet.CreatedAt := DateTimeToUnix(Now);
+            Snippet.UpdatedAt := 0;
+
+            // Передаем TagArr вместо пустых скобок []
+            AppContext.SnippetService.CreateSnippet(Snippet, TagArr);
+            ModalResult := mrOk;
+        end;
+    except
+        on E: Exception do
+        begin
+            MessagesHandler.ShowError(TUIStateLoader.GetMessage('Snippet.SaveError', [E.Message]));
+            ModalResult := mrNone;
+        end;
+    end;
+end;
+
+procedure TAddEditSnippetForm.cbAIHubChange(Sender: TObject);
+var
+    SelectedHubIndex: Integer;
+begin
+    if cbAIHub.ItemIndex < 0 then
+        Exit;
+
+    // Получаем индекс хаба, который мы сохранили, и обновляем второй список
+    SelectedHubIndex := Integer(IntPtr(cbAIHub.Items.Objects[cbAIHub.ItemIndex]));
+    PopulateModels(SelectedHubIndex);
+end;
+
+procedure TAddEditSnippetForm.cbAIModelChange(Sender: TObject);
+var
+    HubIdx, ModIdx: Integer;
+    SelectedAI: TAIItem;
+begin
+    if (cbAIHub.ItemIndex < 0) or (cbAIModel.ItemIndex < 0) then
+        Exit;
+
+    // Получаем индексы
+    HubIdx := Integer(IntPtr(cbAIHub.Items.Objects[cbAIHub.ItemIndex]));
+    ModIdx := Integer(IntPtr(cbAIModel.Items.Objects[cbAIModel.ItemIndex]));
+
+    // Вытаскиваем выбранную модель
+    SelectedAI := AppContext.SettingsManager.Data.AISettings[HubIdx].Items[ModIdx];
+
+    // Сюда можно добавить код обновления UI. Например:
+    // lbAIInfo.Caption := Format('Лимит: %d токенов, Temp: %0.1f',
+    //   [SelectedAI.Params.MaxOutputTokens, SelectedAI.Params.Temperature]);
+end;
+
+procedure TAddEditSnippetForm.cbIgnoreSecurityChecksClick(Sender: TObject);
+begin
+    // Если пользователь снимает галочку, нам подтверждение не нужно — просто выходим
+    if not cbIgnoreSecurityChecks.Checked then
+        Exit;
+
+    // Если пользователь выбрал "Нет" (отказался):
+    if not MessagesHandler.AskWarning(
+        TUIStateLoader.GetMessage('AddEditSnippet.SecurityWarningText'),
+        TUIStateLoader.GetMessage('Common.Warning')
+    ) then begin
+        // Возвращаем состояние компонента назад без вызова зацикливания
+        cbIgnoreSecurityChecks.Checked := False;
+    end else begin
+        bOK.Enabled := True;
+    end;
+
+    // После валидации чекбокса принудительно пересчитываем статус кнопок
+    tmrSecurityScanTimer(nil);
+end;
+
+procedure TAddEditSnippetForm.PopulateHubs;
+var
+    I: Integer;
+begin
+    cbAIHub.Items.BeginUpdate;
+    try
+        cbAIHub.Clear;
+        for I := 0 to AppContext.SettingsManager.Data.AISettings.Count - 1 do
+        begin
+            // Сохраняем индекс хаба прямо в объект (без выделения памяти)
+            cbAIHub.Items.AddObject(AppContext.SettingsManager.Data.AISettings[I].Name, TObject(IntPtr(I)));
+        end;
+    finally
+        cbAIHub.Items.EndUpdate;
+    end;
+
+    // Если хабы есть, выбираем первый и сразу заполняем список моделей для него
+    if cbAIHub.Items.Count > 0 then
+    begin
+        cbAIHub.ItemIndex := 0;
+        PopulateModels(0);
+    end;
+end;
+
+procedure TAddEditSnippetForm.ebCategorySearchChange(Sender: TObject);
+begin
+    if (Length((Sender as TEdit).Text) < 3) then
+        Exit;
+end;
+
+class function TAddEditSnippetForm.ExecuteAdd(Owner: TComponent; AppContext: IAppContext; CategoryID, UserID: Integer): Boolean;
+var
+    Frm: TAddEditSnippetForm;
+    NewSnippet: TSnippetDTO;
+begin
+    // Используем локальную переменную Frm, а не глобальную форму!
+    Frm := TAddEditSnippetForm.Create(Owner);
+    try
+        Frm.Initialize(AppContext);
+        Frm.CategoryID := CategoryID;
+        Frm.UserID := UserID;
+
+        NewSnippet := Default(TSnippetDTO);
+        Frm.Prepare(False, NewSnippet, CategoryID, UserID);
+
+        Result := (Frm.ShowModal = mrOk);
+    finally
+        Frm.Free;
+    end;
+end;
+
+procedure TAddEditSnippetForm.ExecuteAICommand;
+var
+    Instruction, CodeContext: string;
+    IsSelection: Boolean;
+    HubIdx, ModIdx: Integer;
+    SelectedAI: TAIItem;
+begin
+    Instruction := string(mAIPrompt.Text).Trim;
+    if Instruction.IsEmpty then Exit;
+
+    if (cbAIHub.ItemIndex < 0) or (cbAIModel.ItemIndex < 0) then
+    begin
+        MessagesHandler.ShowError(TUIStateLoader.GetMessage('AddEditSnippet.AIChooseModelError'));
+        Exit;
+    end;
+
+    // Получаем реальные индексы из структуры
+    HubIdx := Integer(IntPtr(cbAIHub.Items.Objects[cbAIHub.ItemIndex]));
+    ModIdx := Integer(IntPtr(cbAIModel.Items.Objects[cbAIModel.ItemIndex]));
+
+    // Берем нужную модель из настроек
+    SelectedAI := AppContext.SettingsManager.Data.AISettings[HubIdx].Items[ModIdx];
+
+    // Создаем сервис с её параметрами
+    FAIService := TYandexAIService.Create(
+        SelectedAI.APIKey,
+        SelectedAI.Folder,
+        SelectedAI.Model,
+        SelectedAI.Agent
+    );
+
+    IsSelection := mContent.SelText <> '';
+    if IsSelection then
+        CodeContext := mContent.SelText
+    else
+        CodeContext := mContent.Text;
+
+    pbLoading.Visible := True;
+    mAIPrompt.Enabled := False;
+    FIsAICanceled := False; // Сброс перед стартом
+    FAIInProgress := True;
+
+    FAIThread := TThread.CreateAnonymousThread(
+        procedure
+        var
+            NewCode: string;
+            ErrorMsg: string;
+        begin
+            try
+                NewCode := FAIService.AskAssistant(Instruction, CodeContext);
+                NewCode := TAITextCleaner.ExtractPureCode(NewCode);
+            except
+                on E: Exception do
+                    ErrorMsg := E.Message;
+            end;
+
+            if FIsAICanceled then Exit;
+
+            TThread.Synchronize(nil, TThreadProcedure(
+                procedure
+                 begin
+                     FAIInProgress := False;
+
+                     if FIsAICanceled then Exit;
+
+                     pbLoading.Visible := False;
+                    mAIPrompt.Enabled := True;
+                    pAIOverlay.Visible := False;
+
+                    if ErrorMsg <> '' then
+                        MessagesHandler.ShowError(TUIStateLoader.GetMessage('Common.GeneralError', [ErrorMsg]))
+                    else
+                    begin
+                        mContent.BeginUpdate;
+                        try
+                            if IsSelection then
+                            begin
+                                // Если было выделение — заменяем его
+                                mContent.SelText := NewCode;
+                            end
+                            else
+                            begin
+                                // КАСКАДНЫЙ ЗАПРОС (Вставка в позицию курсора):
+                                // Если мы вставляем в существующий текст, добавим красивые отступы,
+                                // чтобы новый код не слипался со старым
+                                if (mContent.Text <> '') and (mContent.CaretX > 1) then
+                                    NewCode := sLineBreak + NewCode;
+
+                                mContent.SelText := NewCode;
+                            end;
+                        finally
+                            mContent.EndUpdate;
+                        end;
+                    end;
+                    mContent.SetFocus;
+                end));
+        end);
+    // 3. Отключаем автоматическое удаление
+    FAIThread.FreeOnTerminate := False;
+
+    // 4. Назначаем обработчик для штатного завершения
+    FAIThread.OnTerminate := AIThreadTerminated;
+
+    // 5. Теперь запускаем
+    FAIThread.Start;
+end;
+
+class function TAddEditSnippetForm.ExecuteEdit(Owner: TComponent; AppContext: IAppContext; var SnippetToEdit: TSnippetDTO): Boolean;
+var
+    Frm: TAddEditSnippetForm;
+begin
+    Frm := TAddEditSnippetForm.Create(Owner);
+    try
+        Frm.LockDrawing;  // Попытка уменьшить мерцание формы со стилями VCL
+        try
+            Frm.Initialize(AppContext);
+            Frm.Prepare(True, SnippetToEdit, SnippetToEdit.CategoryID, SnippetToEdit.UserID);
+        finally
+            Frm.UnlockDrawing;  // Попытка уменьшить мерцание формы со стилями VCL
+        end;
+        Result := (Frm.ShowModal = mrOk);
+    finally
+        Frm.Free;
+    end;
+end;
+
+procedure TAddEditSnippetForm.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+    // Сигнализируем фоновому потоку, что форма закрывается и UI трогать нельзя
+    FIsAICanceled := True;
+end;
+
+procedure TAddEditSnippetForm.FormCloseQueryAI(Sender: TObject; var CanClose: Boolean);
+begin
+    // Фоновый AI-поток захватывает Self и через Synchronize трогает контролы:
+    // закрытие формы во время запроса = обращение к освобождённой форме
+    CanClose := not FAIInProgress;
+    if not CanClose then
+        MessageBeep(MB_ICONWARNING);
+end;
+
+procedure TAddEditSnippetForm.FormCreate(Sender: TObject);
+begin
+    FFirstShow := True;
+
+    ebTitle.EnableHintText := True;
+    ebTitle.HintText := TUIStateLoader.GetMessage('AddEditSnippet.EnterSnippetTextHere');
+
+    FIsEditMode := False;
+    FSnippet := Default(TSnippetDTO);
+
+    lvSelectedTags.StateImages := MainFormUI.MainForm.vilTags;
+    lvAllTags.StateImages := MainFormUI.MainForm.vilTags;
+
+    SynCompletionProposal.Options := SynCompletionProposal.Options + [scoUseInsertList];
+
+    // Закрытие блокируется, пока выполняется AI-запрос (см. FormCloseQueryAI)
+    OnCloseQuery := FormCloseQueryAI;
+end;
+
+procedure TAddEditSnippetForm.FormShow(Sender: TObject);
+begin
+    // Вся тяжелая работа уже выполнена в памяти
+    tmrReloadCommands.Enabled := True;
+    ebTitle.SetFocus;
+end;
+
+function TAddEditSnippetForm.GetSnippet: TSnippetDTO;
+begin
+    Result := FSnippet;
+end;
+
+procedure TAddEditSnippetForm.Loaded;
+begin
+    inherited;
+end;
+
+procedure TAddEditSnippetForm.lvAllTagsDblClick(Sender: TObject);
+var
+    SrcLV, DstLV: TListView;
+    Item, NewItem: TListItem;
+begin
+    SrcLV := Sender as TListView;
+    if SrcLV = lvAllTags then
+        DstLV := lvSelectedTags
+    else
+        DstLV := lvAllTags;
+
+    Item := SrcLV.Selected;
+    if Assigned(Item) then
+    begin
+        SrcLV.Items.BeginUpdate;
+        DstLV.Items.BeginUpdate;
+        try
+            NewItem := DstLV.Items.Add;
+            NewItem.Caption := Item.Caption;
+            NewItem.Data := Item.Data;
+            NewItem.StateIndex := Item.StateIndex;
+            Item.Delete;
+        finally
+            SrcLV.Items.EndUpdate;
+            DstLV.Items.EndUpdate;
+        end;
+    end;
+end;
+
+procedure TAddEditSnippetForm.lvAllTagsDragDrop(Sender, Source: TObject; X, Y: Integer);
+var
+    SrcLV, DstLV: TListView;
+    Item, NewItem: TListItem;
+    I: Integer;
+    ItemsToMove: TList<TListItem>;
+begin
+    SrcLV := Source as TListView;
+    DstLV := Sender as TListView;
+
+    if SrcLV = DstLV then
+        Exit;
+
+    ItemsToMove := TList<TListItem>.Create;
+    try
+        for i := 0 to SrcLV.Items.Count - 1 do
+            if SrcLV.Items[i].Selected then
+                ItemsToMove.Add(SrcLV.Items[i]);
+
+        SrcLV.Items.BeginUpdate;
+        DstLV.Items.BeginUpdate;
+        try
+            for Item in ItemsToMove do
+            begin
+                NewItem := DstLV.Items.Add;
+                NewItem.Caption := Item.Caption;
+                NewItem.Data := Item.Data;
+                if DstLV = lvSelectedTags then
+                    NewItem.StateIndex := 1
+                else
+                    NewItem.StateIndex := 0;
+            end;
+
+            for i := ItemsToMove.Count - 1 downto 0 do
+                ItemsToMove[i].Delete;
+        finally
+            SrcLV.Items.EndUpdate;
+            DstLV.Items.EndUpdate;
+        end;
+    finally
+        ItemsToMove.Free;
+    end;
+end;
+
+procedure TAddEditSnippetForm.lvAllTagsDragOver(Sender, Source: TObject; X, Y: Integer; State: TDragState; var Accept: Boolean);
+begin
+    Accept := (Source = lvAllTags) or (Source = lvSelectedTags);
+    if Sender = Source then
+        Accept := False;
+end;
+
+procedure TAddEditSnippetForm.lvAllTagsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+    LV: TListView;
+    Item: TListItem;
+begin
+    if Button = mbLeft then
+    begin
+        LV := Sender as TListView;
+        Item := LV.GetItemAt(X, Y);
+        if Assigned(Item) then
+        begin
+            if not Item.Selected then
+            begin
+                if not (ssCtrl in Shift) then
+                    LV.ClearSelection;
+                Item.Selected := True;
+            end;
+            LV.BeginDrag(False, 5);
+        end;
+    end;
+end;
+
+procedure TAddEditSnippetForm.mAIPromptKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+    if Key = VK_ESCAPE then
+    begin
+        pAIOverlay.Visible := False;
+        mContent.SetFocus;
+        Key := 0;
+    end
+    else if Key = VK_RETURN then
+    begin
+        ExecuteAICommand;
+        Key := 0;
+    end;
+end;
+
+procedure TAddEditSnippetForm.mContentChange(Sender: TObject);
+begin
+    // Сбрасываем таймер при каждом изменении текста.
+    // Сканер сработает только когда пользователь остановится на 400 мс.
+    tmrSecurityScan.Enabled := False;
+    tmrSecurityScan.Enabled := True;
+end;
+
+procedure TAddEditSnippetForm.mContentKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+    if (Key = VK_RETURN) and IsAutocompleteVisible then
+    begin
+        FBlockEnter := True;
+        Exit;
+    end;
+end;
+
+procedure TAddEditSnippetForm.mContentProcessCommand(Sender: TObject; var Command: TSynEditorCommand; var Char: WideChar; Data: Pointer);
+begin
+    if FBlockEnter then
+    begin
+        if (Command = ecLineBreak) or ((Command = ecChar) and (Char = #13)) then
+        begin
+            Command := ecNone;
+            Char := #0;
+        end;
+        FBlockEnter := False;
+        Exit;
+    end;
+
+    if IsAutocompleteVisible then
+    begin
+        if (Command = ecUp) or (Command = ecDown) or (Command = ecPageUp) or (Command = ecPageDown) then
+        begin
+            Command := ecNone;
+        end;
+    end;
+end;
+
+procedure TAddEditSnippetForm.PopulateModels(HubIndex: Integer);
+var
+    I: Integer;
+begin
+    cbAIModel.Items.BeginUpdate;
+    try
+        // Берем модели только из выбранного провайдера
+        for I := 0 to AppContext.SettingsManager.Data.AISettings[HubIndex].Items.Count - 1 do
+        begin
+            cbAIModel.Items.AddObject(AppContext.SettingsManager.Data.AISettings[HubIndex].Items[I].Name, TObject(IntPtr(I)));
+        end;
+    finally
+        cbAIModel.Items.EndUpdate;
+    end;
+
+    if cbAIModel.Items.Count > 0 then
+        cbAIModel.ItemIndex := 0;
+end;
+
+procedure TAddEditSnippetForm.Prepare(IsEditMode: Boolean; const Snippet: TSnippetDTO; CatID, UserID: Integer);
+var
+    I: Integer;
+    SnippetTags: TArray<TTagDTO>;
+    AllTags: TArray<TTagDTO>;
+    Tag: TTagDTO;
+begin
+    // 1. Принимаем входящие данные
+    FIsEditMode := IsEditMode;
+    FSnippet := Snippet;
+    FCategoryID := CatID;
+    FUserID := UserID;
+
+    FIsAICanceled := False;
+
+    // 2. Применяем темы ДО показа на экране
+    TSynThemeAdapter.ApplyTheme(mContent);
+    TSynThemeAdapter.ApplyTheme(mComment);
+    TSynThemeAdapter.ApplyTheme(mAIPrompt);
+
+    // 3. Заполняем комбобоксы ДО показа (Никаких белых вспышек)
+    PopulateHubs;
+
+    // 4. Заполняем теги и списки
+    lvAllTags.Items.BeginUpdate;
+    lvSelectedTags.Items.BeginUpdate;
+    try
+        if Assigned(AppContext.TagService) then
+        begin
+            AllTags := AppContext.TagService.GetAllTags;
+            TUIHelpers.FillTagList(lvAllTags, AllTags);
+        end;
+        lvSelectedTags.Items.Clear;
+
+        if FIsEditMode then
+        begin
+            Caption := TUIStateLoader.GetMessage('Snippet.CaptionEdit');
+
+            FOriginalSnippet.Title := FSnippet.Title;
+            FOriginalSnippet.Content := FSnippet.Content;
+            FOriginalSnippet.Comment := FSnippet.Comment;
+            FOriginalSnippet.Tags := '';
+
+            ebTitle.Text := FSnippet.Title;
+            mContent.Text := FSnippet.Content;
+            mComment.Text := FSnippet.Comment;
+
+            if Assigned(AppContext.TagService) then
+            begin
+                SnippetTags := AppContext.TagService.GetSnippetTags(FSnippet.ID);
+                for Tag in SnippetTags do
+                begin
+                    for i := lvAllTags.Items.Count - 1 downto 0 do
+                    begin
+                        if Integer(lvAllTags.Items[i].Data) = Tag.ID then
+                        begin
+                            var Item := lvSelectedTags.Items.Add;
+                            Item.Caption := Tag.Name;
+                            Item.Data := Pointer(Integer(Tag.ID));
+                            Item.StateIndex := 1;
+                            lvAllTags.Items.Delete(i);
+
+                            FOriginalSnippet.Tags := FOriginalSnippet.Tags + ';' + Tag.Name;
+                            Break;
+                        end;
+                    end;
+                end;
+            end;
+        end
+        else
+        begin
+            Caption := TUIStateLoader.GetMessage('Snippet.CaptionAdd');
+            FOriginalSnippet.Title := '';
+            FOriginalSnippet.Content := '';
+            FOriginalSnippet.Comment := '';
+            FOriginalSnippet.Tags := '';
+
+            ebTitle.Text := '';
+            mContent.Text := '';
+            mComment.Text := '';
+        end;
+    finally
+        lvSelectedTags.Items.EndUpdate;
+        lvAllTags.Items.EndUpdate;
+    end;
+end;
+
+procedure TAddEditSnippetForm.SetSyntax;
+begin
+    if Assigned(FCurrentHighlighter) then
+        FreeAndNil(FCurrentHighlighter);
+
+    FCurrentHighlighter := TCustomBashSyn.Create(nil);
+
+    if Assigned(FBasicCommands) then
+        TCustomBashSyn(FCurrentHighlighter).ExtraKeywords.AddStrings(FBasicCommands);
+
+    if Assigned(FCompletionEngine) then
+        FCompletionEngine.ExportKeywords(FCurrentHighlighter.ExtraKeywords);
+
+    mContent.Highlighter := FCurrentHighlighter;
+end;
+
+procedure TAddEditSnippetForm.ShowAIOverlay;
+begin
+    // Устанавливаем стиль прогресс-бара для красоты
+    pbLoading.Style := pbstMarquee;
+    pbLoading.MarqueeInterval := 30; // Скорость бара
+    pbLoading.Visible := False;
+
+    // Просто показываем панель, она уже привязана к форме
+    pAIOverlay.Visible := True;
+    pAIOverlay.BringToFront;
+    mAIPrompt.SetFocus;
+end;
+
+procedure TAddEditSnippetForm.SynCompletionProposalExecute(Kind: SynCompletionType; Sender: TObject; var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
+var
+    LineText: string;
+begin
+    LineText := Copy(mContent.LineText, 1, mContent.CaretX - 1);
+    FCompletionEngine.FillProposals(LineText, SynCompletionProposal.ItemList, SynCompletionProposal.InsertList, CanExecute);
+end;
+
+procedure TAddEditSnippetForm.tmrReloadCommandsTimer(Sender: TObject);
+begin
+    if FCompletionEngine.CheckForUpdates then
+    begin
+        ShowSimpleToast(TUIStateLoader.GetMessage('AddEditSnippet.AutocompleteUpdated'));
+        SetSyntax;
+    end;
+end;
+
+procedure TAddEditSnippetForm.tmrSecurityScanTimer(Sender: TObject);
+var
+    Security: ISecurityScanner;
+    WarningReason: string;
+    IsSafe: Boolean;
+begin
+    tmrSecurityScan.Enabled := False; // Выключаем таймер, чтобы он не циклил
+
+    Security := TSecurityScanner.Create;
+    // Проверяем текст из нашего Memo
+    IsSafe := not Security.HasSensitiveData(mContent.Text, WarningReason);
+
+    // Обновляем визуальное состояние UI
+    UpdateSecurityStatusUI(IsSafe, WarningReason);
+end;
+
+procedure TAddEditSnippetForm.UpdateSecurityStatusUI(IsSafe: Boolean; const Reason: string);
+begin
+    // Если стоит галочка "Игнорировать", то UI всегда разрешает сохранение
+    if cbIgnoreSecurityChecks.Checked then
+    begin
+        sbBottom.SimpleText := TUIStateLoader.GetMessage('AddEditSnippet.SecurityDisabledStatus');
+        bOK.Enabled := True;
+        Exit;
+    end;
+
+    if IsSafe then
+    begin
+        sbBottom.SimpleText := TUIStateLoader.GetMessage('AddEditSnippet.SecuritySafeStatus');
+        bOK.Enabled := True;
+    end
+    else
+    begin
+        // Найдена угроза, а исключение не настроено
+        sbBottom.SimpleText := TUIStateLoader.GetMessage('AddEditSnippet.SecurityThreatStatus', [Reason]);
+        ShowSimpleToast(
+            TUIStateLoader.GetMessage('AddEditSnippet.SecurityToastFound', [Reason]),
+            TUIStateLoader.GetMessage('AddEditSnippet.SecurityToastTitle')
+        );
+        // Блокируем кнопку сохранения.
+        bOK.Enabled := False;
+    end;
+end;
+
+end.

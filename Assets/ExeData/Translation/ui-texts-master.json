@@ -1,0 +1,1361 @@
+{
+  "MainForm": {
+    "Caption": "SSH Snippets Keeper",
+    "ebSearch": {
+      "TextHint": "Введи что-нибудь для поиска по базе данных..."
+    },
+    "rbText": {
+      "Caption": "Текстовый поиск"
+    },
+    "rbFTS": {
+      "Caption": "FTS5 поиск"
+    },
+    "cbUser": {
+      "Hint": "Текущее пространство. Нажми ⚙ для управления пространствами."
+    },
+    "bManageWorkspaces": {
+      "Hint": "Позволяет визуально управлять пространствами."
+    },
+    "tvCategories": {},
+    "nFile": {
+      "Caption": "Файл"
+    },
+    "nCreateDatabase": {
+      "Caption": "Создать базу данных"
+    },
+    "nOpenDatabase": {
+      "Caption": "Открыть базу данных"
+    },
+    "nCloseDatabase": {
+      "Caption": "Закрыть базу данных"
+    },
+    "nSettings": {
+      "Caption": "Настройки"
+    },
+    "nExit": {
+      "Caption": "Выход"
+    },
+    "nDataManagament": {
+      "Caption": "Данные"
+    },
+    "nCategories": {
+      "Caption": "Категории"
+    },
+    "nSnippets": {
+      "Caption": "Сниппеты"
+    },
+    "nTags": {
+      "Caption": "Теги"
+    },
+    "nAddCategory": {
+      "Caption": "Добавить"
+    },
+    "nDeleteCategory": {
+      "Caption": "Удалить"
+    },
+    "nEditCategory": {
+      "Caption": "Редактировать"
+    },
+    "nAddSnippet": {
+      "Caption": "Добавить"
+    },
+    "nEditSnippet": {
+      "Caption": "Редактировать"
+    },
+    "nDeleteSnippet": {
+      "Caption": "Удалить"
+    },
+    "nAddTag": {
+      "Caption": "Добавить"
+    },
+    "nEditTag": {
+      "Caption": "Изменить"
+    },
+    "nDeleteTag": {
+      "Caption": "Удалить"
+    },
+    "nTerminals": {
+      "Caption": "Терминалы"
+    },
+    "nTools": {
+      "Caption": "Инструменты"
+    },
+    "nPasswordGenerator": {
+      "Caption": "Генератор паролей"
+    },
+    "nSearch": {
+      "Caption": "Поиск по базе данных"
+    },
+    "nCronGenerator": {
+      "Caption": "Генератор Cron"
+    },
+    "nEpochConverter": {
+      "Caption": "Конвертер эпох"
+    },
+    "nNetworkCalculator": {
+      "Caption": "IP/CIDR Калькулятор"
+    },
+    "nChmodCalculator": {
+      "Caption": "Калькулятор chmod"
+    },
+    "nArchiveBuilder": {
+      "Caption": "Команды архивации"
+    },
+    "nSyncDatabase": {
+      "Caption": "Синхронизировать базу данных"
+    }
+  },
+  "TagEditorForm": {
+    "Caption": "Редактор тегов",
+    "nActions": {
+      "Caption": "Действия"
+    },
+    "nTagAdd": {
+      "Caption": "Добавить"
+    },
+    "nTagDelete": {
+      "Caption": "Удалить"
+    },
+    "nTagRename": {
+      "Caption": "Переименовать"
+    },
+    "bOK": {
+      "Caption": "ОК"
+    },
+    "bCancel": {
+      "Caption": "Отмена"
+    }
+  },
+  "InputForm": {
+    "Caption": "Ввод значения",
+    "bOK": {
+      "Caption": "ОК"
+    },
+    "bCancel": {
+      "Caption": "Отмена"
+    },
+    "lbPrompt": {
+      "Caption": "Введи значение:"
+    }
+  },
+  "AddEditSnippetForm": {
+    "Caption": "SSH Snippets Keeper - Добавить/редактировать сниппет",
+    "ebTitle": {
+      "Text": ""
+    },
+    "mContent": {
+      "TextHint": "Код сниппета вводи здесь..."
+    },
+    "mComment": {
+      "TextHint": "Комментарий к сниппету вводи сюда...."
+    },
+    "bOK": {
+      "Caption": "ОК"
+    },
+    "bCancel": {
+      "Caption": "Отмена"
+    },
+    "nAI": {
+      "Caption": "ИИ-ассистент"
+    },
+    "nShowAIPrompt": {
+      "Caption": "Вызвать ИИ"
+    },
+    "nAISettings": {
+      "Caption": "Конфигурировать ИИ"
+    },
+    "lbCaption": {
+      "Caption": "Имя сниппета"
+    },
+    "lbAllTags": {
+      "Caption": "Доступные теги"
+    },
+    "lbSelectedTags": {
+      "Caption": "Выбранные теги"
+    },
+    "cbIgnoreSecurityChecks": {
+      "Caption": "Доверять этому сниппету (отключить проверку безопасности)"
+    },
+    "tsSnippet": {
+      "Caption": "Содержимое сниппета"
+    },
+    "tsMacros": {
+      "Caption": "Макросы"
+    },
+    "mInfo": {
+      "Text": "Тестовые макросы на текущий момент:\n{SLEEP N} - Задержка выполнения на N миллисекунд.\n{ENTER} - Отправка нажатия клавиши ENTER.\n{SENDKEY X} - Отправка символа X в целевое окно.\n{INPUT[ТИП:ЗНАЧЕНИЕ-ПО-УМОЛЧАНИЮ] ИМЯ} - Отобразить окно ввода текста с подстановкой в место расположения макроса. Примеры:\n  {INPUT Имя}\n  {INPUT[STRING:test string] Имя}\n  {INPUT[NUMBER:100] Размер}\n  {INPUT[FLOAT:3.14] Размер}\n  {INPUT[Hex:FF] Цвет}\n  {INPUT[Password] Пароль}\n  {INPUT[DATE:2026-01-31] Дата}\n  {INPUT[Confirm] Текст для пользователя} - Приостановить выполнение и ждать подтверждения от пользователя.\n\n..."
+    }
+  },
+  "AISettingsForm": {
+    "Caption": "Настройки ИИ",
+    "nFile": {
+      "Caption": "Файл"
+    },
+    "nSave": {
+      "Caption": "Сохранить"
+    },
+    "nProvider": {
+      "Caption": "Провайдер"
+    },
+    "nProviderCreate": {
+      "Caption": "Создать"
+    },
+    "nProviderDelete": {
+      "Caption": "Удалить"
+    },
+    "nProviderEdit": {
+      "Caption": "Изменить"
+    },
+    "nModel": {
+      "Caption": "Модель"
+    },
+    "nModelCreate": {
+      "Caption": "Создать"
+    },
+    "nModelDelete": {
+      "Caption": "Удалить"
+    },
+    "nModelEdit": {
+      "Caption": "Изменить"
+    },
+    "lbHubName": {
+      "Text": "Имя группы"
+    },
+    "lbHubURL": {
+      "Text": "URL группы"
+    },
+    "lbHubComment": {
+      "Text": "Комментарий"
+    },
+    "lbModelName": {
+      "Text": "Имя модели"
+    },
+    "lbAPIKey": {
+      "Text": "API-ключ"
+    },
+    "lbFolderID": {
+      "Text": "Каталог"
+    },
+    "lbModelPath": {
+      "Text": "Модель"
+    },
+    "lbSystemPrompt": {
+      "Text": "Системный промпт"
+    },
+    "lbAgentID": {
+      "Text": "ID Агента"
+    },
+    "lbTemperature": {
+      "Text": "Температура"
+    },
+    "lbMaxTokens": {
+      "Text": "Ограничение на токены"
+    }
+  },
+  "ChooseTerminalWindow": {
+    "Caption": "Выбор терминала"
+  },
+  "WorkspaceManagerForm": {
+    "Caption": "Управление пространствами",
+    "nWorkspaces": {
+      "Caption": "Пространства"
+    },
+    "nWorkspaceAdd": {
+      "Caption": "Добавить"
+    },
+    "nWorkspaceDelete": {
+      "Caption": "Удалить"
+    },
+    "nWorkspaceRename": {
+      "Caption": "Переименовать"
+    },
+    "bOK": {
+      "Caption": "ОК"
+    },
+    "bCancel": {
+      "Caption": "Отмена"
+    },
+    "lvWorkspaces": {
+      "Columns": {
+        "0": "Имя пространства"
+      }
+    }
+  },
+  "PasswordGenForm": {
+    "Caption": "Генератор паролей",
+    "lbLength": {
+      "Caption": "Длина пароля"
+    },
+    "lbEntropy": {
+      "Caption": "Энтропия"
+    },
+    "lbPresets": {
+      "Caption": "Шаблоны"
+    },
+    "cbUnique": {
+      "Caption": "Уникальные символы"
+    },
+    "bGenerate": {
+      "Caption": "Сгенерировать"
+    },
+    "tsHistory": {
+      "Caption": "История"
+    },
+    "tsCustomSettings": {
+      "Caption": "Дополнительно"
+    },
+    "tsBulkMode": {
+      "Caption": "Массовая генерация"
+    },
+    "lbBulkCount": {
+      "Caption": "Количество"
+    },
+    "bBulkGenerate": {
+      "Caption": "Сгенерировать"
+    },
+    "bExport": {
+      "Caption": "Экспорт"
+    },
+    "nCopyToClipboard": {
+      "Caption": "Копировать в буфер обмена"
+    },
+    "nSaveToFile": {
+      "Caption": "Сохранить в файл"
+    },
+    "nCopyNormal": {
+      "Caption": "Копировать обычный пароль"
+    },
+    "nCopyBcrypt": {
+      "Caption": "Скопировать для .htpasswd (Bcrypt)"
+    },
+    "cbLowercase": {
+      "Caption": "Нижний регистр"
+    },
+    "cbUppercase": {
+      "Caption": "Верхний регистр"
+    },
+    "cbNumbers": {
+      "Caption": "Цифры"
+    },
+    "cbSymbols": {
+      "Caption": "Спецсимволы"
+    },
+    "lbInclude": {
+      "Caption": "Включаемые символы"
+    },
+    "ldExclude": {
+      "Caption": "Исключаемые символы"
+    },
+    "lvHistory": {
+      "Columns": {
+        "0": "Дата",
+        "1": "Время",
+        "2": "Пароль",
+        "3": "Шаблон",
+        "4": "Энтропия"
+      }
+    }
+  },
+  "QuickSearchForm": {
+    "ebQuickSearch": {
+      "TextHint": "Введи что-нибудь..."
+    },
+    "rbText": {
+      "Caption": "Текстовый поиск"
+    },
+    "rbFTS": {
+      "Caption": "FTS5 поиск"
+    }
+  },
+  "CronGenForm": {
+    "Caption": "Генератор и парсер Cron-задач",
+    "lbTitle": {
+      "Caption": "Cron-выражение:"
+    },
+    "bCopy": {
+      "Caption": "Копировать"
+    },
+    "tsMinutes": {
+      "Caption": "Минуты"
+    },
+    "tsHours": {
+      "Caption": "Часы"
+    },
+    "tsDaysOfMonth": {
+      "Caption": "Дни месяца"
+    },
+    "tsMonths": {
+      "Caption": "Месяцы"
+    },
+    "tsDaysOfWeek": {
+      "Caption": "Дни недели"
+    },
+    "rbMinEvery": {
+      "Caption": "Каждую минуту (*)"
+    },
+    "rbMinStep": {
+      "Caption": "Шаг (каждые):"
+    },
+    "rbMinRange": {
+      "Caption": "Диапазон с:"
+    },
+    "rbMinSpec": {
+      "Caption": "Указать точные значения:"
+    },
+    "rbHourEvery": {
+      "Caption": "Каждый час (*)"
+    },
+    "rbHourStep": {
+      "Caption": "Шаг (каждые):"
+    },
+    "rbHourRange": {
+      "Caption": "Диапазон с:"
+    },
+    "rbHourSpec": {
+      "Caption": "Указать точные значения:"
+    },
+    "rbDomEvery": {
+      "Caption": "Каждый день (*)"
+    },
+    "rbDomStep": {
+      "Caption": "Шаг (каждые):"
+    },
+    "rbDomRange": {
+      "Caption": "Диапазон с:"
+    },
+    "rbDomSpec": {
+      "Caption": "Указать точные значения:"
+    },
+    "rbMonEvery": {
+      "Caption": "Каждый месяц (*)"
+    },
+    "rbMonStep": {
+      "Caption": "Шаг (каждые):"
+    },
+    "rbMonRange": {
+      "Caption": "Диапазон с:"
+    },
+    "rbMonSpec": {
+      "Caption": "Указать точные значения:"
+    },
+    "rbDowEvery": {
+      "Caption": "Любой день недели (*)"
+    },
+    "rbDowStep": {
+      "Caption": "Шаг (каждые):"
+    },
+    "rbDowRange": {
+      "Caption": "Диапазон с:"
+    },
+    "rbDowSpec": {
+      "Caption": "Указать точные значения:"
+    }
+  },
+  "EpochConverterForm": {
+    "Caption": "Конвертер эпох",
+    "gbParse": {
+      "Caption": "Исходный текст/лог"
+    },
+    "lvParsed": {
+      "Columns": {
+        "0": "Timestamp",
+        "1": "Локальное время",
+        "2": "Относительно"
+      }
+    },
+    "mEpoch": {
+      "Text": ""
+    },
+    "bNow": {
+      "Caption": "Сейчас"
+    },
+    "ebISO": {
+      "Caption": ""
+    },
+    "ebLocal": {
+      "Caption": ""
+    },
+    "ebSourceTime": {
+      "Caption": ""
+    },
+    "ebUTC": {
+      "Caption": ""
+    },
+    "lbISO": {
+      "Caption": "ISO"
+    },
+    "lbDetectedFormat": {
+      "Caption": ""
+    },
+    "lbLocal": {
+      "Caption": "Локальное"
+    },
+    "lbRelative": {
+      "Caption": ""
+    },
+    "lbSourceTime": {
+      "Caption": "Исходное"
+    },
+    "lbUTC": {
+      "Caption": "UTC"
+    },
+    "nCut": {
+      "Caption": "Вырезать"
+    },
+    "nCopy": {
+      "Caption": "Локальное"
+    },
+    "nPaste": {
+      "Caption": "Вставить"
+    },
+    "nSelectAll": {
+      "Caption": "Выделить всё"
+    },
+    "nToggleBookmark": {
+      "Caption": "Создать закладку"
+    },
+    "nBookmarks": {
+      "Caption": "Перейти к закладке"
+    }
+  },
+  "NetworkForm": {
+    "Caption": "IP/CIDR Калькулятор",
+    "gbTop": {
+      "Caption": "Ввод данных"
+    },
+    "cbIPInput": {
+      "TextHint": "Введи IP, подсеть или CIDR (пример: 192.168.1.1/24)"
+    },
+    "tsInfo": {
+      "Caption": "Информация"
+    },
+    "tsVLSM": {
+      "Caption": "Разбиение (VLSM)"
+    },
+    "lbVLSMMask": {
+      "Caption": "Новая маска:"
+    },
+    "lvVLSM": {
+      "Columns": {
+        "0": "#",
+        "1": "Subnet",
+        "2": "Hosts range",
+        "3": "Broadcast"
+      }
+    },
+    "ledNetworkAddress": {
+      "EditLabel.Caption": "Network Address (Адрес сети)"
+    },
+    "ledHostRange": {
+      "EditLabel.Caption": "Usable Host Range (Диапазон хостов)"
+    },
+    "ledBroadcastAddress": {
+      "EditLabel.Caption": "Broadcast (Широковещательный)"
+    },
+    "ledUsableHosts": {
+      "EditLabel.Caption": "Total Usable Hosts (Кол-во хостов)"
+    },
+    "ledNetmask": {
+      "EditLabel.Caption": "Netmask (Маска подсети)"
+    },
+    "ledWildcardMask": {
+      "EditLabel.Caption": "Wildcard Mask (Обратная маска)"
+    },
+    "ledNetworkType": {
+      "EditLabel.Caption": "Network Type (Тип сети)"
+    },
+    "ledBinaryView": {
+      "EditLabel.Caption": "Binary View (Двоичный вид)"
+    },
+    "bCopyAll": {
+      "Caption": "📄 Скопировать всё"
+    },
+    "bCopyVLSM": {
+      "Caption": "📄 Копировать"
+    },
+    "lbVLSMHostCount": {
+      "Caption": ""
+    }
+  },
+  "ChmodForm": {
+    "Caption": "Калькулятор прав доступа (chmod)",
+    "cbUr": {
+      "Caption": "Чтение (r)"
+    },
+    "cbUw": {
+      "Caption": "Запись (w)"
+    },
+    "cbUx": {
+      "Caption": "Выполнение (x)"
+    },
+    "cbGr": {
+      "Caption": "Чтение (r)"
+    },
+    "cbGw": {
+      "Caption": "Запись (w)"
+    },
+    "cbGx": {
+      "Caption": "Выполнение (x)"
+    },
+    "cbOr": {
+      "Caption": "Чтение (r)"
+    },
+    "cbOw": {
+      "Caption": "Запись (w)"
+    },
+    "cbOx": {
+      "Caption": "Выполнение (x)"
+    },
+    "cbSuid": {
+      "Caption": "SUID"
+    },
+    "cbSgid": {
+      "Caption": "SGID"
+    },
+    "cbSticky": {
+      "Caption": "Sticky"
+    },
+    "cbIsDir": {
+      "Caption": "Это директория (Directory)"
+    },
+    "cbRecursive": {
+      "Caption": "Рекурсивно (-R)"
+    },
+    "cbSudo": {
+      "Caption": "sudo"
+    },
+    "cbSmartExecute": {
+      "Caption": "Умный X для директорий (+X)"
+    },
+    "cbSeparateMode": {
+      "Caption": "Раздельно файлы (644) и директории (755)"
+    },
+    "gbOwner": {
+      "Caption": "Владелец (User)"
+    },
+    "gbGroup": {
+      "Caption": "Группа (Group)"
+    },
+    "gbPublic": {
+      "Caption": "Остальные (Public)"
+    },
+    "gbSpecialBits": {
+      "Caption": "Специальные биты"
+    },
+    "gbCommand": {
+      "Caption": "Команда"
+    },
+    "ebOctal": {
+      "EditLabel.Caption": "Восьмеричный"
+    },
+    "ebSymbolic": {
+      "EditLabel.Caption": "Символьный"
+    },
+    "lbUser": {
+      "Caption": "Имя владельца"
+    },
+    "lbGroup": {
+      "Caption": "Имя группы"
+    },
+    "lbFileName": {
+      "Caption": "Имя файла/директории"
+    },
+    "ebCommand": {
+      "EditLabel.Caption": "Итоговая команда"
+    },
+    "lbPresets": {
+      "Caption": "Предустановки"
+    },
+    "bSavePreset": {
+      "Caption": "💾"
+    },
+    "bDeletePreset": {
+      "Caption": "🗑"
+    },
+    "bCopyCommand": {
+      "Caption": "📋"
+    }
+  },
+  "ArchiveBuilderForm": {
+    "Caption": "Команды архивации",
+    "tsCreate": {
+      "Caption": "Создать архив"
+    },
+    "lbSourcePath": {
+      "Caption": "Исходная директория"
+    },
+    "lbExclude": {
+      "Caption": "Исключить"
+    },
+    "lbPresets": {
+      "Caption": "Предустановки"
+    },
+    "ebCommand": {
+      "EditLabel.Caption": "Итоговая команда"
+    },
+    "lbDestPath": {
+      "Caption": "Путь к архиву"
+    },
+    "lbFormat": {
+      "Caption": "Формат архива"
+    },
+    "lbPassword": {
+      "Caption": "Пароль (только zip/7z)"
+    },
+    "cbMaxCompression": {
+      "Caption": "Максимальное сжатие"
+    },
+    "cbRelativePath": {
+      "Caption": "Относительные пути"
+    },
+    "cbSplit": {
+      "Caption": "Разделить на тома (МБ)"
+    },
+    "tsExtract": {
+      "Caption": "Извлечь из архива"
+    },
+    "lbExtSourcePath": {
+      "Caption": "Путь к архиву"
+    },
+    "lbExtDestPath": {
+      "Caption": "Куда распаковать (оставь пустым для текущей директории):"
+    },
+    "lbExtFormat": {
+      "Caption": "Утилита"
+    },
+    "lbExtPassword": {
+      "Caption": "Пароль (только zip/7z)"
+    },
+    "cbListOnly": {
+      "Caption": "Только просмотр содержимого (Dry Run/List)"
+    }
+  },
+  "SettingsForm": {
+    "Caption": "Настройки",
+    "tsHotkeys": {
+      "Caption": "Горячие клавиши"
+    },
+    "tsLocalSync": {
+      "Caption": "Markdown-синхронизация"
+    },
+    "gbGlobalHotkeys": {
+      "Caption": "Глобальные горячие клавиши"
+    },
+    "chkEnableQuickSearch": {
+      "Caption": "Глобальный вызов \"Панели быстрого поиска\""
+    },
+    "chkEnablePassGen": {
+      "Caption": "Глобальный вызов \"Генератора паролей\""
+    },
+    "gbAppHotkeys": {
+      "Caption": "Локальные горячие клавиши"
+    },
+    "ebSearchHotkeys": {
+      "TextHint": "Введи что-то для поиска..."
+    },
+    "lvHotkeys": {
+      "Columns": {
+        "0": "Категория",
+        "1": "Действие",
+        "2": "Горячая клавиша"
+      }
+    },
+    "lbHotkey": {
+      "Caption": "Горячая клавиша:"
+    },
+    "lbAction": {
+      "Caption": "Действие:"
+    },
+    "lbActionID": {
+      "Caption": "Идентификатор:"
+    },
+    "bApplyShortcut": {
+      "Caption": "✔"
+    },
+    "bResetShortcut": {
+      "Caption": "↺"
+    },
+    "bResetAll": {
+      "Caption": "Сбросить всё"
+    },
+    "bSave": {
+      "Caption": "Сохранить"
+    },
+    "bCancel": {
+      "Caption": "Отмена"
+    },
+    "ledMarkdownPath": {
+      "EditLabel.Caption": "Путь к Markdown-хранилищу"
+    },
+    "cbSyncOnStart": {
+      "Caption": "Синхронизация при запуске приложения"
+    },
+    "cbSyncOnExit": {
+      "Caption": "Синхронизация при закрытии приложения"
+    }
+  },
+  "Messages": {
+    "Help": {
+      "MainForm": {
+        "tvCategories": {
+          "Title": "Список категорий",
+          "Main": "Древовидный список категорий в текущем пространстве. Если выбрано «Все пространства», то пространства отображаются как корневые категории, но добавлять в них сниппеты нельзя.<br><blockquote><b>Виртуальные категории</b> «Недавние» и «Часто используемые»: в эти категории нельзя добавлять сниппеты вручную, только изменять и удалять.</blockquote>",
+          "Expanded": "<code>ALT+A</code> - Добавить категорию<br><code>ALT+E</code> - Редактировать категорию<br><code>ALT+D</code> - Удалить категорию"
+        },
+        "lvSnippets": {
+          "Title": "Список сниппетов",
+          "Main": "Плоский список сниппетов в выбранном пространстве.",
+          "Expanded": "<code>CTRL+A</code> - Добавить сниппет<br><code>CTRL+E</code> - Редактировать сниппет<br><code>CTRL+D</code> - Удалить сниппет"
+        },
+        "lvTags": {
+          "Title": "Список тегов",
+          "Main": "Отображает полный список всех тегов в базе данных. Для удобства теги, которые уже привязаны к выбранному сниппету, автоматически закрепляются в самом начале списка и подсвечиваются зелёным цветом.",
+          "Expanded": "💡 <b>Навигация и горячие клавиши:</b><br><b>Двойной клик</b> — мгновенно отфильтровать сниппеты по выбранному тегу.<br><br><code>CTRL+ALT+A</code> — добавить новый тег.<br><code>CTRL+ALT+E</code> — редактировать название тега.<br><code>CTRL+ALT+D</code> — удалить выбранный тег из базы."
+        },
+        "ebSearch": {
+          "Title": "Строка поиска",
+          "Main": "Строка поиска по базе данных сниппетов. Поиск осуществляется по заголовку, коду, комментариям и привязанным тегам.<br><blockquote><b>Умный полнотекстовый поиск (FTS5):</b><br>Движок автоматически ищет части слов внутри кода (например, запрос <code>List</code> найдет <code>TList</code>). Результаты автоматически сортируются: самые точные совпадения всегда будут сверху.<br><br><b>Специальные операторы:</b><ul><li><code>«Точная фраза»</code> - поиск точного совпадения (в кавычках).</li><li><code>слово1 AND слово2</code> - сниппет должен содержать оба слова.</li><li><code>слово1 OR слово2</code> - сниппет содержит хотя бы одно из слов.</li><li><code>NOT слово</code> - исключить сниппеты с этим словом.</li></ul>Поиск нечувствителен к регистру (буквы Е и Ё считаются одинаковыми).</blockquote>",
+          "Expanded": "В фокусе строки поиска печатай запрос, он будет применён автоматически.<br><br>Управление тегами (глобально):<br><code>CTRL+ALT+A</code> - Добавить тег<br><code>CTRL+ALT+E</code> - Редактировать тег<br><code>CTRL+ALT+D</code> - Удалить тег"
+        },
+        "FrequentlyUsed": "Часто используемые",
+        "Recent": "Недавние"
+      },
+      "AddEditSnippet": {
+        "mContent": {
+          "Title": "Текст сниппета",
+          "Main": "Основное поле для ввода кода сниппета. Поддерживает подсветку синтаксиса и автодополнение для Linux Shell/Bash. <blockquote><ul><li><b>Макросы:</b> Встроенный движок позволяет запрашивать ввод аргументов у пользователя, вставлять паузы, ожидать подтверждения и многое другое. Полный синтаксис доступен на вкладке «Макросы».</li><li><b>Выполнение (Переносы строк):</b> Каждая новая строка интерпретируется терминалом как нажатие клавиши <code>ENTER</code> (отправка команды). Учитывай это при написании многострочных скриптов.</li><li><b>ИИ-ассистент:</b> Встроенная интеграция с Yandex AI Studio для генерации и рефакторинга кода. Рекомендуется настроить и использовать «Агентов» — они возвращают лаконичный, готовый к работе код без лишних текстовых рассуждений. Настроить ИИ можно через главное меню.</li><li><b>Защита данных:</b> Сниппеты автоматически проверяются на наличие конфиденциальной информации (пароли, API-ключи, SSH-токены, строки БД). При обнаружении угроз сохранение будет заблокировано, пока ты явно не отметишь чекбокс «Игнорировать проверки».</li></ul></blockquote>",
+          "Expanded": "<code>CTRL+I</code> - Вызвать окно запроса к ИИ-ассистенту.<br><code>CTRL+ALT+I</code> - Вызвать окно настроек ИИ-Ассистента"
+        },
+        "mComment": {
+          "Title": "Комментарий к сниппету",
+          "Main": "Поле для заметок и пояснений к коду. Опиши, для чего нужен этот сниппет, какие параметры он принимает или на что стоит обратить особое внимание.<br><br>💡 <b>Совет:</b> Текст комментария активно индексируется внутренним поиском, поэтому подробное описание поможет тебе намного быстрее найти нужный скрипт в будущем.",
+          "Expanded": ""
+        },
+        "lvAllTags": {
+          "Title": "Список тегов",
+          "Main": "Выбери теги для сниппета. Их можно переносить двойным кликом мыши или просто перетаскивать (Drag & Drop) между списками. Поддерживается выделение нескольких тегов с помощью Ctrl или Shift.",
+          "Expanded": ""
+        }
+      },
+      "PasswordGenForm": {
+        "lvHistory": {
+          "Title": "История генераций",
+          "Main": "Здесь сохраняются все пароли, созданные за текущий сеанс работы. <blockquote><ul><li><b>Предпросмотр:</b> Одиночный клик вернет выбранный пароль в основное поле ввода.</li><li><b>Быстрое применение:</b> Двойной клик применит пароль и сразу закроет окно. Если генератор был вызван глобальной горячей клавишей, пароль будет <b>автоматически напечатан</b> в вашем активном окне (терминале). В противном случае он просто скопируется в буфер обмена.</li></ul></blockquote>",
+          "Expanded": "💡 <b>Горячие клавиши вызова генератора:</b><br><code>CTRL+G</code> — запуск из главного окна программы.<br><code>CTRL+ALT+G</code> — глобальный вызов из любого места системы поверх других окон."
+        }
+      },
+      "CronGenForm": {
+        "CheckListBox": {
+          "Title": "Точные значения (Умный выбор)",
+          "Main": "Нажимай на нужные значения, чтобы выбрать их. Можно нажимать как на квадратик, так и прямо по тексту для удобства.",
+          "Expanded": "<b>Продвинутое выделение:</b><ul><li><b>Кисть (Drag-to-Check):</b> Нажми на значение, не отпускай левую кнопку мыши и проведи курсором по соседним пунктам, чтобы быстро выделить (или снять выделение) с целой группы.</li><li><b>Горячие клавиши (удерживай при клике):</b><ul><li><code>Ctrl + Клик</code> — принудительно <b>ставить</b> галочки.</li><li><code>Shift + Клик</code> — принудительно <b>снимать</b> галочки.</li><li><code>Alt + Клик</code> — <b>инвертировать</b> (поменять на противоположное) текущее выделение пункта.</li></ul></li></ul>"
+        }
+      },
+      "EpochConverterForm": {
+        "mEpoch": {
+          "Title": "Анализатор логов и текста",
+          "Main": "Вставьте сюда любой текст, JSON или системный лог. Программа автоматически найдет все временные метки (Unix Epoch) и стандартные даты.",
+          "Expanded": "💡 <b>Поддерживается умное распознавание Unix Time (секунды, милли- и микросекунды)</b>, а также дат в форматах ISO 8601, Apache/Nginx, Syslog и локального времени.<br><br>Все найденные совпадения подсвечиваются: светло-голубым маркером — фоновые метки, ярко-желтым — активная метка, выбранная в списке.<br><br><b>Система закладок для навигации:</b><ul><li><code>Ctrl+B</code> (или пункт контекстного меню) — создать или удалить закладку на текущей строке.</li><li><code>CTRL+Alt+0..9</code> — горячие клавиши для установки нумерованных закладок.</li><li><code>Ctrl+0..9</code> — мгновенный переход к соответственной закладке.</li></ul>По правому клику мыши доступно контекстное меню с подменю «Перейти к закладке», где отображается динамический список всех активных закладок с номерами строк и превью текста."
+        },
+        "lvParsed": {
+          "Title": "Список найденных дат",
+          "Main": "Хронологический список всех временных меток, извлеченных из вашего текста, с мгновенным переводом в локальное время.",
+          "Expanded": "В колонке «Относительно» отображается живое время (например, «3 ч назад» или «через 5 мин»), которое обновляется каждую секунду.<br>Клик по любой строке в списке моментально прокрутит текст (лога) к нужной строке, подсветит её желтым маркером и синхронизирует календарь для дальнейшей работы."
+        }
+      },
+      "NetworkForm": {
+        "cbIPInput": {
+          "Title": "Ввод IP-адреса и маски",
+          "Main": "Поле для ввода IPv4 адреса и параметров подсети.",
+          "Expanded": "Поддерживаются следующие форматы ввода:<br>• <code>192.168.1.50/24</code> (CIDR-нотация)<br>• <code>192.168.1.50 255.255.255.0</code> (IP и маска через пробел)<br>• <code>192.168.1.50</code> (маска берется из поля справа)<br><br>При вводе некорректного адреса текст подсвечивается красным цветом."
+        },
+        "seMask": {
+          "Title": "Префикс подсети (CIDR)",
+          "Main": "Длина маски подсети в битах (от /0 до /32).",
+          "Expanded": "Определяет количество фиксированных бит сети.<br><br>Пример популярных значений:<br>• <code>/24</code> — 254 хоста (стандартная локальная сеть)<br>• <code>/30</code> — 2 хоста (Point-to-Point соединение роутеров)<br>• <code>/32</code> — 1 хост (одиночный IP-адрес)"
+        },
+        "ledNetworkAddress": {
+          "Title": "Адрес сети (Network Address)",
+          "Main": "Первый и базовый адрес подсети, служащий её идентификатором.",
+          "Expanded": "Этот адрес не может быть назначен физическому устройству или серверу. Все биты хостовой части равны нулю."
+        },
+        "ledHostRange": {
+          "Title": "Диапазон доступных хостов",
+          "Main": "Диапазон IP-адресов, которые можно назначать реальным устройствам.",
+          "Expanded": "Включает все адреса от первого хоста (<code>Network + 1</code>) до последнего (<code>Broadcast - 1</code>)."
+        },
+        "ledBroadcastAddress": {
+          "Title": "Широковещательный адрес (Broadcast)",
+          "Main": "Служебный адрес для отправки пакетов всем устройствам в подсети.",
+          "Expanded": "Пакет, отправленный на этот адрес, получат все узлы текущей подсети. Все биты хостовой части равны единице."
+        },
+        "ledUsableHosts": {
+          "Title": "Количество доступных хостов",
+          "Main": "Число IP-адресов в подсети, доступных для назначения серверам и устройствам.",
+          "Expanded": "Рассчитывается по формуле: <code>(2 ^ (32 - N)) - 2</code>, где N — длина маски. Два адреса вычитаются под Network и Broadcast.<br><br>Исключение: для маски <code>/31</code> доступны 2 хоста (RFC 3021)."
+        },
+        "ledNetmask": {
+          "Title": "Маска подсети (Netmask)",
+          "Main": "Маска подсети в традиционном десятичном формате (Dotted-Decimal).",
+          "Expanded": "Используется сетевыми адаптерами для отделения сетевой части IP-адреса от узловой (например, <code>255.255.255.0</code> для /24)."
+        },
+        "ledWildcardMask": {
+          "Title": "Обратная маска (Wildcard Mask)",
+          "Main": "Инвертированная маска подсети.",
+          "Expanded": "Получается побитовой инверсией маски (<code>255.255.255.255 - Netmask</code>).<br><br>Активно используется при настройке правил файрволов, списков доступа (ACL) в роутерах Cisco, MikroTik и сервисе OSPF."
+        },
+        "ledNetworkType": {
+          "Title": "Тип и назначение сети",
+          "Main": "Категория IP-адреса согласно стандартам RFC.",
+          "Expanded": "Возможные значения:<br>• <b>Private (RFC 1918)</b> — изолированные серые IP (10.x, 172.16.x, 192.168.x)<br>• <b>Public IP</b> — глобальные белые адреса интернета<br>• <b>Loopback</b> — интерфейс кольцевой проверки (127.0.0.1)<br>• <b>Link-Local (APIPA)</b> — автоназначаемые адреса при отсутствии DHCP (169.254.x)"
+        },
+        "ledBinaryView": {
+          "Title": "Двоичный вид (Binary View)",
+          "Main": "Представление IP-адреса в 32-битном двоичном формате.",
+          "Expanded": "Символ <code>|</code> наглядно показывает физическую границу раздела между битной частью сети и хостовой частью."
+        },
+        "lvVLSM": {
+          "Title": "Таблица подсетей (VLSM)",
+          "Main": "Здесь отображается список подсетей, полученных после разбиения исходной сети с использованием новой маски.",
+          "Expanded": "Таблица содержит следующие данные для каждой сгенерированной подсети:<br>• Подсеть: Адрес сети и её префикс (например, 192.168.1.0/26).<br>• Диапазон хостов: Доступные IP-адреса для назначения устройствам (без адреса сети и широковещательного).<br>• Broadcast: Широковещательный адрес подсети.<br>• Хостов: Количество полезных (используемых) адресов.<br><br>Внимание: для предотвращения зависания программы и переполнения памяти установлено ограничение на отображение максимум 4096 подсетей за один раз."
+        }
+      },
+      "ChmodForm": {
+        "gbCommand": {
+          "Title": "Калькулятор прав (Chmod / Chown)",
+          "Main": "Визуальный конструктор для безопасной и быстрой генерации команд настройки прав доступа в Linux.",
+          "Expanded": "Матрица прав и спец. биты:<br>• R (Чтение), W (Запись), X (Выполнение / Вход в директорию).<br>• SUID / SGID: Запуск от имени владельца / Наследование группы директории.<br>• Sticky Bit: Запрещает удаление чужих файлов в общих папках (например, /tmp).<br>Умные модификаторы:<br>• Умный X (+X): Безопасная рекурсия. Выдает права на выполнение (вход) только папкам, не делая обычные текстовые файлы исполняемыми.<br>• Раздельный режим: Генерирует цепочку команд `find` для массовой установки прав веб-сервера (папки — 755, файлы — 644).<br>• Рекурсивно (-R): Применяет команду ко всем вложенным элементам.<br><br>Форматы и история:<br>• Поля «Восьмеричный» (0755) и «Символьный» (drwxr-xr-x) синхронизируются с чекбоксами. Ввод `d` первым символом автоматически отмечает цель как директорию.<br>• Имена пользователей, групп и пути автоматически запоминаются (сохраняются в историю) при нажатии кнопки «Скопировать».<br>• Частые настройки (например, для ключей SSH) можно сохранить в «Пресеты»."
+        }
+      }
+    },
+    "Actions": {
+      "MainForm": {
+        "Data": {
+          "Caption": "Управление данными",
+          "AddSnippet": "Добавить новый сниппет",
+          "DeleteSnippet": "Удалить сниппет",
+          "EditSnippet": "Изменить сниппет",
+          "AddCategory": "Создать категорию",
+          "DeleteCategory": "Удалить категорию",
+          "EditCategory": "Переименовать категорию",
+          "AddTag": "Добавить тег",
+          "DeleteTag": "Удалить тег",
+          "EditTag": "Переименовать тег"
+        },
+        "Database": {
+          "Caption": "База данных",
+          "CreateDatabase": "Создать БД",
+          "OpenDatabase": "Открыть БД",
+          "CloseDatabase": "Закрыть БД",
+          "SyncDatabase": "Синхронизировать базу данных"
+        },
+        "Tools": {
+          "Caption": "Утилиты",
+          "Search": "Полнотекстовый поиск",
+          "PasswordGenerator": "Генератор паролей",
+          "CronGenerator": "Cron Конструктор",
+          "EpochConverter": "Unix Epoch Конвертер",
+          "NetworkCalculator": "IP/CIDR Калькулятор",
+          "ChmodCalculator": "Chmod Калькулятор",
+          "ArchiveBuilder": "Архиватор (tar/zip)"
+        },
+        "Other": {
+          "Caption": "Прочее",
+          "Settings": "Настройки"
+        }
+      },
+      "AddEditSnippetForm": {
+        "Caption": "Редактор сниппетов",
+        "actShowAIForm": "Вызвать окно ИИ-ассистента",
+        "actConfigureAI": "Настроить ИИ-ассистента"
+      },
+      "AISettingsForm": {
+        "Caption": "ИИ-ассистент",
+        "actSave": "Сохранить настройки",
+        "actCreateProvider": "Создать провайдера",
+        "actDeleteProvider": "Удалить провайдера",
+        "actEditProvider": "Редактировать провайдера",
+        "actCreateModel": "Создать модель",
+        "actDeleteModel": "Удалить модель",
+        "actEditModel": "Редактировать модель"
+      },
+      "TagEditor": {
+        "Caption": "Редактор тегов",
+        "actAddTag": "Добавить тег",
+        "actDeleteTag": "Удалить тег",
+        "actEditTag": "Изменить тег"
+      },
+      "WorkspaceManagerForm": {
+        "Caption": "Пространства",
+        "actAddWorkspace": "Добавить пространство",
+        "actDeleteWorkspace": "Удалить пространство",
+        "actEditWorkspace": "Изменить пространство"
+      }
+    },
+    "Common": {
+      "NotificationDefaultCaption": "Менеджер сниппетов",
+      "Confirmation": "Подтверждение",
+      "Error": "Ошибка",
+      "Warning": "Внимание",
+      "Information": "Информация",
+      "Yes": "Да",
+      "No": "Нет",
+      "OK": "ОК",
+      "Cancel": "Отмена",
+      "Help": "Справка",
+      "MoreInfo": "Подробнее",
+      "WinEventHookError": "Не удалось установить WinEventHook. Ошибка: %s",
+      "CopiedToClipboard": "Скопировано в буфер обмена.",
+      "NoDataToCopy": "❌ Нет данных для копирования в буфер обмена.",
+      "Security": "Безопасность",
+      "Additional": "ДОПОЛНИТЕЛЬНО:",
+      "HotkeyConflict": "Эта комбинация клавиш уже используется действием:\n'%s'.\n\nВыбери другую.",
+      "HotkeyApplied": "Горячая клавиша временно применена. Нажми 'Сохранить' внизу окна, чтобы записать изменения в файл.",
+      "HotkeyRegistrationError": "Не удалось зарегистрировать глобальную клавишу (ID: %d). Возможно, она занята другим приложением.",
+      "SyncFolderCreationError": "Не удалось создать папку синхронизации: %s",
+      "SyncingStorage": "Синхронизация хранилища...",
+      "SyncCompleted": "Синхронизация завершена.",
+      "SyncError": "Ошибка синхронизации: %s"
+    },
+    "DB": {
+      "ConnectError": "Критическая ошибка!\nНе удалось подключиться к базе данных SQLite.\nПроверь путь к файлу.",
+      "OpenError": "Ошибка открытия базы данных: %s",
+      "CreateError": "Ошибка создания базы данных: %s",
+      "OpenedSuccess": "База данных SQLite открыта.",
+      "CreatedSuccess": "База данных SQLite создана.",
+      "NoConnectionError": "Ошибка: нет подключения к базе данных."
+    },
+    "Settings": {
+      "ResetAllHotkeysConfirm": "Сбросить все горячие клавиши к значениям по умолчанию?"
+    },
+    "Category": {
+      "DeleteConfirm": "Уверен, что хочешь удалить эту категорию?",
+      "DeleteSuccess": "Категория успешно удалена.",
+      "SelectPrompt": "Сначала выбери пространство или категорию.",
+      "VirtualFolderError": "Нельзя добавлять категории в виртуальные папки.",
+      "NewNamePrompt": "Введите имя:",
+      "NewDefaultName": "Новая категория",
+      "CreatedMsg": "Категория «%s» создана.",
+      "DeleteWithChildrenConfirm": "Удалить категорию «%s» и все её вложенные элементы?",
+      "DeleteMsg": "Категория «%s» удалена.",
+      "DeleteError": "Ошибка удаления категории: %s",
+      "CreateError": "Ошибка создания категории: %s",
+      "RenameError": "Ошибка переименования категории: %s",
+      "MoveError": "Ошибка перемещения категории: %s",
+      "SourceCategoryNotFound": "Исходная категория не найдена.",
+      "ParentCategoryNotFound": "Родительская категория не найдена.",
+      "MoveToDifferentSpaceError": "Нельзя переместить категорию в другое пространство.",
+      "CategoryNotFound": "Категория не найдена.",
+      "AccessDenied": "Ошибка доступа: Категория принадлежит другому пользователю",
+      "InvalidIdError": "Некорректный идентификатор категории.",
+      "EmptyNameError": "Имя категории не может быть пустым."
+    },
+    "Snippet": {
+      "TypeToWindowConfirm": "Ввести сниппет в окно: «%s»?",
+      "SelectPrompt": "Выбери конкретную категорию для добавления сниппета.",
+      "WorkspaceUndefined": "Не удалось определить пространство для сниппета (UserID=%d). Попробуй выбрать конкретное пространство в фильтре.",
+      "DeletedMsg": "Сниппет удалён.",
+      "DeleteConfirm": "Удалить сниппет «%s»?",
+      "DeleteError": "Ошибка удаления сниппета: %s",
+      "SaveError": "Ошибка сохранения сниппета: %s",
+      "NoComment": "Без комментария",
+      "CaptionEdit": "Редактирование сниппета",
+      "CaptionAdd": "Добавление сниппета",
+      "TitleEmptyError": "Введи заголовок сниппета.",
+      "NoContentError": "Текст сниппета пуст.",
+      "SQLExecutionError": "Ошибка выполнения SQL-запроса: %s",
+      "InvalidIdError": "Некорректный идентификатор сниппета."
+    },
+    "Tag": {
+      "NewPrompt": "Введите имя тега:",
+      "NewDefaultName": "Новый тег",
+      "AddedMsg": "Тег «%s» добавлен.",
+      "DeleteConfirm": "Удалить тег «%s»?",
+      "DeletedMsg": "Тег удалён.",
+      "AddError": "Ошибка добавления тега: %s",
+      "DeleteError": "Ошибка удаления тега: %s",
+      "RenameError": "Ошибка переименования тега: %s",
+      "RenamedMsg": "Тег переименован: «%s» → «%s»",
+      "FilterPrefix": "Фильтр по тегу: «%s»",
+      "FilterReset": "Фильтр сброшен.",
+      "InvalidIdError": "Некорректный идентификатор тега.",
+      "EmptyNameError": "Имя тега не может быть пустым.",
+      "DuplicateNameError": "Тег с именем «%s» уже существует."
+    },
+    "User": {
+      "InvalidIdError": "Некорректный идентификатор пользователя"
+    },
+    "Terminal": {
+      "ChoiceCaption": "Выбор целевого окна терминала",
+      "HistoryEmpty": "История пуста. Сначала активируйте окно терминала.",
+      "WindowsFound": "Найдено %d окон терминала. Выберите целевое окно:",
+      "Column.WindowTitle": "Заголовок окна",
+      "Column.ExeName": "Исполняемый файл",
+      "Column.ActivatedAt": "Время активности",
+      "WindowNoLongerExists": "Выбранное окно больше не существует."
+    },
+    "Workspace": {
+      "AllSpaces": "Все пространства",
+      "RenameError": "Для переименования пространства используй кнопку «Управление пространствами».",
+      "EmptyNameError": "Имя пространства не может быть пустым.",
+      "SystemSpaceError": "Это пространство нельзя удалить (системное)."
+    },
+    "Search": {
+      "BackgroundError": "Ошибка фонового поиска: %s"
+    },
+    "Security": {
+      "DenyReason": {
+        "PrivateSSHKey": "Приватный SSH/RSA ключ",
+        "GitHubToken": "Токен GitHub",
+        "AWSAccessKey": "Ключ AWS Access Key",
+        "GoogleCloudAPIKey": "Ключ Google Cloud / API",
+        "StripeSecretKey": "Секретный ключ Stripe",
+        "TelegramBotToken": "Токен Telegram Bot",
+        "JWTToken": "Токен JWT",
+        "SlackToken": "Токен Slack",
+        "BearerToken": "Авторизационный Bearer токен",
+        "URLConnectionString": "Учетные данные в URL (Connection String)",
+        "ExplicitPasswordKey": "Явное указание пароля/ключа",
+        "HashKey": "MD5/SHA хэш или Hex-ключ",
+        "HighEntropyString": "Высокоэнтропийная строка (возможно, хэш или токен): «%s»..."
+      },
+      "SensitiveDataFound": "Обнаружены потенциально чувствительные данные:\n• %s\nНеобходимо проверить текст сниппета перед его отправкой в терминал.\n\nБерёшь ответственность на себя и хочешь продолжить отправку?"
+    },
+    "AI": {
+      "JSONError": "Не удалось извлечь ответ из JSON: %s",
+      "APIError": "Ошибка API (%d): %s"
+    },
+    "Epoch": {
+      "Seconds": "сек",
+      "Minutes": "мин",
+      "Hours": "ч",
+      "Days": "дн",
+      "Ago": "%d %s назад",
+      "After": "Через %d %s",
+      "JustNow": "Только что",
+      "Format-seconds": "Формат: Секунды (Classic/Linux)",
+      "Format-milliseconds": "Формат: Миллисекунды (Java/JS/ELK)",
+      "Format-microseconds": "Формат: Микросекунды (Python/Influx)",
+      "Format-non-standard": "Формат: Нестандартный",
+      "EmptryString": "␣",
+      "NoActiveBookmarks": "(Нет активных закладок)",
+      "CreateBookmark": "Создать закладку",
+      "DeleteBookmark": "Удалить закладку"
+    },
+    "Cron": {
+      "Error-5Elements": "Ошибка: Cron-выражение должно состоять ровно из 5 элементов.",
+      "EveryStep": "Каждые %d %s",
+      "Range": "%s - %s",
+      "Range-Base": "%s - %s",
+      "Prefix-Minutes": "Минуты: %s",
+      "Prefix-Hours": "Часы: %s",
+      "Prefix-DaysOfMonth": "Дни месяца: %s",
+      "Prefix-Months": "Месяцы: %s",
+      "Prefix-DaysOfWeek": "Дни недели: %s",
+      "Every-Minutes": "Каждую минуту",
+      "Every-Hours": "Каждый час",
+      "Every-DaysOfMonth": "Каждый день месяца",
+      "Every-Months": "Каждый месяц",
+      "Every-DaysOfWeek": "Любой день недели",
+      "Dow-WorkDays": "с понедельника по пятницу",
+      "Dow-Weekends": "по выходным",
+      "Word-Minute-1": "минуту",
+      "Word-Minute-2": "минуты",
+      "Word-Minute-5": "минут",
+      "Word-Hour-1": "час",
+      "Word-Hour-2": "часа",
+      "Word-Hour-5": "часов",
+      "Word-Day-1": "день",
+      "Word-Day-2": "дня",
+      "Word-Day-5": "дней",
+      "Word-Month-1": "месяц",
+      "Word-Month-2": "месяца",
+      "Word-Month-5": "месяцев",
+      "Word-Dow-1": "день недели",
+      "Word-Dow-2": "дня недели",
+      "Word-Dow-5": "дней недели",
+      "Month-Prep-1": "в январе",
+      "Month-Prep-2": "в феврале",
+      "Month-Prep-3": "в марте",
+      "Month-Prep-4": "в апреле",
+      "Month-Prep-5": "в мае",
+      "Month-Prep-6": "в июне",
+      "Month-Prep-7": "в июле",
+      "Month-Prep-8": "в августе",
+      "Month-Prep-9": "в сентябре",
+      "Month-Prep-10": "в октябре",
+      "Month-Prep-11": "в ноябре",
+      "Month-Prep-12": "в декабре",
+      "Dow-Prep-0": "в воскресенье",
+      "Dow-Prep-1": "в понедельник",
+      "Dow-Prep-2": "во вторник",
+      "Dow-Prep-3": "в среду",
+      "Dow-Prep-4": "в четверг",
+      "Dow-Prep-5": "в пятницу",
+      "Dow-Prep-6": "в субботу",
+      "Month-1": "Январь",
+      "Month-2": "Февраль",
+      "Month-3": "Март",
+      "Month-4": "Апрель",
+      "Month-5": "Май",
+      "Month-6": "Июнь",
+      "Month-7": "Июль",
+      "Month-8": "Август",
+      "Month-9": "Сентябрь",
+      "Month-10": "Октябрь",
+      "Month-11": "Ноябрь",
+      "Month-12": "Декабрь",
+      "Dow-0": "Воскресенье",
+      "Dow-1": "Понедельник",
+      "Dow-2": "Вторник",
+      "Dow-3": "Среда",
+      "Dow-4": "Четверг",
+      "Dow-5": "Пятница",
+      "Dow-6": "Суббота"
+    },
+    "AddEditSnippet": {
+      "CloseConfirmText": "Обнаружены изменения, которые потеряются в случае закрытия этого окна.\n\nЗакрыть окно без сохранения изменений?",
+      "SecurityWarningText": "Активация этого параметра отключит автоматические проверки данного сниппета на безопасность, такие как:\n\n• Инфраструктурные ключи и API-токены\n• Веб-токены и заголовки авторизации\n• Пароли и строки подключения к БД\n• Приватная криптография (SSH/RSA)\n• Математический анализ энтропии (случайности строк)\n\nУверен, что хочешь добавить этот сниппет в исключения сканера?",
+      "SecurityDisabledStatus": "ℹ️ Проверки безопасности отключены пользователем.",
+      "SecuritySafeStatus": "✅ Текст проверен, угроз безопасности не обнаружено.",
+      "SecurityThreatStatus": "⚠ Угроза: %s (Сохранение заблокировано)",
+      "SecurityToastFound": "Найдено: %s",
+      "SecurityToastTitle": "⚠ Угроза безопасности",
+      "AutocompleteUpdated": "Файл автозаполнения обновлён. Содержимое будет перезагружено.",
+      "AIChooseModelError": "Выбери провайдера и модель ИИ!",
+      "AIErrorPrefix": "Ошибка: %s",
+      "EnterSnippetTextHere": "Здесь введи имя сниппета..."
+    },
+    "AISettingsForm": {
+      "AddHubPrompt": "Введите имя провайдера ИИ:",
+      "DeleteHubConfirm": "Удалить провайдера и ВСЕ его модели?",
+      "AddModelPrompt": "Новая модель/агент"
+    },
+    "PasswordGenForm": {
+      "BulkLimitWarning": "Отображение более 10 000 паролей на экране может привести к зависанию интерфейса. Рекомендуется сгенерировать их напрямую в файл.\n\nПродолжить?",
+      "BulkSaveSuccessToast": "Успешно сохранено в файл",
+      "HistoryCopyToast": "Сгенерированные пароли скопированы в буфер обмена.",
+      "BulkGenerationToFile": "Генерация идет напрямую в файл...",
+      "MassGenerationCaption": "Массовая генерация",
+      "CopyBtn": "Скопировать",
+      "InsertAndCloseBtn": "Вставить и закрыть",
+      "StopGeneratorCaption": "Остановка генератора, жди...",
+      "PresetSimilar": "Похожие символы",
+      "PresetBrackets": "Скобки",
+      "PresetPunctuation": "Пунктуационные знаки",
+      "PresetBashSQL": "Опасные для Bash/SQL",
+      "PresetQuotes": "Кавычки",
+      "PresetSpace": "Пробел",
+      "PresetURL": "Разделители URL / Веб",
+      "PresetPathJSON": "Символы путей / JSON",
+      "PresetMath": "Математические символы",
+      "MemoryClearConfirm": "Удалить все пароли из памяти?",
+      "MemoryCleared": "Память паролей очищена.",
+      "ClipboardCleared": "Буфер обмена безопасно очищен.",
+      "PasswordCopied": "Пароль скопирован. Буфер будет очищен через 15 сек.",
+      "HtPasswdTitle": "Nginx .htpasswd",
+      "HtPasswdLoginPrompt": "Введи логин для Basic Auth:",
+      "HtPasswdLoginError": "Логин не может быть пустым.",
+      "HtPasswdBcryptCopied": "Строка Bcrypt скопирована в буфер обмена. Буфер будет очищен через 15 сек.",
+      "NoPasswordGenerated": "Сначала сгенерируй пароль",
+      "Presets": {
+        "WebStandard": "Обычный пароль для сайта (Web Safe)",
+        "ActiveDirectory": "Active Directory (A-Z, a-z, 0-9, спецсимвол)",
+        "StrictAlphaNumeric": "Только буквы и цифры (A-Z, a-z, 0-9)",
+        "MacAddress": "MAC-адрес (XX:XX:XX:XX:XX:XX)",
+        "UUIDv4": "UUID v4 (Случайный GUID)",
+        "Base64Key": "Base64 Ключ (JWT/API)",
+        "BashSafe": "Bash Safe (без $, !, `, \\ и кавычек)",
+        "DockerEnvSafe": "Docker & .env Safe",
+        "BitrixDb": "Для БД Bitrix",
+        "PinCode": "Пин-код (Только цифры)",
+        "Custom": "Кастомные настройки...",
+        "HexToken": "Hex-токен (a-f, 0-9)",
+        "UrlSafe": "URL Safe (RFC 3986)",
+        "OracleSafe": "Oracle DB (только _$#, с буквы)",
+        "NoLookAlikes": "Без похожих символов (I, l, 1, O, 0)",
+        "Unknown": "Неизвестный шаблон"
+      }
+    },
+    "InputForm": {
+      "Prompt.String": "Введи текст",
+      "Prompt.Number": "Введи целое число",
+      "Prompt.Hex": "Введи HEX значение (например, FF или 0xFF)",
+      "Prompt.Float": "Введи вещественное число (например, 3.14)",
+      "Prompt.Password": "Введи пароль",
+      "Prompt.Date": "Введи дату (YYYY-MM-DD)",
+      "Error.Number": "Ошибка: введи целое число",
+      "Error.Hex": "Ошибка: введи HEX значение (0-9, A-F)",
+      "Error.Float": "Ошибка: введи вещественное (например, 3.14)",
+      "Error.Date": "Ошибка: формат даты YYYY-MM-DD"
+    },
+    "TagEditorForm": {
+      "InputQueryTitle": "New Tag",
+      "InputQueryPrompt": "Введи имя тега:",
+      "DeleteConfirmFormat": "Удалить выбранные теги (%d шт.)?",
+      "DeleteConfirmTitle": "Подтверждение удаления",
+      "SaveErrorFormat": "Ошибка сохранения тегов: %s"
+    },
+    "WorkspaceManagerForm": {
+      "NewWorkspaceCaption": "Новое пространство",
+      "NewWorkspaceName": "Введите имя нового пространства:",
+      "AddError": "Ошибка добавления пространства: %s",
+      "DeleteConfirm": "Удалить выбранное пространство «%s»?\nВсе вложенные сниппеты этого пространства будут удалены!",
+      "DeleteError": "Ошибка удаления пространства: %s",
+      "RenameError": "Ошибка переименования пространства: %s",
+      "SelectWorkspaceFirst": "Сначала выбери пространство."
+    },
+    "CronGenForm": {
+      "CopiedToClipboardToast": "Текст cron-задания скопирован в буфер обмена.",
+      "TaskSchedule": "🕒 Расписание задачи: "
+    },
+    "NetworkForm": {
+      "InvalidFormat": "❌ Неверный формат IP или маски",
+      "HostsPerSubnet": "Хостов в подсети: %d",
+      "TooManySubnets": "Слишком много подсетей. Уменьши разницу масок."
+    },
+    "ChmodForm": {
+      "InputQueryTitle": "Новая предустановка",
+      "InputQueryPrompt": "Введите имя для текущего набора прав:",
+      "PresetSaved": "Предустановка успешно сохранена.",
+      "DeleteConfirmFormat": "Вы действительно хотите удалить предустановку \"%s\"?",
+      "DeleteTitle": "Удаление",
+      "Presets-Divider": "--- Мои предустановки ---",
+      "Presets-WebDir": "Web-директория (755)",
+      "Presets-WebFile": "Web-файл (644)",
+      "Presets-SshDir": "Папка .ssh (700)",
+      "Presets-SshPrivateKey": "Приватный ключ SSH (600)",
+      "Presets-SshPublicKey": "Публичный ключ SSH (644)",
+      "Presets-Script": "Исполняемый скрипт (755)"
+    },
+    "ArchiveBuilderForm": {
+      "Messages": {
+        "SavePresetTitle": "Сохранение предустановки",
+        "SavePresetPrompt": "Введите имя предустановки:",
+        "PresetSaved": "Предустановка успешно сохранена",
+        "DeletePresetConfirm": "Удалить предустановку \"%s\"?",
+        "DeleteTitle": "Подтверждение"
+      },
+      "DefaultPresets": {
+        "BitrixSite": "Bitrix: Бэкап сайта (без кэша)",
+        "BitrixCore": "Bitrix: Только ядро",
+        "Logs": "Logs: Сжать все логи",
+        "FastZstd": "Fast ZSTD: Ультра-быстрый бэкап",
+        "NodeJs": "Node.js: Только код (без node_modules)",
+        "Laravel": "PHP Frameworks: Код (без vendor/cache)",
+        "CleanSource": "Clean Source: Для клиента (без .git и IDE)",
+        "SqlDumps": "SQL Dumps: Ультра-сжатие (tar.xz -9)",
+        "CustomDivider": "--- Пользовательские ---"
+      },
+      "FormatPresets": {
+        "AutoDetect": "Автоопределение",
+        "zip": "zip",
+        "tar": "tar.* (gz, bz2, xz, zst, lz4)",
+        "7z": "7z"
+      }
+    },
+    "SettingsForm": {
+      "ResetAllPrompt": "Уверен, что хочешь сбросить ВСЕ локальные настройки горячих клавиш к значениям по умолчанию?"
+    }
+  }
+}

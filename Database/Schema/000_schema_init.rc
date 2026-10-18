@@ -1,0 +1,2 @@
+SCHEMA_INIT_SQL RCDATA "000_schema_init.sql"
+SCHEMA_SEED_SQL RCDATA "000_seed_data_full.sql"

@@ -1,0 +1,101 @@
+object WorkspaceManagerForm: TWorkspaceManagerForm
+  Left = 0
+  Top = 0
+  Caption = #1059#1087#1088#1072#1074#1083#1077#1085#1080#1077' '#1087#1088#1086#1089#1090#1088#1072#1085#1089#1090#1074#1072#1084#1080
+  ClientHeight = 400
+  ClientWidth = 347
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -12
+  Font.Name = 'Segoe UI'
+  Font.Style = []
+  FormStyle = fsStayOnTop
+  Menu = MainMenu
+  Position = poScreenCenter
+  OnResize = FormResize
+  OnShow = FormShow
+  TextHeight = 15
+  object lvWorkspaces: TListView
+    Left = 0
+    Top = 0
+    Width = 347
+    Height = 368
+    Align = alClient
+    Columns = <
+      item
+        Caption = #1048#1084#1103' '#1087#1088#1086#1089#1090#1088#1072#1085#1089#1090#1074#1072
+        Width = 200
+      end>
+    RowSelect = True
+    TabOrder = 0
+    ViewStyle = vsReport
+    OnDblClick = lvWorkspacesDblClick
+    OnEdited = lvWorkspacesEdited
+    OnResize = lvWorkspacesResize
+  end
+  object pBottom: TPanel
+    Left = 0
+    Top = 368
+    Width = 347
+    Height = 32
+    Align = alBottom
+    BevelOuter = bvNone
+    TabOrder = 1
+    DesignSize = (
+      347
+      32)
+    object bOK: TButton
+      Left = 184
+      Top = 6
+      Width = 75
+      Height = 25
+      Anchors = [akTop, akRight]
+      Caption = 'OK'
+      TabOrder = 0
+      OnClick = bOKClick
+    end
+    object bCancel: TButton
+      Left = 265
+      Top = 6
+      Width = 75
+      Height = 25
+      Anchors = [akTop, akRight]
+      Caption = #1054#1090#1084#1077#1085#1072
+      TabOrder = 1
+      OnClick = bCancelClick
+    end
+  end
+  object MainMenu: TMainMenu
+    Left = 168
+    Top = 208
+    object nWorkspaces: TMenuItem
+      Caption = #1055#1088#1086#1089#1090#1088#1072#1085#1089#1090#1074#1072
+      object nWorkspaceAdd: TMenuItem
+        Action = actAddWorkspace
+      end
+      object nWorkspaceDelete: TMenuItem
+        Action = actDeleteWorkspace
+      end
+      object nWorkspaceRename: TMenuItem
+        Action = actEditWorkspace
+      end
+    end
+  end
+  object ActionList: TActionList
+    Left = 168
+    Top = 120
+    object actAddWorkspace: TAction
+      Caption = 'actAddWorkspace'
+      OnExecute = actAddWorkspaceExecute
+    end
+    object actDeleteWorkspace: TAction
+      Caption = 'actDeleteWorkspace'
+      OnExecute = actDeleteWorkspaceExecute
+    end
+    object actEditWorkspace: TAction
+      Caption = 'actEditWorkspace'
+      OnExecute = actEditWorkspaceExecute
+    end
+  end
+end

@@ -1,0 +1,172 @@
+unit GlobalHotkeyManager;
+
+{$DEFINE FastMM_FullDebugMode}
+
+interface
+
+uses
+    Core.AppContext,
+    Core.Interfaces.App,
+    Core.Interfaces.Automation,
+    Core.Interfaces.Data,
+    Core.Interfaces.Passwords,
+    Core.Interfaces.Settings,
+    Core.Interfaces.UI,
+    PasswordGenFormUI,
+    System.SysUtils,
+    Vcl.Controls,
+    Vcl.Forms,
+    Winapi.Messages,
+    Winapi.Windows,
+    WindowHelper,
+    WindowMonitor
+    ;
+
+type
+    TGlobalHotkeyManager = class
+    private
+        const
+            HOTKEY_ID_HUD = 1001;
+            HOTKEY_ID_PASSGEN = 1002;
+    private
+        FWindowHandle: Winapi.Windows.HWND;
+        FAppContext: IAppContext;
+        FIsListening: Boolean;
+
+        procedure WndProc(var Msg: TMessage);
+        procedure OnHUDHotkeyTriggered;
+        procedure OnPassGenHotkeyTriggered;
+        procedure RegisterSingleHotkey(ID: Integer; const Config: THotkeyConfig);
+    public
+        constructor Create(AppContext: IAppContext);
+        destructor Destroy; override;
+
+        procedure StartListening;
+        procedure StopListening;
+        procedure ReloadHotkeys; // ��������������� ��� ��������� �������� � UI
+    end;
+
+implementation
+
+uses
+    Common.Localization,
+    QuickSearchFormUI,
+    System.Classes
+    ;
+
+constructor TGlobalHotkeyManager.Create(AppContext: IAppContext);
+begin
+    inherited Create;
+    FAppContext := AppContext;
+    FIsListening := False;
+    FWindowHandle := AllocateHWnd(WndProc);
+end;
+
+destructor TGlobalHotkeyManager.Destroy;
+begin
+    StopListening;
+    DeallocateHWnd(FWindowHandle);
+    inherited;
+end;
+
+procedure TGlobalHotkeyManager.RegisterSingleHotkey(ID: Integer; const Config: THotkeyConfig);
+var
+    Flags: Cardinal;
+begin
+    // ������� ����������� ������� ������ �����������
+    Winapi.Windows.UnregisterHotKey(FWindowHandle, ID);
+
+    if Config.Enabled and (Config.Key <> 0) then
+    begin
+        // ��������� MOD_NOREPEAT, ����� ������ ���������� ��� ������� �������
+        Flags := Config.Modifiers or MOD_NOREPEAT;
+
+        if not Winapi.Windows.RegisterHotKey(FWindowHandle, ID, Flags, Config.Key) then
+        begin
+            // ���� ���������� ������ ������ ���������� � Windows
+            if Assigned(FAppContext) and Assigned(FAppContext.MessagesHandler) then
+                FAppContext.MessagesHandler.ShowWarning(
+                    TUIStateLoader.GetMessage('Common.HotkeyRegistrationError', [ID])
+                );
+        end;
+    end;
+end;
+
+procedure TGlobalHotkeyManager.StartListening;
+var
+    Settings: TAppSettings;
+begin
+    if FIsListening then Exit;
+
+    Settings := FAppContext.SettingsManager.Data;
+
+    // ������������ ������������ �������� �� ��������
+    RegisterSingleHotkey(HOTKEY_ID_HUD, Settings.Hotkeys.QuickSearch);
+    RegisterSingleHotkey(HOTKEY_ID_PASSGEN, Settings.Hotkeys.PasswordGen);
+
+    FIsListening := True;
+end;
+
+procedure TGlobalHotkeyManager.StopListening;
+begin
+    Winapi.Windows.UnregisterHotKey(FWindowHandle, HOTKEY_ID_HUD);
+    Winapi.Windows.UnregisterHotKey(FWindowHandle, HOTKEY_ID_PASSGEN);
+    FIsListening := False;
+end;
+
+procedure TGlobalHotkeyManager.ReloadHotkeys;
+begin
+    // ������������ ������� ������ �� ���� ��� ���������� ��������
+    StopListening;
+    StartListening;
+end;
+
+procedure TGlobalHotkeyManager.WndProc(var Msg: TMessage);
+begin
+    if Msg.Msg = WM_HOTKEY then
+    begin
+        case Msg.WParam of
+            HOTKEY_ID_HUD:
+            begin
+                OnHUDHotkeyTriggered;
+                Msg.Result := 0;
+                Exit;
+            end;
+            HOTKEY_ID_PASSGEN:
+            begin
+                OnPassGenHotkeyTriggered;
+                Msg.Result := 0;
+                Exit;
+            end;
+        end;
+    end;
+    Msg.Result := DefWindowProc(FWindowHandle, Msg.Msg, Msg.WParam, Msg.LParam);
+end;
+
+procedure TGlobalHotkeyManager.OnHUDHotkeyTriggered;
+var
+    CurrentHWND: HWND;
+    ActiveWindowInfo: TWindowMonitorInfo;
+begin
+    CurrentHWND := Winapi.Windows.GetForegroundWindow;
+    ActiveWindowInfo := GWinMonitor.GetLastAllowedWindow;
+
+    if QuickSearchForm.Visible then
+    begin
+        QuickSearchForm.Hide;
+        Exit;
+    end;
+
+    if (ActiveWindowInfo.HWND = CurrentHWND) and IsWindow(CurrentHWND) and (FAppContext.DatabaseManager.IsConnected) then
+    begin
+        QuickSearchForm.ShowWithService(nil, FAppContext, 0, CurrentHWND);
+        QuickSearchForm.Show;
+    end;
+end;
+
+procedure TGlobalHotkeyManager.OnPassGenHotkeyTriggered;
+begin
+    TPasswordGenForm.ExecuteGlobal(nil, FAppContext.PasswordService, FAppContext);
+end;
+
+end.
