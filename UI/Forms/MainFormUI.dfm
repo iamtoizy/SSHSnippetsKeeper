@@ -64,6 +64,8 @@ object MainForm: TMainForm
       OnEdited = tvCategoriesEdited
       OnEndDrag = tvCategoriesEndDrag
       OnMouseDown = tvCategoriesMouseDown
+      OnContextPopup = tvCategoriesContextPopup
+      PopupMenu = pmCategories
     end
   end
   object sbBottom: TStatusBar
@@ -225,6 +227,8 @@ object MainForm: TMainForm
       OnDeletion = lvSnippetsDeletion
       OnInfoTip = lvSnippetsInfoTip
       OnMouseDown = lvSnippetsMouseDown
+      OnContextPopup = lvSnippetsContextPopup
+      PopupMenu = pmSnippets
     end
     object pRight: TPanel
       Left = 429
@@ -248,7 +252,9 @@ object MainForm: TMainForm
         TabOrder = 0
         ViewStyle = vsList
         OnClick = lvTagsClick
+        OnContextPopup = lvTagsContextPopup
         OnEdited = lvTagsEdited
+        PopupMenu = pmTags
       end
     end
   end
@@ -2672,6 +2678,64 @@ object MainForm: TMainForm
     Left = 215
     Top = 441
   end
+  object pmCategories: TPopupMenu
+    Left = 600
+    Top = 441
+    object puCatAdd: TMenuItem
+      Action = actAddCategory
+    end
+    object puCatEdit: TMenuItem
+      Action = actEditCategory
+    end
+    object puCatDelete: TMenuItem
+      Action = actDeleteCategory
+    end
+    object N2: TMenuItem
+      Caption = '-'
+    end
+    object puCatWorkspaces: TMenuItem
+      Caption = 'Workspaces'
+      OnClick = bManageWorkspacesClick
+    end
+  end
+  object pmSnippets: TPopupMenu
+    Left = 640
+    Top = 441
+    object puRunSnippet: TMenuItem
+      Action = actRunSnippet
+    end
+    object N4: TMenuItem
+      Caption = '-'
+    end
+    object puAddSnippet: TMenuItem
+      Action = actAddSnippet
+    end
+    object puEditSnippet: TMenuItem
+      Action = actEditSnippet
+    end
+    object puDeleteSnippet: TMenuItem
+      Action = actDeleteSnippet
+    end
+  end
+  object pmTags: TPopupMenu
+    Left = 680
+    Top = 441
+    object puAddTag: TMenuItem
+      Action = actAddTag
+    end
+    object puEditTag: TMenuItem
+      Action = actEditTag
+    end
+    object puDeleteTag: TMenuItem
+      Action = actDeleteTag
+    end
+    object N5: TMenuItem
+      Caption = '-'
+    end
+    object puClearTagFilter: TMenuItem
+      Action = actClearTagFilter
+    end
+  end
   object ActionList: TActionList
     Left = 328
     Top = 161
@@ -2779,6 +2843,16 @@ object MainForm: TMainForm
       Category = 'Database'
       Caption = 'actSyncDatabase'
       OnExecute = actSyncDatabaseExecute
+    end
+    object actRunSnippet: TAction
+      Category = 'Snippets'
+      Caption = 'actRunSnippet'
+      OnExecute = actRunSnippetExecute
+    end
+    object actClearTagFilter: TAction
+      Category = 'Snippets'
+      Caption = 'actClearTagFilter'
+      OnExecute = actClearTagFilterExecute
     end
   end
   object tmrAutoSync: TTimer

@@ -29,6 +29,7 @@ uses
     System.IOUtils,
     System.SysUtils,
     System.Threading,
+    System.Types,
     Vcl.ActnList,
     Vcl.BaseImageCollection,
     Vcl.ComCtrls,
@@ -101,6 +102,9 @@ type
         nDataManagament: TMenuItem;
         nExit: TMenuItem;
         pmLanguage: TPopupMenu;
+        pmCategories: TPopupMenu;
+        pmSnippets: TPopupMenu;
+        pmTags: TPopupMenu;
         nCronGenerator: TMenuItem;
         nEpochConverter: TMenuItem;
         nNetworkCalculator: TMenuItem;
@@ -131,12 +135,15 @@ type
         actSettings: TAction;
         nSyncDatabase: TMenuItem;
         actSyncDatabase: TAction;
+        actRunSnippet: TAction;
+        actClearTagFilter: TAction;
         tmrAutoSync: TTimer;
         procedure actAddCategoryExecute(Sender: TObject);
         procedure actAddSnippetExecute(Sender: TObject);
         procedure actAddTagExecute(Sender: TObject);
         procedure actArchiveBuilderExecute(Sender: TObject);
         procedure actChmodCalculatorExecute(Sender: TObject);
+        procedure actClearTagFilterExecute(Sender: TObject);
         procedure actCloseDatabaseExecute(Sender: TObject);
         procedure actCreateDatabaseExecute(Sender: TObject);
         procedure actCronGeneratorExecute(Sender: TObject);
@@ -151,12 +158,14 @@ type
         procedure actNetworkCalculatorExecute(Sender: TObject);
         procedure actOpenDatabaseExecute(Sender: TObject);
         procedure actPasswordGeneratorExecute(Sender: TObject);
+        procedure actRunSnippetExecute(Sender: TObject);
         procedure actSearchExecute(Sender: TObject);
         procedure actSettingsExecute(Sender: TObject);
         procedure bManageWorkspacesClick(Sender: TObject);
         procedure cbUserChange(Sender: TObject);
         procedure tvCategoriesChange(Sender: TObject; Node: TTreeNode);
         procedure lvSnippetsClick(Sender: TObject);
+        procedure lvSnippetsContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);
         procedure FormCreate(Sender: TObject);
         procedure lvSnippetsDblClick(Sender: TObject);
         procedure ebSearchChange(Sender: TObject);
@@ -168,8 +177,10 @@ type
         procedure tvCategoriesDragDrop(Sender, Source: TObject; X, Y: Integer);
         procedure tvCategoriesDragOver(Sender, Source: TObject; X, Y: Integer; State: TDragState; var Accept: Boolean);
         procedure tvCategoriesEdited(Sender: TObject; Node: TTreeNode; var S: string);
+        procedure tvCategoriesContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);
         procedure lvSnippetsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
         procedure lvTagsClick(Sender: TObject);
+        procedure lvTagsContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);
         procedure lvTagsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
         procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
         procedure nTagEditorClick(Sender: TObject);
@@ -264,7 +275,6 @@ uses
     SnippetRunner,
     SnippetViewData,
     System.Math,
-    System.Types,
     System.UITypes,
     TagEditorUI,
     UI.Helpers,
@@ -502,18 +512,20 @@ begin
                 tvCategories.Enabled := False;
                 lvSnippets.Enabled := False;
 
-                // Жестко отключаем все зависимые от контента меню
-                nAddCategory.Enabled := False;
-                nDeleteCategory.Enabled := False;
-                nEditCategory.Enabled := False;
+                // Жестко отключаем все зависимые от контента действия (главное меню и попапы)
+                actAddCategory.Enabled := False;
+                actDeleteCategory.Enabled := False;
+                actEditCategory.Enabled := False;
 
-                nAddSnippet.Enabled := False;
-                nEditSnippet.Enabled := False;
-                nDeleteSnippet.Enabled := False;
+                actAddSnippet.Enabled := False;
+                actEditSnippet.Enabled := False;
+                actDeleteSnippet.Enabled := False;
+                actRunSnippet.Enabled := False;
 
-                nAddTag.Enabled := False;
-                nEditTag.Enabled := False;
-                nDeleteTag.Enabled := False;
+                actAddTag.Enabled := False;
+                actEditTag.Enabled := False;
+                actDeleteTag.Enabled := False;
+                actClearTagFilter.Enabled := False;
 
                 // Очищаем списки
                 lvSnippets.Items.Clear;
@@ -567,21 +579,29 @@ begin
 
     // --- КАТЕГОРИИ ---
     // Добавлять категории можно и в категорию, и в корень пространства (но не в вирт. папки)
-    nAddCategory.Enabled := (Node <> nil) and not IsVirtual;
+    actAddCategory.Enabled := (Node <> nil) and not IsVirtual;
     // Удалять и редактировать пространство через это меню нельзя (для этого есть WorkspaceManager)
-    nDeleteCategory.Enabled := (Node <> nil) and not IsVirtual and not IsWorkspace;
-    nEditCategory.Enabled := (Node <> nil) and not IsVirtual and not IsWorkspace;
+    actDeleteCategory.Enabled := (Node <> nil) and not IsVirtual and not IsWorkspace;
+    actEditCategory.Enabled := (Node <> nil) and not IsVirtual and not IsWorkspace;
 
     // --- СНИППЕТЫ ---
     // Сниппеты можно добавлять только в конкретные категории
     actAddSnippet.Enabled := (Node <> nil) and not IsVirtual and not IsWorkspace;
     actDeleteSnippet.Enabled := (lvSnippets.Selected <> nil);
     actEditSnippet.Enabled := (lvSnippets.Selected <> nil);
+    actRunSnippet.Enabled := (lvSnippets.Selected <> nil);
 
     // --- ТЕГИ ---
-    nAddTag.Enabled := True; // Создать новый тег можно всегда
-    nDeleteTag.Enabled := (lvTags.Selected <> nil);
-    nEditTag.Enabled := (lvTags.Selected <> nil);
+    actAddTag.Enabled := True; // Создать новый тег можно всегда
+    actDeleteTag.Enabled := (lvTags.Selected <> nil);
+    actEditTag.Enabled := (lvTags.Selected <> nil);
+    // Пункт активен, пока висит фильтр по тегам
+    actClearTagFilter.Enabled := Length(FTags.FilterTagIDs) > 0;
+end;
+
+procedure TMainForm.actClearTagFilterExecute(Sender: TObject);
+begin
+    FTags.ClearFilter;
 end;
 
 procedure TMainForm.ReloadUI(PreserveCategoryID: Integer);
@@ -683,6 +703,20 @@ end;
 procedure TMainForm.tvCategoriesEdited(Sender: TObject; Node: TTreeNode; var S: string);
 begin
     FCategoryTree.HandleEdited(Node, S);
+end;
+
+procedure TMainForm.tvCategoriesContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);
+var
+    Node: TTreeNode;
+begin
+    // Дерево выделяет узел правым кликом само (до WM_CONTEXTMENU), поэтому
+    // ветка ниже обычно пропускается; в любом случае состояние действий
+    // надо актуализировать перед показом попапа
+    Node := tvCategories.GetNodeAt(MousePos.X, MousePos.Y);
+    if (Node <> nil) and (Node <> tvCategories.Selected) then
+        tvCategories.Selected := Node
+    else
+        UpdateMenuState;
 end;
 
 procedure TMainForm.tvCategoriesDragDrop(Sender, Source: TObject; X, Y: Integer);
@@ -801,6 +835,24 @@ begin
 
     FillUserInterfaceFromSnippet(Snippet);
     UpdateUI(bfsSnippetSelected);
+end;
+
+procedure TMainForm.lvSnippetsContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);
+var
+    Item: TListItem;
+begin
+    // Нативный ListView выделяет пункт правым кликом ДО WM_CONTEXTMENU,
+    // поэтому условие ниже обычно не срабатывает. Прогонять клик-логику
+    // (заполнение панели + UpdateMenuState) нужно ВСЕГДА, иначе попап
+    // покажет Enabled-состояние с предыдущего события
+    Item := lvSnippets.GetItemAt(MousePos.X, MousePos.Y);
+    if (Item <> nil) and (Item <> lvSnippets.Selected) then
+    begin
+        lvSnippets.Selected := Item;
+        Item.Focused := True;
+        Item.MakeVisible(False);
+    end;
+    lvSnippetsClick(lvSnippets);
 end;
 
 procedure TMainForm.DoAddSnippet;
@@ -988,6 +1040,11 @@ begin
 end;
 
 procedure TMainForm.lvSnippetsDblClick(Sender: TObject);
+begin
+    actRunSnippetExecute(Sender);
+end;
+
+procedure TMainForm.actRunSnippetExecute(Sender: TObject);
 var
     Item: TListItem;
     Runner: TSnippetRunner;
@@ -1264,6 +1321,25 @@ end;
 procedure TMainForm.lvTagsClick(Sender: TObject);
 begin
     FTags.HandleClick;
+end;
+
+procedure TMainForm.lvTagsContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);
+var
+    Item: TListItem;
+    I: Integer;
+begin
+    // Если кликнули по невыделенному тегу - выделяем только его (мультивыделение
+    // сохраняем, если точка попала в один из уже выбранных). Фильтр при этом
+    // не применяем, в отличие от левого клика
+    Item := lvTags.GetItemAt(MousePos.X, MousePos.Y);
+    if (Item <> nil) and (not Item.Selected) then
+    begin
+        for I := 0 to lvTags.Items.Count - 1 do
+            lvTags.Items[I].Selected := False;
+        Item.Selected := True;
+        Item.Focused := True;
+    end;
+    UpdateMenuState;
 end;
 
 procedure TMainForm.nExitClick(Sender: TObject);

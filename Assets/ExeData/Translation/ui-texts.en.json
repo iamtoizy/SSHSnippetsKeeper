@@ -74,6 +74,42 @@
     "nDeleteTag": {
       "Caption": "Delete"
     },
+    "puCatAdd": {
+      "Caption": "Add"
+    },
+    "puCatEdit": {
+      "Caption": "Edit"
+    },
+    "puCatDelete": {
+      "Caption": "Delete"
+    },
+    "puCatWorkspaces": {
+      "Caption": "Manage workspaces…"
+    },
+    "puRunSnippet": {
+      "Caption": "Run"
+    },
+    "puAddSnippet": {
+      "Caption": "Add"
+    },
+    "puEditSnippet": {
+      "Caption": "Edit"
+    },
+    "puDeleteSnippet": {
+      "Caption": "Delete"
+    },
+    "puAddTag": {
+      "Caption": "Add"
+    },
+    "puEditTag": {
+      "Caption": "Edit"
+    },
+    "puDeleteTag": {
+      "Caption": "Delete"
+    },
+    "puClearTagFilter": {
+      "Caption": "Reset filter"
+    },
     "nTerminals": {
       "Caption": "Terminals"
     },

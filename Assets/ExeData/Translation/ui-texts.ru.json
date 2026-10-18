@@ -74,6 +74,42 @@
     "nDeleteTag": {
       "Caption": "Удалить"
     },
+    "puCatAdd": {
+      "Caption": "Добавить"
+    },
+    "puCatEdit": {
+      "Caption": "Редактировать"
+    },
+    "puCatDelete": {
+      "Caption": "Удалить"
+    },
+    "puCatWorkspaces": {
+      "Caption": "Управление пространствами…"
+    },
+    "puRunSnippet": {
+      "Caption": "Запустить"
+    },
+    "puAddSnippet": {
+      "Caption": "Добавить"
+    },
+    "puEditSnippet": {
+      "Caption": "Редактировать"
+    },
+    "puDeleteSnippet": {
+      "Caption": "Удалить"
+    },
+    "puAddTag": {
+      "Caption": "Добавить"
+    },
+    "puEditTag": {
+      "Caption": "Изменить"
+    },
+    "puDeleteTag": {
+      "Caption": "Удалить"
+    },
+    "puClearTagFilter": {
+      "Caption": "Сбросить фильтр"
+    },
     "nTerminals": {
       "Caption": "Терминалы"
     },
