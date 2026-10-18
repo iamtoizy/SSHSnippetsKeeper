@@ -226,6 +226,63 @@ object SettingsForm: TSettingsForm
         TabOrder = 3
       end
     end
+    object tsApplications: TTabSheet
+      Caption = #1055#1088#1080#1083#1086#1078#1077#1085#1080#1103
+      object lvApplications: TListView
+        Left = 0
+        Top = 0
+        Width = 616
+        Height = 326
+        Align = alClient
+        Checkboxes = True
+        Columns = <
+          item
+            Caption = #1055#1088#1086#1094#1077#1089#1089
+            Width = 300
+          end>
+        HideSelection = False
+        ReadOnly = True
+        RowSelect = True
+        TabOrder = 0
+        ViewStyle = vsReport
+      end
+      object pApplicationsButtons: TPanel
+        Left = 0
+        Top = 326
+        Width = 616
+        Height = 33
+        Align = alBottom
+        BevelOuter = bvNone
+        TabOrder = 1
+        object bAppAdd: TButton
+          Left = 3
+          Top = 5
+          Width = 100
+          Height = 25
+          Caption = #1044#1086#1073#1072#1074#1080#1090#1100
+          TabOrder = 0
+          OnClick = bAppAddClick
+        end
+        object bAppRename: TButton
+          Left = 109
+          Top = 5
+          Width = 100
+          Height = 25
+          Caption = #1055#1077#1088#1077#1080#1084#1077#1085#1086#1074#1072#1090#1100
+          TabOrder = 1
+          OnClick = bAppRenameClick
+        end
+        object bAppDelete: TButton
+          Left = 215
+          Top = 5
+          Width = 100
+          Height = 25
+          Caption = #1059#1076#1072#1083#1080#1090#1100
+          TabOrder = 2
+          OnClick = bAppDeleteClick
+        end
+      end
+    end
     object tsGeneral: TTabSheet
       Caption = #1054#1073#1097#1080#1077
       object cbTagsMatchAll: TCheckBox

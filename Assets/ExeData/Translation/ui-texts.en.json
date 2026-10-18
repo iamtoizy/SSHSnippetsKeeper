@@ -698,6 +698,23 @@
     "tsHotkeys": {
       "Caption": "Hotkeys"
     },
+    "tsApplications": {
+      "Caption": "Applications"
+    },
+    "lvApplications": {
+      "Columns": {
+        "0": "Process"
+      }
+    },
+    "bAppAdd": {
+      "Caption": "Add"
+    },
+    "bAppRename": {
+      "Caption": "Rename"
+    },
+    "bAppDelete": {
+      "Caption": "Delete"
+    },
     "tsLocalSync": {
       "Caption": "Markdown Sync"
     },
@@ -993,7 +1010,8 @@
       "StatusDbNotOpen": "No database opened",
       "StatusDbDirty": "● Unsynced changes",
       "StatusSnippetCount": "Snippets: %d",
-      "StatusSnippetCountSel": "Snippets: %d (selected: %d)"
+      "StatusSnippetCountSel": "Snippets: %d (selected: %d)",
+      "DebugComponentNotFound": "Component not found on form: %s"
     },
     "DB": {
       "ConnectError": "Critical Error!\nFailed to connect to the SQLite database.\nCheck the file path.",
@@ -1005,7 +1023,12 @@
       "NoConnectionError": "Error: No connection to the database."
     },
     "Settings": {
-      "ResetAllHotkeysConfirm": "Reset all hotkeys to their default values?"
+      "ResetAllHotkeysConfirm": "Reset all hotkeys to their default values?",
+      "ApplicationsAddPrompt": "Application executable file name (e.g., ssh.exe):",
+      "ApplicationsRenamePrompt": "New application executable file name:",
+      "ApplicationsDeleteConfirm": "Delete application \"%s\" from the allowed list?",
+      "ApplicationsInvalidName": "Specify an executable file name (e.g., ssh.exe).",
+      "ApplicationsDuplicate": "Application \"%s\" is already in the list."
     },
     "Category": {
       "DeleteConfirm": "Are you sure you want to delete this category?",

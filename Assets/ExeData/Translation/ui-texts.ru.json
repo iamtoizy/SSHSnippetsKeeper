@@ -771,6 +771,23 @@
     "tsHotkeys": {
       "Caption": "Горячие клавиши"
     },
+    "tsApplications": {
+      "Caption": "Приложения"
+    },
+    "lvApplications": {
+      "Columns": {
+        "0": "Процесс"
+      }
+    },
+    "bAppAdd": {
+      "Caption": "Добавить"
+    },
+    "bAppRename": {
+      "Caption": "Переименовать"
+    },
+    "bAppDelete": {
+      "Caption": "Удалить"
+    },
     "tsLocalSync": {
       "Caption": "Markdown-синхронизация"
     },
@@ -1066,7 +1083,8 @@
       "StatusDbNotOpen": "База не открыта",
       "StatusDbDirty": "● Есть изменения",
       "StatusSnippetCount": "Сниппетов: %d",
-      "StatusSnippetCountSel": "Сниппетов: %d (выделено: %d)"
+      "StatusSnippetCountSel": "Сниппетов: %d (выделено: %d)",
+      "DebugComponentNotFound": "Компонент не найден на форме: %s"
     },
     "DB": {
       "ConnectError": "Критическая ошибка!\nНе удалось подключиться к базе данных SQLite.\nПроверь путь к файлу.",
@@ -1077,7 +1095,12 @@
       "NoConnectionError": "Ошибка: нет подключения к базе данных."
     },
     "Settings": {
-      "ResetAllHotkeysConfirm": "Сбросить все горячие клавиши к значениям по умолчанию?"
+      "ResetAllHotkeysConfirm": "Сбросить все горячие клавиши к значениям по умолчанию?",
+      "ApplicationsAddPrompt": "Имя исполняемого файла (например, ssh.exe):",
+      "ApplicationsRenamePrompt": "Новое имя исполняемого файла:",
+      "ApplicationsDeleteConfirm": "Удалить приложение «%s» из списка разрешённых?",
+      "ApplicationsInvalidName": "Укажи имя исполняемого файла (например, ssh.exe).",
+      "ApplicationsDuplicate": "Приложение «%s» уже есть в списке."
     },
     "Category": {
       "DeleteConfirm": "Уверен, что хочешь удалить эту категорию?",

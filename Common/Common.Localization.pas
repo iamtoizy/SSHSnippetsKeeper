@@ -142,7 +142,7 @@ begin
                 {$IFDEF DEBUG}
                 if not Assigned(Comp) then
                 begin
-                    raise Exception.Create('Компонент не найден на форме: ' + PropPair.JsonString.Value);
+                    raise Exception.Create(TUIStateLoader.GetMessage('Common.DebugComponentNotFound', [PropPair.JsonString.Value]));
                 end;
                 {$ENDIF}
 

@@ -58,6 +58,12 @@ type
         cbSyncOnStart: TCheckBox;
         cbSyncOnExit: TCheckBox;
         cbTagsMatchAll: TCheckBox;
+        tsApplications: TTabSheet;
+        lvApplications: TListView;
+        pApplicationsButtons: TPanel;
+        bAppAdd: TButton;
+        bAppRename: TButton;
+        bAppDelete: TButton;
 
         procedure bSaveClick(Sender: TObject);
         procedure bCancelClick(Sender: TObject);
@@ -70,10 +76,15 @@ type
         procedure FormShow(Sender: TObject);
         procedure lvHotkeysDeletion(Sender: TObject; Item: TListItem);
         procedure lvHotkeysCompare(Sender: TObject; Item1, Item2: TListItem; Data: Integer; var Compare: Integer);
+        procedure bAppAddClick(Sender: TObject);
+        procedure bAppRenameClick(Sender: TObject);
+        procedure bAppDeleteClick(Sender: TObject);
     private
         FLocalActions: TDictionary<string, TActionHotkeyInfo>;
         procedure LoadSettingsToUI;
         procedure PopulateHotkeysList(const FilterText: string = '');
+        procedure PopulateApplicationsList;
+        function TryNormalizeAppName(var AName: string; const AIgnoreExisting: string): Boolean;
     protected
         procedure DoInitialize; override;
     public
@@ -91,7 +102,8 @@ uses
     System.IOUtils,
     Common.Localization,
     Vcl.FileCtrl,
-    Vcl.Menus
+    Vcl.Menus,
+    WindowMonitor
     ;
 
 constructor TSettingsForm.Create(AOwner: TComponent);
@@ -141,6 +153,8 @@ begin
 
     cbTagsMatchAll.Checked := Setts.TagsMatchAll;
 
+    PopulateApplicationsList;
+
     FLocalActions.Clear;
     Actions := AppContext.HotkeyService.GetAllActions;
     for Info in Actions do
@@ -150,6 +164,9 @@ begin
 
     for I := 0 to lvHotkeys.Columns.Count - 1 do
         lvHotkeys.Columns[I].Width := -2;
+
+    for I := 0 to lvApplications.Columns.Count - 1 do
+        lvApplications.Columns[I].Width := -2;
 end;
 
 procedure TSettingsForm.PopulateHotkeysList(const FilterText: string = '');
@@ -295,6 +312,111 @@ begin
         lvHotkeysSelectItem(Self, lvHotkeys.Selected, True);
 end;
 
+procedure TSettingsForm.PopulateApplicationsList;
+var
+    Item: TListItem;
+begin
+    lvApplications.Items.BeginUpdate;
+    try
+        lvApplications.Items.Clear;
+
+        for var App in AppContext.SettingsManager.Data.AllowedApplications do
+        begin
+            Item := lvApplications.Items.Add;
+            Item.Caption := App.ExeName;
+            Item.Checked := App.Enabled;
+        end;
+    finally
+        lvApplications.Items.EndUpdate;
+    end;
+end;
+
+function TSettingsForm.TryNormalizeAppName(var AName: string; const AIgnoreExisting: string): Boolean;
+var
+    Item: TListItem;
+begin
+    AName := ExtractFileName(Trim(AName));
+
+    if AName.IsEmpty then
+    begin
+        MessagesHandler.ShowWarning(
+            TUIStateLoader.GetMessage('Settings.ApplicationsInvalidName')
+        );
+        Exit(False);
+    end;
+
+    if not AName.ToLower.EndsWith('.exe') then
+        AName := AName + '.exe';
+
+    for Item in lvApplications.Items do
+        if (Item.Caption <> AIgnoreExisting) and SameText(Item.Caption, AName) then
+        begin
+            MessagesHandler.ShowWarning(
+                TUIStateLoader.GetMessage('Settings.ApplicationsDuplicate', [AName])
+            );
+            Exit(False);
+        end;
+
+    Result := True;
+end;
+
+procedure TSettingsForm.bAppAddClick(Sender: TObject);
+var
+    NewName: string;
+    Item: TListItem;
+begin
+    NewName := '';
+    if not InputQuery(
+        Caption,
+        TUIStateLoader.GetMessage('Settings.ApplicationsAddPrompt'),
+        NewName
+    ) then Exit;
+
+    if not TryNormalizeAppName(NewName, '') then Exit;
+
+    Item := lvApplications.Items.Add;
+    Item.Caption := NewName;
+    Item.Checked := True;
+    lvApplications.Selected := Item;
+end;
+
+procedure TSettingsForm.bAppRenameClick(Sender: TObject);
+var
+    Item: TListItem;
+    NewName: string;
+begin
+    Item := lvApplications.Selected;
+    if Item = nil then
+        Exit;
+
+    NewName := Item.Caption;
+    if not InputQuery(
+        Caption,
+        TUIStateLoader.GetMessage('Settings.ApplicationsRenamePrompt'),
+        NewName
+    ) then Exit;
+
+    if not TryNormalizeAppName(NewName, Item.Caption) then Exit;
+
+    Item.Caption := NewName;
+end;
+
+procedure TSettingsForm.bAppDeleteClick(Sender: TObject);
+var
+    Item: TListItem;
+begin
+    Item := lvApplications.Selected;
+    if Item = nil then
+        Exit;
+
+    if not MessagesHandler.AskConfirmation(
+        TUIStateLoader.GetMessage('Settings.ApplicationsDeleteConfirm', [Item.Caption]),
+        TUIStateLoader.GetMessage('Common.Confirmation')
+    ) then Exit;
+
+    Item.Delete;
+end;
+
 procedure TSettingsForm.bSaveClick(Sender: TObject);
 var
     Setts: TAppSettings;
@@ -314,6 +436,13 @@ begin
 
     Setts.TagsMatchAll := cbTagsMatchAll.Checked;
 
+    SetLength(Setts.AllowedApplications.Items, lvApplications.Items.Count);
+    for I := 0 to lvApplications.Items.Count - 1 do
+    begin
+        Setts.AllowedApplications.Items[I].ExeName := lvApplications.Items[I].Caption;
+        Setts.AllowedApplications.Items[I].Enabled := lvApplications.Items[I].Checked;
+    end;
+
     for Info in FLocalActions.Values do
         AppContext.HotkeyService.SetActionShortCut(Info.ActionName, Info.CurrentShortCut);
 
@@ -321,6 +450,11 @@ begin
 
     AppContext.SettingsManager.Data := Setts;
     AppContext.SettingsManager.Save;
+
+    GWinMonitor.ClearAllowedProcesses;
+    for I := 0 to lvApplications.Items.Count - 1 do
+        if lvApplications.Items[I].Checked then
+            GWinMonitor.AddAllowedProcess(lvApplications.Items[I].Caption.ToLower);
 
     for I := 0 to Screen.FormCount - 1 do
         AppContext.HotkeyService.ApplySettingsToForm(Screen.Forms[I]);
