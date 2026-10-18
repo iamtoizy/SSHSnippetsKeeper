@@ -107,6 +107,7 @@ uses
   TrackBarEx in 'UI\Controls\TrackBarEx.pas',
   AI.Service in 'UI\Services\AI.Service.pas',
   AI.TextCleaner in 'UI\Services\AI.TextCleaner.pas',
+  AI.LocalAISmokeTest in 'UI\Services\AI.LocalAISmokeTest.pas',
   AISettingsFormUI in 'UI\Forms\AISettingsFormUI.pas' {AISettingsForm},
   SecurityScanner in 'Core\Services\SecurityScanner.pas',
   PasswordService in 'Core\Services\PasswordService.pas',

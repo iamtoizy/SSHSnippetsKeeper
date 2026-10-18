@@ -1,4 +1,4 @@
-unit Core.AppContext;
+п»їunit Core.AppContext;
 
 interface
 
@@ -55,7 +55,7 @@ type
         function GetHotkeyService: IHotkeyService;
         function GetLocalAIService: ILocalAIService;
     public
-        // Основной конструктор (для UI-потока)
+        // РћСЃРЅРѕРІРЅРѕР№ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ (РґР»СЏ UI-РїРѕС‚РѕРєР°)
         constructor Create(
             DatabaseManager: IDatabaseManager;
             DBConnection: TFDConnection;
@@ -64,7 +64,7 @@ type
             MessagesHandler: IUIMessagesHandler
         );
 
-        // Второй конструктор: Для безопасных фоновых задач (TTask)
+        // Р’С‚РѕСЂРѕР№ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ: Р”Р»СЏ Р±РµР·РѕРїР°СЃРЅС‹С… С„РѕРЅРѕРІС‹С… Р·Р°РґР°С‡ (TTask)
         constructor CreateBackground(DBConnection: TFDConnection; BaseContext: IAppContext);
 
         destructor Destroy; override;
@@ -83,7 +83,7 @@ type
 
         function CreateIsolatedSnippetService(out BackgroundConnection: TComponent): ISnippetService;
 
-        // Новая фабрика для полной изоляции при синхронизации
+        // РќРѕРІР°СЏ С„Р°Р±СЂРёРєР° РґР»СЏ РїРѕР»РЅРѕР№ РёР·РѕР»СЏС†РёРё РїСЂРё СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёРё
         function CreateIsolatedContext(out BackgroundConnection: TComponent): IAppContext;
     end;
 
@@ -116,31 +116,31 @@ begin
     FMessagesHandler := MessagesHandler;
 
     FHotkeyService := THotkeyService.Create;
-    // Накладываем настройки юзера из JSON поверх дефолтной карты
+    // РќР°РєР»Р°РґС‹РІР°РµРј РЅР°СЃС‚СЂРѕР№РєРё СЋР·РµСЂР° РёР· JSON РїРѕРІРµСЂС… РґРµС„РѕР»С‚РЅРѕР№ РєР°СЂС‚С‹
     FHotkeyService.LoadFromSettings(FSettingsManager.Data.CustomShortCuts);
 
-    // Создаем репозитории
+    // РЎРѕР·РґР°РµРј СЂРµРїРѕР·РёС‚РѕСЂРёРё
     SnippetRepo := TSnippetRepository.Create(DBConnection);
     CategoryRepo := TCategoryRepository.Create(DBConnection);
     TagRepo := TTagRepository.Create(DBConnection);
     UserRepo := TUserRepository.Create(DBConnection);
 
-    // Создаем сервисы и внедряем в них репозитории
+    // РЎРѕР·РґР°РµРј СЃРµСЂРІРёСЃС‹ Рё РІРЅРµРґСЂСЏРµРј РІ РЅРёС… СЂРµРїРѕР·РёС‚РѕСЂРёРё
     FSnippetService := TSnippetService.Create(SnippetRepo, CategoryRepo, TagRepo, UserRepo);
     FCategoryService := TCategoryService.Create(CategoryRepo);
     FTagService := TTagService.Create(TagRepo);
     FUserService := TUserService.Create(UserRepo);
 
-    // Локальные сервисы, создающиеся в AppContext
+    // Р›РѕРєР°Р»СЊРЅС‹Рµ СЃРµСЂРІРёСЃС‹, СЃРѕР·РґР°СЋС‰РёРµСЃСЏ РІ AppContext
     FPasswordService := TPasswordService.Create;
     FEpochService := TEpochService.Create;
 
-    // Создаем сервис ИИ
+    // РЎРѕР·РґР°РµРј СЃРµСЂРІРёСЃ РР
     FLocalAIService := TLocalAIService.Create(nil);
 end;
 
 // ============================================================================
-// СПЕЦИАЛЬНЫЙ КОНСТРУКТОР ДЛЯ ФОНОВЫХ ПОТОКОВ (СИНХРОНИЗАЦИИ)
+// РЎРџР•Р¦РРђР›Р¬РќР«Р™ РљРћРќРЎРўР РЈРљРўРћР  Р”Р›РЇ Р¤РћРќРћР’Р«РҐ РџРћРўРћРљРћР’ (РЎРРќРҐР РћРќРР—РђР¦РР)
 // ============================================================================
 constructor TAppContext.CreateBackground(DBConnection: TFDConnection; BaseContext: IAppContext);
 var
@@ -151,22 +151,22 @@ var
 begin
     inherited Create;
 
-    // 1. Берем безопасные глобальные синглтоны из базового (главного) контекста
+    // 1. Р‘РµСЂРµРј Р±РµР·РѕРїР°СЃРЅС‹Рµ РіР»РѕР±Р°Р»СЊРЅС‹Рµ СЃРёРЅРіР»С‚РѕРЅС‹ РёР· Р±Р°Р·РѕРІРѕРіРѕ (РіР»Р°РІРЅРѕРіРѕ) РєРѕРЅС‚РµРєСЃС‚Р°
     FDatabaseManager := BaseContext.DatabaseManager;
     FSettingsManager := BaseContext.SettingsManager;
     FMessagesHandler := BaseContext.MessagesHandler;
 
-    // ВАЖНО: Оставляем nil, чтобы деструктор их не трогал и не сломал UI!
+    // Р’РђР–РќРћ: РћСЃС‚Р°РІР»СЏРµРј nil, С‡С‚РѕР±С‹ РґРµСЃС‚СЂСѓРєС‚РѕСЂ РёС… РЅРµ С‚СЂРѕРіР°Р» Рё РЅРµ СЃР»РѕРјР°Р» UI!
     FWindowHelper := nil;
     FHotkeyService := nil;
 
-    // 2. Создаем ИЗОЛИРОВАННЫЕ репозитории с нашим фоновым коннектом
+    // 2. РЎРѕР·РґР°РµРј РР—РћР›РР РћР’РђРќРќР«Р• СЂРµРїРѕР·РёС‚РѕСЂРёРё СЃ РЅР°С€РёРј С„РѕРЅРѕРІС‹Рј РєРѕРЅРЅРµРєС‚РѕРј
     SnippetRepo := TSnippetRepository.Create(DBConnection);
     CategoryRepo := TCategoryRepository.Create(DBConnection);
     TagRepo := TTagRepository.Create(DBConnection);
     UserRepo := TUserRepository.Create(DBConnection);
 
-    // 3. Создаем ИЗОЛИРОВАННЫЕ сервисы
+    // 3. РЎРѕР·РґР°РµРј РР—РћР›РР РћР’РђРќРќР«Р• СЃРµСЂРІРёСЃС‹
     FSnippetService := TSnippetService.Create(SnippetRepo, CategoryRepo, TagRepo, UserRepo);
     FCategoryService := TCategoryService.Create(CategoryRepo);
     FTagService := TTagService.Create(TagRepo);
@@ -175,32 +175,32 @@ begin
     FPasswordService := TPasswordService.Create;
     FEpochService := TEpochService.Create;
 
-    // В фоновом контексте пробрасываем тот же сервис или оставляем nil,
-    // если фоновые задачи не работают с ИИ напрямую
+    // Р’ С„РѕРЅРѕРІРѕРј РєРѕРЅС‚РµРєСЃС‚Рµ РїСЂРѕР±СЂР°СЃС‹РІР°РµРј С‚РѕС‚ Р¶Рµ СЃРµСЂРІРёСЃ РёР»Рё РѕСЃС‚Р°РІР»СЏРµРј nil,
+    // РµСЃР»Рё С„РѕРЅРѕРІС‹Рµ Р·Р°РґР°С‡Рё РЅРµ СЂР°Р±РѕС‚Р°СЋС‚ СЃ РР РЅР°РїСЂСЏРјСѓСЋ
     FLocalAIService := BaseContext.LocalAIService;
 end;
 
 // ============================================================================
-// ФАБРИКА ДЛЯ ФОНОВОЙ СИНХРОНИЗАЦИИ
+// Р¤РђР‘Р РРљРђ Р”Р›РЇ Р¤РћРќРћР’РћР™ РЎРРќРҐР РћРќРР—РђР¦РР
 // ============================================================================
 function TAppContext.CreateIsolatedContext(out BackgroundConnection: TComponent): IAppContext;
 var
     BgConnection: TFDConnection;
 begin
-    // 1. Создаем изолированное подключение к БД
+    // 1. РЎРѕР·РґР°РµРј РёР·РѕР»РёСЂРѕРІР°РЅРЅРѕРµ РїРѕРґРєР»СЋС‡РµРЅРёРµ Рє Р‘Р”
     BgConnection := TFDConnection.Create(nil);
     BgConnection.Params.Text := FDatabaseManager.GetConnectionString;
     BgConnection.Connected := True;
 
-    // Применяем настройки SQLite для многопоточности в фоне
+    // РџСЂРёРјРµРЅСЏРµРј РЅР°СЃС‚СЂРѕР№РєРё SQLite РґР»СЏ РјРЅРѕРіРѕРїРѕС‚РѕС‡РЅРѕСЃС‚Рё РІ С„РѕРЅРµ
     BgConnection.ExecSQL('PRAGMA foreign_keys = ON;');
     BgConnection.ExecSQL('PRAGMA journal_mode = WAL;');
     BgConnection.ExecSQL('PRAGMA busy_timeout = 5000;');
 
-    // 2. Создаем чистый контекст через фоновый конструктор
+    // 2. РЎРѕР·РґР°РµРј С‡РёСЃС‚С‹Р№ РєРѕРЅС‚РµРєСЃС‚ С‡РµСЂРµР· С„РѕРЅРѕРІС‹Р№ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ
     Result := TAppContext.CreateBackground(BgConnection, Self);
 
-    // 3. Отдаем коннект наружу (его освободит блок finally в MainFormUI)
+    // 3. РћС‚РґР°РµРј РєРѕРЅРЅРµРєС‚ РЅР°СЂСѓР¶Сѓ (РµРіРѕ РѕСЃРІРѕР±РѕРґРёС‚ Р±Р»РѕРє finally РІ MainFormUI)
     BackgroundConnection := BgConnection;
 end;
 
@@ -229,8 +229,8 @@ destructor TAppContext.Destroy;
 var
     ObjToFree: TObject;
 begin
-    // Защита: если контекст фоновый, FWindowHelper = nil,
-    // и объект главного потока не будет уничтожен
+    // Р—Р°С‰РёС‚Р°: РµСЃР»Рё РєРѕРЅС‚РµРєСЃС‚ С„РѕРЅРѕРІС‹Р№, FWindowHelper = nil,
+    // Рё РѕР±СЉРµРєС‚ РіР»Р°РІРЅРѕРіРѕ РїРѕС‚РѕРєР° РЅРµ Р±СѓРґРµС‚ СѓРЅРёС‡С‚РѕР¶РµРЅ
     if Assigned(FWindowHelper) then
     begin
         ObjToFree := FWindowHelper as TObject;

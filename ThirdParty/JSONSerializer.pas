@@ -1,4 +1,4 @@
-unit JSONSerializer;
+п»їunit JSONSerializer;
 
 interface
 
@@ -330,7 +330,7 @@ function TDSONValueReader.readFloatValue(const rttiType: TRttiType; const jv: TJ
 var
   rft: TRttiFloatType;
   currVal: Currency;
-  compVal: Comp absolute currVal; // альтернатива: используем тот же битовый шаблон
+  compVal: Comp absolute currVal; // Р°Р»СЊС‚РµСЂРЅР°С‚РёРІР°: РёСЃРїРѕР»СЊР·СѓРµРј С‚РѕС‚ Р¶Рµ Р±РёС‚РѕРІС‹Р№ С€Р°Р±Р»РѕРЅ
 begin
   rft := rttiType as TRttiFloatType;
   case rft.FloatType of
@@ -348,7 +348,7 @@ begin
     ftComp:
       begin
         currVal := jv.GetValue<Currency>;
-        Result := TValue.From<Comp>(compVal); // или PComp(@currVal)^
+        Result := TValue.From<Comp>(compVal); // РёР»Рё PComp(@currVal)^
       end;
   else
     raise Exception.CreateFmt('Unsupported float type %d', [Ord(rft.FloatType)]);
@@ -435,7 +435,7 @@ var
 	tk: TTypeKind;
 begin
 	Result := False;
-	if (jv = nil) {or jv.Null} then	// toizy - Убрал проверку на IsNull, потому что она почему-то TRUE
+	if (jv = nil) {or jv.Null} then	// toizy - РЈР±СЂР°Р» РїСЂРѕРІРµСЂРєСѓ РЅР° IsNull, РїРѕС‚РѕРјСѓ С‡С‚Рѕ РѕРЅР° РїРѕС‡РµРјСѓ-С‚Рѕ TRUE
 		Exit;
 
 	tk := rttiType.TypeKind;

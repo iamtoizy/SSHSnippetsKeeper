@@ -1,4 +1,4 @@
-unit UI.HoverHelpManager;
+п»їunit UI.HoverHelpManager;
 
 interface
 
@@ -41,7 +41,7 @@ type
 
     TOnShowHelpEvent = procedure(Target: TControl; const HelpKey: string; HelpKind: THelpKind) of object;
 
-    // Плавающее окно с кнопкой
+    // РџР»Р°РІР°СЋС‰РµРµ РѕРєРЅРѕ СЃ РєРЅРѕРїРєРѕР№
     THelpPopupWindow = class(TForm)
     private
         FButton: TSpeedButton;
@@ -56,7 +56,7 @@ type
         property OnClickEvent: TNotifyEvent read FOnClickEvent write FOnClickEvent;
     end;
 
-    // Менеджер
+    // РњРµРЅРµРґР¶РµСЂ
     TUIHoverHelpManager = class(TComponent)
     private
         FRegistered: TDictionary<TControl, THelpSetup>;
@@ -292,21 +292,21 @@ var
 begin
     if not Assigned(AOwner) then Exit;
 
-    // 1. Создаем статичную копию ключей (массив).
-    // Теперь нам не страшны любые модификации словаря FRegistered
-    // ни из нашего кода, ни из асинхронных вызовов Notification.
+    // 1. РЎРѕР·РґР°РµРј СЃС‚Р°С‚РёС‡РЅСѓСЋ РєРѕРїРёСЋ РєР»СЋС‡РµР№ (РјР°СЃСЃРёРІ).
+    // РўРµРїРµСЂСЊ РЅР°Рј РЅРµ СЃС‚СЂР°С€РЅС‹ Р»СЋР±С‹Рµ РјРѕРґРёС„РёРєР°С†РёРё СЃР»РѕРІР°СЂСЏ FRegistered
+    // РЅРё РёР· РЅР°С€РµРіРѕ РєРѕРґР°, РЅРё РёР· Р°СЃРёРЅС…СЂРѕРЅРЅС‹С… РІС‹Р·РѕРІРѕРІ Notification.
     KeysArray := FRegistered.Keys.ToArray;
 
     for Ctrl in KeysArray do
     begin
-        // 2. Обязательно проверяем, что контрол всё ещё жив и не находится в процессе удаления
+        // 2. РћР±СЏР·Р°С‚РµР»СЊРЅРѕ РїСЂРѕРІРµСЂСЏРµРј, С‡С‚Рѕ РєРѕРЅС‚СЂРѕР» РІСЃС‘ РµС‰С‘ Р¶РёРІ Рё РЅРµ РЅР°С…РѕРґРёС‚СЃСЏ РІ РїСЂРѕС†РµСЃСЃРµ СѓРґР°Р»РµРЅРёСЏ
         if Assigned(Ctrl) and not (csDestroying in Ctrl.ComponentState) then
         begin
             if (Ctrl.Owner = AOwner) or
                ((AOwner is TCustomForm) and (GetParentForm(Ctrl) = AOwner)) then
             begin
-                // Безопасно отписываем.
-                // Даже если внутри сработает FRegistered.Remove, наш массив KeysArray не пострадает.
+                // Р‘РµР·РѕРїР°СЃРЅРѕ РѕС‚РїРёСЃС‹РІР°РµРј.
+                // Р”Р°Р¶Рµ РµСЃР»Рё РІРЅСѓС‚СЂРё СЃСЂР°Р±РѕС‚Р°РµС‚ FRegistered.Remove, РЅР°С€ РјР°СЃСЃРёРІ KeysArray РЅРµ РїРѕСЃС‚СЂР°РґР°РµС‚.
                 UnregisterControl(Ctrl);
             end;
         end;
@@ -416,10 +416,10 @@ begin
                             FFadeStartTick := CurrentTime;
                             FSharedButton.AlphaBlendValue := 0;
 
-                            // [ИСПРАВЛЕНИЕ БАГА Z-ORDER]
-                            // Принудительно размещаем кнопку ПОВЕРХ ВСЕХ окон.
-                            // Это необходимо для форм со свойством fsStayOnTop,
-                            // иначе после закрытия модального окна они перекрывают кнопку.
+                            // [РРЎРџР РђР’Р›Р•РќРР• Р‘РђР“Рђ Z-ORDER]
+                            // РџСЂРёРЅСѓРґРёС‚РµР»СЊРЅРѕ СЂР°Р·РјРµС‰Р°РµРј РєРЅРѕРїРєСѓ РџРћР’Р•Р РҐ Р’РЎР•РҐ РѕРєРѕРЅ.
+                            // Р­С‚Рѕ РЅРµРѕР±С…РѕРґРёРјРѕ РґР»СЏ С„РѕСЂРј СЃРѕ СЃРІРѕР№СЃС‚РІРѕРј fsStayOnTop,
+                            // РёРЅР°С‡Рµ РїРѕСЃР»Рµ Р·Р°РєСЂС‹С‚РёСЏ РјРѕРґР°Р»СЊРЅРѕРіРѕ РѕРєРЅР° РѕРЅРё РїРµСЂРµРєСЂС‹РІР°СЋС‚ РєРЅРѕРїРєСѓ.
                             SetWindowPos(FSharedButton.Handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE or SWP_NOSIZE or SWP_NOACTIVATE);
 
                             ShowWindow(FSharedButton.Handle, SW_SHOWNOACTIVATE);
@@ -462,32 +462,32 @@ begin
     TargetH := Target.ClientHeight;
     RightPadding := 0;
 
-    // 1. Определяем текущий масштаб (DPI) контрола, над которым мы находимся.
-    // В Delphi 10.3 Rio или новее у TControl есть CurrentPPI
+    // 1. РћРїСЂРµРґРµР»СЏРµРј С‚РµРєСѓС‰РёР№ РјР°СЃС€С‚Р°Р± (DPI) РєРѕРЅС‚СЂРѕР»Р°, РЅР°Рґ РєРѕС‚РѕСЂС‹Рј РјС‹ РЅР°С…РѕРґРёРјСЃСЏ.
+    // Р’ Delphi 10.3 Rio РёР»Рё РЅРѕРІРµРµ Сѓ TControl РµСЃС‚СЊ CurrentPPI
     {$IF CompilerVersion >= 33.0}
     CurrentDPI := Target.CurrentPPI;
     {$ELSE}
     CurrentDPI := Screen.PixelsPerInch;
     {$ENDIF}
 
-    // 2. Берем реальную ширину и высоту кнопки (VCL может сама отмасштабировать THelpPopupWindow)
-    // Это безопаснее, чем использовать константы BTN_WIDTH
+    // 2. Р‘РµСЂРµРј СЂРµР°Р»СЊРЅСѓСЋ С€РёСЂРёРЅСѓ Рё РІС‹СЃРѕС‚Сѓ РєРЅРѕРїРєРё (VCL РјРѕР¶РµС‚ СЃР°РјР° РѕС‚РјР°СЃС€С‚Р°Р±РёСЂРѕРІР°С‚СЊ THelpPopupWindow)
+    // Р­С‚Рѕ Р±РµР·РѕРїР°СЃРЅРµРµ, С‡РµРј РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РєРѕРЅСЃС‚Р°РЅС‚С‹ BTN_WIDTH
     ActualBtnW := FSharedButton.Width;
     ActualBtnH := FSharedButton.Height;
 
-    // 3. Масштабируем ручные оффсеты под текущий DPI монитора.
-    // Если на 100% масштабе (96 DPI) OffsetX был -10, то на 200% (192 DPI) он станет -20
+    // 3. РњР°СЃС€С‚Р°Р±РёСЂСѓРµРј СЂСѓС‡РЅС‹Рµ РѕС„С„СЃРµС‚С‹ РїРѕРґ С‚РµРєСѓС‰РёР№ DPI РјРѕРЅРёС‚РѕСЂР°.
+    // Р•СЃР»Рё РЅР° 100% РјР°СЃС€С‚Р°Р±Рµ (96 DPI) OffsetX Р±С‹Р» -10, С‚Рѕ РЅР° 200% (192 DPI) РѕРЅ СЃС‚Р°РЅРµС‚ -20
     ScaledOffsetX := MulDiv(Setup.OffsetX, CurrentDPI, 96);
     ScaledOffsetY := MulDiv(Setup.OffsetY, CurrentDPI, 96);
 
-    // Автоматически вычисляем ширину встроенных кнопок (стрелочек)
+    // РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРё РІС‹С‡РёСЃР»СЏРµРј С€РёСЂРёРЅСѓ РІСЃС‚СЂРѕРµРЅРЅС‹С… РєРЅРѕРїРѕРє (СЃС‚СЂРµР»РѕС‡РµРє)
     if (Target is TCustomComboBox) or (Target.ClassName = 'TSpinEdit') then
     begin
-        // Масштабируем и системную метрику для HighDPI
+        // РњР°СЃС€С‚Р°Р±РёСЂСѓРµРј Рё СЃРёСЃС‚РµРјРЅСѓСЋ РјРµС‚СЂРёРєСѓ РґР»СЏ HighDPI
         RightPadding := MulDiv(GetSystemMetrics(SM_CXVSCROLL), CurrentDPI, 96);
     end;
 
-    // Вычитаем RightPadding из позиций, привязанных к праавому краю (Right)
+    // Р’С‹С‡РёС‚Р°РµРј RightPadding РёР· РїРѕР·РёС†РёР№, РїСЂРёРІСЏР·Р°РЅРЅС‹С… Рє РїСЂР°Р°РІРѕРјСѓ РєСЂР°СЋ (Right)
     case Setup.Position of
         hipTopLeft:      Pt := Point(BASE_OFFSET_X, BASE_OFFSET_Y);
         hipTopCenter:    Pt := Point((TargetW - ActualBtnW) div 2, BASE_OFFSET_Y);
@@ -501,13 +501,13 @@ begin
         hipBottomRight:  Pt := Point(TargetW - RightPadding - ActualBtnW - BASE_OFFSET_X, TargetH - ActualBtnH - BASE_OFFSET_Y);
     end;
 
-    // Применяем отмасштабированные ручные смещения
+    // РџСЂРёРјРµРЅСЏРµРј РѕС‚РјР°СЃС€С‚Р°Р±РёСЂРѕРІР°РЅРЅС‹Рµ СЂСѓС‡РЅС‹Рµ СЃРјРµС‰РµРЅРёСЏ
     Pt.X := Pt.X + ScaledOffsetX;
     Pt.Y := Pt.Y + ScaledOffsetY;
 
     Pt := Target.ClientToScreen(Pt);
 
-    // Перемещаем кнопку и выводим на передний план
+    // РџРµСЂРµРјРµС‰Р°РµРј РєРЅРѕРїРєСѓ Рё РІС‹РІРѕРґРёРј РЅР° РїРµСЂРµРґРЅРёР№ РїР»Р°РЅ
     SetWindowPos(FSharedButton.Handle, HWND_TOPMOST, Pt.X, Pt.Y, ActualBtnW, ActualBtnH, SWP_NOACTIVATE);
 end;
 

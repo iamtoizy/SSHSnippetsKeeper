@@ -1,4 +1,4 @@
-unit AI.Service;
+п»їunit AI.Service;
 
 interface
 
@@ -24,10 +24,10 @@ type
         FApiKey: string;
         FFolderID: string;
         FModel: string;
-        FAgentID: string; // ID Агента из Yandex AI Studio
+        FAgentID: string; // ID РђРіРµРЅС‚Р° РёР· Yandex AI Studio
         FUseAgent: Boolean;
     public
-        // Конструктор поддерживает как обычную модель, так и Агента (передаем пустую строку в AModel, если нужен Агент)
+        // РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РїРѕРґРґРµСЂР¶РёРІР°РµС‚ РєР°Рє РѕР±С‹С‡РЅСѓСЋ РјРѕРґРµР»СЊ, С‚Р°Рє Рё РђРіРµРЅС‚Р° (РїРµСЂРµРґР°РµРј РїСѓСЃС‚СѓСЋ СЃС‚СЂРѕРєСѓ РІ AModel, РµСЃР»Рё РЅСѓР¶РµРЅ РђРіРµРЅС‚)
         constructor Create(const AApiKey, AFolderID, AModel, AAgentID: string);
         function AskAssistant(const Instruction, CodeContext: string): string;
     end;
@@ -119,7 +119,7 @@ begin
     FFolderID := AFolderID;
     FModel := AModel;
     FAgentID := AAgentID;
-    // Если передан AgentID, значит используем режим Агента
+    // Р•СЃР»Рё РїРµСЂРµРґР°РЅ AgentID, Р·РЅР°С‡РёС‚ РёСЃРїРѕР»СЊР·СѓРµРј СЂРµР¶РёРј РђРіРµРЅС‚Р°
     FUseAgent := not FAgentID.Trim.IsEmpty;
 end;
 
@@ -151,16 +151,16 @@ begin
     RequestJSON := TJSONObject.Create;
     StringStream := TStringStream.Create('', TEncoding.UTF8);
     try
-        // Формируем ввод для ИИ (Инструкция + контекст существующего кода)
+        // Р¤РѕСЂРјРёСЂСѓРµРј РІРІРѕРґ РґР»СЏ РР (РРЅСЃС‚СЂСѓРєС†РёСЏ + РєРѕРЅС‚РµРєСЃС‚ СЃСѓС‰РµСЃС‚РІСѓСЋС‰РµРіРѕ РєРѕРґР°)
         if CodeContext.Trim.IsEmpty then
             CombinedInput := Instruction
         else
             CombinedInput := Format('Instructions: %s' + #13#10 + 'Current code:' + #13#10 + '%s', [Instruction, CodeContext]);
 
-        // --- РАЗДЕЛЕНИЕ ЛОГИКИ ЗАПРОСА ---
+        // --- Р РђР—Р”Р•Р›Р•РќРР• Р›РћР“РРљР Р—РђРџР РћРЎРђ ---
         if FUseAgent then
         begin
-            // Сборка JSON для Агента согласно новой инструкции
+            // РЎР±РѕСЂРєР° JSON РґР»СЏ РђРіРµРЅС‚Р° СЃРѕРіР»Р°СЃРЅРѕ РЅРѕРІРѕР№ РёРЅСЃС‚СЂСѓРєС†РёРё
             PromptJSON := TJSONObject.Create;
             PromptJSON.AddPair('id', FAgentID);
             RequestJSON.AddPair('prompt', PromptJSON);
@@ -168,7 +168,7 @@ begin
             RequestJSON.AddPair('input', CombinedInput);
             RequestJSON.AddPair('max_output_tokens', TJSONNumber.Create(1500));
 
-            // Добавляем обязательный массив tools для code_interpreter
+            // Р”РѕР±Р°РІР»СЏРµРј РѕР±СЏР·Р°С‚РµР»СЊРЅС‹Р№ РјР°СЃСЃРёРІ tools РґР»СЏ code_interpreter
             ToolsArray := TJSONArray.Create;
             ToolObj := TJSONObject.Create;
             ToolObj.AddPair('type', 'code_interpreter');
@@ -185,7 +185,7 @@ begin
         end
         else
         begin
-            // Стандартный JSON для обычной текстовой модели (YandexGPT / DeepSeek)
+            // РЎС‚Р°РЅРґР°СЂС‚РЅС‹Р№ JSON РґР»СЏ РѕР±С‹С‡РЅРѕР№ С‚РµРєСЃС‚РѕРІРѕР№ РјРѕРґРµР»Рё (YandexGPT / DeepSeek)
             RequestJSON.AddPair('model', Format('gpt://%s/%s', [FFolderID, FModel]));
             RequestJSON.AddPair('temperature', TJSONNumber.Create(0.3));
             RequestJSON.AddPair('max_output_tokens', TJSONNumber.Create(1500));
@@ -199,7 +199,7 @@ begin
                 RequestJSON.AddPair('input', CodeContext);
         end;
 
-    // Настройка заголовков
+    // РќР°СЃС‚СЂРѕР№РєР° Р·Р°РіРѕР»РѕРІРєРѕРІ
         Client.CustomHeaders['Authorization'] := 'Bearer ' + FApiKey;
         Client.CustomHeaders['X-Folder-Id'] := FFolderID;
         Client.CustomHeaders['Content-Type'] := 'application/json';
@@ -207,13 +207,13 @@ begin
         StringStream.WriteString(RequestJSON.ToString);
         StringStream.Position := 0;
 
-        // СТРОГО ЧИСТЫЙ URL БЕЗ СКОБОК MARKDOWN И ЛИШНИХ СИМВОЛОВ
+        // РЎРўР РћР“Рћ Р§РРЎРўР«Р™ URL Р‘Р•Р— РЎРљРћР‘РћРљ MARKDOWN Р Р›РРЁРќРРҐ РЎРРњР’РћР›РћР’
         FullURL := 'https://ai.api.cloud.yandex.net/v1/responses';
 
-        // Для полной безопасности принудительно очистим строку от возможных невидимых символов
+        // Р”Р»СЏ РїРѕР»РЅРѕР№ Р±РµР·РѕРїР°СЃРЅРѕСЃС‚Рё РїСЂРёРЅСѓРґРёС‚РµР»СЊРЅРѕ РѕС‡РёСЃС‚РёРј СЃС‚СЂРѕРєСѓ РѕС‚ РІРѕР·РјРѕР¶РЅС‹С… РЅРµРІРёРґРёРјС‹С… СЃРёРјРІРѕР»РѕРІ
         FullURL := Trim(FullURL).DeQuotedString('"').DeQuotedString('''');
 
-        // Выполняем POST запрос
+        // Р’С‹РїРѕР»РЅСЏРµРј POST Р·Р°РїСЂРѕСЃ
         Response := Client.Post(FullURL, StringStream);
 
         RawResponse := Response.ContentAsString;
@@ -227,14 +227,14 @@ begin
         try
             if Assigned(ResponseJSON) then
             begin
-        // Агенты возвращают ответ либо в плоском корневом ключе 'output_text', либо в структуре 'output'
+        // РђРіРµРЅС‚С‹ РІРѕР·РІСЂР°С‰Р°СЋС‚ РѕС‚РІРµС‚ Р»РёР±Рѕ РІ РїР»РѕСЃРєРѕРј РєРѕСЂРЅРµРІРѕРј РєР»СЋС‡Рµ 'output_text', Р»РёР±Рѕ РІ СЃС‚СЂСѓРєС‚СѓСЂРµ 'output'
                 if ResponseJSON.TryGetValue<string>('output_text', Result) then
                 begin
                     Result := TAITextCleaner.ExtractPureCode(Result);
                     Exit;
                 end;
 
-                // Fallback-партинг по массиву output (если ответ всё же разбился на части)
+                // Fallback-РїР°СЂС‚РёРЅРі РїРѕ РјР°СЃСЃРёРІСѓ output (РµСЃР»Рё РѕС‚РІРµС‚ РІСЃС‘ Р¶Рµ СЂР°Р·Р±РёР»СЃСЏ РЅР° С‡Р°СЃС‚Рё)
                 if ResponseJSON.TryGetValue('output', OutputArray) then
                 begin
                     for I := 0 to OutputArray.Count - 1 do
@@ -262,7 +262,7 @@ begin
                 end
                 else if ResponseJSON.TryGetValue('content', Result) then
                 begin
-                    // Обычная строка контента
+                    // РћР±С‹С‡РЅР°СЏ СЃС‚СЂРѕРєР° РєРѕРЅС‚РµРЅС‚Р°
                 end
                 else
                     raise Exception.Create(

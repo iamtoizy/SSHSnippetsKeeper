@@ -32,7 +32,8 @@ type
 implementation
 
 uses
-    Common.Helpers
+    Common.Helpers,
+    Common.Localization
     ;
 
 constructor TLocalAIService.Create(Engine: TPythonEngine);
@@ -101,7 +102,7 @@ begin
 
     except
         on E: Exception do
-            Log := 'Ошибка вызова PIP: ' + E.Message;
+            Log := TUIStateLoader.GetMessage('AI.PipCallError', [E.Message]);
     end;
 end;
 
@@ -136,7 +137,7 @@ begin
     if FIsLoaded then Exit(True);
 
     if not FEngine.IsHandleValid then
-        raise Exception.Create('Критическая ошибка: Интерпретатор Python не найден!');
+        raise Exception.Create(TUIStateLoader.GetMessage('AI.PythonNotFound'));
 
     try
         PyMain := Import('__main__');
@@ -173,7 +174,7 @@ var
     PyMain: Variant;
 begin
     if not FIsLoaded then
-        Exit('Ошибка: Модель нейросети не загружена!');
+        Exit(TUIStateLoader.GetMessage('AI.ModelNotLoaded'));
 
     try
         PyMain := Import('__main__');
@@ -185,7 +186,7 @@ begin
         Result := PyMain.ans;
     except
         on E: Exception do
-            Result := 'Ошибка вызова ИИ: ' + E.Message;
+            Result := TUIStateLoader.GetMessage('AI.AskCallError', [E.Message]);
     end;
 end;
 

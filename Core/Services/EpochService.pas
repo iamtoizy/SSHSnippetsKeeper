@@ -142,7 +142,7 @@ var
     Mo, Y: Word;
 begin
     Result := False;
-    // Формат: Oct 25 14:30:00 (���� ���)
+    // Формат: Oct 25 14:30:00 (Года нет)
     Match := TRegEx.Match(S, '([A-Z][a-z]{2})\s+(\d{1,2})\s+(\d{2}):(\d{2}):(\d{2})');
     if Match.Success then
     begin

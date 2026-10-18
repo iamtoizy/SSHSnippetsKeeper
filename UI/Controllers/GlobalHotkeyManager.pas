@@ -1,4 +1,4 @@
-unit GlobalHotkeyManager;
+﻿unit GlobalHotkeyManager;
 
 {$DEFINE FastMM_FullDebugMode}
 
@@ -43,7 +43,7 @@ type
 
         procedure StartListening;
         procedure StopListening;
-        procedure ReloadHotkeys; // ��������������� ��� ��������� �������� � UI
+        procedure ReloadHotkeys; // Перерегистрация при изменении настроек в UI
     end;
 
 implementation
@@ -73,17 +73,17 @@ procedure TGlobalHotkeyManager.RegisterSingleHotkey(ID: Integer; const Config: T
 var
     Flags: Cardinal;
 begin
-    // ������� ����������� ������� ������ �����������
+    // Сначала обязательно снимаем старую регистрацию
     Winapi.Windows.UnregisterHotKey(FWindowHandle, ID);
 
     if Config.Enabled and (Config.Key <> 0) then
     begin
-        // ��������� MOD_NOREPEAT, ����� ������ ���������� ��� ������� �������
+        // Добавляем MOD_NOREPEAT, чтобы убрать автоповтор при зажатии клавиши
         Flags := Config.Modifiers or MOD_NOREPEAT;
 
         if not Winapi.Windows.RegisterHotKey(FWindowHandle, ID, Flags, Config.Key) then
         begin
-            // ���� ���������� ������ ������ ���������� � Windows
+            // Если комбинация занята другой программой в Windows
             if Assigned(FAppContext) and Assigned(FAppContext.MessagesHandler) then
                 FAppContext.MessagesHandler.ShowWarning(
                     TUIStateLoader.GetMessage('Common.HotkeyRegistrationError', [ID])
@@ -100,7 +100,7 @@ begin
 
     Settings := FAppContext.SettingsManager.Data;
 
-    // ������������ ������������ �������� �� ��������
+    // Регистрируем динамические значения из настроек
     RegisterSingleHotkey(HOTKEY_ID_HUD, Settings.Hotkeys.QuickSearch);
     RegisterSingleHotkey(HOTKEY_ID_PASSGEN, Settings.Hotkeys.PasswordGen);
 
@@ -116,7 +116,7 @@ end;
 
 procedure TGlobalHotkeyManager.ReloadHotkeys;
 begin
-    // ������������ ������� ������ �� ���� ��� ���������� ��������
+    // Перезагрузка горячих клавиш на лету при сохранении настроек
     StopListening;
     StartListening;
 end;

@@ -1,4 +1,4 @@
-unit Core.BashCompletionEngine;
+п»їunit Core.BashCompletionEngine;
 
 interface
 
@@ -10,7 +10,7 @@ uses
     ;
 
 type
-    // Узел дерева команд
+    // РЈР·РµР» РґРµСЂРµРІР° РєРѕРјР°РЅРґ
     TCommandNode = class
     private
         FName: string;
@@ -27,7 +27,7 @@ type
         property SubCommands: TObjectDictionary<string, TCommandNode> read FSubCommands;
     end;
 
-    // Главный движок автодополнения
+    // Р“Р»Р°РІРЅС‹Р№ РґРІРёР¶РѕРє Р°РІС‚РѕРґРѕРїРѕР»РЅРµРЅРёСЏ
     TBashCompletionEngine = class
     private
         FRoot: TCommandNode;
@@ -40,7 +40,7 @@ type
         destructor Destroy; override;
 
         procedure LoadFromJsonFile(const FilePath: string);
-        // Метод для отслеживания изменений файла на диске
+        // РњРµС‚РѕРґ РґР»СЏ РѕС‚СЃР»РµР¶РёРІР°РЅРёСЏ РёР·РјРµРЅРµРЅРёР№ С„Р°Р№Р»Р° РЅР° РґРёСЃРєРµ
         function CheckForUpdates: Boolean;
 
         procedure FillProposals(const LineText: string; ItemList, InsertList: TStrings; var CanExecute: Boolean);
@@ -53,7 +53,7 @@ uses
     System.JSON
     ;
 
-// Безопасная рекурсивная процедура чтения узлов (без inline var)
+// Р‘РµР·РѕРїР°СЃРЅР°СЏ СЂРµРєСѓСЂСЃРёРІРЅР°СЏ РїСЂРѕС†РµРґСѓСЂР° С‡С‚РµРЅРёСЏ СѓР·Р»РѕРІ (Р±РµР· inline var)
 procedure ParseJsonNode(ParentNode: TCommandNode; JsonObject: TJSONObject);
 var
     I: Integer;
@@ -68,19 +68,19 @@ begin
         Pair := JsonObject.Pairs[I];
         CmdName := Pair.JsonString.Value;
 
-        // Убеждаемся, что значение - это объект
+        // РЈР±РµР¶РґР°РµРјСЃСЏ, С‡С‚Рѕ Р·РЅР°С‡РµРЅРёРµ - СЌС‚Рѕ РѕР±СЉРµРєС‚
         if Pair.JsonValue is TJSONObject then
         begin
             CmdObj := TJSONObject(Pair.JsonValue);
 
-            // 1. Пытаемся получить текст вставки
+            // 1. РџС‹С‚Р°РµРјСЃСЏ РїРѕР»СѓС‡РёС‚СЊ С‚РµРєСЃС‚ РІСЃС‚Р°РІРєРё
             InsertVal := CmdObj.GetValue('insert');
             if Assigned(InsertVal) then
                 ChildNode := ParentNode.Add(CmdName, InsertVal.Value)
             else
                 ChildNode := ParentNode.Add(CmdName, CmdName + ' ');
 
-            // 2. Рекурсивно читаем вложенные команды
+            // 2. Р РµРєСѓСЂСЃРёРІРЅРѕ С‡РёС‚Р°РµРј РІР»РѕР¶РµРЅРЅС‹Рµ РєРѕРјР°РЅРґС‹
             ChildrenVal := CmdObj.GetValue('children');
             if Assigned(ChildrenVal) and (ChildrenVal is TJSONObject) then
                 ParseJsonNode(ChildNode, TJSONObject(ChildrenVal));
@@ -135,7 +135,7 @@ begin
     if not TFile.Exists(FilePath) then
         Exit;
 
-    // Запоминаем путь и время последнего изменения файла
+    // Р—Р°РїРѕРјРёРЅР°РµРј РїСѓС‚СЊ Рё РІСЂРµРјСЏ РїРѕСЃР»РµРґРЅРµРіРѕ РёР·РјРµРЅРµРЅРёСЏ С„Р°Р№Р»Р°
     FFilePath := FilePath;
     FLastModified := TFile.GetLastWriteTime(FilePath);
 
@@ -144,7 +144,7 @@ begin
 
     if Assigned(JsonRoot) then
     try
-        FRoot.SubCommands.Clear; // Очищаем старое дерево
+        FRoot.SubCommands.Clear; // РћС‡РёС‰Р°РµРј СЃС‚Р°СЂРѕРµ РґРµСЂРµРІРѕ
         ParseJsonNode(FRoot, JsonRoot);
     finally
         JsonRoot.Free;
@@ -161,12 +161,12 @@ begin
     if not TFile.Exists(FFilePath) then
         Exit;
 
-    // Сравниваем время на диске с тем, что в памяти
+    // РЎСЂР°РІРЅРёРІР°РµРј РІСЂРµРјСЏ РЅР° РґРёСЃРєРµ СЃ С‚РµРј, С‡С‚Рѕ РІ РїР°РјСЏС‚Рё
     CurrentModified := TFile.GetLastWriteTime(FFilePath);
 
     if CurrentModified > FLastModified then
     begin
-        // Файл изменился. Загружаем его заново.
+        // Р¤Р°Р№Р» РёР·РјРµРЅРёР»СЃСЏ. Р—Р°РіСЂСѓР¶Р°РµРј РµРіРѕ Р·Р°РЅРѕРІРѕ.
         LoadFromJsonFile(FFilePath);
         Result := True;
     end;

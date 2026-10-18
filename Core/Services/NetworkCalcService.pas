@@ -1,4 +1,4 @@
-unit NetworkCalcService;
+п»їunit NetworkCalcService;
 
 interface
 
@@ -9,7 +9,7 @@ uses
     System.Classes;
 
 type
-    // Типы сетей
+    // РўРёРїС‹ СЃРµС‚РµР№
     TIPNetworkType = (ntPublic, ntPrivate, ntLoopback, ntLinkLocal, ntMulticast, ntBroadcast);
 
     TIPv4Network = record
@@ -22,7 +22,7 @@ type
         function GetWildcard: Cardinal;
     public
         constructor Create(const AIP: string; AMaskBits: Byte); overload;
-        constructor Create(const ACIDRString: string); overload; // Формат '192.168.1.1/24'
+        constructor Create(const ACIDRString: string); overload; // Р¤РѕСЂРјР°С‚ '192.168.1.1/24'
         constructor Create(AIP: Cardinal; AMaskBits: Byte); overload;
 
         property IP: Cardinal read FIP;
@@ -33,20 +33,20 @@ type
         property Broadcast: Cardinal read GetBroadcast;
         property Wildcard: Cardinal read GetWildcard;
 
-        function HostsCount: UInt64; // UInt64 на случай /0 (весь интернет)
+        function HostsCount: UInt64; // UInt64 РЅР° СЃР»СѓС‡Р°Р№ /0 (РІРµСЃСЊ РёРЅС‚РµСЂРЅРµС‚)
         function FirstHost: Cardinal;
         function LastHost: Cardinal;
 
         function GetNetworkType: TIPNetworkType;
 
-        // Вспомогательные методы
+        // Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Рµ РјРµС‚РѕРґС‹
         class function IPToStr(AIP: Cardinal): string; static;
         class function StrToIP(const S: string): Cardinal; overload; static;
         class function ToBinaryStr(AIP: Cardinal; AMaskBits: Byte = 0): string; static;
 
-        // Методы, чтобы калькулятор понимал варианты ввода вроде:
-        // 192.168.1.50 255.255.255.0, 192.168.1.50/24 или 192.168.1.50 24,
-        // а также строго проверял диапазоны октетов (чтобы 192.168.300.1 не считался валидным)
+        // РњРµС‚РѕРґС‹, С‡С‚РѕР±С‹ РєР°Р»СЊРєСѓР»СЏС‚РѕСЂ РїРѕРЅРёРјР°Р» РІР°СЂРёР°РЅС‚С‹ РІРІРѕРґР° РІСЂРѕРґРµ:
+        // 192.168.1.50 255.255.255.0, 192.168.1.50/24 РёР»Рё 192.168.1.50 24,
+        // Р° С‚Р°РєР¶Рµ СЃС‚СЂРѕРіРѕ РїСЂРѕРІРµСЂСЏР» РґРёР°РїР°Р·РѕРЅС‹ РѕРєС‚РµС‚РѕРІ (С‡С‚РѕР±С‹ 192.168.300.1 РЅРµ СЃС‡РёС‚Р°Р»СЃСЏ РІР°Р»РёРґРЅС‹Рј)
         class function StrToIP(const S: string; out IP: Cardinal): Boolean; overload; static;
         class function NetmaskToBits(const MaskStr: string): Byte; static;
         class function TryParseInput(const Input: string; DefaultMask: Byte; out IP: Cardinal; out MaskBits: Byte): Boolean; static;
@@ -72,7 +72,7 @@ begin
     if Length(Parts) > 1 then
         FMaskBits := EnsureRange(StrToIntDef(Parts[1], 32), 0, 32)
     else
-        FMaskBits := 32; // По умолчанию 1 хост
+        FMaskBits := 32; // РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ 1 С…РѕСЃС‚
 end;
 
 class function TIPv4Network.StrToIP(const S: string): Cardinal;
@@ -83,7 +83,7 @@ begin
     Result := 0;
     Octets := S.Split(['.']);
     if Length(Octets) <> 4 then
-        Exit; // Возвращаем 0 при ошибке (в приложении можно бросить Exception)
+        Exit; // Р’РѕР·РІСЂР°С‰Р°РµРј 0 РїСЂРё РѕС€РёР±РєРµ (РІ РїСЂРёР»РѕР¶РµРЅРёРё РјРѕР¶РЅРѕ Р±СЂРѕСЃРёС‚СЊ Exception)
 
     for I := 0 to 3 do
         Result := Result or (Cardinal(StrToIntDef(Octets[I], 0)) shl ((3 - I) * 8));
@@ -99,7 +99,7 @@ begin
     if FMaskBits = 0 then
         Result := 0
     else
-        // Сдвигаем единицы влево. Например для /24 это будет 32-24 = 8 нулей справа
+        // РЎРґРІРёРіР°РµРј РµРґРёРЅРёС†С‹ РІР»РµРІРѕ. РќР°РїСЂРёРјРµСЂ РґР»СЏ /24 СЌС‚Рѕ Р±СѓРґРµС‚ 32-24 = 8 РЅСѓР»РµР№ СЃРїСЂР°РІР°
         Result := $FFFFFFFF shl (32 - FMaskBits);
 end;
 
@@ -126,7 +126,7 @@ end;
 
 function TIPv4Network.FirstHost: Cardinal;
 begin
-    if FMaskBits >= 31 then // Для /31 и /32 нет Broadcast и Network
+    if FMaskBits >= 31 then // Р”Р»СЏ /31 Рё /32 РЅРµС‚ Broadcast Рё Network
         Result := GetNetwork
     else
         Result := GetNetwork + 1;
@@ -153,13 +153,13 @@ begin
     while (Bits < 32) and (((MaskIP shr (31 - Bits)) and 1) = 1) do
         Inc(Bits);
 
-    // Строгая проверка: формируем идеальную маску из полученных бит
+    // РЎС‚СЂРѕРіР°СЏ РїСЂРѕРІРµСЂРєР°: С„РѕСЂРјРёСЂСѓРµРј РёРґРµР°Р»СЊРЅСѓСЋ РјР°СЃРєСѓ РёР· РїРѕР»СѓС‡РµРЅРЅС‹С… Р±РёС‚
     ExpectedMask := 0;
     if Bits > 0 then
         ExpectedMask := $FFFFFFFF shl (32 - Bits);
 
-    // Если идеальная маска не совпадает с тем, что ввели (например, 255.255.0.255),
-    // значит маска некорректная. Возвращаем 0.
+    // Р•СЃР»Рё РёРґРµР°Р»СЊРЅР°СЏ РјР°СЃРєР° РЅРµ СЃРѕРІРїР°РґР°РµС‚ СЃ С‚РµРј, С‡С‚Рѕ РІРІРµР»Рё (РЅР°РїСЂРёРјРµСЂ, 255.255.0.255),
+    // Р·РЅР°С‡РёС‚ РјР°СЃРєР° РЅРµРєРѕСЂСЂРµРєС‚РЅР°СЏ. Р’РѕР·РІСЂР°С‰Р°РµРј 0.
     if MaskIP <> ExpectedMask then
         Exit(0);
 
@@ -182,7 +182,7 @@ begin
     begin
         if not TryStrToInt(Octets[I], Val) then
             Exit;
-        // Октет должен быть строго в диапазоне от 0 до 255
+        // РћРєС‚РµС‚ РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ СЃС‚СЂРѕРіРѕ РІ РґРёР°РїР°Р·РѕРЅРµ РѕС‚ 0 РґРѕ 255
         if (Val < 0) or (Val > 255) then
             Exit;
 
@@ -237,11 +237,11 @@ begin
         Bit := (AIP shr I) and 1;
         Result := Result + IntToStr(Bit);
 
-        // Добавляем точку каждые 8 бит
+        // Р”РѕР±Р°РІР»СЏРµРј С‚РѕС‡РєСѓ РєР°Р¶РґС‹Рµ 8 Р±РёС‚
         if (I mod 8 = 0) and (I > 0) then
             Result := Result + '.';
 
-        // Можно добавить визуальный разделитель (например '|') где заканчивается маска
+        // РњРѕР¶РЅРѕ РґРѕР±Р°РІРёС‚СЊ РІРёР·СѓР°Р»СЊРЅС‹Р№ СЂР°Р·РґРµР»РёС‚РµР»СЊ (РЅР°РїСЂРёРјРµСЂ '|') РіРґРµ Р·Р°РєР°РЅС‡РёРІР°РµС‚СЃСЏ РјР°СЃРєР°
         if (32 - I) = AMaskBits then
             Result := Result + '|';
     end;
@@ -261,7 +261,7 @@ begin
     if CleanInput = '' then
         Exit;
 
-    // Формат CIDR со слешем (192.168.1.1/24 или 192.168.1.1/255.255.255.0)
+    // Р¤РѕСЂРјР°С‚ CIDR СЃРѕ СЃР»РµС€РµРј (192.168.1.1/24 РёР»Рё 192.168.1.1/255.255.255.0)
     if CleanInput.Contains('/') then
     begin
         Parts := CleanInput.Split(['/']);
@@ -281,10 +281,10 @@ begin
         Exit(True);
     end;
 
-    // Формат с пробелом (192.168.1.1 255.255.255.0 или 192.168.1.1 24)
+    // Р¤РѕСЂРјР°С‚ СЃ РїСЂРѕР±РµР»РѕРј (192.168.1.1 255.255.255.0 РёР»Рё 192.168.1.1 24)
     if CleanInput.Contains(' ') then
     begin
-        // Заменяем множественные пробелы на один
+        // Р—Р°РјРµРЅСЏРµРј РјРЅРѕР¶РµСЃС‚РІРµРЅРЅС‹Рµ РїСЂРѕР±РµР»С‹ РЅР° РѕРґРёРЅ
         while CleanInput.Contains('  ') do
             CleanInput := StringReplace(CleanInput, '  ', ' ', [rfReplaceAll]);
 
@@ -308,7 +308,7 @@ begin
         end;
     end;
 
-    // Только IP-адрес без маски
+    // РўРѕР»СЊРєРѕ IP-Р°РґСЂРµСЃ Р±РµР· РјР°СЃРєРё
     if StrToIP(CleanInput, IP) then
     begin
         MaskBits := EnsureRange(DefaultMask, 0, 32);

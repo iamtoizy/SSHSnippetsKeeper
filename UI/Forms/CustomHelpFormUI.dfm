@@ -15,24 +15,4 @@ object CustomHelpForm: TCustomHelpForm
   OnCreate = FormCreate
   OnShow = FormShow
   TextHeight = 15
-  object HtmlViewer: THtmlViewer
-    Left = 0
-    Top = 0
-    Width = 460
-    Height = 339
-    BorderStyle = htNone
-    HistoryMaxCount = 0
-    NoSelect = False
-    PrintMarginBottom = 2.000000000000000000
-    PrintMarginLeft = 2.000000000000000000
-    PrintMarginRight = 2.000000000000000000
-    PrintMarginTop = 2.000000000000000000
-    PrintScale = 1.000000000000000000
-    Text = ''
-    OnHotSpotClick = HtmlViewerHotSpotClick
-    Align = alClient
-    TabOrder = 0
-    Touch.InteractiveGestures = [igPan]
-    Touch.InteractiveGestureOptions = [igoPanSingleFingerHorizontal, igoPanSingleFingerVertical, igoPanInertia]
-  end
 end

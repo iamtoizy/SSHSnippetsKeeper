@@ -1,4 +1,4 @@
-unit HintTextEdit;
+п»їunit HintTextEdit;
 
 interface
 
@@ -17,7 +17,7 @@ type
         function GetHintText: string;
         procedure SetHintText(const Value: string);
     protected
-        // Переопределяем встроенный метод Change вместо хуков в WndProc
+        // РџРµСЂРµРѕРїСЂРµРґРµР»СЏРµРј РІСЃС‚СЂРѕРµРЅРЅС‹Р№ РјРµС‚РѕРґ Change РІРјРµСЃС‚Рѕ С…СѓРєРѕРІ РІ WndProc
         procedure Change; override;
     published
         property EnableHintText: Boolean read FEnableHintText write SetEnableHintText;
@@ -40,13 +40,13 @@ begin
     inherited Create(Owner);
     FEnableHintText := False;
     FMaskedStr := '';
-    // Используем встроенное свойство VCL для отображения подсказок (Cue Banner API)
+    // РСЃРїРѕР»СЊР·СѓРµРј РІСЃС‚СЂРѕРµРЅРЅРѕРµ СЃРІРѕР№СЃС‚РІРѕ VCL РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ РїРѕРґСЃРєР°Р·РѕРє (Cue Banner API)
     Self.TextHint := 'Type here... ("*", "?" wildcards are supported)';
 end;
 
 procedure TEdit.Change;
 begin
-    inherited Change; // Вызывает стандартный OnChange (безопасно)
+    inherited Change; // Р’С‹Р·С‹РІР°РµС‚ СЃС‚Р°РЅРґР°СЂС‚РЅС‹Р№ OnChange (Р±РµР·РѕРїР°СЃРЅРѕ)
     if FEnableHintText then
         PrepareMaskStr;
 end;
@@ -62,12 +62,12 @@ end;
 
 function TEdit.GetHintText: string;
 begin
-    Result := Self.TextHint; // Читаем из нативного свойства
+    Result := Self.TextHint; // Р§РёС‚Р°РµРј РёР· РЅР°С‚РёРІРЅРѕРіРѕ СЃРІРѕР№СЃС‚РІР°
 end;
 
 procedure TEdit.SetHintText(const Value: string);
 begin
-    Self.TextHint := Value; // Пишем в нативное свойство
+    Self.TextHint := Value; // РџРёС€РµРј РІ РЅР°С‚РёРІРЅРѕРµ СЃРІРѕР№СЃС‚РІРѕ
 end;
 
 procedure TEdit.PrepareMaskStr;

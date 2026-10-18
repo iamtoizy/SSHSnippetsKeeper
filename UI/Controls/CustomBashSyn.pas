@@ -1,4 +1,4 @@
-unit CustomBashSyn;
+п»їunit CustomBashSyn;
 
 interface
 
@@ -9,17 +9,17 @@ uses
     ;
 
 type
-  // Наш умный хайлайтер с поддержкой динамического словаря
+  // РќР°С€ СѓРјРЅС‹Р№ С…Р°Р№Р»Р°Р№С‚РµСЂ СЃ РїРѕРґРґРµСЂР¶РєРѕР№ РґРёРЅР°РјРёС‡РµСЃРєРѕРіРѕ СЃР»РѕРІР°СЂСЏ
     TCustomBashSyn = class(TSynUNIXShellScriptSyn)
     private
         FExtraKeywords: TStringList;
     public
         constructor Create(Owner: TComponent); override;
         destructor Destroy; override;
-        // Этот метод SynEdit вызывает для КАЖДОГО слова, чтобы узнать его цвет
+        // Р­С‚РѕС‚ РјРµС‚РѕРґ SynEdit РІС‹Р·С‹РІР°РµС‚ РґР»СЏ РљРђР–Р”РћР“Рћ СЃР»РѕРІР°, С‡С‚РѕР±С‹ СѓР·РЅР°С‚СЊ РµРіРѕ С†РІРµС‚
         function GetTokenAttribute: TSynHighlighterAttributes; override;
 
-        // Сюда мы загрузим наш bash_commands.txt
+        // РЎСЋРґР° РјС‹ Р·Р°РіСЂСѓР·РёРј РЅР°С€ bash_commands.txt
         property ExtraKeywords: TStringList read FExtraKeywords;
     end;
 
@@ -32,10 +32,10 @@ begin
     inherited Create(Owner);
     FExtraKeywords := TStringList.Create;
 
-    // КРИТИЧНО для Linux: команды чувствительны к регистру (Docker != docker)
+    // РљР РРўРР§РќРћ РґР»СЏ Linux: РєРѕРјР°РЅРґС‹ С‡СѓРІСЃС‚РІРёС‚РµР»СЊРЅС‹ Рє СЂРµРіРёСЃС‚СЂСѓ (Docker != docker)
     FExtraKeywords.CaseSensitive := True;
 
-    // Включаем сортировку для мгновенного бинарного поиска (чтобы редактор не тормозил)
+    // Р’РєР»СЋС‡Р°РµРј СЃРѕСЂС‚РёСЂРѕРІРєСѓ РґР»СЏ РјРіРЅРѕРІРµРЅРЅРѕРіРѕ Р±РёРЅР°СЂРЅРѕРіРѕ РїРѕРёСЃРєР° (С‡С‚РѕР±С‹ СЂРµРґР°РєС‚РѕСЂ РЅРµ С‚РѕСЂРјРѕР·РёР»)
     FExtraKeywords.Sorted := True;
 end;
 
@@ -47,14 +47,14 @@ end;
 
 function TCustomBashSyn.GetTokenAttribute: TSynHighlighterAttributes;
 begin
-  // Сначала спрашиваем стандартный хайлайтер
+  // РЎРЅР°С‡Р°Р»Р° СЃРїСЂР°С€РёРІР°РµРј СЃС‚Р°РЅРґР°СЂС‚РЅС‹Р№ С…Р°Р№Р»Р°Р№С‚РµСЂ
   Result := inherited GetTokenAttribute;
 
-  // Затем проверяем: если текущее слово есть в нашем словаре...
-  // (FExtraKeywords.IndexOf работает за наносекунды благодаря Sorted=True)
+  // Р—Р°С‚РµРј РїСЂРѕРІРµСЂСЏРµРј: РµСЃР»Рё С‚РµРєСѓС‰РµРµ СЃР»РѕРІРѕ РµСЃС‚СЊ РІ РЅР°С€РµРј СЃР»РѕРІР°СЂРµ...
+  // (FExtraKeywords.IndexOf СЂР°Р±РѕС‚Р°РµС‚ Р·Р° РЅР°РЅРѕСЃРµРєСѓРЅРґС‹ Р±Р»Р°РіРѕРґР°СЂСЏ Sorted=True)
   if FExtraKeywords.IndexOf(GetToken) >= 0 then
   begin
-    // ...плевать, что думает базовый класс, МЫ решаем, что это ключевое слово!
+    // ...РїР»РµРІР°С‚СЊ, С‡С‚Рѕ РґСѓРјР°РµС‚ Р±Р°Р·РѕРІС‹Р№ РєР»Р°СЃСЃ, РњР« СЂРµС€Р°РµРј, С‡С‚Рѕ СЌС‚Рѕ РєР»СЋС‡РµРІРѕРµ СЃР»РѕРІРѕ!
     Result := KeyAttri;
   end;
 end;

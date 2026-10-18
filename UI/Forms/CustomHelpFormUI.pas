@@ -1,4 +1,4 @@
-unit CustomHelpFormUI;
+п»їunit CustomHelpFormUI;
 
 interface
 
@@ -47,19 +47,27 @@ uses
 
 procedure TCustomHelpForm.FormCreate(Sender: TObject);
 begin
-    // Убираем рамку вокруг HTML-вьювера, чтобы он сливался с формой
+    HtmlViewer := THtmlViewer.Create(Self);
+    HtmlViewer.Parent := Self;
+    HtmlViewer.Align := alClient;
+    HtmlViewer.HistoryMaxCount := 0;
+    HtmlViewer.OnHotSpotClick := HtmlViewerHotSpotClick;
+
+    // РЈР±РёСЂР°РµРј СЂР°РјРєСѓ РІРѕРєСЂСѓРі HTML-РІСЊСЋРІРµСЂР°, С‡С‚РѕР±С‹ РѕРЅ СЃР»РёРІР°Р»СЃСЏ СЃ С„РѕСЂРјРѕР№
     HtmlViewer.BorderStyle := htNone;
-    // Синхронизируем базовый цвет компонента с цветом формы VCL-стиля
+    // РЎРёРЅС…СЂРѕРЅРёР·РёСЂСѓРµРј Р±Р°Р·РѕРІС‹Р№ С†РІРµС‚ РєРѕРјРїРѕРЅРµРЅС‚Р° СЃ С†РІРµС‚РѕРј С„РѕСЂРјС‹ VCL-СЃС‚РёР»СЏ
     HtmlViewer.DefBackground := StyleServices.GetSystemColor(clBtnFace);
-    // Запрещаем компоненту получать фокус при случайном нажатии клавиши TAB
+    // Р—Р°РїСЂРµС‰Р°РµРј РєРѕРјРїРѕРЅРµРЅС‚Сѓ РїРѕР»СѓС‡Р°С‚СЊ С„РѕРєСѓСЃ РїСЂРё СЃР»СѓС‡Р°Р№РЅРѕРј РЅР°Р¶Р°С‚РёРё РєР»Р°РІРёС€Рё TAB
     HtmlViewer.TabStop := False;
-    // Создаем громоотвод для фокуса
+    // РЎРѕР·РґР°РµРј РіСЂРѕРјРѕРѕС‚РІРѕРґ РґР»СЏ С„РѕРєСѓСЃР°
     FFocusCatcher := TButton.Create(Self);
     FFocusCatcher.Parent := Self;
-    // Прячем кнопку далеко за пределами экрана (в координатах -1000)
+    // РџСЂСЏС‡РµРј РєРЅРѕРїРєСѓ РґР°Р»РµРєРѕ Р·Р° РїСЂРµРґРµР»Р°РјРё СЌРєСЂР°РЅР° (РІ РєРѕРѕСЂРґРёРЅР°С‚Р°С… -1000)
     FFocusCatcher.SetBounds(-1000, -1000, 10, 10);
-    // Делаем её первой в очереди на получение фокуса
+    // Р”РµР»Р°РµРј РµС‘ РїРµСЂРІРѕР№ РІ РѕС‡РµСЂРµРґРё РЅР° РїРѕР»СѓС‡РµРЅРёРµ С„РѕРєСѓСЃР°
     FFocusCatcher.TabOrder := 0;
+
+    TUIStateLoader.ApplyTranslations(Self);
 end;
 
 { TCustomHelpForm }
@@ -83,8 +91,8 @@ end;
 
 procedure TCustomHelpForm.FormShow(Sender: TObject);
 begin
-    // При появлении формы, VCL захочет кому-то отдать фокус.
-    // Жёстко перенаправляем этот удар на невидимую кнопку.
+    // РџСЂРё РїРѕСЏРІР»РµРЅРёРё С„РѕСЂРјС‹, VCL Р·Р°С…РѕС‡РµС‚ РєРѕРјСѓ-С‚Рѕ РѕС‚РґР°С‚СЊ С„РѕРєСѓСЃ.
+    // Р–С‘СЃС‚РєРѕ РїРµСЂРµРЅР°РїСЂР°РІР»СЏРµРј СЌС‚РѕС‚ СѓРґР°СЂ РЅР° РЅРµРІРёРґРёРјСѓСЋ РєРЅРѕРїРєСѓ.
     ActiveControl := FFocusCatcher;
 end;
 
@@ -93,38 +101,38 @@ var
     VclBg, VclText, VclAccent, VclPreBg, VclBorder: string;
     BodyContent, FinalHtml: string;
 begin
-    // Вместо clWindow берем clBtnFace, чтобы фон совпал с формой
+    // Р’РјРµСЃС‚Рѕ clWindow Р±РµСЂРµРј clBtnFace, С‡С‚РѕР±С‹ С„РѕРЅ СЃРѕРІРїР°Р» СЃ С„РѕСЂРјРѕР№
     VclBg := ColorToHtmlHex(StyleServices.GetSystemColor(clBtnFace));
     VclText := ColorToHtmlHex(StyleServices.GetSystemColor(clWindowText));
     VclAccent := ColorToHtmlHex(StyleServices.GetSystemColor(clHighlight));
 
-    // Настройка контраста заговоров и блоков под темы
+    // РќР°СЃС‚СЂРѕР№РєР° РєРѕРЅС‚СЂР°СЃС‚Р° Р·Р°РіРѕРІРѕСЂРѕРІ Рё Р±Р»РѕРєРѕРІ РїРѕРґ С‚РµРјС‹
     if StyleServices.IsSystemStyle then
     begin
-        // СВЕТЛАЯ ТЕМА
-        VclAccent := '#005A9E';  // Глубокий синий
-        VclPreBg := '#F3F4F6';   // Светло-серый фон для кода
-        VclBorder := '#D1D5DB';  // Контрастная серая граница
+        // РЎР’Р•РўР›РђРЇ РўР•РњРђ
+        VclAccent := '#005A9E';  // Р“Р»СѓР±РѕРєРёР№ СЃРёРЅРёР№
+        VclPreBg := '#F3F4F6';   // РЎРІРµС‚Р»Рѕ-СЃРµСЂС‹Р№ С„РѕРЅ РґР»СЏ РєРѕРґР°
+        VclBorder := '#D1D5DB';  // РљРѕРЅС‚СЂР°СЃС‚РЅР°СЏ СЃРµСЂР°СЏ РіСЂР°РЅРёС†Р°
     end
     else
     begin
-        // ТЁМНАЯ ТЕМА
-        VclAccent := '#56B6C2';  // Пастельный бирюзовый
-        VclPreBg := '#252526';   // Глубокий темно-серый фон для кода
-        VclBorder := '#3F3F46';  // Серая граница
+        // РўРЃРњРќРђРЇ РўР•РњРђ
+        VclAccent := '#56B6C2';  // РџР°СЃС‚РµР»СЊРЅС‹Р№ Р±РёСЂСЋР·РѕРІС‹Р№
+        VclPreBg := '#252526';   // Р“Р»СѓР±РѕРєРёР№ С‚РµРјРЅРѕ-СЃРµСЂС‹Р№ С„РѕРЅ РґР»СЏ РєРѕРґР°
+        VclBorder := '#3F3F46';  // РЎРµСЂР°СЏ РіСЂР°РЅРёС†Р°
     end;
     // -------------------------------------------------------
 
-    // Явно перекрашиваем сам компонент, чтобы при рендеринге не было старых артефактов
+    // РЇРІРЅРѕ РїРµСЂРµРєСЂР°С€РёРІР°РµРј СЃР°Рј РєРѕРјРїРѕРЅРµРЅС‚, С‡С‚РѕР±С‹ РїСЂРё СЂРµРЅРґРµСЂРёРЅРіРµ РЅРµ Р±С‹Р»Рѕ СЃС‚Р°СЂС‹С… Р°СЂС‚РµС„Р°РєС‚РѕРІ
     HtmlViewer.DefBackground := StyleServices.GetSystemColor(clBtnFace);
 
-    // Формируем чистое тело (Body) страницы блоками
+    // Р¤РѕСЂРјРёСЂСѓРµРј С‡РёСЃС‚РѕРµ С‚РµР»Рѕ (Body) СЃС‚СЂР°РЅРёС†С‹ Р±Р»РѕРєР°РјРё
     BodyContent := '<h2>' + Title + '</h2>';
     BodyContent := BodyContent + '<p>' + MainText + '</p>';
 
     if ExpandedText <> '' then
     begin
-        // Оборачиваем в контейнер и добавляем автоматический подзаголовок "ДОПОЛНИТЕЛЬНО"
+        // РћР±РѕСЂР°С‡РёРІР°РµРј РІ РєРѕРЅС‚РµР№РЅРµСЂ Рё РґРѕР±Р°РІР»СЏРµРј Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРёР№ РїРѕРґР·Р°РіРѕР»РѕРІРѕРє "Р”РћРџРћР›РќРРўР•Р›Р¬РќРћ"
         BodyContent := BodyContent +
             '<div class="help-expanded">' +
             '<div style="color: ' + VclAccent + '; font-weight: bold; font-size: 8.5pt; margin-bottom: 8px;">' +
@@ -134,16 +142,16 @@ begin
             '</div>';
     end;
 
-    // Автоматическое превращение <code>text</code> в кликабельные кнопки копирования
+    // РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРµ РїСЂРµРІСЂР°С‰РµРЅРёРµ <code>text</code> РІ РєР»РёРєР°Р±РµР»СЊРЅС‹Рµ РєРЅРѕРїРєРё РєРѕРїРёСЂРѕРІР°РЅРёСЏ
     BodyContent := TRegEx.Replace(
         BodyContent, '<code>(.*?)</code>',
-        '<a href="copy:$1" class="copy-cmd" title="Кликните, чтобы скопировать"><code class="copyable">$1</code></a>'
+        '<a href="copy:$1" class="copy-cmd" title="' + TUIStateLoader.GetMessage('Common.CopyTooltip') + '"><code class="copyable">$1</code></a>'
     );
 
-    // Собираем финальный HTML, внедряя контент CSS-шаблон
+    // РЎРѕР±РёСЂР°РµРј С„РёРЅР°Р»СЊРЅС‹Р№ HTML, РІРЅРµРґСЂСЏСЏ РєРѕРЅС‚РµРЅС‚ CSS-С€Р°Р±Р»РѕРЅ
     FinalHtml := Format(GetHtmlTemplate(VclBg, VclText, VclAccent, VclPreBg, VclBorder), [BodyContent]);
 
-    // Загружаем в память
+    // Р—Р°РіСЂСѓР¶Р°РµРј РІ РїР°РјСЏС‚СЊ
     HtmlViewer.LoadFromString(FinalHtml);
 end;
 
@@ -163,17 +171,17 @@ begin
     '  }' +
     '  p { margin-top: 0; margin-bottom: 12px; text-align: left; }' +
     '  .help-expanded {' +
-    '    margin-top: 20px; padding-top: 12px;' +         // Отступы сверху
-    '    border-top: 1px dashed ' + BorderColor + ';' +  // Пунктирная линия-разделитель
-    '    font-size: 9.5pt;' +                            // Шрифт чуть меньше основного (Main = 10pt)
+    '    margin-top: 20px; padding-top: 12px;' +         // РћС‚СЃС‚СѓРїС‹ СЃРІРµСЂС…Сѓ
+    '    border-top: 1px dashed ' + BorderColor + ';' +  // РџСѓРЅРєС‚РёСЂРЅР°СЏ Р»РёРЅРёСЏ-СЂР°Р·РґРµР»РёС‚РµР»СЊ
+    '    font-size: 9.5pt;' +                            // РЁСЂРёС„С‚ С‡СѓС‚СЊ РјРµРЅСЊС€Рµ РѕСЃРЅРѕРІРЅРѕРіРѕ (Main = 10pt)
     '  }' +
     '  pre {' +
     '    background-color: ' + PreBgColor + '; color: ' + TxtColor + ';' +
     '    padding: 12px; border-radius: 4px; border: 1px solid ' + BorderColor + ';' +
     '    font-family: "Consolas", "Courier New", monospace; font-size: 10pt;' +
     '    margin-top: 10px; margin-bottom: 10px; line-height: 1.4;' +
-    '    white-space: pre-wrap;' +       // CSS: сохраняет пробелы, но переносит строки
-    '    word-wrap: break-word;' +       // Дополнительно: разбивает длинные монолитные слова/токены
+    '    white-space: pre-wrap;' +       // CSS: СЃРѕС…СЂР°РЅСЏРµС‚ РїСЂРѕР±РµР»С‹, РЅРѕ РїРµСЂРµРЅРѕСЃРёС‚ СЃС‚СЂРѕРєРё
+    '    word-wrap: break-word;' +       // Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅРѕ: СЂР°Р·Р±РёРІР°РµС‚ РґР»РёРЅРЅС‹Рµ РјРѕРЅРѕР»РёС‚РЅС‹Рµ СЃР»РѕРІР°/С‚РѕРєРµРЅС‹
     '  }' +
     '  a.copy-cmd, a.copy-cmd:link, a.copy-cmd:visited, a.copy-cmd:active, a.copy-cmd:focus {' +
     '    text-decoration: none;' +
@@ -204,22 +212,22 @@ procedure TCustomHelpForm.HtmlViewerHotSpotClick(Sender: TObject; const SRC: Tht
 var
     TextToCopy: string;
 begin
-    // Если ссылка начинается с префикса 'copy:'
+    // Р•СЃР»Рё СЃСЃС‹Р»РєР° РЅР°С‡РёРЅР°РµС‚СЃСЏ СЃ РїСЂРµС„РёРєСЃР° 'copy:'
     if SRC.StartsWith('copy:') then
     begin
-        TextToCopy := SRC.Substring(5); // Отрезаем слово 'copy:'
+        TextToCopy := SRC.Substring(5); // РћС‚СЂРµР·Р°РµРј СЃР»РѕРІРѕ 'copy:'
 
-        // На случай, если движок заменит пробелы на веб-формат
+        // РќР° СЃР»СѓС‡Р°Р№, РµСЃР»Рё РґРІРёР¶РѕРє Р·Р°РјРµРЅРёС‚ РїСЂРѕР±РµР»С‹ РЅР° РІРµР±-С„РѕСЂРјР°С‚
         TextToCopy := TextToCopy.Replace('%20', ' ');
 
         Clipboard.AsText := TextToCopy;
         Handled := True;
 
-        // Даем пользователю понять, что копирование прошло успешно
+        // Р”Р°РµРј РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ РїРѕРЅСЏС‚СЊ, С‡С‚Рѕ РєРѕРїРёСЂРѕРІР°РЅРёРµ РїСЂРѕС€Р»Рѕ СѓСЃРїРµС€РЅРѕ
         MessageBeep(MB_OK);
         ShowSimpleToast(TUIStateLoader.GetMessage('Common.CopiedToClipboard'));
 
-        // После клика тоже забираем фокус у HTMLViewer'а и прячем на кнопку
+        // РџРѕСЃР»Рµ РєР»РёРєР° С‚РѕР¶Рµ Р·Р°Р±РёСЂР°РµРј С„РѕРєСѓСЃ Сѓ HTMLViewer'Р° Рё РїСЂСЏС‡РµРј РЅР° РєРЅРѕРїРєСѓ
         ActiveControl := FFocusCatcher;
     end;
 end;

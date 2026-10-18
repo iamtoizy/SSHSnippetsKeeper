@@ -160,7 +160,7 @@ begin
     ExecuteSQL('DELETE FROM snippet_tags WHERE snippet_id = ?', [SnippetID]);
 end;
 
-// ���������� �������� ������� (Array DML)
+// РЕАЛИЗАЦИЯ ПАКЕТНОЙ ВСТАВКИ (Array DML)
 procedure TTagRepository.LinkTagsToSnippetBatch(SnippetID: Integer; const TagIDs: TArray<Integer>);
 var
     Q: TFDQuery;
@@ -173,17 +173,17 @@ begin
     try
         Q.SQL.Text := 'INSERT OR IGNORE INTO snippet_tags (snippet_id, tag_id) VALUES (:snip_id, :tag_id)';
 
-        // 1. ������� FireDAC ������ ������
+        // 1. Говорим FireDAC размер пакета
         Q.Params.ArraySize := Length(TagIDs);
 
-        // 2. ��������� ������� ����������
+        // 2. Заполняем массивы параметров
         for I := 0 to High(TagIDs) do
         begin
             Q.ParamByName('snip_id').AsIntegers[I] := SnippetID;
             Q.ParamByName('tag_id').AsIntegers[I] := TagIDs[I];
         end;
 
-        // 3. ��������� ���� ����� ����� �����
+        // 3. Выполняем весь пакет одним разом
         Q.Execute(Q.Params.ArraySize);
     finally
         Q.Free;
@@ -194,7 +194,7 @@ function TTagRepository.ExistsByName(const Name: string): Boolean;
 var
     Count: Variant;
 begin
-    // ���������� COLLATE NOCASE, ����� 'Delphi' � 'delphi' ��������� ����� ����� (���� �� ��� ������������)
+    // Используем COLLATE NOCASE, чтобы 'Delphi' и 'delphi' считались одним тегом (если БД это поддерживает)
     Count := ExecuteSQLScalar('SELECT COUNT(*) FROM tags WHERE name = ? COLLATE NOCASE', [Trim(Name)]);
     Result := Integer(Count) > 0;
 end;

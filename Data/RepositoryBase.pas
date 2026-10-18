@@ -1,4 +1,4 @@
-unit RepositoryBase;
+﻿unit RepositoryBase;
 
 interface
 
@@ -15,7 +15,7 @@ type
         function CreateQuery: TFDQuery;
         procedure SetQueryParams(Query: TFDQuery; const Params: array of Variant);
 
-        // ���������������� ����� ��� ���������� �������� � ������������ ������
+        // Централизованный метод для выполнения запросов с автоочисткой памяти
         procedure ExecuteQuery(const SQL: string; const Params: array of Variant; Proc: TProc<TFDQuery>);
         function ExecuteSQL(const SQL: string; const Params: array of Variant): Integer;
         function ExecuteSQLScalar(const SQL: string; const Params: array of Variant): Variant;
@@ -42,7 +42,7 @@ function TRepositoryBase.CreateQuery: TFDQuery;
 begin
     Result := TFDQuery.Create(nil);
     Result.Connection := FConnection;
-    // ��������� ��� ����������� �������
+    // Настройки для оптимизации выборок
     Result.FetchOptions.Unidirectional := True;
 end;
 
@@ -50,7 +50,7 @@ procedure TRepositoryBase.ExecuteQuery(const SQL: string; const Params: array of
 var
     Query: TFDQuery;
 begin
-    // ������ ����� ��������� ������� - CreateQuery, ���������� ���������� - SetQueryParams
+    // Единая точка настройки запроса - CreateQuery, заполнение параметров - SetQueryParams
     Query := CreateQuery;
     try
         Query.SQL.Text := SQL;

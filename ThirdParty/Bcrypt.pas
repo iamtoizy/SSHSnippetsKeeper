@@ -1,4 +1,4 @@
-unit Bcrypt;
+п»їunit Bcrypt;
 
 (*
 	Sample Usage
@@ -501,7 +501,7 @@ const
 {
 	TODO: bcrypt with SHA256 pre-hashing
 
-	passlib.hash.bcrypt_sha256 - BCrypt+SHA256¶
+	passlib.hash.bcrypt_sha256 - BCrypt+SHA256В¶
 	https://passlib.readthedocs.io/en/stable/lib/passlib.hash.bcrypt_sha256.html
 
 	BCrypt was developed to replace md5_crypt for BSD systems. It uses a modified version of the Blowfish stream cipher.
@@ -1404,21 +1404,21 @@ type
 	end;
 	PBlowfishBlock = ^TBlowfishBlock;
 
-// Заглушка. Оптимизатор Delphi не может заглянуть внутрь и поэтому не смеет удалять вызовы, ведущие к ней.
+// Р—Р°РіР»СѓС€РєР°. РћРїС‚РёРјРёР·Р°С‚РѕСЂ Delphi РЅРµ РјРѕР¶РµС‚ Р·Р°РіР»СЏРЅСѓС‚СЊ РІРЅСѓС‚СЂСЊ Рё РїРѕСЌС‚РѕРјСѓ РЅРµ СЃРјРµРµС‚ СѓРґР°Р»СЏС‚СЊ РІС‹Р·РѕРІС‹, РІРµРґСѓС‰РёРµ Рє РЅРµР№.
 procedure DummyRead(const P: Pointer);
 asm
-    // Пустой блок. Компилятор не видит, что внутри,
-    // поэтому вынужден считать, что указатель P здесь используется.
+    // РџСѓСЃС‚РѕР№ Р±Р»РѕРє. РљРѕРјРїРёР»СЏС‚РѕСЂ РЅРµ РІРёРґРёС‚, С‡С‚Рѕ РІРЅСѓС‚СЂРё,
+    // РїРѕСЌС‚РѕРјСѓ РІС‹РЅСѓР¶РґРµРЅ СЃС‡РёС‚Р°С‚СЊ, С‡С‚Рѕ СѓРєР°Р·Р°С‚РµР»СЊ P Р·РґРµСЃСЊ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ.
 end;
 
-// Реализация SecureZeroMemory
+// Р РµР°Р»РёР·Р°С†РёСЏ SecureZeroMemory
 procedure SecureZeroMemory(Destination: Pointer; Length: NativeUInt);
 begin
     if (Destination <> nil) and (Length > 0) then
     begin
         FillChar(Destination^, Length, 0);
-        // Искусственное чтение. Заставляет компилятор считать,
-        // что стертые данные нам нужны, предотвращая Dead Store Elimination.
+        // РСЃРєСѓСЃСЃС‚РІРµРЅРЅРѕРµ С‡С‚РµРЅРёРµ. Р—Р°СЃС‚Р°РІР»СЏРµС‚ РєРѕРјРїРёР»СЏС‚РѕСЂ СЃС‡РёС‚Р°С‚СЊ,
+        // С‡С‚Рѕ СЃС‚РµСЂС‚С‹Рµ РґР°РЅРЅС‹Рµ РЅР°Рј РЅСѓР¶РЅС‹, РїСЂРµРґРѕС‚РІСЂР°С‰Р°СЏ Dead Store Elimination.
         DummyRead(Destination);
     end;
 end;
@@ -1434,7 +1434,7 @@ var
 	saltHalfIndex: Integer;
 begin
 	try
-		// Оригинальный код автора
+		// РћСЂРёРіРёРЅР°Р»СЊРЅС‹Р№ РєРѕРґ Р°РІС‚РѕСЂР°
 		keyLen := Length(key);
 		if (keyLen > BCRYPT_MaxKeyLen) then
 			raise EBCryptException.CreateFmt(SKeyRangeError, [keyLen]);
@@ -1493,10 +1493,10 @@ begin
 		end;
 {$RANGECHECKS ON}
 	finally
-		// Сжигаем абсолютно все локальные переменные,
-		// чтобы компилятор не смел вырезать этот код (Dead Store Elimination)
-        // Взятие адреса переменной (@) и передача её в другую функцию
-        // заставляет компилятор думать, что переменная "используется".
+		// РЎР¶РёРіР°РµРј Р°Р±СЃРѕР»СЋС‚РЅРѕ РІСЃРµ Р»РѕРєР°Р»СЊРЅС‹Рµ РїРµСЂРµРјРµРЅРЅС‹Рµ,
+		// С‡С‚РѕР±С‹ РєРѕРјРїРёР»СЏС‚РѕСЂ РЅРµ СЃРјРµР» РІС‹СЂРµР·Р°С‚СЊ СЌС‚РѕС‚ РєРѕРґ (Dead Store Elimination)
+        // Р’Р·СЏС‚РёРµ Р°РґСЂРµСЃР° РїРµСЂРµРјРµРЅРЅРѕР№ (@) Рё РїРµСЂРµРґР°С‡Р° РµС‘ РІ РґСЂСѓРіСѓСЋ С„СѓРЅРєС†РёСЋ
+        // Р·Р°СЃС‚Р°РІР»СЏРµС‚ РєРѕРјРїРёР»СЏС‚РѕСЂ РґСѓРјР°С‚СЊ, С‡С‚Рѕ РїРµСЂРµРјРµРЅРЅР°СЏ "РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ".
 		SecureZeroMemory(@block, SizeOf(block));
 		SecureZeroMemory(@A, SizeOf(A));
 		SecureZeroMemory(@keyB, SizeOf(keyB));
@@ -2100,8 +2100,8 @@ begin
 
 		SASLprep (rfc4013), like StringPrep (rfc3454) both specified NFKC:
 
-			Before: NoeЁl
-			After:  Noлl
+			Before: NoeРЃl
+			After:  NoР»l
 
 		Spaces
 		======
@@ -2606,20 +2606,20 @@ const
 			//http://stackoverflow.com/a/7031942/12597
 begin
 	{
-		Before: A + Ё + fi + n
+		Before: A + РЃ + fi + n
 				A:  U+0041
-				Ё:  U+0308 Combining Diaeresis
+				РЃ:  U+0308 Combining Diaeresis
 				fi: U+FB01 Latin Small Ligature Fi
 				n:  U+006E
 
-		Normalized:  Д + f + i + n
-				Д:  U+00C4  Latin Capital Letter A with Diaeresis
+		Normalized:  Р” + f + i + n
+				Р”:  U+00C4  Latin Capital Letter A with Diaeresis
 				f:  U+0066
 				i:  U+0069
 				n:  U+006E
 
 		Final UTF-8:
-				Д:  0xC3 0x84
+				Р”:  0xC3 0x84
 				f:  0x66
 				i:  0x69
 				n:  0x6E
@@ -2669,12 +2669,12 @@ begin
 
 		Original
 				A:  U+0041
-				Ё:  U+0308 Combining Diaeresis
+				РЃ:  U+0308 Combining Diaeresis
 				fi: U+FB01 Latin Small Ligature Fi
 				n:  U+006E
 
-		Normalized:  Д + f + i + n
-				Д:  U+00C4  Latin Capital Letter A with Diaeresis
+		Normalized:  Р” + f + i + n
+				Р”:  U+00C4  Latin Capital Letter A with Diaeresis
 				f:  U+0066
 				i:  U+0069
 				n:  U+006E

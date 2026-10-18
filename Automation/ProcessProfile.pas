@@ -1,4 +1,4 @@
-unit ProcessProfile;
+﻿unit ProcessProfile;
 
 interface
 
@@ -56,7 +56,7 @@ constructor TProcessProfile.Create(const ExeName: string);
 begin
     inherited Create;
     FExeName := ExeName;
-    FTitleIncludeRegex := '.*'; // �� ��������� ��������� ��� ���������
+    FTitleIncludeRegex := '.*'; // По умолчанию разрешаем все заголовки
     FTitleExcludeRegex := '';
     FEnabled := True;
 end;
@@ -70,7 +70,7 @@ begin
     if not FEnabled then
         Exit;
 
-    // ��������� Include regex
+    // Проверяем Include regex
     if FTitleIncludeRegex <> '' then
     begin
         IncludeMatch := TRegEx.IsMatch(Title, FTitleIncludeRegex, [roIgnoreCase]);
@@ -78,7 +78,7 @@ begin
             Exit;
     end;
 
-    // ��������� Exclude regex
+    // Проверяем Exclude regex
     if FTitleExcludeRegex <> '' then
     begin
         ExcludeMatch := TRegEx.IsMatch(Title, FTitleExcludeRegex, [roIgnoreCase]);

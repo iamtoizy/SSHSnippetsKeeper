@@ -1,4 +1,4 @@
-unit SynThemeAdapter;
+п»їunit SynThemeAdapter;
 
 interface
 
@@ -11,8 +11,8 @@ uses
     ;
 
 type
-    // Глобальный класс-перехватчик.
-    // Он доступен всем формам, которые подключат этот модуль.
+    // Р“Р»РѕР±Р°Р»СЊРЅС‹Р№ РєР»Р°СЃСЃ-РїРµСЂРµС…РІР°С‚С‡РёРє.
+    // РћРЅ РґРѕСЃС‚СѓРїРµРЅ РІСЃРµРј С„РѕСЂРјР°Рј, РєРѕС‚РѕСЂС‹Рµ РїРѕРґРєР»СЋС‡Р°С‚ СЌС‚РѕС‚ РјРѕРґСѓР»СЊ.
     TSynEdit = class(SynEdit.TSynEdit)
         private
         FCacheBrush: HBRUSH;
@@ -115,7 +115,7 @@ begin
     if not Assigned(SynEdit) then
         Exit;
 
-    // Берем цвет напрямую из текущего стиля VCL (решает проблему с мерцанием)
+    // Р‘РµСЂРµРј С†РІРµС‚ РЅР°РїСЂСЏРјСѓСЋ РёР· С‚РµРєСѓС‰РµРіРѕ СЃС‚РёР»СЏ VCL (СЂРµС€Р°РµС‚ РїСЂРѕР±Р»РµРјСѓ СЃ РјРµСЂС†Р°РЅРёРµРј)
     if TStyleManager.IsCustomStyleActive then
         SysBgColor := TStyleManager.ActiveStyle.GetStyleColor(scEdit)
     else
@@ -126,21 +126,21 @@ begin
     else
         Palette := GetLightPalette;
 
-    // Базовые цвета редактора
+    // Р‘Р°Р·РѕРІС‹Рµ С†РІРµС‚Р° СЂРµРґР°РєС‚РѕСЂР°
     SynEdit.Color := SysBgColor;
     SynEdit.Font.Color := Palette.Foreground;
     SynEdit.ActiveLineColor := Palette.ActiveLine;
 
-    // Цвета панели Gutter
+    // Р¦РІРµС‚Р° РїР°РЅРµР»Рё Gutter
     SynEdit.Gutter.Color := Palette.GutterBackground;
     SynEdit.Gutter.Font.Color := Palette.GutterForeground;
 
-    // Именно это свойство отвечает за вертикальную разделительную линию
+    // РРјРµРЅРЅРѕ СЌС‚Рѕ СЃРІРѕР№СЃС‚РІРѕ РѕС‚РІРµС‡Р°РµС‚ Р·Р° РІРµСЂС‚РёРєР°Р»СЊРЅСѓСЋ СЂР°Р·РґРµР»РёС‚РµР»СЊРЅСѓСЋ Р»РёРЅРёСЋ
     SynEdit.Gutter.BorderColor := Palette.GutterBorder;
 
     SynEdit.RightEdgeColor := Palette.RightEdge;
 
-    // Адаптация хайлайтера
+    // РђРґР°РїС‚Р°С†РёСЏ С…Р°Р№Р»Р°Р№С‚РµСЂР°
     Hl := SynEdit.Highlighter;
     if Assigned(Hl) then
     begin
@@ -172,7 +172,7 @@ begin
         end;
     end;
 
-    // Настройка CodeFolding (плюсики/минусики и их линии)
+    // РќР°СЃС‚СЂРѕР№РєР° CodeFolding (РїР»СЋСЃРёРєРё/РјРёРЅСѓСЃРёРєРё Рё РёС… Р»РёРЅРёРё)
     SynEdit.CodeFolding.CollapsedLineColor := Palette.GutterForeground;
     SynEdit.CodeFolding.FolderBarLinesColor := Palette.GutterBorder;
 end;

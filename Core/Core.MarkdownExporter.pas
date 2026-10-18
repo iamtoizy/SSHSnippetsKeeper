@@ -32,6 +32,8 @@ type
 implementation
 
 uses
+    Common.Localization,
+
     Core.Entities.Tag,
 
     Core.Entities.Snippet
@@ -170,7 +172,7 @@ begin
             if not GeneratedFiles.ContainsKey(LowerCase(OldFile)) then
             begin
                 try TFile.Delete(OldFile);
-                except on E: Exception do raise Exception.CreateFmt('�� ������� ������� ����: "%s"', [ExtractFileName(OldFile)]); end;
+                except on E: Exception do raise Exception.Create(TUIStateLoader.GetMessage('Markdown.DeleteFileError', [ExtractFileName(OldFile)])); end;
             end;
         end;
 
@@ -183,7 +185,7 @@ begin
             if Dir.Contains(TPath.DirectorySeparatorChar + '.git') or Dir.EndsWith(TPath.DirectorySeparatorChar + '.git') then Continue;
             try
                 if TDirectory.IsEmpty(Dir) then TDirectory.Delete(Dir);
-            except on E: Exception do raise Exception.CreateFmt('�� ������� ������� �����: "%s"', [ExtractFileName(Dir)]); end;
+            except on E: Exception do raise Exception.Create(TUIStateLoader.GetMessage('Markdown.DeleteFolderError', [ExtractFileName(Dir)])); end;
         end;
 
     finally

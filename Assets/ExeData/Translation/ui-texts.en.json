@@ -721,6 +721,9 @@
       "Caption": "Sync on database close"
     }
   },
+  "CustomHelpForm": {
+    "Caption": "Reference information"
+  },
   "Messages": {
     "Help": {
       "MainForm": {
@@ -920,6 +923,7 @@
       }
     },
     "Common": {
+      "CopyTooltip": "Click to copy",
       "NotificationDefaultCaption": "SSH Snippets Keeper",
       "Confirmation": "Confirmation",
       "Error": "Error",
@@ -1049,7 +1053,15 @@
       },
       "SensitiveDataFound": "Sensitive data found:\n• %s\nPlease review the snippet text before sending it to the terminal.\n\nDo you want to proceed with the submission?"
     },
+    "Markdown": {
+      "DeleteFileError": "Failed to delete file: \"%s\"",
+      "DeleteFolderError": "Failed to delete folder: \"%s\""
+    },
     "AI": {
+      "PipCallError": "PIP call error: %s",
+      "PythonNotFound": "Critical error: Python interpreter not found!",
+      "ModelNotLoaded": "Error: The neural network model is not loaded!",
+      "AskCallError": "AI call error: %s",
       "JSONError": "Failed to extract response from JSON: %s",
       "APIError": "API Error (%d): %s"
     },

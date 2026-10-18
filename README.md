@@ -182,7 +182,7 @@ brcc32 -fo000_schema_init.res "Database\Schema\000_schema_init.rc"
 "C:\Program Files (x86)\Embarcadero\Studio\23.0\bin\dcc32.exe" -Q -B -DDEBUG ^
   "-IC:\DC\SynEdit\Source" ^
   "-NSWinapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Soap.Win" ^
-  "-UC:\DC\SynEdit\Source;C:\DC\SynEdit\Source\Highlighters;C:\DC\SynEdit\Source\Highlighters\Omni Highlighters;C:\DC\HtmlViewer\source;C:\DC\FastMM5;C:\DC\python4delphi\lib\Win32\Release;C:\Program Files (x86)\Embarcadero\Studio\23.0\lib\win32\release;Automation;Common;Core;Core\Entities;Core\Services;Data;Data\Repositories;MacroEngine;Tests;UI\Controllers;UI\Controls;UI\Forms;UI\Helpers;UI\Services;UI\ViewModels;ThirdParty" ^
+  "-UC:\DC\SynEdit\Source;C:\DC\SynEdit\Source\Highlighters;C:\DC\SynEdit\Source\Highlighters\Omni Highlighters;C:\DC\HtmlViewer\source;C:\DC\FastMM5;C:\DC\python4delphi\Source;C:\DC\python4delphi\lib\Win32\Release;C:\Program Files (x86)\Embarcadero\Studio\23.0\lib\win32\release;Automation;Common;Core;Core\Entities;Core\Services;Data;Data\Repositories;MacroEngine;Tests;UI\Controllers;UI\Controls;UI\Forms;UI\Helpers;UI\Services;UI\ViewModels;ThirdParty" ^
   "-N0%TEMP%\rufp" SSHSnippetsKeeper.dpr
 ```
 
@@ -316,13 +316,14 @@ sudo systemctl restart nginx
 cd Tests
 
 "C:\Program Files (x86)\Embarcadero\Studio\23.0\bin\dcc32.exe" -Q -B -DDEBUG ^
-  "-IC:\DC\SynEdit\Source;C:\DC\DUnitX\Source" ^
   "-NSWinapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Soap.Win;DUnitX" ^
-  "-UC:\DC\DUnitX\Source;<путь к репозиторию>;<путь>\Core;<путь>\Core\Services;<путь>\Core\Entities;<путь>\Data;<путь>\Data\Repositories;<путь>\Common;<путь>\UI\Helpers;<путь>\MacroEngine;<путь>\Automation;<путь>\ThirdParty;<путь>\UI\ViewModels;<путь>\UI\Controllers;C:\Program Files (x86)\Embarcadero\Studio\23.0\lib\win32\release" ^
+  "-U..;..\Core;..\Core\Services;..\Core\Entities;..\Data;..\Data\Repositories;..\Common;..\UI\Helpers;..\MacroEngine;..\Automation;..\ThirdParty;..\UI\ViewModels;..\UI\Controllers;C:\DC\DUnitX\Source;C:\DC\SynEdit\Source;C:\DC\HtmlViewer\source;C:\DC\FastMM5;C:\DC\python4delphi\Source" ^
   "-N0%TEMP%\rufp" SSHSnippetsKeeperTests.dpr
 
 .\SSHSnippetsKeeperTests.exe
 ```
+
+Пути к модулям проекта указываются только относительными (`..`, `..\Core`, …): dcc32 не ищет юниты по абсолютным путям, содержащим кириллицу (например, `C:\Users\<user>\Документы\...`).
 
 </details>
 
@@ -344,9 +345,12 @@ Tests Errored : 0
 
 Ключи иерархические, например `Actions.MainForm.Data.AddSnippet`. Язык выбирается в настройках и переключается без перезапуска (`LanguageMenuController`). Новый язык добавляется копированием master-файла и переводом значений.
 
+Тексты из кода (диалоги, ошибки, подсказки) живут в ветке `Messages` и берутся через `TUIStateLoader.GetMessage('Common.Confirmation')` — без префикса `Messages`. Поддерживается подстановка аргументов: `GetMessage('Markdown.DeleteFileError', [FileName])`. Заголовки форм и компоненты переводятся автоматически (`TUIStateLoader.ApplyTranslations`) для всех наследников `TBaseFormUI`; остальные формы вызывают метод явно.
+
 ## Соглашения по коду и коммитам
 
 - Именование юнитов — точечное: `Common.*`, `Core.*`, `Data.*`, `UI.Services.*`, `Tests.*`; вендорский код в `ThirdParty` не переименовывается;
+- Исходники — UTF-8 с BOM; пользовательские тексты (сообщения, заголовки, подсказки) — только через словарь локализации, литералов с кириллицей в коде нет;
 - Слои: формы → контроллеры/сервисы → интерфейсы (`Core.Interfaces.*`) → репозитории → SQLite;
 - Коммиты — conventional-префиксы (`feat:`, `fix:`, `refactor:`, `docs:`) с описанием на русском: `feat: Внедрение генерации Bcrypt в генераторе паролей`;
 - Отладка — FastMM5 с отчётом об утечках (`ReportMemoryLeaksOnShutdown` в Debug).

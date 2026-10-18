@@ -1,9 +1,9 @@
-unit Common.Consts;
+п»їunit Common.Consts;
 
 interface
 
 const
-    // Уникальная строка-идентификатор для главного окна приложения
+    // РЈРЅРёРєР°Р»СЊРЅР°СЏ СЃС‚СЂРѕРєР°-РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РґР»СЏ РіР»Р°РІРЅРѕРіРѕ РѕРєРЅР° РїСЂРёР»РѕР¶РµРЅРёСЏ
     UNIQUE_APP_STR = 'SSHSnippetsKeeper_D05F695B-8CCE-4889-A4BA-7D29CC6A8C7D';
 
 implementation

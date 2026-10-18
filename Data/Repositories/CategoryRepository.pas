@@ -50,7 +50,7 @@ begin
     List := TList<TCategoryDTO>.Create;
     Query := CreateQuery;
     try
-        // sort_order � ���������� ����������
+        // sort_order и правильная сортировка
         if UserID > 0 then
             Query.Open('SELECT id, user_id, name, parent_id, sort_order FROM snippet_categories WHERE user_id = ? ORDER BY parent_id, sort_order, name', [UserID])
         else
@@ -154,7 +154,7 @@ var
     SiblingIDs: TList<Integer>;
     i, CurrentPos: Integer;
 begin
-    // === 1. �������� ��������� �������� ��������� ===
+    // === 1. Проверка владельца исходной категории ===
     QGetOwner := CreateQuery;
     try
         QGetOwner.SQL.Text := 'SELECT user_id FROM snippet_categories WHERE id = :id';
@@ -169,7 +169,7 @@ begin
         QGetOwner.Free;
     end;
 
-    // === 2. �������� ��������� ������ �������� (���� ������) ===
+    // === 2. Проверка владельца нового родителя (если указан) ===
     if NewParentID > 0 then
     begin
         QGetOwner := CreateQuery;
@@ -186,7 +186,7 @@ begin
             QGetOwner.Free;
         end;
 
-        // ��������� ��������: ������������
+        // Критичная проверка: пространства
         if SourceUserID <> TargetUserID then
             raise Exception.Create(
                 TUIStateLoader.GetMessage('MoveToDifferentSpaceError')
@@ -194,13 +194,13 @@ begin
     end
     else
     begin
-        // NewParentID = 0 � ����������� � ������.
-        // ������ �� ����� ���������, ������� �������� �� ���������.
-        // �� �� �� ����� ������ ��������� user_id �������� ���������
-        // (�� �� �������� ��� �����������).
+        // NewParentID = 0 — перемещение в корень.
+        // Корень не имеет владельца, поэтому проверка не требуется.
+        // Но мы всё равно должны сохранить user_id исходной категории
+        // (он не меняется при перемещении).
     end;
 
-    // === 3. �������� ������ siblings � ����� ������� ===
+    // === 3. Получаем список siblings в НОВОЙ позиции ===
     SiblingIDs := TList<Integer>.Create;
     QGetSiblings := CreateQuery;
     try
@@ -234,7 +234,7 @@ begin
         QGetSiblings.Free;
     end;
 
-    // === 4. ��������� ID � ������ ������� ===
+    // === 4. Вставляем ID в нужную позицию ===
     if Position < 0 then
         CurrentPos := SiblingIDs.Count
     else if Position > SiblingIDs.Count then
@@ -244,7 +244,7 @@ begin
 
     SiblingIDs.Insert(CurrentPos, ID);
 
-    // === 5. ��������� parent_id � sort_order � ���������� ===
+    // === 5. Обновляем parent_id и sort_order в транзакции ===
     QUpd := CreateQuery;
     try
         FConnection.StartTransaction;
@@ -341,7 +341,7 @@ var
 begin
     Q := CreateQuery;
     try
-        // ��������� ON DELETE CASCADE � ��, �������� ��������� ��������� � ��������
+        // Благодаря ON DELETE CASCADE в БД, удалятся вложенные категории и сниппеты
         Q.SQL.Text := 'DELETE FROM snippet_categories WHERE id = :id';
         Q.ParamByName('id').AsInteger := ID;
         Q.ExecSQL;
@@ -354,7 +354,7 @@ function TCategoryRepository.GetUserID(ID: Integer): Integer;
 var
     Query: TFDQuery;
 begin
-    Result := -1; // -1 �������� "�� �������"
+    Result := -1; // -1 означает "не найдено"
     Query := CreateQuery;
     try
         Query.SQL.Text := 'SELECT user_id FROM snippet_categories WHERE id = :id';

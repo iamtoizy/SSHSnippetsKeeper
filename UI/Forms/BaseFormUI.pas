@@ -1,4 +1,4 @@
-unit BaseFormUI;
+п»їunit BaseFormUI;
 
 interface
 
@@ -26,7 +26,7 @@ type
 
     TBaseForm = class(TForm, ILocalizable)
     private
-        // Глобальный реестр открытых форм (Класс -> Экземпляр)
+        // Р“Р»РѕР±Р°Р»СЊРЅС‹Р№ СЂРµРµСЃС‚СЂ РѕС‚РєСЂС‹С‚С‹С… С„РѕСЂРј (РљР»Р°СЃСЃ -> Р­РєР·РµРјРїР»СЏСЂ)
         class var FInstances: TDictionary<TClass, TBaseForm>;
 
         FHelpManager: TUIHoverHelpManager;
@@ -34,15 +34,15 @@ type
         procedure DoShowHelp(Target: TControl; const HelpKey: string; HelpKind: THelpKind);
         function GetMessagesHandler: IUIMessagesHandler;
 
-        // Классовые конструктор и деструктор для инициализации словаря
+        // РљР»Р°СЃСЃРѕРІС‹Рµ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ Рё РґРµСЃС‚СЂСѓРєС‚РѕСЂ РґР»СЏ РёРЅРёС†РёР°Р»РёР·Р°С†РёРё СЃР»РѕРІР°СЂСЏ
         class constructor CreateClass;
         class destructor DestroyClass;
-    function GetAppContext: IAppContext;
+        function GetAppContext: IAppContext;
     protected
         FAppContext: IAppContext;
-        // Хук для дочерних классов. Виртуальный, но пустой по умолчанию.
-        // Дочерний класс переопределяет его, ЕСЛИ ему нужно что-то инициализировать у себя.
-        // TODO Использовать в дочерних DoInitialize
+        // РҐСѓРє РґР»СЏ РґРѕС‡РµСЂРЅРёС… РєР»Р°СЃСЃРѕРІ. Р’РёСЂС‚СѓР°Р»СЊРЅС‹Р№, РЅРѕ РїСѓСЃС‚РѕР№ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ.
+        // Р”РѕС‡РµСЂРЅРёР№ РєР»Р°СЃСЃ РїРµСЂРµРѕРїСЂРµРґРµР»СЏРµС‚ РµРіРѕ, Р•РЎР›Р РµРјСѓ РЅСѓР¶РЅРѕ С‡С‚Рѕ-С‚Рѕ РёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°С‚СЊ Сѓ СЃРµР±СЏ.
+        // TODO РСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РІ РґРѕС‡РµСЂРЅРёС… DoInitialize
         procedure DoInitialize; virtual;
         procedure DoShow; override;
         procedure RegisterHelp(
@@ -53,11 +53,11 @@ type
             OffsetX: Integer = 0;
             OffsetY: Integer = 0);
 
-        // Добавил метод для точечной отписки, на случай если в будущем вы будете
-        // динамически удалять контролы с формы в рантайме.
+        // Р”РѕР±Р°РІРёР» РјРµС‚РѕРґ РґР»СЏ С‚РѕС‡РµС‡РЅРѕР№ РѕС‚РїРёСЃРєРё, РЅР° СЃР»СѓС‡Р°Р№ РµСЃР»Рё РІ Р±СѓРґСѓС‰РµРј РІС‹ Р±СѓРґРµС‚Рµ
+        // РґРёРЅР°РјРёС‡РµСЃРєРё СѓРґР°Р»СЏС‚СЊ РєРѕРЅС‚СЂРѕР»С‹ СЃ С„РѕСЂРјС‹ РІ СЂР°РЅС‚Р°Р№РјРµ.
         procedure UnregisterHelp(Control: TControl);
 
-        // Переопределяем закрытие окна в базовом классе
+        // РџРµСЂРµРѕРїСЂРµРґРµР»СЏРµРј Р·Р°РєСЂС‹С‚РёРµ РѕРєРЅР° РІ Р±Р°Р·РѕРІРѕРј РєР»Р°СЃСЃРµ
         procedure DoClose(var Action: TCloseAction); override;
 
         property MessagesHandler: IUIMessagesHandler read GetMessagesHandler;
@@ -68,10 +68,10 @@ type
         procedure UpdateUI(const State: TBaseFormState); virtual;
         procedure Initialize(AppContext: IAppContext);
         procedure ApplyLanguage; virtual;
-        // Для плавающих окон (Калькуляторы, Конвертеры)
+        // Р”Р»СЏ РїР»Р°РІР°СЋС‰РёС… РѕРєРѕРЅ (РљР°Р»СЊРєСѓР»СЏС‚РѕСЂС‹, РљРѕРЅРІРµСЂС‚РµСЂС‹)
         class procedure ExecuteGlobal(Owner: TComponent; AppContext: IAppContext);
 
-        // Для диалогов (Настройки, Менеджер рабочих пространств)
+        // Р”Р»СЏ РґРёР°Р»РѕРіРѕРІ (РќР°СЃС‚СЂРѕР№РєРё, РњРµРЅРµРґР¶РµСЂ СЂР°Р±РѕС‡РёС… РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІ)
         class function ExecuteModal(Owner: TComponent; AppContext: IAppContext): TModalResult;
     end;
 
@@ -86,7 +86,7 @@ uses
 
 procedure TBaseForm.ApplyLanguage;
 begin
-    // Автоматически прогоняем все стандартные компоненты через StateLoader
+    // РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРё РїСЂРѕРіРѕРЅСЏРµРј РІСЃРµ СЃС‚Р°РЅРґР°СЂС‚РЅС‹Рµ РєРѕРјРїРѕРЅРµРЅС‚С‹ С‡РµСЂРµР· StateLoader
     TUIStateLoader.ApplyTranslations(Self);
 end;
 
@@ -105,7 +105,7 @@ end;
 
 destructor TBaseForm.Destroy;
 begin
-    // 2. Безопасное удаление дочерних форм
+    // 2. Р‘РµР·РѕРїР°СЃРЅРѕРµ СѓРґР°Р»РµРЅРёРµ РґРѕС‡РµСЂРЅРёС… С„РѕСЂРј
     if Assigned(FCustomHelpForm) then
         FreeAndNil(FCustomHelpForm);
 
@@ -131,27 +131,27 @@ end;
 
 procedure TBaseForm.UnregisterHelp(Control: TControl);
 begin
-    // Обертка на случай, вам понадобится снять хелп с конкретного контрола.
+    // РћР±РµСЂС‚РєР° РЅР° СЃР»СѓС‡Р°Р№, РІР°Рј РїРѕРЅР°РґРѕР±РёС‚СЃСЏ СЃРЅСЏС‚СЊ С…РµР»Рї СЃ РєРѕРЅРєСЂРµС‚РЅРѕРіРѕ РєРѕРЅС‚СЂРѕР»Р°.
     if Assigned(FHelpManager) then
         FHelpManager.UnregisterControl(Control);
 end;
 
 procedure TBaseForm.DoClose(var Action: TCloseAction);
 begin
-    inherited DoClose(Action); // Вызываем стандартную логику VCL и события OnClose
+    inherited DoClose(Action); // Р’С‹Р·С‹РІР°РµРј СЃС‚Р°РЅРґР°СЂС‚РЅСѓСЋ Р»РѕРіРёРєСѓ VCL Рё СЃРѕР±С‹С‚РёСЏ OnClose
 
-    // Проверяем: если форма открыта МОДАЛЬНО, мы НЕ делаем ей caFree,
-    // так как блок try..finally в ExecuteModal сам сделает Instance.Free.
+    // РџСЂРѕРІРµСЂСЏРµРј: РµСЃР»Рё С„РѕСЂРјР° РѕС‚РєСЂС‹С‚Р° РњРћР”РђР›Р¬РќРћ, РјС‹ РќР• РґРµР»Р°РµРј РµР№ caFree,
+    // С‚Р°Рє РєР°Рє Р±Р»РѕРє try..finally РІ ExecuteModal СЃР°Рј СЃРґРµР»Р°РµС‚ Instance.Free.
     if fsModal in FormState then
     begin
-        Action := caHide; // Оставляем удаление на совести вызывающего
+        Action := caHide; // РћСЃС‚Р°РІР»СЏРµРј СѓРґР°Р»РµРЅРёРµ РЅР° СЃРѕРІРµСЃС‚Рё РІС‹Р·С‹РІР°СЋС‰РµРіРѕ
     end
     else
     begin
-        // Если форма плавающая (ExecuteGlobal), она уничтожает себя сама
+        // Р•СЃР»Рё С„РѕСЂРјР° РїР»Р°РІР°СЋС‰Р°СЏ (ExecuteGlobal), РѕРЅР° СѓРЅРёС‡С‚РѕР¶Р°РµС‚ СЃРµР±СЏ СЃР°РјР°
         Action := caFree;
 
-        // И удаляет себя из реестра открытых окон
+        // Р СѓРґР°Р»СЏРµС‚ СЃРµР±СЏ РёР· СЂРµРµСЃС‚СЂР° РѕС‚РєСЂС‹С‚С‹С… РѕРєРѕРЅ
         if FInstances.ContainsKey(Self.ClassType) then
             FInstances.Remove(Self.ClassType);
     end;
@@ -159,12 +159,12 @@ end;
 
 procedure TBaseForm.DoInitialize;
 begin
-    // По умолчанию пусто - базовому классу нечего добавлять
+    // РџРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РїСѓСЃС‚Рѕ - Р±Р°Р·РѕРІРѕРјСѓ РєР»Р°СЃСЃСѓ РЅРµС‡РµРіРѕ РґРѕР±Р°РІР»СЏС‚СЊ
 end;
 
 procedure TBaseForm.DoShow;
 begin
-    // Если форма выводится на экран, а контекста нет - это грубейшая ошибка разработчика
+    // Р•СЃР»Рё С„РѕСЂРјР° РІС‹РІРѕРґРёС‚СЃСЏ РЅР° СЌРєСЂР°РЅ, Р° РєРѕРЅС‚РµРєСЃС‚Р° РЅРµС‚ - СЌС‚Рѕ РіСЂСѓР±РµР№С€Р°СЏ РѕС€РёР±РєР° СЂР°Р·СЂР°Р±РѕС‚С‡РёРєР°
     Assert(
         Assigned(FAppContext),
         Format('We forgot to call the Initialize method for the %s form after it was created!', [Self.ClassName])
@@ -177,11 +177,11 @@ var
     TaskDlg: TTaskDialog;
     Title, MainText, ExpText: string;
 begin
-    // Запрашиваем все три поля одним вызовом
+    // Р—Р°РїСЂР°С€РёРІР°РµРј РІСЃРµ С‚СЂРё РїРѕР»СЏ РѕРґРЅРёРј РІС‹Р·РѕРІРѕРј
     TUIStateLoader.GetHelpTexts(HelpKey, Title, MainText, ExpText);
 
     case HelpKind of
-        // Отображение через кастомную форму
+        // РћС‚РѕР±СЂР°Р¶РµРЅРёРµ С‡РµСЂРµР· РєР°СЃС‚РѕРјРЅСѓСЋ С„РѕСЂРјСѓ
         hkCustomForm:
             begin
                 with FCustomHelpForm do
@@ -191,7 +191,7 @@ begin
                 end;
             end;
 
-        // Отображение через стандартный TTaskDialog
+        // РћС‚РѕР±СЂР°Р¶РµРЅРёРµ С‡РµСЂРµР· СЃС‚Р°РЅРґР°СЂС‚РЅС‹Р№ TTaskDialog
         hkTaskDialog:
             begin
                 TaskDlg := TTaskDialog.Create(Self);
@@ -220,10 +220,10 @@ class procedure TBaseForm.ExecuteGlobal(Owner: TComponent; AppContext: IAppConte
 var
     Instance: TBaseForm;
 begin
-    // В методах класса (class procedure) Self указывает на ТИП класса,
-    // из которого был вызван метод (например, TChmodForm или TNetworkForm).
+    // Р’ РјРµС‚РѕРґР°С… РєР»Р°СЃСЃР° (class procedure) Self СѓРєР°Р·С‹РІР°РµС‚ РЅР° РўРРџ РєР»Р°СЃСЃР°,
+    // РёР· РєРѕС‚РѕСЂРѕРіРѕ Р±С‹Р» РІС‹Р·РІР°РЅ РјРµС‚РѕРґ (РЅР°РїСЂРёРјРµСЂ, TChmodForm РёР»Рё TNetworkForm).
 
-    // Проверяем, открыта ли уже форма такого класса
+    // РџСЂРѕРІРµСЂСЏРµРј, РѕС‚РєСЂС‹С‚Р° Р»Рё СѓР¶Рµ С„РѕСЂРјР° С‚Р°РєРѕРіРѕ РєР»Р°СЃСЃР°
     if FInstances.TryGetValue(Self, Instance) then
     begin
         if Instance.WindowState = wsMinimized then
@@ -234,21 +234,21 @@ begin
         Exit;
     end;
 
-    // Вызываем виртуальный конструктор Create. Delphi поймет, что нужно
-    // создать именно дочерний класс (например, TChmodForm), а не TBaseForm.
+    // Р’С‹Р·С‹РІР°РµРј РІРёСЂС‚СѓР°Р»СЊРЅС‹Р№ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ Create. Delphi РїРѕР№РјРµС‚, С‡С‚Рѕ РЅСѓР¶РЅРѕ
+    // СЃРѕР·РґР°С‚СЊ РёРјРµРЅРЅРѕ РґРѕС‡РµСЂРЅРёР№ РєР»Р°СЃСЃ (РЅР°РїСЂРёРјРµСЂ, TChmodForm), Р° РЅРµ TBaseForm.
     Instance := Self.Create(Application) as TBaseForm;
 
-    // Регистрируем экземпляр в словаре ДО вызова Initialize,
-    // на случай если внутри Initialize форма попытается обратиться к синглтону
+    // Р РµРіРёСЃС‚СЂРёСЂСѓРµРј СЌРєР·РµРјРїР»СЏСЂ РІ СЃР»РѕРІР°СЂРµ Р”Рћ РІС‹Р·РѕРІР° Initialize,
+    // РЅР° СЃР»СѓС‡Р°Р№ РµСЃР»Рё РІРЅСѓС‚СЂРё Initialize С„РѕСЂРјР° РїРѕРїС‹С‚Р°РµС‚СЃСЏ РѕР±СЂР°С‚РёС‚СЊСЃСЏ Рє СЃРёРЅРіР»С‚РѕРЅСѓ
     FInstances.Add(Self, Instance);
 
 
-    Instance.LockDrawing; // Попытка уменьшить мерцание формы со стилями VCL
+    Instance.LockDrawing; // РџРѕРїС‹С‚РєР° СѓРјРµРЅСЊС€РёС‚СЊ РјРµСЂС†Р°РЅРёРµ С„РѕСЂРјС‹ СЃРѕ СЃС‚РёР»СЏРјРё VCL
     try
         Instance.Initialize(AppContext);
         Instance.FormStyle := fsStayOnTop;
     finally
-        Instance.UnlockDrawing;   // Попытка уменьшить мерцание формы со стилями VCL
+        Instance.UnlockDrawing;   // РџРѕРїС‹С‚РєР° СѓРјРµРЅСЊС€РёС‚СЊ РјРµСЂС†Р°РЅРёРµ С„РѕСЂРјС‹ СЃРѕ СЃС‚РёР»СЏРјРё VCL
     end;
     Instance.Show;
 end;
@@ -257,8 +257,8 @@ class function TBaseForm.ExecuteModal(Owner: TComponent; AppContext: IAppContext
 var
     Instance: TBaseForm;
 begin
-    // Для модальных окон нам не нужен реестр FInstances.
-    // Просто создаем, инициализируем, показываем с блокировкой и уничтожаем.
+    // Р”Р»СЏ РјРѕРґР°Р»СЊРЅС‹С… РѕРєРѕРЅ РЅР°Рј РЅРµ РЅСѓР¶РµРЅ СЂРµРµСЃС‚СЂ FInstances.
+    // РџСЂРѕСЃС‚Рѕ СЃРѕР·РґР°РµРј, РёРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј, РїРѕРєР°Р·С‹РІР°РµРј СЃ Р±Р»РѕРєРёСЂРѕРІРєРѕР№ Рё СѓРЅРёС‡С‚РѕР¶Р°РµРј.
     Instance := Self.Create(Owner) as TBaseForm;
     try
         Instance.Initialize(AppContext);
@@ -280,24 +280,24 @@ end;
 
 procedure TBaseForm.Initialize(AppContext: IAppContext);
 begin
-    // Гарантируем, что контекст не пустой
+    // Р“Р°СЂР°РЅС‚РёСЂСѓРµРј, С‡С‚Рѕ РєРѕРЅС‚РµРєСЃС‚ РЅРµ РїСѓСЃС‚РѕР№
     if not Assigned(AppContext) then
         raise EArgumentNilException.Create('AppContext can not be nil!');
 
     FAppContext := AppContext;
 
-    // Применяем локализацию
+    // РџСЂРёРјРµРЅСЏРµРј Р»РѕРєР°Р»РёР·Р°С†РёСЋ
     TUIStateLoader.ApplyTranslations(Self);
 
-    // Гарантированно пробрасываем настройки в HelpManager в одном месте для ВСЕХ форм.
-    // Дочерним формам вообще не нужно знать, как устроен менеджер справки внутри базовой.
+    // Р“Р°СЂР°РЅС‚РёСЂРѕРІР°РЅРЅРѕ РїСЂРѕР±СЂР°СЃС‹РІР°РµРј РЅР°СЃС‚СЂРѕР№РєРё РІ HelpManager РІ РѕРґРЅРѕРј РјРµСЃС‚Рµ РґР»СЏ Р’РЎР•РҐ С„РѕСЂРј.
+    // Р”РѕС‡РµСЂРЅРёРј С„РѕСЂРјР°Рј РІРѕРѕР±С‰Рµ РЅРµ РЅСѓР¶РЅРѕ Р·РЅР°С‚СЊ, РєР°Рє СѓСЃС‚СЂРѕРµРЅ РјРµРЅРµРґР¶РµСЂ СЃРїСЂР°РІРєРё РІРЅСѓС‚СЂРё Р±Р°Р·РѕРІРѕР№.
     FHelpManager.Configure(FAppContext.SettingsManager.Data.UISettings);
 
-    // Автоматически применяем горячие клавиши для дочерней формы.
+    // РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРё РїСЂРёРјРµРЅСЏРµРј РіРѕСЂСЏС‡РёРµ РєР»Р°РІРёС€Рё РґР»СЏ РґРѕС‡РµСЂРЅРµР№ С„РѕСЂРјС‹.
     if Assigned(FAppContext.HotkeyService) then
         FAppContext.HotkeyService.ApplySettingsToForm(Self);
 
-    // Вызываем кастомную логику дочерней формы (если она переопределена)
+    // Р’С‹Р·С‹РІР°РµРј РєР°СЃС‚РѕРјРЅСѓСЋ Р»РѕРіРёРєСѓ РґРѕС‡РµСЂРЅРµР№ С„РѕСЂРјС‹ (РµСЃР»Рё РѕРЅР° РїРµСЂРµРѕРїСЂРµРґРµР»РµРЅР°)
     DoInitialize;
 end;
 

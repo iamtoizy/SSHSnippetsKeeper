@@ -1,4 +1,4 @@
-unit HintTextMemo;
+п»їunit HintTextMemo;
 
 interface
 
@@ -75,7 +75,7 @@ begin
     if FHintText <> Value then
     begin
         FHintText := Value;
-        Invalidate; // Принудительно запрашиваем перерисовку при смене текста
+        Invalidate; // РџСЂРёРЅСѓРґРёС‚РµР»СЊРЅРѕ Р·Р°РїСЂР°С€РёРІР°РµРј РїРµСЂРµСЂРёСЃРѕРІРєСѓ РїСЂРё СЃРјРµРЅРµ С‚РµРєСЃС‚Р°
     end;
 end;
 
@@ -102,7 +102,7 @@ end;
 procedure TMemo.CMEnabledChanged(var Message: TMessage);
 begin
     inherited;
-    Invalidate; // Синхронизируем появление/исчезновение при смене Enabled
+    Invalidate; // РЎРёРЅС…СЂРѕРЅРёР·РёСЂСѓРµРј РїРѕСЏРІР»РµРЅРёРµ/РёСЃС‡РµР·РЅРѕРІРµРЅРёРµ РїСЂРё СЃРјРµРЅРµ Enabled
 end;
 
 procedure TMemo.WMPaint(var Message: TWMPaint);
@@ -112,16 +112,16 @@ var
     R: TRect;
     NeedRelease: Boolean;
 begin
-    inherited; // Даем системе отрисовать сам Memo
+    inherited; // Р”Р°РµРј СЃРёСЃС‚РµРјРµ РѕС‚СЂРёСЃРѕРІР°С‚СЊ СЃР°Рј Memo
 
-    // Используем GetTextLen = 0 (это в 10 раз надежнее, чем Text = '', т.к. игнорирует скрытые переносы строк)
+    // РСЃРїРѕР»СЊР·СѓРµРј GetTextLen = 0 (СЌС‚Рѕ РІ 10 СЂР°Р· РЅР°РґРµР¶РЅРµРµ, С‡РµРј Text = '', С‚.Рє. РёРіРЅРѕСЂРёСЂСѓРµС‚ СЃРєСЂС‹С‚С‹Рµ РїРµСЂРµРЅРѕСЃС‹ СЃС‚СЂРѕРє)
     if FEnableHintText and (GetTextLen = 0) and (FHintText <> '') and Enabled then
     begin
         NeedRelease := False;
         DC := Message.DC;
 
-        // Магия VCL: если Message.DC = 0, значит двойная буферизация отключена, берем DC у окна.
-        // Если <> 0, значит VCL дал нам виртуальный буфер, и мы ОБЯЗАНЫ рисовать в него!
+        // РњР°РіРёСЏ VCL: РµСЃР»Рё Message.DC = 0, Р·РЅР°С‡РёС‚ РґРІРѕР№РЅР°СЏ Р±СѓС„РµСЂРёР·Р°С†РёСЏ РѕС‚РєР»СЋС‡РµРЅР°, Р±РµСЂРµРј DC Сѓ РѕРєРЅР°.
+        // Р•СЃР»Рё <> 0, Р·РЅР°С‡РёС‚ VCL РґР°Р» РЅР°Рј РІРёСЂС‚СѓР°Р»СЊРЅС‹Р№ Р±СѓС„РµСЂ, Рё РјС‹ РћР‘РЇР—РђРќР« СЂРёСЃРѕРІР°С‚СЊ РІ РЅРµРіРѕ!
         if DC = 0 then
         begin
             DC := GetDC(Handle);
@@ -133,10 +133,10 @@ begin
             Canvas := TCanvas.Create;
             try
                 Canvas.Handle := DC;
-                Canvas.Font.Assign(Self.Font);   // Безопасное копирование системного шрифта
-                Canvas.Font.Color := clGrayText; // Нативный серый цвет для неактивного текста (выглядит лучше)
+                Canvas.Font.Assign(Self.Font);   // Р‘РµР·РѕРїР°СЃРЅРѕРµ РєРѕРїРёСЂРѕРІР°РЅРёРµ СЃРёСЃС‚РµРјРЅРѕРіРѕ С€СЂРёС„С‚Р°
+                Canvas.Font.Color := clGrayText; // РќР°С‚РёРІРЅС‹Р№ СЃРµСЂС‹Р№ С†РІРµС‚ РґР»СЏ РЅРµР°РєС‚РёРІРЅРѕРіРѕ С‚РµРєСЃС‚Р° (РІС‹РіР»СЏРґРёС‚ Р»СѓС‡С€Рµ)
                 Canvas.Font.Style := [fsItalic];
-                Canvas.Brush.Style := bsClear;   // Не закрашиваем фон!
+                Canvas.Brush.Style := bsClear;   // РќРµ Р·Р°РєСЂР°С€РёРІР°РµРј С„РѕРЅ!
 
                 R := ClientRect;
                 Inc(R.Left, 4);
@@ -145,7 +145,7 @@ begin
 
                 DrawText(Canvas.Handle, PChar(FHintText), -1, R, DT_NOPREFIX or DT_WORDBREAK);
             finally
-                Canvas.Handle := 0; // Отвязываем контекст ДО удаления Canvas, чтобы не убить системный DC
+                Canvas.Handle := 0; // РћС‚РІСЏР·С‹РІР°РµРј РєРѕРЅС‚РµРєСЃС‚ Р”Рћ СѓРґР°Р»РµРЅРёСЏ Canvas, С‡С‚РѕР±С‹ РЅРµ СѓР±РёС‚СЊ СЃРёСЃС‚РµРјРЅС‹Р№ DC
                 Canvas.Free;
                 if NeedRelease then
                     ReleaseDC(Handle, DC);
@@ -158,7 +158,7 @@ procedure TMemo.WndProc(var Message: TMessage);
 begin
     inherited WndProc(Message);
 
-    // Моментальная перерисовка при клике или вводе символа
+    // РњРѕРјРµРЅС‚Р°Р»СЊРЅР°СЏ РїРµСЂРµСЂРёСЃРѕРІРєР° РїСЂРё РєР»РёРєРµ РёР»Рё РІРІРѕРґРµ СЃРёРјРІРѕР»Р°
     case Message.Msg of
         WM_SETFOCUS, WM_KILLFOCUS, CM_TEXTCHANGED:
             Invalidate;
