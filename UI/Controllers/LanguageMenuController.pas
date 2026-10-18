@@ -6,13 +6,14 @@ uses
     Core.Interfaces.App,
     System.Classes,
     System.SysUtils,
+    UI.AppStatusBar,
     Vcl.ComCtrls,
     Vcl.Menus
     ;
 
 const
     // Индекс панели StatusBar, клик по которой открывает меню языков
-    LANG_PANEL_INDEX = 1;
+    LANG_PANEL_INDEX = TAppStatusBar.SB_PANEL_LANG;
 
 type
     // Меню выбора языка: построение списка из Translation\ui-texts.*.json

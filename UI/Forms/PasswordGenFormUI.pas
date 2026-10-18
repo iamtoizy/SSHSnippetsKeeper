@@ -221,17 +221,23 @@ begin
 
     tmrClipboard.Interval := 100;
     tmrClipboard.Enabled := True;
+
+    sbBottom.Panels[0].Text := TUIStateLoader.GetMessage('PasswordGenForm.StatusClipboardCountdown',
+        [FClipboardCountdown div 10]);
 end;
 
 procedure TPasswordGenForm.tmrClipboardTimer(Sender: TObject);
 begin
     Dec(FClipboardCountdown);
     FProgressBar.Position := FClipboardCountdown;
+    sbBottom.Panels[0].Text := TUIStateLoader.GetMessage('PasswordGenForm.StatusClipboardCountdown',
+        [FClipboardCountdown div 10]);
 
     if FClipboardCountdown <= 0 then
     begin
         tmrClipboard.Enabled := False;
         FProgressBar.Visible := False;
+        sbBottom.Panels[0].Text := '';
 
         try
             ClearClipboardAfterDelay(FLastCopiedText, 0);
@@ -291,6 +297,7 @@ procedure TPasswordGenForm.UpdateEntropyUI;
 var
     PoolSize: Integer;
     Entropy: Double;
+    Strength: string;
     Settings: TCustomPasswordSettings;
 begin
     if not Assigned(FPasswordService) then Exit;
@@ -310,6 +317,16 @@ begin
 
     Entropy := FPasswordService.CalculateEntropy(seLength.Value, PoolSize);
     lbEntropyValue.Caption := Format('%.1f bit', [Entropy]);
+
+    if Entropy < 45 then
+        Strength := TUIStateLoader.GetMessage('PasswordGenForm.StatusStrengthWeak')
+    else if Entropy < 70 then
+        Strength := TUIStateLoader.GetMessage('PasswordGenForm.StatusStrengthMedium')
+    else
+        Strength := TUIStateLoader.GetMessage('PasswordGenForm.StatusStrengthStrong');
+
+    sbBottom.Panels[0].Text := TUIStateLoader.GetMessage('PasswordGenForm.StatusSummary',
+        [seLength.Value, FormatFloat('0.0', Entropy), Strength]);
 end;
 
 procedure TPasswordGenForm.UpdateHistoryUI;
@@ -773,9 +790,7 @@ begin
                         // Набираем пароль ТОЛЬКО если целевое окно реально получило фокус,
                         // иначе секрет уйдёт в то окно, которое активно сейчас
                         if GetForegroundWindow = TargetWnd then
-                            Frm.SendStringViaInput(PasswordToType)
-                        else
-                            ShowSimpleToast(TUIStateLoader.GetMessage('PasswordGenForm.FocusLostError'));
+                            Frm.SendStringViaInput(PasswordToType);
                     end;
                 end
                 else

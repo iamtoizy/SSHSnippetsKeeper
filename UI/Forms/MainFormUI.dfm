@@ -76,7 +76,16 @@ object MainForm: TMainForm
         Width = 50
       end
       item
+        Width = 200
+      end
+      item
+        Width = 130
+      end
+      item
         Width = 150
+      end
+      item
+        Width = 60
       end>
     OnMouseDown = sbBottomMouseDown
     OnResize = sbBottomResize

@@ -65,6 +65,7 @@ uses
   HintTextMemo in 'UI\Controls\HintTextMemo.pas',
   BaseFormUI in 'UI\Forms\BaseFormUI.pas',
   UI.Services.AppStateManager in 'UI\Services\UI.Services.AppStateManager.pas',
+  UI.AppStatusBar in 'UI\Helpers\UI.AppStatusBar.pas',
   UI.Helpers in 'UI\Helpers\UI.Helpers.pas',
   UI.TreeViewSearchHelper in 'UI\Helpers\UI.TreeViewSearchHelper.pas',
    SnippetViewData in 'UI\ViewModels\SnippetViewData.pas',

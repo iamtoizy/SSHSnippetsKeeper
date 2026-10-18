@@ -999,7 +999,9 @@
         "actAddWorkspace": "Добавить пространство",
         "actDeleteWorkspace": "Удалить пространство",
         "actEditWorkspace": "Изменить пространство"
-      }
+      },
+      "GlobalQuickSearch": "Панель быстрого поиска",
+      "GlobalPasswordGen": "Генератор паролей"
     },
     "Common": {
       "CopyTooltip": "Кликните, чтобы скопировать",
@@ -1020,12 +1022,15 @@
       "Security": "Безопасность",
       "Additional": "ДОПОЛНИТЕЛЬНО:",
       "HotkeyConflict": "Эта комбинация клавиш уже используется действием:\n'%s'.\n\nВыбери другую.",
-      "HotkeyApplied": "Горячая клавиша временно применена. Нажми 'Сохранить' внизу окна, чтобы записать изменения в файл.",
-      "HotkeyRegistrationError": "Не удалось зарегистрировать глобальную клавишу (ID: %d). Возможно, она занята другим приложением.",
+      "HotkeyRegistrationError": "Не удалось зарегистрировать глобальную горячую клавишу «%s». Возможно, она занята другим приложением.",
       "SyncFolderCreationError": "Не удалось создать папку синхронизации: %s",
       "SyncingStorage": "Синхронизация хранилища...",
       "SyncCompleted": "Синхронизация завершена.",
-      "SyncError": "Ошибка синхронизации: %s"
+      "SyncError": "Ошибка синхронизации: %s",
+      "StatusDbNotOpen": "База не открыта",
+      "StatusDbDirty": "● Есть изменения",
+      "StatusSnippetCount": "Сниппетов: %d",
+      "StatusSnippetCountSel": "Сниппетов: %d (выделено: %d)"
     },
     "DB": {
       "ConnectError": "Критическая ошибка!\nНе удалось подключиться к базе данных SQLite.\nПроверь путь к файлу.",
@@ -1279,6 +1284,11 @@
       "HtPasswdLoginError": "Логин не может быть пустым.",
       "HtPasswdBcryptCopied": "Строка Bcrypt скопирована в буфер обмена. Буфер будет очищен через 15 сек.",
       "NoPasswordGenerated": "Сначала сгенерируй пароль",
+      "StatusSummary": "Длина: %d · Энтропия: %s бит · %s",
+      "StatusStrengthWeak": "слабый",
+      "StatusStrengthMedium": "средний",
+      "StatusStrengthStrong": "надёжный",
+      "StatusClipboardCountdown": "Буфер будет очищен через %d с",
       "Presets": {
         "WebStandard": "Обычный пароль для сайта (Web Safe)",
         "ActiveDirectory": "Active Directory (A-Z, a-z, 0-9, спецсимвол)",

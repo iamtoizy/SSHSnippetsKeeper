@@ -37,6 +37,7 @@ type
         procedure OnHUDHotkeyTriggered;
         procedure OnPassGenHotkeyTriggered;
         procedure RegisterSingleHotkey(ID: Integer; const Config: THotkeyConfig);
+        function HotkeyDisplayName(ID: Integer): string;
     public
         constructor Create(AppContext: IAppContext);
         destructor Destroy; override;
@@ -49,6 +50,7 @@ type
 implementation
 
 uses
+    Common.Helpers,
     Common.Localization,
     QuickSearchFormUI,
     System.Classes
@@ -82,13 +84,21 @@ begin
         Flags := Config.Modifiers or MOD_NOREPEAT;
 
         if not Winapi.Windows.RegisterHotKey(FWindowHandle, ID, Flags, Config.Key) then
-        begin
             // Если комбинация занята другой программой в Windows
-            if Assigned(FAppContext) and Assigned(FAppContext.MessagesHandler) then
-                FAppContext.MessagesHandler.ShowWarning(
-                    TUIStateLoader.GetMessage('Common.HotkeyRegistrationError', [ID])
-                );
-        end;
+            ShowSimpleToast(TUIStateLoader.GetMessage('Common.HotkeyRegistrationError',
+                [HotkeyDisplayName(ID)]));
+    end;
+end;
+
+function TGlobalHotkeyManager.HotkeyDisplayName(ID: Integer): string;
+begin
+    case ID of
+        HOTKEY_ID_HUD:
+            Result := TUIStateLoader.GetMessage('Actions.GlobalQuickSearch');
+        HOTKEY_ID_PASSGEN:
+            Result := TUIStateLoader.GetMessage('Actions.GlobalPasswordGen');
+    else
+        Result := IntToStr(ID);
     end;
 end;
 

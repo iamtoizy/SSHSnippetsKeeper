@@ -20,6 +20,7 @@ uses
     SearchController,
     SyncController,
     TagListController,
+    UI.AppStatusBar,
     System.Actions,
     System.Classes,
     System.DateUtils,
@@ -190,6 +191,7 @@ type
         FIgnoreCategoryChange: Boolean;
         FHotkeyMgr: TGlobalHotkeyManager;
         FSync: TSyncController;
+        FStatus: TAppStatusBar;
         FSearch: TMainSearchController;
         FUsersCache: TArray<TUserDTO>;
         FAllTagsCache: TArray<TTagDTO>;
@@ -216,14 +218,15 @@ type
         procedure RefreshCurrentSnippetList;
         procedure ReloadUI(PreserveCategoryID: Integer);
         procedure RefreshCaches;
-        function FindCachedUser(UserID: Integer): TUserDTO;
         procedure CloseDatabase;
+        procedure UpdateSnippetCount;
+        function CurrentDbFileName: string;
         //
         procedure PerformSearchAsync(const Mask: string);
         procedure DisplaySearchResults(const Results: TArray<TSnippetDTO>);
         procedure LanguageMenuItemClick(Sender: TObject);
         // Синхронизация Markdown
-        procedure PerformSync(IsAsync: Boolean);
+        procedure PerformSync(IsAsync: Boolean; ShowToastOnDone: Boolean = False);
     protected
         procedure WMActivate(var Msg: TWMActivate); message WM_ACTIVATE;
         procedure DoInitialize; override;
@@ -392,7 +395,7 @@ begin
             // Авто-синхронизация при старте
             if AppContext.SettingsManager.Data.SyncOnStart then
             begin
-                PerformSync(True); // Асинхронно, чтобы не тормозить показ формы
+                PerformSync(True, True); // Асинхронно, чтобы не тормозить показ формы
             end;
         except
             on E: Exception do
@@ -450,6 +453,7 @@ begin
     RemoveProp(Self.Handle, PChar(UNIQUE_APP_STR));
     FreeAndNil(FSync);
     FreeAndNil(FSearch);
+    FreeAndNil(FStatus);
     FHotkeyMgr.Free;
 end;
 
@@ -474,6 +478,11 @@ begin
                 rbFTS.Enabled := True;
                 tvCategories.Enabled := True;
                 lvSnippets.Enabled := True;
+
+                FStatus.SetDatabase(CurrentDbFileName);
+                FStatus.SetDirty(False);
+                FStatus.SetEvent('');
+                UpdateSnippetCount;
 
                 // ВАЖНО: При открытии БД сниппет еще не выбран, фильтр по тегам сбрасывается
                 FTags.ResetFilterState;
@@ -515,6 +524,11 @@ begin
                 finally
                     tvCategories.Items.EndUpdate;
                 end;
+
+                FStatus.SetDatabase('');
+                FStatus.SetDirty(False);
+                FStatus.SetEvent('');
+                FStatus.SetSnippetCount(0, 0);
 
                 UpdateUI(bfsSnippetDeselected);
             end;
@@ -600,17 +614,6 @@ begin
         FAllTagsCache := AppContext.TagService.GetAllTags
     else
         FAllTagsCache := [];
-end;
-
-function TMainForm.FindCachedUser(UserID: Integer): TUserDTO;
-var
-    User: TUserDTO;
-begin
-    Result := Default(TUserDTO);
-    for User in FUsersCache do
-        if User.ID = UserID then
-            Exit(User);
-    Result := AppContext.UserService.GetUserByID(UserID);
 end;
 
 procedure TMainForm.RefreshCurrentSnippetList;
@@ -709,8 +712,12 @@ begin
 
     lvTags.OnMouseDown := lvTagsMouseDown;
 
+    FStatus := TAppStatusBar.Create(sbBottom);
+    FStatus.Layout;
+    FStatus.SetDatabase('');
+
     // Контроллеры областей формы: дерево категорий, теги, меню языков
-    FCategoryTree := TCategoryTreeController.Create(tvCategories, sbBottom, AppContext,
+    FCategoryTree := TCategoryTreeController.Create(tvCategories, FStatus, AppContext,
         procedure(PreserveCategoryID: Integer)
         begin
             ReloadUI(PreserveCategoryID);
@@ -721,7 +728,7 @@ begin
         end);
     FCategoryTree.DefaultUserID := FUserID;
 
-    FTags := TTagListController.Create(lvTags, sbBottom, AppContext,
+    FTags := TTagListController.Create(lvTags, FStatus, AppContext,
         procedure
         begin
             if tvCategories.Selected <> nil then
@@ -772,6 +779,7 @@ var
     Item: TListItem;
     Snippet: TSnippetDTO;
 begin
+    UpdateSnippetCount;
     Item := lvSnippets.Selected;
     if not Assigned(Item) then
     begin
@@ -883,7 +891,7 @@ begin
                 SelectedCatID := PRESERVE_CATEGORY_EMPTY_ID;
 
             ReloadUI(SelectedCatID);
-            sbBottom.Panels[0].Text := TUIStateLoader.GetMessage('Snippet.DeletedMsg');
+            FStatus.Flash(TUIStateLoader.GetMessage('Snippet.DeletedMsg'));
             MarkDataChanged;
         except
             on E: Exception do
@@ -927,6 +935,7 @@ begin
     finally
         lvSnippets.Items.EndUpdate;
     end;
+    UpdateSnippetCount;
 end;
 
 procedure TMainForm.lvSnippetsDeletion(Sender: TObject; Item: TListItem);
@@ -1003,12 +1012,13 @@ end;
 procedure TMainForm.MarkDataChanged;
 begin
     GetSyncEngine.MarkDataChanged;
+    FStatus.SetDirty(True);
 end;
 
 function TMainForm.GetSyncEngine: TSyncController;
 begin
     if not Assigned(FSync) then
-        FSync := TSyncController.Create(AppContext, actSyncDatabase, sbBottom, tmrAutoSync,
+        FSync := TSyncController.Create(AppContext, actSyncDatabase, FStatus, tmrAutoSync,
             PRESERVE_CATEGORY_EMPTY_ID,
             procedure(PreserveCategoryID: Integer)
             begin
@@ -1200,16 +1210,32 @@ begin
     Result := AppContext.SnippetService.GetSnippetByID(TSnippetViewData(Item.Data).ID);
 end;
 
+procedure TMainForm.UpdateSnippetCount;
+begin
+    FStatus.SetSnippetCount(lvSnippets.Items.Count, lvSnippets.SelCount);
+end;
+
+function TMainForm.CurrentDbFileName: string;
+var
+    ConnParts: TStringList;
+begin
+    Result := '';
+    if (not Assigned(AppContext.DatabaseManager)) or (not AppContext.DatabaseManager.IsConnected) then
+        Exit;
+    ConnParts := TStringList.Create;
+    try
+        ConnParts.Text := AppContext.DatabaseManager.GetConnectionString;
+        Result := ExtractFileName(ConnParts.Values['Database']);
+    finally
+        ConnParts.Free;
+    end;
+end;
+
 procedure TMainForm.FillUserInterfaceFromSnippet(const Snippet: TSnippetDTO);
 var
-    User: TUserDTO;
     SnippetTags: TArray<TTagDTO>;
 begin
     FTags.CurrentSnippetID := Snippet.ID;
-
-    User := FindCachedUser(Snippet.UserID);
-    if User.ID > 0 then
-        sbBottom.Panels[0].Text := Format('[%d] %s (ID: %d) CID: %d', [Snippet.ID, User.Name, Snippet.UserID, Snippet.CategoryID]);
 
     // Отрисовка тегов через TUIHelpers.
     // При активном фильтре по тегам список не перерисовываем:
@@ -1260,9 +1286,9 @@ begin
     GetSearchEngine.SearchAsync(Mask);
 end;
 
-procedure TMainForm.PerformSync(IsAsync: Boolean);
+procedure TMainForm.PerformSync(IsAsync: Boolean; ShowToastOnDone: Boolean);
 begin
-    GetSyncEngine.PerformSync(IsAsync);
+    GetSyncEngine.PerformSync(IsAsync, ShowToastOnDone);
 end;
 
 procedure TMainForm.rbTextClick(Sender: TObject);
@@ -1297,6 +1323,11 @@ begin
 
                 // Показываем всплывающее меню со списками языков
                 pmLanguage.Popup(Pt.X, Pt.Y);
+            end
+            else if I = TAppStatusBar.SB_PANEL_DIRTY then
+            begin
+                if FStatus.Dirty then
+                    actSyncDatabase.Execute;
             end;
 
             Break; // Нашли нужную панель - выходим из цикла
@@ -1306,7 +1337,7 @@ end;
 
 procedure TMainForm.sbBottomResize(Sender: TObject);
 begin
-    sbBottom.Panels[0].Width := sbBottom.ClientWidth - sbBottom.Panels[1].Width;
+    FStatus.Layout;
 end;
 
 procedure TMainForm.tmrAutoSyncTimer(Sender: TObject);

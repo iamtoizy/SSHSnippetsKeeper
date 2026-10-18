@@ -11,6 +11,7 @@ uses
     Core.Interfaces.UI,
     System.SysUtils,
     System.Types,
+    UI.AppStatusBar,
     Vcl.ComCtrls,
     Vcl.Controls,
     Winapi.Messages,
@@ -28,14 +29,14 @@ type
     TCategoryTreeController = class
     private
         FTree: TTreeView;
-        FStatusBar: TStatusBar;
+        FStatusBar: TAppStatusBar;
         FContext: IAppContext;
         FOnReloadUI: TProc<Integer>;
         FOnDataChanged: TProc;
         FFilterUserID: Integer;
         FDefaultUserID: Integer;
     public
-        constructor Create(ATree: TTreeView; AStatusBar: TStatusBar; AContext: IAppContext;
+        constructor Create(ATree: TTreeView; AStatusBar: TAppStatusBar; AContext: IAppContext;
             const AOnReloadUI: TProc<Integer>; const AOnDataChanged: TProc);
 
         function IsVirtualCategory(Node: TTreeNode): Boolean;
@@ -68,7 +69,7 @@ uses
 
 { TCategoryTreeController }
 
-constructor TCategoryTreeController.Create(ATree: TTreeView; AStatusBar: TStatusBar;
+constructor TCategoryTreeController.Create(ATree: TTreeView; AStatusBar: TAppStatusBar;
     AContext: IAppContext; const AOnReloadUI: TProc<Integer>; const AOnDataChanged: TProc);
 begin
     inherited Create;
@@ -194,7 +195,7 @@ begin
         if (Node <> nil) and (Integer(IntPtr(Node.Data)) = NewCatID) then
             Node.EditText;
 
-        FStatusBar.Panels[0].Text := TUIStateLoader.GetMessage('Category.CreatedMsg', [NewCatName]);
+        FStatusBar.Flash(TUIStateLoader.GetMessage('Category.CreatedMsg', [NewCatName]));
 
         if Assigned(FOnDataChanged) then
             FOnDataChanged();
@@ -226,7 +227,7 @@ begin
             FContext.CategoryService.DeleteCategory(Cat.ID);
             if Assigned(FOnReloadUI) then
                 FOnReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
-            FStatusBar.Panels[0].Text := TUIStateLoader.GetMessage('Category.DeleteMsg', [Cat.Name]);
+            FStatusBar.Flash(TUIStateLoader.GetMessage('Category.DeleteMsg', [Cat.Name]));
             if Assigned(FOnDataChanged) then
                 FOnDataChanged();
         except

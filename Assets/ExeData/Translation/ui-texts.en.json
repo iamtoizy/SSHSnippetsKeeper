@@ -926,7 +926,9 @@
         "actAddWorkspace": "Add workspace",
         "actDeleteWorkspace": "Delete workspace",
         "actEditWorkspace": "Edit workspace"
-      }
+      },
+      "GlobalQuickSearch": "Quick Search Panel",
+      "GlobalPasswordGen": "Password Generator"
     },
     "Common": {
       "CopyTooltip": "Click to copy",
@@ -947,12 +949,15 @@
       "Security": "Security",
       "Additional": "ADDITIONAL:",
       "HotkeyConflict": "This key combination is already used by the action:\n'%s'.\n\nChoose another one.",
-      "HotkeyApplied": "Hotkey temporarily applied. Click 'Save' at the bottom of the window to write changes to the file.",
-      "HotkeyRegistrationError": "Failed to register global key (ID: %d). It might be occupied by another application.",
+      "HotkeyRegistrationError": "Failed to register the global hotkey '%s'. It might be occupied by another application.",
       "SyncFolderCreationError": "Failed to create synchronization folder: %s",
       "SyncingStorage": "Synchronizing storage...",
       "SyncCompleted": "Synchronization completed.",
-      "SyncError": "Error synchronizing: %s"
+      "SyncError": "Error synchronizing: %s",
+      "StatusDbNotOpen": "No database opened",
+      "StatusDbDirty": "● Unsynced changes",
+      "StatusSnippetCount": "Snippets: %d",
+      "StatusSnippetCountSel": "Snippets: %d (selected: %d)"
     },
     "DB": {
       "ConnectError": "Critical Error!\nFailed to connect to the SQLite database.\nCheck the file path.",
@@ -1207,7 +1212,6 @@
       "PresetMath": "Mathematical Symbols",
       "MemoryClearConfirm": "Delete all passwords from memory?",
       "MemoryCleared": "Password memory cleared.",
-      "FocusLostError": "Could not restore focus to the target window - the password was not typed.",
       "ClipboardCleared": "Clipboard cleared.",
       "PasswordCopied": "Password copied. Clipboard will be cleared in 15 seconds.",
       "HtPasswdTitle": "Nginx .htpasswd",
@@ -1215,6 +1219,11 @@
       "HtPasswdLoginError": "Login cannot be empty.",
       "HtPasswdBcryptCopied": "Bcrypt string copied to clipboard. Clipboard will be cleared in 15 seconds.",
       "NoPasswordGenerated": "Generate a password first.",
+      "StatusSummary": "Length: %d · %s bits · %s",
+      "StatusStrengthWeak": "weak",
+      "StatusStrengthMedium": "medium",
+      "StatusStrengthStrong": "strong",
+      "StatusClipboardCountdown": "Clipboard will be cleared in %d s",
       "Presets": {
         "WebStandard": "Standard Web Password (Web Safe)",
         "ActiveDirectory": "Active Directory (A-Z, a-z, 0-9, symbol)",

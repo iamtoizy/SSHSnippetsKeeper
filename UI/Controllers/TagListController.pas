@@ -11,6 +11,7 @@ uses
     Core.Interfaces.UI,
     System.Classes,
     System.SysUtils,
+    UI.AppStatusBar,
     Vcl.ComCtrls,
     Vcl.Controls,
     Winapi.Messages
@@ -22,7 +23,7 @@ type
     TTagListController = class
     private
         FListView: TListView;
-        FStatusBar: TStatusBar;
+        FStatusBar: TAppStatusBar;
         FContext: IAppContext;
         FFilterByTagIDs: TArray<Integer>;
         FCurrentSnippetID: Integer;
@@ -33,7 +34,7 @@ type
         procedure ApplyFilter(const TagIDs: TArray<Integer>; const TagNames: string);
         procedure ClearTagSelection;
     public
-        constructor Create(AListView: TListView; AStatusBar: TStatusBar; AContext: IAppContext;
+        constructor Create(AListView: TListView; AStatusBar: TAppStatusBar; AContext: IAppContext;
             const AOnFilterCleared: TProc; const AOnUpdateMenuState: TProc;
             const AOnDataChanged: TProc; const AOnShowSnippets: TProc<TArray<TSnippetDTO>>);
 
@@ -64,7 +65,7 @@ uses
 
 { TTagListController }
 
-constructor TTagListController.Create(AListView: TListView; AStatusBar: TStatusBar;
+constructor TTagListController.Create(AListView: TListView; AStatusBar: TAppStatusBar;
     AContext: IAppContext; const AOnFilterCleared: TProc; const AOnUpdateMenuState: TProc;
     const AOnDataChanged: TProc; const AOnShowSnippets: TProc<TArray<TSnippetDTO>>);
 begin
@@ -105,7 +106,7 @@ begin
             Selected := True;
             MakeVisible(False);
         end;
-        FStatusBar.Panels[0].Text := TUIStateLoader.GetMessage('Tag.AddedMsg', [NewName]);
+        FStatusBar.Flash(TUIStateLoader.GetMessage('Tag.AddedMsg', [NewName]));
         if Assigned(FOnDataChanged) then
             FOnDataChanged();
     except
@@ -152,7 +153,7 @@ begin
                 FContext.TagService.GetSnippetTags(FCurrentSnippetID)
             );
 
-        FStatusBar.Panels[0].Text := TUIStateLoader.GetMessage('Tag.DeletedMsg');
+        FStatusBar.Flash(TUIStateLoader.GetMessage('Tag.DeletedMsg'));
         if Assigned(FOnDataChanged) then
             FOnDataChanged();
     except
@@ -185,7 +186,7 @@ begin
     try
         TagID := Integer(IntPtr(Item.Data));
         FContext.TagService.RenameTag(TagID, S);
-        FStatusBar.Panels[0].Text := TUIStateLoader.GetMessage('Tag.RenamedMsg', [OldName, S]);
+        FStatusBar.Flash(TUIStateLoader.GetMessage('Tag.RenamedMsg', [OldName, S]));
         if Assigned(FOnDataChanged) then
             FOnDataChanged();
     except
@@ -251,7 +252,7 @@ begin
         FOnFilterCleared();
 
     SetLength(FFilterByTagIDs, 0);
-    FStatusBar.Panels[0].Text := TUIStateLoader.GetMessage('Tag.FilterReset');
+    FStatusBar.Flash(TUIStateLoader.GetMessage('Tag.FilterReset'));
 end;
 
 procedure TTagListController.ResetFilterState;
@@ -269,9 +270,9 @@ begin
         FOnShowSnippets(FContext.SnippetService.GetSnippetsByTags(TagIDs, FContext.SettingsManager.Data.TagsMatchAll));
 
     if FContext.SettingsManager.Data.TagsMatchAll then
-        FStatusBar.Panels[0].Text := TUIStateLoader.GetMessage('Tag.FilterPrefixAll', [TagNames])
+        FStatusBar.SetEvent(TUIStateLoader.GetMessage('Tag.FilterPrefixAll', [TagNames]))
     else
-        FStatusBar.Panels[0].Text := TUIStateLoader.GetMessage('Tag.FilterPrefixAny', [TagNames]);
+        FStatusBar.SetEvent(TUIStateLoader.GetMessage('Tag.FilterPrefixAny', [TagNames]));
 end;
 
 procedure TTagListController.ClearTagSelection;

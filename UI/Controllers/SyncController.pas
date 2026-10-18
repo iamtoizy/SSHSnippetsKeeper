@@ -13,8 +13,8 @@ uses
     System.IOUtils,
     System.SysUtils,
     System.Threading,
+    UI.AppStatusBar,
     Vcl.ActnList,
-    Vcl.ComCtrls,
     Vcl.ExtCtrls
     ;
 
@@ -24,14 +24,15 @@ type
     private
         FAppContext: IAppContext;
         FSyncAction: TCustomAction;
-        FStatusBar: TStatusBar;
+        FStatusBar: TAppStatusBar;
         FAutoSyncTimer: TTimer;
         FIsDbDirty: Boolean;
+        FShowToastOnDone: Boolean;
         FPreserveCategoryID: Integer;
         FOnReloadUI: TProc<Integer>;
         function ResolveSyncPath: string;
     public
-        constructor Create(AppContext: IAppContext; SyncAction: TCustomAction; StatusBar: TStatusBar; AutoSyncTimer: TTimer; PreserveCategoryID: Integer; OnReloadUI: TProc<Integer>);
+        constructor Create(AppContext: IAppContext; SyncAction: TCustomAction; StatusBar: TAppStatusBar; AutoSyncTimer: TTimer; PreserveCategoryID: Integer; OnReloadUI: TProc<Integer>);
 
         // Фиксирует факт изменения данных и перезапускает debounce-таймер
         procedure MarkDataChanged;
@@ -40,7 +41,7 @@ type
         // Глушит таймер (при закрытии базы/программы)
         procedure StopTimer;
 
-        procedure PerformSync(IsAsync: Boolean);
+        procedure PerformSync(IsAsync: Boolean; ShowToastOnDone: Boolean = False);
 
         property Dirty: Boolean read FIsDbDirty;
     end;
@@ -49,7 +50,7 @@ implementation
 
 { TSyncController }
 
-constructor TSyncController.Create(AppContext: IAppContext; SyncAction: TCustomAction; StatusBar: TStatusBar; AutoSyncTimer: TTimer; PreserveCategoryID: Integer; OnReloadUI: TProc<Integer>);
+constructor TSyncController.Create(AppContext: IAppContext; SyncAction: TCustomAction; StatusBar: TAppStatusBar; AutoSyncTimer: TTimer; PreserveCategoryID: Integer; OnReloadUI: TProc<Integer>);
 begin
     inherited Create;
     FAppContext := AppContext;
@@ -118,7 +119,7 @@ begin
     Result := TPath.Combine(BaseDir, DbName);
 end;
 
-procedure TSyncController.PerformSync(IsAsync: Boolean);
+procedure TSyncController.PerformSync(IsAsync: Boolean; ShowToastOnDone: Boolean);
 var
     SyncDir: string;
     DoSyncLogic: TProc;
@@ -140,8 +141,9 @@ begin
         end;
     end;
 
+    FShowToastOnDone := ShowToastOnDone;
     FSyncAction.Enabled := False;
-    FStatusBar.Panels[0].Text := TUIStateLoader.GetMessage('Common.SyncingStorage');
+    FStatusBar.SetEvent(TUIStateLoader.GetMessage('Common.SyncingStorage'));
 
     DoSyncLogic := procedure
     var
@@ -165,8 +167,12 @@ begin
                 TThread.Queue(nil, procedure
                 begin
                     FOnReloadUI(FPreserveCategoryID);
-                    FStatusBar.Panels[0].Text := TUIStateLoader.GetMessage('Common.SyncCompleted');
                     FIsDbDirty := False;
+                    FStatusBar.SetDirty(False);
+                    if FShowToastOnDone then
+                        FStatusBar.Flash(TUIStateLoader.GetMessage('Common.SyncCompleted'))
+                    else
+                        FStatusBar.SetEvent('');
                 end);
             finally
                 // Обязательно освобождаем фоновое подключение (DataModule), чтобы не было утечек памяти
@@ -176,11 +182,11 @@ begin
         except
             on E: Exception do
             begin
-                var ErrMsg := E.Message;
+                var ErrMsg := TUIStateLoader.GetMessage('Common.SyncError', [E.Message]);
                 TThread.Queue(nil, procedure
                 begin
-                    FAppContext.MessagesHandler.ShowError(TUIStateLoader.GetMessage('Common.SyncError', [ErrMsg]));
-                    FStatusBar.Panels[0].Text := '';
+                    FAppContext.MessagesHandler.ShowError(ErrMsg);
+                    FStatusBar.SetEvent(ErrMsg);
                 end);
             end;
         end;
@@ -195,7 +201,7 @@ begin
         TTask.Run(DoSyncLogic)  // Идеально плавный фоновый процесс
     else
     begin
-        FStatusBar.Update;
+        FStatusBar.ForceUpdate;
         DoSyncLogic();          // Синхронный вызов при выходе
     end;
 end;
