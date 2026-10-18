@@ -7,7 +7,6 @@ uses
     System.Classes,
     System.SysUtils,
     UI.AppStatusBar,
-    Vcl.ComCtrls,
     Vcl.Menus
     ;
 
@@ -21,11 +20,11 @@ type
     TLanguageMenuController = class
     private
         FPopupMenu: TPopupMenu;
-        FStatusBar: TStatusBar;
+        FAppStatus: TAppStatusBar;
         FContext: IAppContext;
         FOnLanguageSelected: TNotifyEvent;
     public
-        constructor Create(APopupMenu: TPopupMenu; AStatusBar: TStatusBar;
+        constructor Create(APopupMenu: TPopupMenu; AStatusBar: TAppStatusBar;
             AContext: IAppContext; AOnLanguageSelected: TNotifyEvent);
 
         procedure BuildMenu;
@@ -45,12 +44,12 @@ uses
 
 { TLanguageMenuController }
 
-constructor TLanguageMenuController.Create(APopupMenu: TPopupMenu; AStatusBar: TStatusBar;
+constructor TLanguageMenuController.Create(APopupMenu: TPopupMenu; AStatusBar: TAppStatusBar;
     AContext: IAppContext; AOnLanguageSelected: TNotifyEvent);
 begin
     inherited Create;
     FPopupMenu := APopupMenu;
-    FStatusBar := AStatusBar;
+    FAppStatus := AStatusBar;
     FContext := AContext;
     FOnLanguageSelected := AOnLanguageSelected;
 end;
@@ -94,7 +93,7 @@ begin
         if SameText(LangCode, CurrentLang) then
         begin
             MI.Checked := True;
-            FStatusBar.Panels[LANG_PANEL_INDEX].Text := '🌐 ' + UpperCase(LangCode);
+            FAppStatus.SetLanguage('🌐 ' + UpperCase(LangCode));
         end;
     end;
 end;
@@ -105,7 +104,7 @@ var
     LocForm: ILocalizable;
 begin
     // Обновляем надпись в StatusBar
-    FStatusBar.Panels[LANG_PANEL_INDEX].Text := '🌐 ' + UpperCase(LangCode);
+    FAppStatus.SetLanguage('🌐 ' + UpperCase(LangCode));
 
     // Сохраняем выбор в настройки
     FContext.SettingsManager.CurrentLanguage := LangCode;

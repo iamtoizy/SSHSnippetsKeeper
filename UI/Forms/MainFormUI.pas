@@ -783,7 +783,7 @@ begin
             FillSnippetListView(Results);
         end);
 
-    FLangMenu := TLanguageMenuController.Create(pmLanguage, sbBottom, AppContext, LanguageMenuItemClick);
+    FLangMenu := TLanguageMenuController.Create(pmLanguage, FStatus, AppContext, LanguageMenuItemClick);
 
     // Строим меню языков в StatusBar
     FLangMenu.BuildMenu;

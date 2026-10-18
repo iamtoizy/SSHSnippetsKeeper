@@ -32,6 +32,7 @@ type
         procedure SetDatabase(const DbFileName: string);
         procedure SetDirty(ADirty: Boolean);
         procedure SetSnippetCount(Total, Selected: Integer);
+        procedure SetLanguage(const Text: string);
         procedure Layout;
         procedure ForceUpdate;
 
@@ -87,6 +88,7 @@ begin
         FStatusBar.Panels[SB_PANEL_DATABASE].Text := TUIStateLoader.GetMessage('Common.StatusDbNotOpen')
     else
         FStatusBar.Panels[SB_PANEL_DATABASE].Text := DbFileName;
+    Layout;
 end;
 
 procedure TAppStatusBar.SetDirty(ADirty: Boolean);
@@ -96,6 +98,13 @@ begin
         FStatusBar.Panels[SB_PANEL_DIRTY].Text := TUIStateLoader.GetMessage('Common.StatusDbDirty')
     else
         FStatusBar.Panels[SB_PANEL_DIRTY].Text := '';
+    Layout;
+end;
+
+procedure TAppStatusBar.SetLanguage(const Text: string);
+begin
+    FStatusBar.Panels[SB_PANEL_LANG].Text := Text;
+    Layout;
 end;
 
 procedure TAppStatusBar.SetSnippetCount(Total, Selected: Integer);
@@ -104,17 +113,34 @@ begin
         FStatusBar.Panels[SB_PANEL_COUNT].Text := TUIStateLoader.GetMessage('Common.StatusSnippetCountSel', [Total, Selected])
     else
         FStatusBar.Panels[SB_PANEL_COUNT].Text := TUIStateLoader.GetMessage('Common.StatusSnippetCount', [Total]);
+    Layout;
 end;
 
 procedure TAppStatusBar.Layout;
-var
-    I: Integer;
-    Fixed: Integer;
+
+    function FitWidth(const Text: string; MinWidth, MaxWidth: Integer): Integer;
+    begin
+        if Text = '' then
+            Exit(0);
+        Result := Max(MinWidth, Min(FStatusBar.Canvas.TextWidth(Text) + 26, MaxWidth));
+    end;
+
 begin
-    Fixed := 0;
-    for I := SB_PANEL_DATABASE to SB_PANEL_LANG do
-        Fixed := Fixed + FStatusBar.Panels[I].Width;
-    FStatusBar.Panels[SB_PANEL_EVENTS].Width := Max(50, FStatusBar.ClientWidth - Fixed);
+    FStatusBar.Panels[SB_PANEL_DATABASE].Width := FitWidth(
+        FStatusBar.Panels[SB_PANEL_DATABASE].Text, 120, FStatusBar.ClientWidth div 2);
+    FStatusBar.Panels[SB_PANEL_DIRTY].Width := FitWidth(
+        FStatusBar.Panels[SB_PANEL_DIRTY].Text, 0, 300);
+    FStatusBar.Panels[SB_PANEL_COUNT].Width := FitWidth(
+        FStatusBar.Panels[SB_PANEL_COUNT].Text, 110, 300);
+    FStatusBar.Panels[SB_PANEL_LANG].Width := FitWidth(
+        FStatusBar.Panels[SB_PANEL_LANG].Text, 0, 120);
+
+    FStatusBar.Panels[SB_PANEL_EVENTS].Width := Max(50,
+        FStatusBar.ClientWidth
+        - FStatusBar.Panels[SB_PANEL_DATABASE].Width
+        - FStatusBar.Panels[SB_PANEL_DIRTY].Width
+        - FStatusBar.Panels[SB_PANEL_COUNT].Width
+        - FStatusBar.Panels[SB_PANEL_LANG].Width);
 end;
 
 procedure TAppStatusBar.ForceUpdate;
