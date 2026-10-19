@@ -140,59 +140,67 @@ var
     WarningReason: string;
     WarningMsg: string;
 begin
-    if Trim(Snippet.Content).IsEmpty then
+    // Защита от повторного входа: диалоги ниже прокачивают очередь сообщений,
+    // так что второй вызов возможен, пока предыдущий макрос ещё печатается
+    if IsExecuting then
     begin
-        FAppContext.MessagesHandler.ShowInfo(
-            TUIStateLoader.GetMessage('Snippet.NoContentError')
-        );
+        {$IFDEF DEBUG}
+        OutputDebugString('[SnippetRunner] ExecuteSnippet re-entry blocked');
+        {$ENDIF}
         Exit;
     end;
 
-    // Анализ безопасности
-    if not Snippet.IsSecurityCheckIgnored then
-    begin
-        Security := TSecurityScanner.Create;
-        if Security.HasSensitiveData(Snippet.Content, WarningReason) then
+    IsExecuting := True;
+    try
+        if Trim(Snippet.Content).IsEmpty then
         begin
-            WarningMsg :=
-                TUIStateLoader.GetMessage('Snippet.SensitiveDataFound', [WarningReason]);
+            FAppContext.MessagesHandler.ShowInfo(
+                TUIStateLoader.GetMessage('Snippet.NoContentError')
+            );
+            Exit;
+        end;
 
-            // Если пользователь нажал "Нет" - прерываем.
-            if not FAppContext.MessagesHandler.AskWarning(
-                WarningMsg,
-                TUIStateLoader.GetMessage('Common.Warning')
+        // Анализ безопасности
+        if not Snippet.IsSecurityCheckIgnored then
+        begin
+            Security := TSecurityScanner.Create;
+            if Security.HasSensitiveData(Snippet.Content, WarningReason) then
+            begin
+                WarningMsg :=
+                    TUIStateLoader.GetMessage('Snippet.SensitiveDataFound', [WarningReason]);
+
+                // Если пользователь нажал "Нет" - прерываем.
+                if not FAppContext.MessagesHandler.AskWarning(
+                    WarningMsg,
+                    TUIStateLoader.GetMessage('Common.Warning')
+                ) then Exit;
+            end;
+        end;
+
+        // Выбор окна и подтверждение
+        if not SelectTargetWindow(TargetWindow) then
+            Exit;
+
+        if not IsWindow(TargetWindow.HWND) then
+        begin
+            FAppContext.MessagesHandler.ShowInfo(
+                TUIStateLoader.GetMessage('Terminal.WindowNoLongerExists')
+            );
+            Exit;
+        end;
+
+        if RequireConfirmation then
+        begin
+            // Используем наш обычный диалог подтверждения
+            if not FAppContext.MessagesHandler.AskConfirmation(
+                TUIStateLoader.GetMessage('Terminal.ConfirmTarget', [TargetWindow.WindowTitle]),
+                TUIStateLoader.GetMessage('Common.Confirmation'),
+                MB_YESNO or MB_ICONQUESTION
             ) then Exit;
         end;
-    end;
 
-    // Выбор окна и подтверждение
-    if not SelectTargetWindow(TargetWindow) then
-        Exit;
-
-    if not IsWindow(TargetWindow.HWND) then
-    begin
-        FAppContext.MessagesHandler.ShowInfo(
-            TUIStateLoader.GetMessage('Terminal.WindowNoLongerExists')
-        );
-        Exit;
-    end;
-
-    if RequireConfirmation then
-    begin
-        // Используем наш обычный диалог подтверждения
-        if not FAppContext.MessagesHandler.AskConfirmation(
-            TUIStateLoader.GetMessage('Terminal.ConfirmTarget', [TargetWindow.WindowTitle]),
-            TUIStateLoader.GetMessage('Common.Confirmation'),
-            MB_YESNO or MB_ICONQUESTION
-        ) then Exit;
-    end;
-
-    // Выполнение макроса
-    IsExecuting := True;
-
-    // Блокируем смену фокуса для нашего процесса (ASFW_ANY = 2)
-    // Это не позволит MainForm "выпрыгнуть" вперед при переключении
-    try
+        // Блокируем смену фокуса для нашего процесса (ASFW_ANY = 2)
+        // Это не позволит MainForm "выпрыгнуть" вперед при переключении
         LockSetForegroundWindow(LSFW_LOCK);
         try
             Context := BuildMacroContext(Snippet.ID, TargetWindow.HWND);
@@ -203,9 +211,9 @@ begin
             FAppContext.WindowHelper.SetTargetWindow(TargetWindow.HWND);
             FAppContext.WindowHelper.TypeTextIntoWindowWithContext(Snippet.Content, Context);
         finally
+            LockSetForegroundWindow(LSFW_UNLOCK);
         end;
     finally
-        LockSetForegroundWindow(LSFW_UNLOCK);
         IsExecuting := False;
     end;
 end;

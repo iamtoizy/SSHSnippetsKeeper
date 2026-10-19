@@ -1,7 +1,5 @@
 ﻿unit GlobalHotkeyManager;
 
-{$DEFINE FastMM_FullDebugMode}
-
 interface
 
 uses
@@ -167,11 +165,33 @@ begin
         Exit;
     end;
 
-    if (ActiveWindowInfo.HWND = CurrentHWND) and IsWindow(CurrentHWND) and (FAppContext.DatabaseManager.IsConnected) then
+    if not FAppContext.DatabaseManager.IsConnected then
     begin
-        QuickSearchForm.ShowWithService(nil, FAppContext, 0, CurrentHWND);
-        QuickSearchForm.Show;
+        {$IFDEF DEBUG}
+        OutputDebugString('[HotkeyMgr] HUD blocked: DB not connected');
+        {$ENDIF}
+        Exit;
     end;
+
+    if not IsWindow(CurrentHWND) then
+    begin
+        {$IFDEF DEBUG}
+        OutputDebugString('[HotkeyMgr] HUD blocked: foreground window is invalid');
+        {$ENDIF}
+        Exit;
+    end;
+
+    if ActiveWindowInfo.HWND <> CurrentHWND then
+    begin
+        {$IFDEF DEBUG}
+        OutputDebugString(PChar(Format('[HotkeyMgr] HUD blocked: last allowed "%s" (HWND=%d) <> foreground (HWND=%d)',
+            [ActiveWindowInfo.ExeName, ActiveWindowInfo.HWND, CurrentHWND])));
+        {$ENDIF}
+        Exit;
+    end;
+
+    QuickSearchForm.ShowWithService(nil, FAppContext, 0, CurrentHWND);
+    QuickSearchForm.Show;
 end;
 
 procedure TGlobalHotkeyManager.OnPassGenHotkeyTriggered;

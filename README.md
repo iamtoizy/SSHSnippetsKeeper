@@ -179,12 +179,14 @@ SSHSnippetsKeeper/
 ```
 brcc32 -fo000_schema_init.res "Database\Schema\000_schema_init.rc"
 
-"C:\Program Files (x86)\Embarcadero\Studio\23.0\bin\dcc32.exe" -Q -B -DDEBUG ^
+"C:\Program Files (x86)\Embarcadero\Studio\23.0\bin\dcc32.exe" -Q -B -DDEBUG;FastMM_FullDebugMode;FastMM_EnableMemoryLeakReporting -GD ^
   "-IC:\DC\SynEdit\Source" ^
   "-NSWinapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Soap.Win" ^
   "-UC:\DC\SynEdit\Source;C:\DC\SynEdit\Source\Highlighters;C:\DC\SynEdit\Source\Highlighters\Omni Highlighters;C:\DC\HtmlViewer\source;C:\DC\FastMM5;C:\DC\python4delphi\Source;C:\DC\python4delphi\lib\Win32\Release;C:\Program Files (x86)\Embarcadero\Studio\23.0\lib\win32\release;Automation;Common;Core;Core\Entities;Core\Services;Data;Data\Repositories;MacroEngine;Tests;UI\Controllers;UI\Controls;UI\Forms;UI\Helpers;UI\Services;UI\ViewModels;ThirdParty" ^
   "-N0%TEMP%\rufp" SSHSnippetsKeeper.dpr
 ```
+
+В DEBUG-сборке FastMM5 работает в FullDebugMode: в IDE defines уже заданы в Debug-конфиге `.dproj`, в CLI-команде выше они переданы через `-D`. Рядом с exe обязаны лежать `FastMM_FullDebugMode.dll` (в IDE-сборке уже в `Binary\Win32\Debug`; для CLI-сборки скопировать в корень) и `.map`-файл — `-GD` строит подробную карту для символьных стеков в логах FastMM.
 
 </details>
 

@@ -59,8 +59,10 @@ uses
 
 constructor TWindowHelper.Create(SettingsManager: ISettingsManager);
 begin
-//    inherited;
     FSettingsManager := SettingsManager;
+    // PressEnter/PressKey/TypeRawText читают задержки из FActiveSettings и
+    // могут вызваться до первого TypeTextIntoWindowWithContext
+    FActiveSettings := FSettingsManager.Data;
     FMacroEngine := TMacroEngine.Create;
 end;
 
