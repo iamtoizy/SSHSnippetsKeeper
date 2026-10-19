@@ -74,6 +74,7 @@ type
         procedure bSelectVaultPathClick(Sender: TObject);
         procedure ebSearchHotkeysChange(Sender: TObject);
         procedure FormShow(Sender: TObject);
+        procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
         procedure lvHotkeysDeletion(Sender: TObject; Item: TListItem);
         procedure lvHotkeysCompare(Sender: TObject; Item1, Item2: TListItem; Data: Integer; var Compare: Integer);
         procedure bAppAddClick(Sender: TObject);
@@ -81,10 +82,14 @@ type
         procedure bAppDeleteClick(Sender: TObject);
     private
         FLocalActions: TDictionary<string, TActionHotkeyInfo>;
+        FSnapshottedUI: string;
         procedure LoadSettingsToUI;
         procedure PopulateHotkeysList(const FilterText: string = '');
         procedure PopulateApplicationsList;
         function TryNormalizeAppName(var AName: string; const AIgnoreExisting: string): Boolean;
+        function BuildUISnapshot: string;
+        procedure CaptureSnapshot;
+        function IsUIChanged: Boolean;
     protected
         procedure DoInitialize; override;
     public
@@ -409,9 +414,9 @@ begin
     if Item = nil then
         Exit;
 
-    if not MessagesHandler.AskConfirmation(
+    if not MessagesHandler.AskWarning(
         TUIStateLoader.GetMessage('Settings.ApplicationsDeleteConfirm', [Item.Caption]),
-        TUIStateLoader.GetMessage('Common.Confirmation')
+        TUIStateLoader.GetMessage('Common.Warning')
     ) then Exit;
 
     Item.Delete;
@@ -459,6 +464,7 @@ begin
     for I := 0 to Screen.FormCount - 1 do
         AppContext.HotkeyService.ApplySettingsToForm(Screen.Forms[I]);
 
+    CaptureSnapshot;
     ModalResult := mrOk;
 end;
 
@@ -483,6 +489,61 @@ end;
 procedure TSettingsForm.FormShow(Sender: TObject);
 begin
     pcSettings.ActivePage := tsHotkeys;
+    CaptureSnapshot;
+end;
+
+procedure TSettingsForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+begin
+    if IsUIChanged and (not MessagesHandler.AskWarning(
+        TUIStateLoader.GetMessage('Common.DiscardChangesConfirm'),
+        TUIStateLoader.GetMessage('Common.Warning'))) then
+        CanClose := False;
+end;
+
+function TSettingsForm.BuildUISnapshot: string;
+var
+    SB: TStringBuilder;
+    KeyName: string;
+    KeyNames: TArray<string>;
+    Item: TListItem;
+begin
+    SB := TStringBuilder.Create;
+    try
+        SB.Append(hkQuickSearch.HotKey).Append('|')
+            .Append(chkEnableQuickSearch.Checked).Append('|')
+            .Append(hkPassGen.HotKey).Append('|')
+            .Append(chkEnablePassGen.Checked).Append('|')
+            .Append(ledMarkdownPath.Text).Append('|')
+            .Append(cbSyncOnStart.Checked).Append('|')
+            .Append(cbSyncOnExit.Checked).Append('|')
+            .Append(cbTagsMatchAll.Checked).Append('|');
+
+        for Item in lvApplications.Items do
+            SB.Append(Item.Caption).Append(':')
+                .Append(Item.Checked).Append(';');
+
+        SB.Append('|');
+
+        KeyNames := FLocalActions.Keys.ToArray;
+        TArray.Sort<string>(KeyNames);
+        for KeyName in KeyNames do
+            SB.Append(KeyName).Append('=')
+                .Append(FLocalActions[KeyName].CurrentShortCut).Append(';');
+
+        Result := SB.ToString;
+    finally
+        SB.Free;
+    end;
+end;
+
+procedure TSettingsForm.CaptureSnapshot;
+begin
+    FSnapshottedUI := BuildUISnapshot;
+end;
+
+function TSettingsForm.IsUIChanged: Boolean;
+begin
+    Result := BuildUISnapshot <> FSnapshottedUI;
 end;
 
 end.

@@ -52,6 +52,7 @@ object WorkspaceManagerForm: TWorkspaceManagerForm
       Height = 25
       Anchors = [akTop, akRight]
       Caption = 'OK'
+      Default = True
       TabOrder = 0
       OnClick = bOKClick
     end
@@ -62,6 +63,7 @@ object WorkspaceManagerForm: TWorkspaceManagerForm
       Height = 25
       Anchors = [akTop, akRight]
       Caption = #1054#1090#1084#1077#1085#1072
+      Cancel = True
       TabOrder = 1
       OnClick = bCancelClick
     end

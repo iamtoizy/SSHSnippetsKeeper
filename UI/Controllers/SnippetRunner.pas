@@ -123,7 +123,7 @@ begin
         function(const Prompt: string): Boolean
         begin
             // Здесь Result - это возвращаемое значение (Boolean) для OnConfirm
-            Result := MessageBox(0, PChar(Prompt), PChar(TUIStateLoader.GetMessage('Common.Confirmation')), MB_YESNO or MB_ICONQUESTION or MB_TOPMOST) = IDYES;
+            Result := MessageBox(0, PChar(Prompt), PChar(TUIStateLoader.GetMessage('Common.Confirmation')), MB_YESNO or MB_ICONQUESTION or MB_TOPMOST or MB_DEFBUTTON2) = IDYES;
             if not Result then
                 Context.UserCanceled := True;
         end;

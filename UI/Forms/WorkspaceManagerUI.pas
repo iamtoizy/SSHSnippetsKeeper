@@ -152,11 +152,9 @@ begin
     UserID := Integer(Item.Data);
     UserName := Item.Caption;
 
-    if MessageBox(
-        Application.Handle,
-        PChar(TUIStateLoader.GetMessage('WorkspaceManagerForm.DeleteConfirm', [UserName])),
-        PChar(TUIStateLoader.GetMessage('Common.Confirmation')),
-        MB_YESNO or MB_ICONWARNING) <> IDYES then Exit;
+    if not MessagesHandler.AskWarning(
+        TUIStateLoader.GetMessage('WorkspaceManagerForm.DeleteConfirm', [UserName]),
+        TUIStateLoader.GetMessage('Common.Warning')) then Exit;
 
     try
         // Бизнес-проверка "ID=1" теперь выполн¤етс¤ внутри сервиса

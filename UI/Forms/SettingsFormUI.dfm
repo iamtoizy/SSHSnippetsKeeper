@@ -12,6 +12,7 @@ object SettingsForm: TSettingsForm
   Font.Name = 'Segoe UI'
   Font.Style = []
   Position = poScreenCenter
+  OnCloseQuery = FormCloseQuery
   OnShow = FormShow
   TextHeight = 15
   object pcSettings: TPageControl
@@ -309,6 +310,7 @@ object SettingsForm: TSettingsForm
       Width = 115
       Height = 25
       Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100
+      Default = True
       TabOrder = 0
       OnClick = bSaveClick
     end
@@ -318,6 +320,7 @@ object SettingsForm: TSettingsForm
       Width = 110
       Height = 25
       Caption = #1054#1090#1084#1077#1085#1072
+      Cancel = True
       TabOrder = 1
       OnClick = bCancelClick
     end

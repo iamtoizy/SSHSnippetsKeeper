@@ -1011,7 +1011,9 @@
       "StatusDbDirty": "● Unsynced changes",
       "StatusSnippetCount": "Snippets: %d",
       "StatusSnippetCountSel": "Snippets: %d (selected: %d)",
-      "DebugComponentNotFound": "Component not found on form: %s"
+      "DebugComponentNotFound": "Component not found on form: %s",
+      "DiscardChangesConfirm": "Changes detected that will be lost if you close this window.\n\nClose window without saving changes?",
+      "UnsyncedDataWarning": "There are changes that have not been exported to the Markdown vault yet.\nThey will not be written to the vault files on exit.\n\nExit anyway?"
     },
     "DB": {
       "ConnectError": "Critical Error!\nFailed to connect to the SQLite database.\nCheck the file path.",

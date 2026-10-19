@@ -269,7 +269,7 @@ begin
                 CleanText := StringReplace(TextToCopy, VISIBLE_SPACE, ' ', [rfReplaceAll]);
                 CopyToClipboardSecure(CleanText);
                 StartClipboardTimer(CleanText);
-                ShowSimpleToast(TUIStateLoader.GetMessage('PasswordGenForm.MemoryCleared'));
+                ShowSimpleToast(TUIStateLoader.GetMessage('Common.CopiedToClipboard'));
             end;
         finally
             // Безопасно уничтожаем текст в переменных

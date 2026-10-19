@@ -131,6 +131,7 @@ object AddEditSnippetForm: TAddEditSnippetForm
       Height = 25
       Anchors = [akTop, akRight]
       Caption = 'OK'
+      Default = True
       ParentShowHint = False
       ShowHint = True
       TabOrder = 0
@@ -143,6 +144,7 @@ object AddEditSnippetForm: TAddEditSnippetForm
       Height = 25
       Anchors = [akTop, akRight]
       Caption = #1054#1090#1084#1077#1085#1072
+      Cancel = True
       ParentShowHint = False
       ShowHint = True
       TabOrder = 1

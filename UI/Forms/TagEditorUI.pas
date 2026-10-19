@@ -190,10 +190,9 @@ begin
     if lvTags.SelCount = 0 then
         Exit;
 
-    if not MessagesHandler.AskConfirmation(
+    if not MessagesHandler.AskWarning(
         TUIStateLoader.GetMessage('TagEditorForm.DeleteConfirmFormat', [lvTags.SelCount]),
-        TUIStateLoader.GetMessage('TagEditorForm.DeleteConfirmTitle'),
-        MB_YESNO or MB_ICONQUESTION) then
+        TUIStateLoader.GetMessage('TagEditorForm.DeleteConfirmTitle')) then
         Exit;
 
     for I := lvTags.Items.Count - 1 downto 0 do

@@ -469,6 +469,19 @@ end;
 
 procedure TMainForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
+    if Assigned(AppContext.DatabaseManager) and AppContext.DatabaseManager.IsConnected
+        and GetSyncEngine.Dirty
+        and (not AppContext.SettingsManager.Data.SyncOnExit) then
+    begin
+        if not MessagesHandler.AskWarning(
+            TUIStateLoader.GetMessage('Common.UnsyncedDataWarning'),
+            TUIStateLoader.GetMessage('Common.Warning')) then
+        begin
+            CanClose := False;
+            Exit;
+        end;
+    end;
+
     CloseDatabase;
     CanClose := True;
 end;
@@ -967,11 +980,11 @@ begin
         begin
             Item := lvSnippets.Items.Add;
             Item.Caption := Snippet.Title;
-            Item.SubItems.Add(DateTimeToStr(UnixToDateTime(Snippet.CreatedAt)));
+            Item.SubItems.Add(DateTimeToStr(UnixToDateTime(Snippet.CreatedAt, False)));
             Item.StateIndex := 0;
 
             if (Snippet.UpdatedAt > 0) then
-                Item.SubItems.Add(DateTimeToStr(UnixToDateTime(Snippet.UpdatedAt)))
+                Item.SubItems.Add(DateTimeToStr(UnixToDateTime(Snippet.UpdatedAt, False)))
             else
                 Item.SubItems.Add('');
 
