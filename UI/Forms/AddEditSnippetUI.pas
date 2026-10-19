@@ -127,6 +127,7 @@ type
         FAIService: IAIService;
         FAIThread: TThread;
         FAIInProgress: Boolean;
+        FWasSecuritySafe: Boolean;
 
         procedure ShowAIOverlay;
         procedure ExecuteAICommand;
@@ -616,6 +617,7 @@ end;
 procedure TAddEditSnippetForm.FormCreate(Sender: TObject);
 begin
     FFirstShow := True;
+    FWasSecuritySafe := True;
 
     ebTitle.EnableHintText := True;
     ebTitle.HintText := TUIStateLoader.GetMessage('AddEditSnippet.EnterSnippetTextHere');
@@ -992,13 +994,16 @@ begin
     begin
         // Найдена угроза, а исключение не настроено
         sbBottom.SimpleText := TUIStateLoader.GetMessage('AddEditSnippet.SecurityThreatStatus', [Reason]);
-        ShowSimpleToast(
-            TUIStateLoader.GetMessage('AddEditSnippet.SecurityToastFound', [Reason]),
-            TUIStateLoader.GetMessage('AddEditSnippet.SecurityToastTitle')
-        );
+        if FWasSecuritySafe then
+            ShowSimpleToast(
+                TUIStateLoader.GetMessage('AddEditSnippet.SecurityToastFound', [Reason]),
+                TUIStateLoader.GetMessage('AddEditSnippet.SecurityToastTitle')
+            );
         // Блокируем кнопку сохранения.
         bOK.Enabled := False;
     end;
+
+    FWasSecuritySafe := IsSafe;
 end;
 
 end.

@@ -291,7 +291,7 @@
       "Caption": "OK"
     },
     "bCancel": {
-      "Caption": "Cancel"
+      "Caption": "Close"
     },
     "lvWorkspaces": {
       "Columns": {

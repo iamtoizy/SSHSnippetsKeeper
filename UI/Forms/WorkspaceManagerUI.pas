@@ -41,7 +41,6 @@ type
         procedure FormResize(Sender: TObject);
         procedure FormShow(Sender: TObject);
         procedure lvWorkspacesDblClick(Sender: TObject);
-        procedure lvWorkspacesResize(Sender: TObject);
     private
         procedure RefreshWorkspaces;
         procedure DoAddWorkspace;
@@ -63,8 +62,7 @@ uses
     Core.Entities.User,
     Vcl.Dialogs,
     Vcl.Forms,
-    Winapi.CommCtrl,
-    Winapi.Windows
+    Winapi.CommCtrl
     ;
 
 {$R *.dfm}
@@ -251,12 +249,6 @@ end;
 procedure TWorkspaceManagerForm.lvWorkspacesDblClick(Sender: TObject);
 begin
     DoRenameWorkspace;
-end;
-
-procedure TWorkspaceManagerForm.lvWorkspacesResize(Sender: TObject);
-begin
-    ShowScrollBar(lvWorkspaces.Handle, SB_HORZ, False);
-    lvWorkspaces.Columns[0].Width := lvWorkspaces.ClientWidth - 30
 end;
 
 end.

@@ -224,7 +224,6 @@ begin
         Handled := True;
 
         // Даем пользователю понять, что копирование прошло успешно
-        MessageBeep(MB_OK);
         ShowSimpleToast(TUIStateLoader.GetMessage('Common.CopiedToClipboard'));
 
         // После клика тоже забираем фокус у HTMLViewer'а и прячем на кнопку

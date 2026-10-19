@@ -1266,11 +1266,9 @@ end;
 
 procedure TMainForm.bManageWorkspacesClick(Sender: TObject);
 begin
-    if TWorkspaceManagerForm.ExecuteModal(Self, AppContext) = mrOk then
-    begin
-        LoadUsersToComboBox;  // Перезагружает список пространств и ставит ItemIndex := 0.
-        cbUserChange(cbUser); // Явно вызываем OnChange. Он обновит FFilterUserID и вызовет ReloadUI.
-    end;
+    TWorkspaceManagerForm.ExecuteModal(Self, AppContext);
+    LoadUsersToComboBox;  // Перезагружает список пространств и ставит ItemIndex := 0.
+    cbUserChange(cbUser); // Явно вызываем OnChange. Он обновит FFilterUserID и вызовет ReloadUI.
 end;
 
 function TMainForm.ExtractSnippetByListItem(Item: TListItem): TSnippetDTO;
