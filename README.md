@@ -211,6 +211,9 @@ brcc32 -fo000_schema_init.res "Database\Schema\000_schema_init.rc"
 | `Translation\ui-texts.ru.json`, `ui-texts.en.json` | Локализация |
 | `bash-autocomplete.txt`, `extra-commands.json` | База автодополнения bash |
 | `Python\` | Встраиваемый Python (см. выше) |
+| `Styles\` | VCL-стили интерфейса (.vsf); без них доступен только стандартный стиль Windows |
+
+Стили интерфейса в репозиторий не входят (лицензия RAD Studio). Чтобы переключать темы в *Настройки → Общие*, положите `.vsf`-файлы (например, из `C:\Users\Public\Documents\Embarcadero\Studio\23.0\Styles\`) в папку `Styles` рядом с `.exe` (папки в git не попадают). Стиль применяется сразу и запоминается в `settings.json`; TSynEdit-редакторы перекрашиваются автоматически.
 
 Порядок первого запуска:
 

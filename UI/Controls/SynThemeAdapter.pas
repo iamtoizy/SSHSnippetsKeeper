@@ -44,6 +44,7 @@ type
         class function GetLightPalette: TSynPalette;
     public
         class procedure ApplyTheme(SynEdit: TCustomSynEdit);
+        class procedure ApplyThemeToAll;
     end;
 
 implementation
@@ -51,6 +52,7 @@ implementation
 uses
     SynEditHighlighter,
     System.SysUtils,
+    Vcl.Controls,
     Vcl.Forms,
     Vcl.Themes
     ;
@@ -175,6 +177,30 @@ begin
     // Настройка CodeFolding (плюсики/минусики и их линии)
     SynEdit.CodeFolding.CollapsedLineColor := Palette.GutterForeground;
     SynEdit.CodeFolding.FolderBarLinesColor := Palette.GutterBorder;
+end;
+
+class procedure TSynThemeAdapter.ApplyThemeToAll;
+var
+    I: Integer;
+
+    procedure ApplyToControl(AParent: TWinControl);
+    var
+        I: Integer;
+        Child: TControl;
+    begin
+        for I := 0 to AParent.ControlCount - 1 do
+        begin
+            Child := AParent.Controls[I];
+            if Child is TCustomSynEdit then
+                ApplyTheme(TCustomSynEdit(Child));
+            if Child is TWinControl then
+                ApplyToControl(TWinControl(Child));
+        end;
+    end;
+
+begin
+    for I := 0 to Screen.FormCount - 1 do
+        ApplyToControl(Screen.Forms[I]);
 end;
 
 { TSynEdit }

@@ -58,6 +58,8 @@ type
         cbSyncOnStart: TCheckBox;
         cbSyncOnExit: TCheckBox;
         cbTagsMatchAll: TCheckBox;
+        lbVCLStyle: TLabel;
+        cbVCLStyle: TComboBox;
         tsApplications: TTabSheet;
         lvApplications: TListView;
         pApplicationsButtons: TPanel;
@@ -80,9 +82,14 @@ type
         procedure bAppAddClick(Sender: TObject);
         procedure bAppRenameClick(Sender: TObject);
         procedure bAppDeleteClick(Sender: TObject);
+        procedure cbVCLStyleChange(Sender: TObject);
     private
         FLocalActions: TDictionary<string, TActionHotkeyInfo>;
+        FHotkeyData: TObjectList<THotkeyViewData>;
         FSnapshottedUI: string;
+        FFirstShowDone: Boolean;
+        FStyleSavedPage: TTabSheet;
+        FStyleSavedFocus: TWinControl;
         procedure LoadSettingsToUI;
         procedure PopulateHotkeysList(const FilterText: string = '');
         procedure PopulateApplicationsList;
@@ -92,6 +99,7 @@ type
         function IsUIChanged: Boolean;
     protected
         procedure DoInitialize; override;
+        procedure DoStyleRecreated; override;
     public
         constructor Create(AOwner: TComponent); override;
         destructor Destroy; override;
@@ -106,8 +114,10 @@ uses
     HotkeyService,
     System.IOUtils,
     Common.Localization,
+    SynThemeAdapter,
     Vcl.FileCtrl,
     Vcl.Menus,
+    VCLStyleService,
     WindowMonitor
     ;
 
@@ -115,10 +125,12 @@ constructor TSettingsForm.Create(AOwner: TComponent);
 begin
     inherited Create(AOwner);
     FLocalActions := TDictionary<string, TActionHotkeyInfo>.Create;
+    FHotkeyData := TObjectList<THotkeyViewData>.Create;
 end;
 
 destructor TSettingsForm.Destroy;
 begin
+    FHotkeyData.Free;
     FLocalActions.Free;
     inherited Destroy;
 end;
@@ -158,6 +170,11 @@ begin
 
     cbTagsMatchAll.Checked := Setts.TagsMatchAll;
 
+    TVCLStyleService.FillStyleList(cbVCLStyle.Items);
+    cbVCLStyle.ItemIndex := cbVCLStyle.Items.IndexOf(Setts.UISettings.VCLStyle);
+    if cbVCLStyle.ItemIndex < 0 then
+        cbVCLStyle.ItemIndex := 0;
+
     PopulateApplicationsList;
 
     FLocalActions.Clear;
@@ -186,6 +203,7 @@ begin
     lvHotkeys.Items.BeginUpdate;
     try
         lvHotkeys.Items.Clear;
+        FHotkeyData.Clear;
 
         for Info in FLocalActions.Values do
         begin
@@ -205,6 +223,7 @@ begin
 
             ViewData := THotkeyViewData.Create;
             ViewData.ActionID := Info.ActionName;
+            FHotkeyData.Add(ViewData);
             Item.Data := ViewData;
         end;
 
@@ -223,12 +242,13 @@ end;
 
 procedure TSettingsForm.lvHotkeysDeletion(Sender: TObject; Item: TListItem);
 begin
-    if Assigned(Item.Data) then
-        TObject(Item.Data).Free;
+    Item.Data := nil;
 end;
 
 procedure TSettingsForm.ebSearchHotkeysChange(Sender: TObject);
 begin
+    if csRecreating in ebSearchHotkeys.ControlState then
+        Exit;
     PopulateHotkeysList(ebSearchHotkeys.Text);
 end;
 
@@ -422,6 +442,61 @@ begin
     Item.Delete;
 end;
 
+procedure TSettingsForm.cbVCLStyleChange(Sender: TObject);
+var
+    Setts: TAppSettings;
+    NewStyle, FailedStyle: string;
+begin
+    if cbVCLStyle.ItemIndex < 0 then
+        Exit;
+
+    if cbVCLStyle.ItemIndex = 0 then
+        NewStyle := ''
+    else
+        NewStyle := cbVCLStyle.Items[cbVCLStyle.ItemIndex];
+
+    Setts := AppContext.SettingsManager.Data;
+    if SameText(NewStyle, Setts.UISettings.VCLStyle) then
+        Exit;
+
+    FStyleSavedPage := pcSettings.ActivePage;
+    FStyleSavedFocus := ActiveControl;
+
+    if not TVCLStyleService.ApplyStyle(NewStyle) then
+    begin
+        if NewStyle.IsEmpty then
+            FailedStyle := 'Windows'
+        else
+            FailedStyle := NewStyle;
+
+        MessagesHandler.ShowError(TUIStateLoader.GetMessage('Settings.StyleApplyError', [FailedStyle]));
+        cbVCLStyle.ItemIndex := cbVCLStyle.Items.IndexOf(Setts.UISettings.VCLStyle);
+        if cbVCLStyle.ItemIndex < 0 then
+            cbVCLStyle.ItemIndex := 0;
+        Exit;
+    end;
+
+    TSynThemeAdapter.ApplyThemeToAll;
+
+    Setts.UISettings.VCLStyle := NewStyle;
+    AppContext.SettingsManager.Data := Setts;
+    AppContext.SettingsManager.Save;
+end;
+
+procedure TSettingsForm.DoStyleRecreated;
+begin
+    inherited;
+
+    if (FStyleSavedPage <> nil) and FStyleSavedPage.TabVisible then
+        pcSettings.ActivePage := FStyleSavedPage;
+
+    if (FStyleSavedFocus <> nil) and FStyleSavedFocus.CanFocus then
+        ActiveControl := FStyleSavedFocus;
+
+    FStyleSavedPage := nil;
+    FStyleSavedFocus := nil;
+end;
+
 procedure TSettingsForm.bSaveClick(Sender: TObject);
 var
     Setts: TAppSettings;
@@ -488,8 +563,12 @@ end;
 
 procedure TSettingsForm.FormShow(Sender: TObject);
 begin
+    if FFirstShowDone then
+        Exit;
+
     pcSettings.ActivePage := tsHotkeys;
     CaptureSnapshot;
+    FFirstShowDone := True;
 end;
 
 procedure TSettingsForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);

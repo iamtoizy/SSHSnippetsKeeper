@@ -851,6 +851,9 @@
     },
     "cbTagsMatchAll": {
       "Caption": "Показывать только сниппеты, содержащие все выбранные теги"
+    },
+    "lbVCLStyle": {
+      "Caption": "Стиль интерфейса:"
     }
   },
   "CustomHelpForm": {
@@ -1102,7 +1105,8 @@
       "ApplicationsRenamePrompt": "Новое имя исполняемого файла:",
       "ApplicationsDeleteConfirm": "Удалить приложение «%s» из списка разрешённых?",
       "ApplicationsInvalidName": "Укажи имя исполняемого файла (например, ssh.exe).",
-      "ApplicationsDuplicate": "Приложение «%s» уже есть в списке."
+      "ApplicationsDuplicate": "Приложение «%s» уже есть в списке.",
+      "StyleApplyError": "Не удалось применить стиль «%s»."
     },
     "Category": {
       "DeleteConfirm": "Уверен, что хочешь удалить эту категорию?",

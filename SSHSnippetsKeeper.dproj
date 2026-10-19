@@ -74,7 +74,7 @@
         <VerInfo_MajorVer>0</VerInfo_MajorVer>
         <VerInfo_Debug>true</VerInfo_Debug>
         <VerInfo_AutoGenVersion>true</VerInfo_AutoGenVersion>
-        <Custom_Styles>Glow|VCLSTYLE|$(BDSCOMMONDIR)\Styles\Glow.vsf</Custom_Styles>
+        <Custom_Styles>&quot;Onyx Blue|VCLSTYLE|$(BDSCOMMONDIR)\Styles\OnyxBlue.vsf&quot;</Custom_Styles>
         <DCC_ExeOutput>Binary\$(Platform)\$(Config)</DCC_ExeOutput>
         <BRCC_OutputDir>Resources</BRCC_OutputDir>
         <DCC_UnitSearchPath>C:\DC\SynEdit\Source;C:\DC\SynEdit\Source\Highlighters;C:\DC\SynEdit\Source\Highlighters\Omni Highlighters;C:\DC\HtmlViewer\source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
@@ -175,6 +175,7 @@
         <DCCReference Include="UI\Controls\HintTextMemo.pas"/>
         <DCCReference Include="UI\Forms\BaseFormUI.pas"/>
         <DCCReference Include="UI\Services\UI.Services.AppStateManager.pas"/>
+        <DCCReference Include="UI\Helpers\UI.AppStatusBar.pas"/>
         <DCCReference Include="UI\Helpers\UI.Helpers.pas"/>
         <DCCReference Include="UI\Helpers\UI.TreeViewSearchHelper.pas"/>
         <DCCReference Include="UI\ViewModels\SnippetViewData.pas"/>
@@ -202,6 +203,7 @@
         <DCCReference Include="Core\Core.BashCompletionEngine.pas"/>
         <DCCReference Include="Common\Common.Consts.pas"/>
         <DCCReference Include="Common\Common.Helpers.pas"/>
+        <DCCReference Include="Common\VCLStyleService.pas"/>
         <DCCReference Include="Core\Services\SnippetService.pas"/>
         <DCCReference Include="Core\Services\TagService.pas"/>
         <DCCReference Include="Core\Services\CategoryService.pas"/>
@@ -227,6 +229,7 @@
         <DCCReference Include="UI\Controls\TrackBarEx.pas"/>
         <DCCReference Include="UI\Services\AI.Service.pas"/>
         <DCCReference Include="UI\Services\AI.TextCleaner.pas"/>
+        <DCCReference Include="UI\Services\AI.LocalAISmokeTest.pas"/>
         <DCCReference Include="UI\Forms\AISettingsFormUI.pas">
             <Form>AISettingsForm</Form>
         </DCCReference>
@@ -307,8 +310,8 @@
                     <Source Name="MainSource">SSHSnippetsKeeper.dpr</Source>
                 </Source>
                 <Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k290.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp290.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k370.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp370.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
                 </Excluded_Packages>
             </Delphi.Personality>
             <Platforms>

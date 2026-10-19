@@ -85,6 +85,7 @@ uses
   Core.BashCompletionEngine in 'Core\Core.BashCompletionEngine.pas',
   Common.Consts in 'Common\Common.Consts.pas',
   Common.Helpers in 'Common\Common.Helpers.pas',
+  VCLStyleService in 'Common\VCLStyleService.pas',
   SnippetService in 'Core\Services\SnippetService.pas',
   TagService in 'Core\Services\TagService.pas',
   CategoryService in 'Core\Services\CategoryService.pas',
@@ -204,9 +205,8 @@ ReportMemoryLeaksOnShutdown := True;
 
     Application.Initialize;
     Application.MainFormOnTaskbar := True;
-//    TStyleManager.TrySetStyle('Glow');
-//    TStyleManager.UseParentPaintBuffers := True;
-    Application.Title := 'SSH Snippets Keeper';
+    TVCLStyleService.ApplySavedStyle(SettingsManager);
+  Application.Title := 'SSH Snippets Keeper';
     Application.CreateForm(TAppDatabase, AppDatabase);
   Application.CreateForm(TMainForm, MainForm);
   Application.CreateForm(TQuickSearchForm, QuickSearchForm);
@@ -231,6 +231,8 @@ ReportMemoryLeaksOnShutdown := True;
     MainForm.Show;
 
     Application.Run;
+
+    TVCLStyleService.Shutdown;
 
     AppContext := nil;
     SettingsManager := nil;

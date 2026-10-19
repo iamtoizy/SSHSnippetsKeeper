@@ -12,10 +12,18 @@ uses
     System.Generics.Collections,
     UI.HoverHelpManager,
     Vcl.Controls,
-    Vcl.Forms
+    Vcl.Forms,
+    Winapi.Messages
     ;
 
 type
+    TForm = class(Vcl.Forms.TForm)
+    protected
+        procedure DoStyleRecreated; virtual;
+    public
+        procedure WndProc(var Message: TMessage); override;
+    end;
+
     TBaseFormState = (
         bfsDBConnected,
         bfsDBDisconnected,
@@ -83,6 +91,22 @@ uses
     Vcl.Dialogs,
     Winapi.Windows
     ;
+
+procedure TForm.WndProc(var Message: TMessage);
+var
+    StyleChanged: Boolean;
+begin
+    StyleChanged := Message.Msg = CM_CUSTOMSTYLECHANGED;
+    if StyleChanged then
+        ActiveControl := nil;
+    inherited WndProc(Message);
+    if StyleChanged then
+        DoStyleRecreated;
+end;
+
+procedure TForm.DoStyleRecreated;
+begin
+end;
 
 procedure TBaseForm.ApplyLanguage;
 begin

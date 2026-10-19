@@ -20,6 +20,7 @@ type
 
     TUISettings = record
         Help: THelp;
+        VCLStyle: string;
     end;
 
     TWindowsNode = record

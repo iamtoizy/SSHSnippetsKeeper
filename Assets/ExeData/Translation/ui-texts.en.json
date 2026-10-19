@@ -778,6 +778,9 @@
     },
     "cbTagsMatchAll": {
       "Caption": "Show only snippets containing all selected tags"
+    },
+    "lbVCLStyle": {
+      "Caption": "Interface style:"
     }
   },
   "CustomHelpForm": {
@@ -1030,7 +1033,8 @@
       "ApplicationsRenamePrompt": "New application executable file name:",
       "ApplicationsDeleteConfirm": "Delete application \"%s\" from the allowed list?",
       "ApplicationsInvalidName": "Specify an executable file name (e.g., ssh.exe).",
-      "ApplicationsDuplicate": "Application \"%s\" is already in the list."
+      "ApplicationsDuplicate": "Application \"%s\" is already in the list.",
+      "StyleApplyError": "Failed to apply style \"%s\"."
     },
     "Category": {
       "DeleteConfirm": "Are you sure you want to delete this category?",

@@ -84,3 +84,7 @@ settings.json
 
 # Дистрибутив Python 3.13 для встраивания - пользователь скачивает сам
 Assets/ExeData/Python/
+
+# VCL-стили (.vsf) - пользователь скачивает сам
+Assets/Styles/
+Styles/
