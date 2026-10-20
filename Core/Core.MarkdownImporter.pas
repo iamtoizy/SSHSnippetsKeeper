@@ -194,7 +194,7 @@ class function TMarkdownImporter.ResolveCategoryAndUserFromPath(
     CatCache: TDictionary<string, Integer>;
     out OutUserID, OutCategoryID: Integer): Boolean;
 var
-    RelPath, FolderPath: string;
+    RelPath, AbsBase, AbsDir: string;
     PathParts: TArray<string>;
     UserName, CatName, CatCacheKey: string;
     I, ParentCatID, CurrentCatID: Integer;
@@ -205,11 +205,14 @@ begin
     OutUserID := 0;
     OutCategoryID := 0;
 
-    FolderPath := TPath.GetDirectoryName(FilePath);
-    RelPath := ExtractRelativePath(IncludeTrailingPathDelimiter(BaseDir), FolderPath);
+    AbsBase := IncludeTrailingPathDelimiter(TPath.GetFullPath(BaseDir));
+    AbsDir := TPath.GetFullPath(TPath.GetDirectoryName(FilePath));
 
-    if (RelPath = '') or (RelPath = '.') then Exit;
-    PathParts := RelPath.Split([TPath.DirectorySeparatorChar]);
+    if not AbsDir.StartsWith(AbsBase, True) then Exit;
+    if SameText(AbsDir, ExcludeTrailingPathDelimiter(AbsBase)) then Exit;
+
+    RelPath := AbsDir.Substring(Length(AbsBase));
+    PathParts := RelPath.Split([TPath.DirectorySeparatorChar], TStringSplitOptions.ExcludeEmpty);
     if Length(PathParts) = 0 then Exit;
 
     UserName := PathParts[0].ToLower; // Сравниваем в нижнем регистре для надежности
@@ -253,7 +256,6 @@ end;
 
 class procedure TMarkdownImporter.ImportFromDirectory(const AppContext: IAppContext; const BaseDir: string);
 var
-    Files: TArray<string>;
     FilePath: string;
     Parsed: TParsedMarkdown;
     UserID, CategoryID: Integer;
@@ -268,6 +270,42 @@ var
     CatCache: TDictionary<string, Integer>;
     Cat: TCategoryDTO;
     User: TUserDTO;
+    FileList: TList<string>;
+
+    procedure CollectFiles(const ADir: string);
+    var
+        SubDirs, Found: TArray<string>;
+        D, F: string;
+        DirName: string;
+        Attrs: TFileAttributes;
+    begin
+        SubDirs := TDirectory.GetDirectories(ADir, '*', TSearchOption.soTopDirectoryOnly);
+        for D in SubDirs do
+        begin
+            DirName := ExtractFileName(ExcludeTrailingPathDelimiter(D));
+
+            if DirName.StartsWith('.') or SameText(DirName, 'SSHSnippetsKeeper_Trash') then
+                Continue;
+
+            try
+                Attrs := TFile.GetAttributes(D);
+            except
+                Continue;
+            end;
+
+            if (TFileAttribute.faHidden in Attrs)
+                or (TFileAttribute.faReparsePoint in Attrs)
+                or (TFileAttribute.faSymLink in Attrs) then
+                Continue;
+
+            CollectFiles(D);
+        end;
+
+        Found := TDirectory.GetFiles(ADir, '*.md', TSearchOption.soTopDirectoryOnly);
+        for F in Found do
+            FileList.Add(F);
+    end;
+
 begin
     if not TDirectory.Exists(BaseDir) then Exit;
 
@@ -276,6 +314,7 @@ begin
 
     UserCache := TDictionary<string, Integer>.Create;
     CatCache := TDictionary<string, Integer>.Create;
+    FileList := TList<string>.Create;
     try
         try
             if Assigned(DBConn) then
@@ -297,9 +336,9 @@ begin
                 CatCache.Add(Format('%d_%d_%s', [Cat.UserID, Cat.ParentID, Cat.Name.ToLower]), Cat.ID);
             // =========================
 
-            Files := TDirectory.GetFiles(BaseDir, '*.md', TSearchOption.soAllDirectories);
+            CollectFiles(TPath.GetFullPath(BaseDir));
 
-            for FilePath in Files do
+            for FilePath in FileList do
             begin
                 if not ParseMarkdownFile(FilePath, Parsed) then Continue;
 
@@ -351,6 +390,7 @@ begin
             raise;
         end;
     finally
+        FileList.Free;
         UserCache.Free;
         CatCache.Free;
     end;

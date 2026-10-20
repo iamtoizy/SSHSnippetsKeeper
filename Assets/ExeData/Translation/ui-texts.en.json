@@ -1090,6 +1090,7 @@
       "SyncingStorage": "Synchronizing storage...",
       "SyncCompleted": "Synchronization completed.",
       "SyncError": "Error synchronizing: %s",
+      "PathEscapeBlocked": "Attempt to write outside the vault has been blocked.",
       "StatusDbNotOpen": "No database opened",
       "StatusDbDirty": "● Unsynced changes",
       "StatusSnippetCount": "Snippets: %d",

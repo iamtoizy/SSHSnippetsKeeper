@@ -105,6 +105,7 @@ var
     User: TUserDTO;
     CatPath, FullDir, BaseFileName, FinalFileName, FileContent, TagsList: string;
     Counter: Integer;
+    BaseAbs: string;
     GeneratedFiles: TDictionary<string, Boolean>;
     CatDict: TDictionary<Integer, TCategoryDTO>;
     UserDict: TDictionary<Integer, TUserDTO>;
@@ -124,6 +125,7 @@ var
 begin
     if not TDirectory.Exists(BaseDir) then TDirectory.CreateDirectory(BaseDir);
 
+    BaseAbs := IncludeTrailingPathDelimiter(TPath.GetFullPath(BaseDir));
     QuarantineDir := TPath.Combine(ExtractFileDir(ExcludeTrailingPathDelimiter(BaseDir)), 'SSHSnippetsKeeper_Trash');
     QuarantineIdx := 0;
 
@@ -146,7 +148,11 @@ begin
         begin
             // Передаем кэш внутрь
             CatPath := BuildCategoryPath(CatDict, UserDict, Snippet.UserID, Snippet.CategoryID);
-            FullDir := TPath.Combine(BaseDir, CatPath);
+            FullDir := TPath.GetFullPath(TPath.Combine(BaseAbs, CatPath));
+
+            if not FullDir.StartsWith(BaseAbs, True) then
+                raise Exception.Create(TUIStateLoader.GetMessage('Common.PathEscapeBlocked'));
+
             ForceDirectories(FullDir);
 
             BaseFileName := SanitizeFileName(Snippet.Title);
