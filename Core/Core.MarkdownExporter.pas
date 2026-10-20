@@ -17,7 +17,10 @@ uses
 type
     TMarkdownExporter = class
     private
-        const MAX_FILENAME_LENGTH = 80;
+        const
+            MAX_FILENAME_LENGTH = 80;
+            SYNC_MARKER = 'generator: SSHSnippetsKeeper';
+
         class function SanitizeFileName(const Name: string): string;
 
         // Передаем закэшированные словари вместо AppContext
@@ -107,12 +110,27 @@ var
     UserDict: TDictionary<Integer, TUserDTO>;
     ExistingFiles, AllDirs: TArray<string>;
     OldFile, Dir: string;
+    TagSB: TStringBuilder;
+    QuarantineDir: string;
+    QuarantineIdx: Integer;
+
+    function QuarantinePath(const SrcFile: string): string;
+    begin
+        Inc(QuarantineIdx);
+        Result := TPath.Combine(QuarantineDir,
+            Format('%s_%d_%s', [FormatDateTime('yyyymmdd_hhnnss', Now), QuarantineIdx, ExtractFileName(SrcFile)]));
+    end;
+
 begin
     if not TDirectory.Exists(BaseDir) then TDirectory.CreateDirectory(BaseDir);
+
+    QuarantineDir := TPath.Combine(ExtractFileDir(ExcludeTrailingPathDelimiter(BaseDir)), 'SSHSnippetsKeeper_Trash');
+    QuarantineIdx := 0;
 
     GeneratedFiles := TDictionary<string, Boolean>.Create;
     CatDict := TDictionary<Integer, TCategoryDTO>.Create;
     UserDict := TDictionary<Integer, TUserDTO>.Create;
+    TagSB := TStringBuilder.Create;
     try
         // === ПРЕДЗАГРУЗКА КЭША (Всего 2 SQL запроса на всю базу) ===
         for Cat in AppContext.CategoryService.GetAllCategories(0) do
@@ -144,14 +162,17 @@ begin
             GeneratedFiles.Add(LowerCase(FinalFileName), True);
 
             Tags := AppContext.TagService.GetSnippetTags(Snippet.ID);
-            TagsList := '';
-            for Tag in Tags do TagsList := TagsList + '"' + Tag.Name + '", ';
+            TagSB.Clear;
+            for Tag in Tags do
+                TagSB.Append('"').Append(Tag.Name).Append('", ');
+            TagsList := TagSB.ToString;
             if TagsList.EndsWith(', ') then Delete(TagsList, TagsList.Length - 1, 2);
 
             FileContent :=
                 '---' + sLineBreak +
                 'id: ' + Snippet.ID.ToString + sLineBreak +
                 'title: "' + Snippet.Title.Replace('"', '\"') + '"' + sLineBreak +
+                SYNC_MARKER + sLineBreak +
                 'tags: [' + TagsList + ']' + sLineBreak +
                 'created_at: ' + Snippet.CreatedAt.ToString + sLineBreak +
                 'updated_at: ' + Snippet.UpdatedAt.ToString + sLineBreak +
@@ -169,10 +190,15 @@ begin
         ExistingFiles := TDirectory.GetFiles(BaseDir, '*.md', TSearchOption.soAllDirectories);
         for OldFile in ExistingFiles do
         begin
+            if OldFile.Contains(TPath.DirectorySeparatorChar + '.git' + TPath.DirectorySeparatorChar) then Continue;
             if not GeneratedFiles.ContainsKey(LowerCase(OldFile)) then
             begin
-                try TFile.Delete(OldFile);
-                except on E: Exception do raise Exception.Create(TUIStateLoader.GetMessage('Markdown.DeleteFileError', [ExtractFileName(OldFile)])); end;
+                try
+                    if not TDirectory.Exists(QuarantineDir) then TDirectory.CreateDirectory(QuarantineDir);
+                    TFile.Move(OldFile, QuarantinePath(OldFile));
+                except
+                    on E: Exception do ;
+                end;
             end;
         end;
 
@@ -189,6 +215,7 @@ begin
         end;
 
     finally
+        TagSB.Free;
         GeneratedFiles.Free;
         CatDict.Free;
         UserDict.Free;

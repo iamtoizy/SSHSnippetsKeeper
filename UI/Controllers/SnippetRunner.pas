@@ -32,7 +32,6 @@ uses
     ChooseTerminalWindowUI,
     Common.Localization,
     InputFormUI,
-    SecurityScanner,
     System.SysUtils,
     Vcl.Controls
     ;
@@ -136,7 +135,6 @@ procedure TSnippetRunner.ExecuteSnippet(const Snippet: TSnippetDTO; RequireConfi
 var
     TargetWindow: TWindowMonitorInfo;
     Context: TMacroContext;
-    Security: ISecurityScanner;
     WarningReason: string;
     WarningMsg: string;
 begin
@@ -163,8 +161,7 @@ begin
         // Анализ безопасности
         if not Snippet.IsSecurityCheckIgnored then
         begin
-            Security := TSecurityScanner.Create;
-            if Security.HasSensitiveData(Snippet.Content, WarningReason) then
+            if FAppContext.SecurityScanner.HasSensitiveData(Snippet.Content, WarningReason) then
             begin
                 WarningMsg :=
                     TUIStateLoader.GetMessage('Snippet.SensitiveDataFound', [WarningReason]);

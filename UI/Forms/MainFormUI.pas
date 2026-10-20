@@ -461,6 +461,8 @@ begin
         FSearch.CancelPending;
     GWinMonitor.StopMonitoring;
     RemoveProp(Self.Handle, PChar(UNIQUE_APP_STR));
+    if Assigned(FSync) then
+        FSync.WaitForCompletion;
     FreeAndNil(FSync);
     FreeAndNil(FSearch);
     FreeAndNil(FStatus);
@@ -1126,6 +1128,8 @@ procedure TMainForm.CloseDatabase;
 begin
     if Assigned(AppContext.DatabaseManager) and AppContext.DatabaseManager.IsConnected then
     begin
+        GetSyncEngine.WaitForCompletion;
+
         // Авто-синхронизация при закрытии
         // Если мы закрываем программу, а таймер еще тикает (прошло меньше 5 сек с последней правки)
         if GetSyncEngine.Dirty and AppContext.SettingsManager.Data.SyncOnExit then

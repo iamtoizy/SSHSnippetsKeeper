@@ -34,7 +34,6 @@ type
 implementation
 
 uses
-    System.Generics.Collections,
     System.Math,
     Common.Localization
     ;
@@ -196,10 +195,9 @@ end;
 
 function TSecurityScanner.CalculateEntropy(const S: string): Double;
 var
-    CharCounts: TDictionary<Char, Integer>;
+    CharCounts: array[0..255] of Integer;
     C: Char;
-    Count: Integer;
-    Len: Integer;
+    Count, Len, I: Integer;
     Prob: Double;
 begin
     Result := 0.0;
@@ -207,24 +205,24 @@ begin
     if Len = 0 then
         Exit;
 
-    // Честный расчёт энтропии через словарь для всех символов без искажения длины
-    CharCounts := TDictionary<Char, Integer>.Create;
-    try
-        for C in S do
-        begin
-            if CharCounts.TryGetValue(C, Count) then
-                CharCounts[C] := Count + 1
-            else
-                CharCounts.Add(C, 1);
-        end;
+    for I := 0 to 255 do
+        CharCounts[I] := 0;
 
-        for Count in CharCounts.Values do
+    // Вызов гарантирован только для ASCII-строк (IsValidSecretCandidate отсекает Ord > 127)
+    for C in S do
+    begin
+        if Ord(C) > 255 then Continue;
+        Inc(CharCounts[Ord(C)]);
+    end;
+
+    for I := 0 to 255 do
+    begin
+        Count := CharCounts[I];
+        if Count > 0 then
         begin
             Prob := Count / Len;
             Result := Result - (Prob * Log2(Prob));
         end;
-    finally
-        CharCounts.Free;
     end;
 end;
 

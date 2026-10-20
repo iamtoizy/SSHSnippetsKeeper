@@ -42,11 +42,93 @@ implementation
 uses
     Common.Helpers,
     JSONSerializer,
+    System.NetEncoding,
     System.IOUtils,
     System.JSON,
     System.SysUtils,
     Winapi.Windows
     ;
+
+const
+    SECRET_PREFIX = 'dpapi:';
+    CRYPTPROTECT_UI_FORBIDDEN = $1;
+
+type
+    PDataBlob = ^TDataBlob;
+    TDataBlob = record
+        cbData: DWORD;
+        pbData: PByte;
+    end;
+
+function CryptProtectData(pDataIn: PDataBlob; szDataDescr: LPCWSTR; pOptionalEntropy: Pointer; pvReserved: Pointer; pPromptStruct: Pointer; dwFlags: DWORD; pDataOut: PDataBlob): BOOL; stdcall; external 'crypt32' name 'CryptProtectData';
+function CryptUnprotectData(pDataIn: PDataBlob; ppszDataDescr: PLPWSTR; pOptionalEntropy: Pointer; pvReserved: Pointer; pPromptStruct: Pointer; dwFlags: DWORD; pDataOut: PDataBlob): BOOL; stdcall; external 'crypt32' name 'CryptUnprotectData';
+
+function ProtectSecret(const Value: string): string;
+var
+    InBlob, OutBlob: TDataBlob;
+    RawBytes: TBytes;
+begin
+    Result := Value;
+    if Value.IsEmpty then Exit;
+
+    InBlob.cbData := Length(Value) * SizeOf(Char);
+    InBlob.pbData := PByte(PChar(Value));
+    if not CryptProtectData(@InBlob, nil, nil, nil, nil, CRYPTPROTECT_UI_FORBIDDEN, @OutBlob) then Exit;
+
+    try
+        SetLength(RawBytes, OutBlob.cbData);
+        if OutBlob.cbData > 0 then
+            Move(OutBlob.pbData^, RawBytes[0], OutBlob.cbData);
+        Result := SECRET_PREFIX + System.NetEncoding.TNetEncoding.Base64.EncodeBytesToString(RawBytes);
+        Result := Result.Replace(#13, '').Replace(#10, '');
+    finally
+        LocalFree(HLOCAL(OutBlob.pbData));
+    end;
+end;
+
+function UnprotectSecret(const Value: string): string;
+var
+    InBlob, OutBlob: TDataBlob;
+    RawBytes: TBytes;
+begin
+    Result := Value;
+    if not Value.StartsWith(SECRET_PREFIX, True) then Exit;
+
+    RawBytes := System.NetEncoding.TNetEncoding.Base64.DecodeStringToBytes(Value.Substring(Length(SECRET_PREFIX)));
+    if Length(RawBytes) = 0 then Exit('');
+
+    InBlob.cbData := Length(RawBytes);
+    InBlob.pbData := @RawBytes[0];
+    if not CryptUnprotectData(@InBlob, nil, nil, nil, nil, CRYPTPROTECT_UI_FORBIDDEN, @OutBlob) then Exit('');
+
+    try
+        SetLength(Result, OutBlob.cbData div SizeOf(Char));
+        if Length(Result) > 0 then
+            Move(OutBlob.pbData^, Pointer(Result)^, Length(Result) * SizeOf(Char));
+    finally
+        LocalFree(HLOCAL(OutBlob.pbData));
+    end;
+end;
+
+procedure EncryptAIKeys(var Settings: TAppSettings);
+var
+    HubIdx, KeyIdx: Integer;
+begin
+    for HubIdx := 0 to High(Settings.AISettings.Items) do
+        for KeyIdx := 0 to High(Settings.AISettings.Items[HubIdx].Items.Items) do
+            Settings.AISettings.Items[HubIdx].Items.Items[KeyIdx].APIKey :=
+                ProtectSecret(Settings.AISettings.Items[HubIdx].Items.Items[KeyIdx].APIKey);
+end;
+
+procedure DecryptAIKeys(var Settings: TAppSettings);
+var
+    HubIdx, KeyIdx: Integer;
+begin
+    for HubIdx := 0 to High(Settings.AISettings.Items) do
+        for KeyIdx := 0 to High(Settings.AISettings.Items[HubIdx].Items.Items) do
+            Settings.AISettings.Items[HubIdx].Items.Items[KeyIdx].APIKey :=
+                UnprotectSecret(Settings.AISettings.Items[HubIdx].Items.Items[KeyIdx].APIKey);
+end;
 
 const
     // Системный промпт для всех моделей ИИ
@@ -288,6 +370,9 @@ begin
         if Length(FSettings.AISettings.Items) = 0 then
             InitDefaultAISettings;
 
+        // 4. API-ключи хранятся на диске в виде DPAPI, в памяти работаем с открытым текстом
+        DecryptAIKeys(FSettings);
+
     except
         on E: Exception do
         begin
@@ -301,10 +386,22 @@ end;
 procedure TSettingsManager.Save;
 var
     JsonString: string;
+    TmpPath: string;
+    SafeSettings: TAppSettings;
 begin
     try
-        JsonString := DSON.toJson<TAppSettings>(FSettings);
-        TFile.WriteAllText(GetSettingsPath, JsonString, TEncoding.UTF8);
+        // Шифруем копию настроек: в памяти FSettings остается с открытыми ключами
+        SafeSettings := FSettings;
+        EncryptAIKeys(SafeSettings);
+
+        JsonString := DSON.toJson<TAppSettings>(SafeSettings);
+
+        // Атомарная запись: сначала во временный файл, затем переименование
+        TmpPath := GetSettingsPath + '.tmp';
+        TFile.WriteAllText(TmpPath, JsonString, TEncoding.UTF8);
+        if TFile.Exists(GetSettingsPath) then
+            TFile.Delete(GetSettingsPath);
+        TFile.Move(TmpPath, GetSettingsPath);
     except
         // Без логирования пользователь молча потерял бы все изменения
         on E: Exception do

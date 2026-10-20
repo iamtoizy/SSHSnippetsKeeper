@@ -17,9 +17,11 @@ uses
     FireDAC.Comp.Client,
     HotkeyService,
     PasswordService,
+    SecurityScanner,
     SnippetRepository,
     SnippetService,
     System.Classes,
+    System.SysUtils,
     TagRepository,
     TagService,
     UserRepository,
@@ -41,6 +43,8 @@ type
         FEpochService: IEpochService;
         FHotkeyService: IHotkeyService;
         FLocalAIService: ILocalAIService;
+        FSecurityScanner: ISecurityScanner;
+        FDBConnection: TFDConnection;
 
         function GetDatabaseManager: IDatabaseManager;
         function GetSnippetService: ISnippetService;
@@ -54,6 +58,8 @@ type
         function GetEpochService: IEpochService;
         function GetHotkeyService: IHotkeyService;
         function GetLocalAIService: ILocalAIService;
+        function GetSecurityScanner: ISecurityScanner;
+        function GetDBConnection: TFDConnection;
     public
         // Основной конструктор (для UI-потока)
         constructor Create(
@@ -61,7 +67,8 @@ type
             DBConnection: TFDConnection;
             SettingsManager: ISettingsManager;
             WindowHelper: IWindowHelper;
-            MessagesHandler: IUIMessagesHandler
+            MessagesHandler: IUIMessagesHandler;
+            LocalAIFactory: TFunc<ILocalAIService> = nil
         );
 
         // Второй конструктор: Для безопасных фоновых задач (TTask)
@@ -80,6 +87,8 @@ type
         property EpochService: IEpochService read GetEpochService;
         property HotkeyService: IHotkeyService read GetHotkeyService;
         property LocalAIService: ILocalAIService read GetLocalAIService;
+        property SecurityScanner: ISecurityScanner read GetSecurityScanner;
+        property DBConnection: TFDConnection read GetDBConnection;
 
         function CreateIsolatedSnippetService(out BackgroundConnection: TComponent): ISnippetService;
 
@@ -100,7 +109,8 @@ constructor TAppContext.Create(
     DBConnection: TFDConnection;
     SettingsManager: ISettingsManager;
     WindowHelper: IWindowHelper;
-    MessagesHandler: IUIMessagesHandler
+    MessagesHandler: IUIMessagesHandler;
+    LocalAIFactory: TFunc<ILocalAIService>
 );
 var
     SnippetRepo: ISnippetRepository;
@@ -111,6 +121,7 @@ begin
     inherited Create;
 
     FDatabaseManager := DatabaseManager;
+    FDBConnection := DBConnection;
     FSettingsManager := SettingsManager;
     FWindowHelper := WindowHelper;
     FMessagesHandler := MessagesHandler;
@@ -134,9 +145,13 @@ begin
     // Локальные сервисы, создающиеся в AppContext
     FPasswordService := TPasswordService.Create;
     FEpochService := TEpochService.Create;
+    FSecurityScanner := TSecurityScanner.Create;
 
     // Создаем сервис ИИ
-    FLocalAIService := TLocalAIService.Create(nil);
+    if Assigned(LocalAIFactory) then
+        FLocalAIService := LocalAIFactory()
+    else
+        FLocalAIService := TLocalAIService.Create(nil);
 end;
 
 // ============================================================================
@@ -153,8 +168,10 @@ begin
 
     // 1. Берем безопасные глобальные синглтоны из базового (главного) контекста
     FDatabaseManager := BaseContext.DatabaseManager;
+    FDBConnection := DBConnection;
     FSettingsManager := BaseContext.SettingsManager;
     FMessagesHandler := BaseContext.MessagesHandler;
+    FSecurityScanner := BaseContext.SecurityScanner;
 
     // ВАЖНО: Оставляем nil, чтобы деструктор их не трогал и не сломал UI!
     FWindowHelper := nil;
@@ -299,6 +316,16 @@ end;
 function TAppContext.GetWindowHelper: IWindowHelper;
 begin
     Result := FWindowHelper;
+end;
+
+function TAppContext.GetSecurityScanner: ISecurityScanner;
+begin
+    Result := FSecurityScanner;
+end;
+
+function TAppContext.GetDBConnection: TFDConnection;
+begin
+    Result := FDBConnection;
 end;
 
 end.

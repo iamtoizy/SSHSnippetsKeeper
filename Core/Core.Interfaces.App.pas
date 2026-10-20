@@ -10,6 +10,8 @@ uses
     Core.Interfaces.Settings,
     Core.Interfaces.Tools,
     Core.Interfaces.UI,
+    FireDAC.Comp.Client,
+    SecurityScanner,
     System.Classes
     ;
 
@@ -29,6 +31,8 @@ type
         function GetEpochService: IEpochService;
         function GetHotkeyService: IHotkeyService;
         function GetLocalAIService: ILocalAIService;
+        function GetSecurityScanner: ISecurityScanner;
+        function GetDBConnection: TFDConnection;
 
         // Фабрика для фоновых потоков. Возвращает готовый сервис и ссылку на коннект для его очистки.
         function CreateIsolatedSnippetService(out BackgroundConnection: TComponent): ISnippetService;
@@ -47,6 +51,8 @@ type
         property EpochService: IEpochService read GetEpochService;
         property HotkeyService: IHotkeyService read GetHotkeyService;
         property LocalAIService: ILocalAIService read GetLocalAIService;
+        property SecurityScanner: ISecurityScanner read GetSecurityScanner;
+        property DBConnection: TFDConnection read GetDBConnection;
     end;
 
 implementation

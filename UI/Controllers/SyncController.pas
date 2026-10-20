@@ -30,7 +30,11 @@ type
         FShowToastOnDone: Boolean;
         FPreserveCategoryID: Integer;
         FOnReloadUI: TProc<Integer>;
+        FSyncInProgress: Integer;
+        FPendingUIEvents: Integer;
+        FChangesDuringSync: Boolean;
         function ResolveSyncPath: string;
+        procedure QueueToUI(const AProc: TProc);
     public
         constructor Create(AppContext: IAppContext; SyncAction: TCustomAction; StatusBar: TAppStatusBar; AutoSyncTimer: TTimer; PreserveCategoryID: Integer; OnReloadUI: TProc<Integer>);
 
@@ -43,10 +47,17 @@ type
 
         procedure PerformSync(IsAsync: Boolean; ShowToastOnDone: Boolean = False);
 
+        procedure WaitForCompletion;
+
         property Dirty: Boolean read FIsDbDirty;
     end;
 
 implementation
+
+uses
+    System.SyncObjs,
+    Winapi.Windows
+    ;
 
 { TSyncController }
 
@@ -59,12 +70,45 @@ begin
     FAutoSyncTimer := AutoSyncTimer;
     FPreserveCategoryID := PreserveCategoryID;
     FOnReloadUI := OnReloadUI;
+    FSyncInProgress := 0;
+    FPendingUIEvents := 0;
+    FChangesDuringSync := False;
+end;
+
+procedure TSyncController.QueueToUI(const AProc: TProc);
+begin
+    TInterlocked.Increment(FPendingUIEvents);
+    TThread.Queue(nil,
+        procedure
+        begin
+            try
+                AProc();
+            finally
+                TInterlocked.Decrement(FPendingUIEvents);
+            end;
+        end);
+end;
+
+procedure TSyncController.WaitForCompletion;
+var
+    StartTick: Cardinal;
+begin
+    StartTick := GetTickCount;
+    while (FSyncInProgress <> 0) or (FPendingUIEvents > 0) do
+    begin
+        if (GetTickCount - StartTick) > 10000 then Break;
+        Sleep(10);
+        CheckSynchronize(10);
+    end;
 end;
 
 procedure TSyncController.MarkDataChanged;
 begin
     // Включаем флаг
     FIsDbDirty := True;
+
+    if FSyncInProgress <> 0 then
+        FChangesDuringSync := True;
 
     // Перезапускаем таймер (эффект Debounce).
     // Если метод вызывается часто (пользователь активно работает),
@@ -126,6 +170,16 @@ var
 begin
     if not FAppContext.DatabaseManager.IsConnected then Exit;
 
+    if IsAsync then
+    begin
+        if TInterlocked.CompareExchange(FSyncInProgress, 1, 0) <> 0 then Exit;
+    end
+    else
+    begin
+        WaitForCompletion;
+        FSyncInProgress := 1;
+    end;
+
     SyncDir := ResolveSyncPath;
 
     if not TDirectory.Exists(SyncDir) then
@@ -135,6 +189,8 @@ begin
         except
             on E: Exception do
             begin
+                if IsAsync then
+                    TInterlocked.Exchange(FSyncInProgress, 0);
                 FAppContext.MessagesHandler.ShowError(TUIStateLoader.GetMessage('Common.SyncFolderCreationError', [E.Message]));
                 Exit;
             end;
@@ -164,11 +220,12 @@ begin
                 TMarkdownImporter.ImportFromDirectory(BgContext, SyncDir);
                 TMarkdownExporter.ExportDatabase(BgContext, SyncDir);
 
-                TThread.Queue(nil, procedure
+                QueueToUI(procedure
                 begin
                     FOnReloadUI(FPreserveCategoryID);
-                    FIsDbDirty := False;
-                    FStatusBar.SetDirty(False);
+                    FIsDbDirty := FChangesDuringSync;
+                    FChangesDuringSync := False;
+                    FStatusBar.SetDirty(FIsDbDirty);
                     if FShowToastOnDone then
                         FStatusBar.Flash(TUIStateLoader.GetMessage('Common.SyncCompleted'))
                     else
@@ -183,18 +240,21 @@ begin
             on E: Exception do
             begin
                 var ErrMsg := TUIStateLoader.GetMessage('Common.SyncError', [E.Message]);
-                TThread.Queue(nil, procedure
+                QueueToUI(procedure
                 begin
                     FAppContext.MessagesHandler.ShowError(ErrMsg);
                     FStatusBar.SetEvent(ErrMsg);
+                    FChangesDuringSync := False;
                 end);
             end;
         end;
 
-        TThread.Queue(nil, procedure
+        QueueToUI(procedure
         begin
             FSyncAction.Enabled := True;
         end);
+
+        TInterlocked.Exchange(FSyncInProgress, 0);
     end;
 
     if IsAsync then
@@ -203,6 +263,8 @@ begin
     begin
         FStatusBar.ForceUpdate;
         DoSyncLogic();          // Синхронный вызов при выходе
+        TInterlocked.Exchange(FSyncInProgress, 0);
+        WaitForCompletion;
     end;
 end;
 

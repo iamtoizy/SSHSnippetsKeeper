@@ -9,6 +9,7 @@ uses
     Core.Entities.User,
     Core.Interfaces.App,
     Core.Interfaces.Services,
+    FireDAC.Comp.Client,
     System.Classes,
     System.DateUtils,
     System.Generics.Collections,
@@ -26,6 +27,7 @@ type
         Tags: TArray<string>;
         CreatedAt: Int64;
         UpdatedAt: Int64;
+        HasKeeperMarker: Boolean;
     end;
 
     TMarkdownImporter = class
@@ -132,6 +134,7 @@ begin
 
                     if Key = 'id' then Parsed.ID := StrToIntDef(Value, 0)
                     else if Key = 'title' then Parsed.Title := Value
+                    else if Key = 'generator' then Parsed.HasKeeperMarker := SameText(Value, 'SSHSnippetsKeeper')
                     else if Key = 'tags' then Parsed.Tags := ExtractTagsFromYaml(Value)
                     else if Key = 'created_at' then Parsed.CreatedAt := StrToInt64Def(Value, DateTimeToUnix(Now))
                     else if Key = 'updated_at' then Parsed.UpdatedAt := StrToInt64Def(Value, DateTimeToUnix(Now));
@@ -258,6 +261,8 @@ var
     TagIDs: TList<Integer>;
     TagName: string;
     TagID: Integer;
+    DBConn: TFDConnection;
+    InTransaction: Boolean;
 
     UserCache: TDictionary<string, Integer>;
     CatCache: TDictionary<string, Integer>;
@@ -266,57 +271,87 @@ var
 begin
     if not TDirectory.Exists(BaseDir) then Exit;
 
+    DBConn := AppContext.DBConnection;
+    InTransaction := False;
+
     UserCache := TDictionary<string, Integer>.Create;
     CatCache := TDictionary<string, Integer>.Create;
     try
-        // === ПРЕДЗАГРУЗКА КЭША ===
-        for User in AppContext.UserService.GetAllUsers do
-            UserCache.Add(User.Name.ToLower, User.ID);
-
-        for Cat in AppContext.CategoryService.GetAllCategories(0) do
-            CatCache.Add(Format('%d_%d_%s', [Cat.UserID, Cat.ParentID, Cat.Name.ToLower]), Cat.ID);
-        // =========================
-
-        Files := TDirectory.GetFiles(BaseDir, '*.md', TSearchOption.soAllDirectories);
-
-        for FilePath in Files do
-        begin
-            if not ParseMarkdownFile(FilePath, Parsed) then Continue;
-
-            // Передаем кэш внутрь
-            if not ResolveCategoryAndUserFromPath(AppContext, BaseDir, FilePath, UserCache, CatCache, UserID, CategoryID) then Continue;
-
-            TagIDs := TList<Integer>.Create;
-            try
-                for TagName in Parsed.Tags do
-                begin
-                    TagID := AppContext.TagService.GetOrCreateTag(TagName);
-                    if (TagID > 0) and not TagIDs.Contains(TagID) then TagIDs.Add(TagID);
+        try
+            if Assigned(DBConn) then
+            begin
+                try
+                    DBConn.StartTransaction;
+                    InTransaction := True;
+                except
+                    on E: Exception do
+                        InTransaction := False;
                 end;
-
-                Snippet := Default(TSnippetDTO);
-                Snippet.UserID := UserID;
-                Snippet.CategoryID := CategoryID;
-                Snippet.Title := Parsed.Title;
-                Snippet.Comment := Parsed.Comment;
-                Snippet.Content := Parsed.Content;
-                Snippet.CreatedAt := Parsed.CreatedAt;
-                Snippet.UpdatedAt := Parsed.UpdatedAt;
-
-                ExistingSnippet := Default(TSnippetDTO);
-                if Parsed.ID > 0 then
-                    ExistingSnippet := AppContext.SnippetService.GetSnippetByID(Parsed.ID);
-
-                if ExistingSnippet.ID > 0 then
-                begin
-                    Snippet.ID := ExistingSnippet.ID;
-                    AppContext.SnippetService.UpdateSnippet(Snippet, TagIDs.ToArray);
-                end
-                else
-                    AppContext.SnippetService.CreateSnippet(Snippet, TagIDs.ToArray);
-            finally
-                TagIDs.Free;
             end;
+
+            // === ПРЕДЗАГРУЗКА КЭША ===
+            for User in AppContext.UserService.GetAllUsers do
+                UserCache.Add(User.Name.ToLower, User.ID);
+
+            for Cat in AppContext.CategoryService.GetAllCategories(0) do
+                CatCache.Add(Format('%d_%d_%s', [Cat.UserID, Cat.ParentID, Cat.Name.ToLower]), Cat.ID);
+            // =========================
+
+            Files := TDirectory.GetFiles(BaseDir, '*.md', TSearchOption.soAllDirectories);
+
+            for FilePath in Files do
+            begin
+                if not ParseMarkdownFile(FilePath, Parsed) then Continue;
+
+                // Передаем кэш внутрь
+                if not ResolveCategoryAndUserFromPath(AppContext, BaseDir, FilePath, UserCache, CatCache, UserID, CategoryID) then Continue;
+
+                TagIDs := TList<Integer>.Create;
+                try
+                    for TagName in Parsed.Tags do
+                    begin
+                        TagID := AppContext.TagService.GetOrCreateTag(TagName);
+                        if (TagID > 0) and not TagIDs.Contains(TagID) then TagIDs.Add(TagID);
+                    end;
+
+                    Snippet := Default(TSnippetDTO);
+                    Snippet.UserID := UserID;
+                    Snippet.CategoryID := CategoryID;
+                    Snippet.Title := Parsed.Title;
+                    Snippet.Comment := Parsed.Comment;
+                    Snippet.Content := Parsed.Content;
+                    Snippet.CreatedAt := Parsed.CreatedAt;
+                    Snippet.UpdatedAt := Parsed.UpdatedAt;
+
+                    ExistingSnippet := Default(TSnippetDTO);
+                    if Parsed.ID > 0 then
+                        ExistingSnippet := AppContext.SnippetService.GetSnippetByID(Parsed.ID);
+
+                    // Файл без нашего маркера не имеет права перетирать существующий сниппет
+                    if (ExistingSnippet.ID > 0) and (not Parsed.HasKeeperMarker) then
+                        Continue;
+
+                    if ExistingSnippet.ID > 0 then
+                    begin
+                        Snippet.ID := ExistingSnippet.ID;
+                        AppContext.SnippetService.UpdateSnippet(Snippet, TagIDs.ToArray);
+                    end
+                    else
+                        AppContext.SnippetService.CreateSnippet(Snippet, TagIDs.ToArray);
+                finally
+                    TagIDs.Free;
+                end;
+            end;
+
+            if InTransaction then
+                DBConn.Commit;
+        except
+            if InTransaction then
+            begin
+                DBConn.Rollback;
+                InTransaction := False;
+            end;
+            raise;
         end;
     finally
         UserCache.Free;
