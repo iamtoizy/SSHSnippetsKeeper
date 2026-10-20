@@ -125,7 +125,7 @@ uses
     SynThemeAdapter,
     Vcl.FileCtrl,
     Vcl.Menus,
-    VCLStyleService,
+    Common.VCLStyleService,
     WindowMonitor
     ;
 

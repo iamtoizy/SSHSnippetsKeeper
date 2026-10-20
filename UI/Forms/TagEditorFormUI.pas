@@ -1,4 +1,4 @@
-﻿unit TagEditorUI;
+﻿unit TagEditorFormUI;
 
 interface
 

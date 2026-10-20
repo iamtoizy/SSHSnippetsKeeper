@@ -282,7 +282,7 @@ implementation
 {$R *.dfm}
 
 uses
-    AddEditSnippetUI,
+    AddEditSnippetFormUI,
     UI.Services.AppStateManager,
     ArchiveBuilderFormUI,
     ArrayHelper,
@@ -305,14 +305,14 @@ uses
     SnippetViewData,
     System.Math,
     System.UITypes,
-    TagEditorUI,
+    TagEditorFormUI,
     UI.Helpers,
     UI.HoverHelpManager,
     Common.Localization,
     Vcl.FileCtrl,
     Winapi.CommCtrl,
     WindowMonitor,
-    WorkspaceManagerUI
+    WorkspaceManagerFormUI
     ;
 
 procedure TMainForm.actAddCategoryExecute(Sender: TObject);
@@ -1700,7 +1700,7 @@ end;
 
 procedure TMainForm.nTerminalsClick(Sender: TObject);
 begin
-    // Тело (тест локального ИИ) перенесено в UI\Services\AI.LocalAISmokeTest.pas
+    // Тело (тест локального ИИ) перенесено в UI\Services\UI.Services.LocalAISmokeTest.pas
 end;
 
 procedure TMainForm.PerformSearchAsync(const Mask: string);

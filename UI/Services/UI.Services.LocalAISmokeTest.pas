@@ -1,4 +1,4 @@
-﻿unit AI.LocalAISmokeTest;
+﻿unit UI.Services.LocalAISmokeTest;
 
 // Архив мёртвого тестового кода.
 // Ниже дословно сохранено тело процедуры TMainForm.nTerminalsClick

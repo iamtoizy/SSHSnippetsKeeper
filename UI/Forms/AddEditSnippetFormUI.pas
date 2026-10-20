@@ -1,9 +1,9 @@
-﻿unit AddEditSnippetUI;
+﻿unit AddEditSnippetFormUI;
 
 interface
 
 uses
-    AI.Service,
+    UI.Services.AIService,
     BaseFormUI,
     Core.BashCompletionEngine,
     Core.Entities.Snippet,
@@ -155,7 +155,7 @@ type
 implementation
 
 uses
-    AI.TextCleaner,
+    UI.Services.AITextCleaner,
     AISettingsFormUI,
     Common.Localization,
     Common.Helpers,

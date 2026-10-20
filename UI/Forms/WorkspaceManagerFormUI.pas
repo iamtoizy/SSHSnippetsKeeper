@@ -1,4 +1,4 @@
-﻿unit WorkspaceManagerUI;
+﻿unit WorkspaceManagerFormUI;
 
 interface
 

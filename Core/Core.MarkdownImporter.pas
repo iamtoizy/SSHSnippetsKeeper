@@ -347,10 +347,7 @@ begin
                 DBConn.Commit;
         except
             if InTransaction then
-            begin
                 DBConn.Rollback;
-                InTransaction := False;
-            end;
             raise;
         end;
     finally

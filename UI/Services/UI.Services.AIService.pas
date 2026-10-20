@@ -1,4 +1,4 @@
-﻿unit AI.Service;
+﻿unit UI.Services.AIService;
 
 interface
 

@@ -1,4 +1,4 @@
-﻿unit AI.TextCleaner;
+﻿unit UI.Services.AITextCleaner;
 
 interface
 

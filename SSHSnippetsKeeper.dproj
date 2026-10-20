@@ -168,7 +168,7 @@
         <DCCReference Include="Data\RepositoryBase.pas"/>
         <DCCReference Include="ThirdParty\ArrayHelper.pas"/>
         <DCCReference Include="Automation\WindowHelper.pas"/>
-        <DCCReference Include="UI\Forms\AddEditSnippetUI.pas">
+        <DCCReference Include="UI\Forms\AddEditSnippetFormUI.pas">
             <Form>AddEditSnippetForm</Form>
         </DCCReference>
         <DCCReference Include="UI\Controls\HintTextEdit.pas"/>
@@ -192,10 +192,10 @@
             <Form>InputForm</Form>
         </DCCReference>
         <DCCReference Include="MacroEngine\MacroInputTypes.pas"/>
-        <DCCReference Include="UI\Forms\TagEditorUI.pas">
+        <DCCReference Include="UI\Forms\TagEditorFormUI.pas">
             <Form>TagEditorForm</Form>
         </DCCReference>
-        <DCCReference Include="UI\Forms\WorkspaceManagerUI.pas">
+        <DCCReference Include="UI\Forms\WorkspaceManagerFormUI.pas">
             <Form>WorkspaceManagerForm</Form>
         </DCCReference>
         <DCCReference Include="UI\Controls\SynThemeAdapter.pas"/>
@@ -203,7 +203,7 @@
         <DCCReference Include="Core\Core.BashCompletionEngine.pas"/>
         <DCCReference Include="Common\Common.Consts.pas"/>
         <DCCReference Include="Common\Common.Helpers.pas"/>
-        <DCCReference Include="Common\VCLStyleService.pas"/>
+        <DCCReference Include="Common\Common.VCLStyleService.pas"/>
         <DCCReference Include="Core\Services\SnippetService.pas"/>
         <DCCReference Include="Core\Services\TagService.pas"/>
         <DCCReference Include="Core\Services\CategoryService.pas"/>
@@ -227,9 +227,11 @@
         </DCCReference>
         <DCCReference Include="UI\Controllers\GlobalHotkeyManager.pas"/>
         <DCCReference Include="UI\Controls\TrackBarEx.pas"/>
-        <DCCReference Include="UI\Services\AI.Service.pas"/>
-        <DCCReference Include="UI\Services\AI.TextCleaner.pas"/>
-        <DCCReference Include="UI\Services\AI.LocalAISmokeTest.pas"/>
+        <DCCReference Include="UI\Services\UI.Services.AIService.pas"/>
+
+        <DCCReference Include="UI\Services\UI.Services.AITextCleaner.pas"/>
+
+        <DCCReference Include="UI\Services\UI.Services.LocalAISmokeTest.pas"/>
         <DCCReference Include="UI\Forms\AISettingsFormUI.pas">
             <Form>AISettingsForm</Form>
         </DCCReference>
