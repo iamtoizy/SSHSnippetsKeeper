@@ -20,6 +20,7 @@ type
     TForm = class(Vcl.Forms.TForm)
     protected
         procedure DoStyleRecreated; virtual;
+        procedure DoShownOnScreen; virtual;
     public
         procedure WndProc(var Message: TMessage); override;
     end;
@@ -39,6 +40,8 @@ type
 
         FHelpManager: TUIHoverHelpManager;
         FCustomHelpForm: TCustomHelpForm;
+        FShowGuardPending: Boolean;
+        FGuardCenterRef: TCustomForm;
         procedure DoShowHelp(Target: TControl; const HelpKey: string; HelpKind: THelpKind);
         function GetMessagesHandler: IUIMessagesHandler;
 
@@ -53,6 +56,7 @@ type
         // TODO Использовать в дочерних DoInitialize
         procedure DoInitialize; virtual;
         procedure DoShow; override;
+        procedure DoShownOnScreen; override;
         procedure RegisterHelp(
             Control: TControl;
             Position: THelpIconPosition;
@@ -75,6 +79,9 @@ type
         destructor Destroy; override;
         procedure UpdateUI(const State: TBaseFormState); virtual;
         procedure Initialize(AppContext: IAppContext);
+        procedure WarmUpPaint;
+        procedure PrepareGuardedShow;
+        procedure FinishGuardedShow;
         procedure ApplyLanguage; virtual;
         // Для плавающих окон (Калькуляторы, Конвертеры)
         class procedure ExecuteGlobal(Owner: TComponent; AppContext: IAppContext);
@@ -88,23 +95,34 @@ implementation
 uses
     System.SysUtils,
     Common.Localization,
+    SynThemeAdapter,
     Vcl.Dialogs,
+    Vcl.Graphics,
     Winapi.Windows
     ;
 
 procedure TForm.WndProc(var Message: TMessage);
 var
     StyleChanged: Boolean;
+    ShownNow: Boolean;
 begin
     StyleChanged := Message.Msg = CM_CUSTOMSTYLECHANGED;
+    ShownNow := (Message.Msg = WM_WINDOWPOSCHANGED) and (PWindowPos(Message.LParam) <> nil)
+        and ((PWindowPos(Message.LParam).flags and SWP_SHOWWINDOW) <> 0);
     if StyleChanged then
         ActiveControl := nil;
     inherited WndProc(Message);
     if StyleChanged then
         DoStyleRecreated;
+    if ShownNow then
+        DoShownOnScreen;
 end;
 
 procedure TForm.DoStyleRecreated;
+begin
+end;
+
+procedure TForm.DoShownOnScreen;
 begin
 end;
 
@@ -274,6 +292,8 @@ begin
     finally
         Instance.UnlockDrawing;   // Попытка уменьшить мерцание формы со стилями VCL
     end;
+    Instance.WarmUpPaint;
+    Instance.PrepareGuardedShow;
     Instance.Show;
 end;
 
@@ -286,10 +306,98 @@ begin
     Instance := Self.Create(Owner) as TBaseForm;
     try
         Instance.Initialize(AppContext);
+        Instance.WarmUpPaint;
+        Instance.PrepareGuardedShow;
         Result := Instance.ShowModal;
     finally
         Instance.Free;
     end;
+end;
+
+procedure TBaseForm.WarmUpPaint;
+
+    procedure PaintTree(Control: TWinControl; DC: HDC);
+    var
+        I: Integer;
+        Child: TControl;
+    begin
+        if Control <> Self then
+        begin
+            Control.HandleNeeded;
+            Control.Perform(WM_PAINT, DC, 0);
+        end;
+
+        for I := 0 to Control.ControlCount - 1 do
+        begin
+            Child := Control.Controls[I];
+            if Child is TWinControl then
+                PaintTree(TWinControl(Child), DC);
+        end;
+    end;
+
+var
+    Bmp: Vcl.Graphics.TBitmap;
+begin
+    if not HandleAllocated then
+        Exit;
+
+    Bmp := Vcl.Graphics.TBitmap.Create;
+    try
+        Bmp.SetSize(Width, Height);
+        PaintTree(Self, Bmp.Canvas.Handle);
+        Perform(WM_PRINT, Bmp.Canvas.Handle, PRF_CHILDREN or PRF_CLIENT or PRF_ERASEBKGND or PRF_NONCLIENT);
+    finally
+        Bmp.Free;
+    end;
+end;
+
+procedure TBaseForm.PrepareGuardedShow;
+var
+    ExStyle: LONG;
+    R: TRect;
+begin
+    FGuardCenterRef := Screen.ActiveCustomForm;
+    FShowGuardPending := True;
+    Position := poDesigned;
+
+    if (FGuardCenterRef <> nil) and FGuardCenterRef.Visible then
+        R := FGuardCenterRef.BoundsRect
+    else
+        R := Screen.WorkAreaRect;
+
+    Left := R.Left + (R.Width - Width) div 2;
+    Top := R.Top + (R.Height - Height) div 2;
+    if Left + Width > Screen.WorkAreaLeft + Screen.WorkAreaWidth then
+        Left := Screen.WorkAreaLeft;
+    if Top + Height > Screen.WorkAreaTop + Screen.WorkAreaHeight then
+        Top := Screen.WorkAreaTop;
+    if Left < Screen.WorkAreaLeft then
+        Left := Screen.WorkAreaLeft;
+    if Top < Screen.WorkAreaTop then
+        Top := Screen.WorkAreaTop;
+
+    ExStyle := GetWindowLong(Handle, GWL_EXSTYLE);
+    if (ExStyle and WS_EX_LAYERED) = 0 then
+        SetWindowLong(Handle, GWL_EXSTYLE, ExStyle or WS_EX_LAYERED);
+    SetLayeredWindowAttributes(Handle, 0, 1, LWA_ALPHA);
+end;
+
+procedure TBaseForm.FinishGuardedShow;
+begin
+    FShowGuardPending := False;
+
+    RedrawWindow(Handle, nil, 0,
+        RDW_INVALIDATE or RDW_ERASE or RDW_FRAME or RDW_ALLCHILDREN or RDW_UPDATENOW);
+
+    SetLayeredWindowAttributes(Handle, 0, 255, LWA_ALPHA);
+end;
+
+procedure TBaseForm.DoShownOnScreen;
+begin
+    inherited;
+
+    if FShowGuardPending then
+        FinishGuardedShow;
 end;
 
 function TBaseForm.GetAppContext: IAppContext;
@@ -312,6 +420,8 @@ begin
 
     // Применяем локализацию
     TUIStateLoader.ApplyTranslations(Self);
+
+    TSynThemeAdapter.ThemeFormControls(Self);
 
     // Гарантированно пробрасываем настройки в HelpManager в одном месте для ВСЕХ форм.
     // Дочерним формам вообще не нужно знать, как устроен менеджер справки внутри базовой.

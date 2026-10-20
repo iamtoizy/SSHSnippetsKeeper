@@ -467,6 +467,9 @@ begin
         NewSnippet := Default(TSnippetDTO);
         Frm.Prepare(False, NewSnippet, CategoryID, UserID);
 
+        Frm.WarmUpPaint;
+        Frm.PrepareGuardedShow;
+
         Result := (Frm.ShowModal = mrOk);
     finally
         Frm.Free;
@@ -593,6 +596,9 @@ begin
         finally
             Frm.UnlockDrawing;  // Попытка уменьшить мерцание формы со стилями VCL
         end;
+        Frm.WarmUpPaint;
+        Frm.PrepareGuardedShow;
+
         Result := (Frm.ShowModal = mrOk);
     finally
         Frm.Free;

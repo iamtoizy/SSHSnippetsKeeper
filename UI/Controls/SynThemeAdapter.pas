@@ -5,6 +5,7 @@ interface
 uses
     SynEdit,
     System.Classes,
+    Vcl.Controls,
     Vcl.Graphics,
     Winapi.Messages,
     Winapi.Windows
@@ -19,6 +20,7 @@ type
         FCacheColor: TColor;
         procedure WMEraseBkgnd(var Message: TWmEraseBkgnd); message WM_ERASEBKGND;
     public
+        constructor Create(AOwner: TComponent); override;
         destructor Destroy; override;
     end;
 
@@ -45,6 +47,7 @@ type
     public
         class procedure ApplyTheme(SynEdit: TCustomSynEdit);
         class procedure ApplyThemeToAll;
+        class procedure ThemeFormControls(ARoot: TWinControl);
     end;
 
 implementation
@@ -52,10 +55,16 @@ implementation
 uses
     SynEditHighlighter,
     System.SysUtils,
-    Vcl.Controls,
     Vcl.Forms,
+    Vcl.StdCtrls,
     Vcl.Themes
     ;
+
+type
+    TControlAccess = class(TControl)
+    public
+        property Color;
+    end;
 
 { TSynThemeAdapter }
 
@@ -203,7 +212,36 @@ begin
         ApplyToControl(Screen.Forms[I]);
 end;
 
+class procedure TSynThemeAdapter.ThemeFormControls(ARoot: TWinControl);
+
+    procedure Visit(Control: TControl);
+    var
+        I: Integer;
+    begin
+        if Control is TCustomSynEdit then
+            ApplyTheme(TCustomSynEdit(Control))
+        else if (Control is TCustomEdit) and (TControlAccess(Control).Color = clWindow) then
+            TControlAccess(Control).Color := TStyleManager.ActiveStyle.GetStyleColor(scEdit);
+
+        if Control is TWinControl then
+            for I := 0 to TWinControl(Control).ControlCount - 1 do
+                Visit(TWinControl(Control).Controls[I]);
+    end;
+
+begin
+    if not TStyleManager.IsCustomStyleActive then
+        Exit;
+
+    Visit(ARoot);
+end;
+
 { TSynEdit }
+
+constructor TSynEdit.Create(AOwner: TComponent);
+begin
+    inherited Create(AOwner);
+    StyleElements := StyleElements - [seClient];
+end;
 
 procedure TSynEdit.WMEraseBkgnd(var Message: TWmEraseBkgnd);
 var
