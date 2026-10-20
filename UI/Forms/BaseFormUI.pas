@@ -147,6 +147,11 @@ end;
 
 destructor TBaseForm.Destroy;
 begin
+    // 1. Менеджер справки уничтожаем первым: его всплывающая кнопка
+    // является самостоятельным окном и иначе переживёт разрушение формы.
+    if Assigned(FHelpManager) then
+        FreeAndNil(FHelpManager);
+
     // 2. Безопасное удаление дочерних форм
     if Assigned(FCustomHelpForm) then
         FreeAndNil(FCustomHelpForm);
@@ -219,6 +224,8 @@ var
     TaskDlg: TTaskDialog;
     Title, MainText, ExpText: string;
 begin
+    if csDestroying in ComponentState then Exit;
+
     // Запрашиваем все три поля одним вызовом
     TUIStateLoader.GetHelpTexts(HelpKey, Title, MainText, ExpText);
 
@@ -226,6 +233,8 @@ begin
         // Отображение через кастомную форму
         hkCustomForm:
             begin
+                if FCustomHelpForm = nil then
+                    FCustomHelpForm := TCustomHelpForm.Create(Self);
                 with FCustomHelpForm do
                 begin
                     SetContent(Title, MainText, ExpText);

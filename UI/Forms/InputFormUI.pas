@@ -73,6 +73,9 @@ begin
         if (DefaultValue <> '') then
             Form.FDefaultValue := DefaultValue;
 
+        Form.WarmUpPaint;
+        Form.PrepareGuardedShow;
+
         Result := Form.ShowModal = mrOk;
         if Result then
             Value := Form.ResultValue;

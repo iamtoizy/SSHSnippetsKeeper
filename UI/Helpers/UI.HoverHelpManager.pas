@@ -318,6 +318,12 @@ var
     Setup: THelpSetup;
     CachedTarget: TControl;
 begin
+    if (not Assigned(Owner)) or (csDestroying in Owner.ComponentState) then
+    begin
+        HideButton;
+        Exit;
+    end;
+
     if Assigned(FCurrentTarget) and FRegistered.TryGetValue(FCurrentTarget, Setup) then
     begin
         CachedTarget := FCurrentTarget;
