@@ -218,32 +218,36 @@ function TSnippetRepository.GetSnippetsByTags(const TagIDs: TArray<Integer>; Mat
 var
     Sb: TStringBuilder;
     I: Integer;
-    IDList, SQL: string;
+    Placeholders, SQL: string;
+    Params: array of Variant;
 begin
     if Length(TagIDs) = 0 then
         Exit(nil);
 
-    // Собираем массив ID в строку через запятую для подстановки в IN (...)
+    // Собираем плейсхолдеры для IN (...); значения передаются через параметрический биндинг
     Sb := TStringBuilder.Create;
     try
-        for i := 0 to High(TagIDs) do
+        for I := 0 to High(TagIDs) do
         begin
-            Sb.Append(TagIDs[i]);
-            if i < High(TagIDs) then
+            Sb.Append('?');
+            if I < High(TagIDs) then
                 Sb.Append(',');
         end;
-        IDList := Sb.ToString;
+        Placeholders := Sb.ToString;
     finally
         Sb.Free;
     end;
 
-    // Формируем итоговый запрос с помощью Format
-    if MatchAll then
-        SQL := Format(SQL_SELECT_SNIPPETS_BY_TAGS_ALL, [IDList, Length(TagIDs)])
-    else
-        SQL := Format(SQL_SELECT_SNIPPETS_BY_TAGS_ANY, [IDList]);
+    SetLength(Params, Length(TagIDs));
+    for I := 0 to High(TagIDs) do
+        Params[I] := TagIDs[I];
 
-    Result := InternalLoadSnippets(SQL, []);
+    if MatchAll then
+        SQL := Format(SQL_SELECT_SNIPPETS_BY_TAGS_ALL, [Placeholders, Length(TagIDs)])
+    else
+        SQL := Format(SQL_SELECT_SNIPPETS_BY_TAGS_ANY, [Placeholders]);
+
+    Result := InternalLoadSnippets(SQL, Params);
 end;
 
 function TSnippetRepository.GetSnippetTags(SnippetID: Integer): TArray<TTagDTO>;
