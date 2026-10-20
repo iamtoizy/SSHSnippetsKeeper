@@ -76,6 +76,8 @@ uses
   WindowMonitor in 'Automation\WindowMonitor.pas',
   ProcessProfile in 'Automation\ProcessProfile.pas',
   ChooseTerminalWindowUI in 'UI\Forms\ChooseTerminalWindowUI.pas' {ChooseTerminalWindow},
+  AppEnumerator in 'Automation\AppEnumerator.pas',
+  AppPickerFormUI in 'UI\Forms\AppPickerFormUI.pas' {AppPickerForm},
   InputFormUI in 'UI\Forms\InputFormUI.pas' {InputForm},
   MacroInputTypes in 'MacroEngine\MacroInputTypes.pas',
   TagEditorUI in 'UI\Forms\TagEditorUI.pas' {TagEditorForm},

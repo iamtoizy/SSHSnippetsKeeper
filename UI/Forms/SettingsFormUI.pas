@@ -70,6 +70,7 @@ type
         bAppAdd: TButton;
         bAppRename: TButton;
         bAppDelete: TButton;
+        bAppPick: TButton;
 
         procedure bSaveClick(Sender: TObject);
         procedure bCancelClick(Sender: TObject);
@@ -86,6 +87,7 @@ type
         procedure bAppAddClick(Sender: TObject);
         procedure bAppRenameClick(Sender: TObject);
         procedure bAppDeleteClick(Sender: TObject);
+        procedure bAppPickClick(Sender: TObject);
         procedure cbVCLStyleChange(Sender: TObject);
     private
         FLocalActions: TDictionary<string, TActionHotkeyInfo>;
@@ -114,6 +116,8 @@ implementation
 {$R *.dfm}
 
 uses
+    AppEnumerator,
+    AppPickerFormUI,
     Common.Helpers,
     HotkeyService,
     System.IOUtils,
@@ -450,6 +454,43 @@ begin
     ) then Exit;
 
     Item.Delete;
+end;
+
+procedure TSettingsForm.bAppPickClick(Sender: TObject);
+var
+    Picked: TArray<TAppEntry>;
+    Entry: TAppEntry;
+    Name: string;
+    Item: TListItem;
+    Duplicate: Boolean;
+begin
+    Picked := TAppPickerForm.Execute(Self, AppContext);
+
+    for Entry in Picked do
+    begin
+        Name := Trim(Entry.ExeName);
+        if Name.IsEmpty then
+            Continue;
+
+        Name := ExtractFileName(Name);
+        if not Name.ToLower.EndsWith('.exe') then
+            Name := Name + '.exe';
+
+        Duplicate := False;
+        for Item in lvApplications.Items do
+            if SameText(Item.Caption, Name) then
+            begin
+                Duplicate := True;
+                Break;
+            end;
+
+        if Duplicate then
+            Continue;
+
+        Item := lvApplications.Items.Add;
+        Item.Caption := Name;
+        Item.Checked := True;
+    end;
 end;
 
 procedure TSettingsForm.cbVCLStyleChange(Sender: TObject);

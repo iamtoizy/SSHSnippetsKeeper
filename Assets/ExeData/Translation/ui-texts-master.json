@@ -806,6 +806,9 @@
     "bAppDelete": {
       "Caption": "Удалить"
     },
+    "bAppPick": {
+      "Caption": "Из списка..."
+    },
     "tsLocalSync": {
       "Caption": "Markdown-синхронизация"
     },
@@ -878,6 +881,36 @@
     },
     "lbVCLStyle": {
       "Caption": "Стиль интерфейса:"
+    }
+  },
+  "AppPickerForm": {
+    "Caption": "Добавление приложений",
+    "ebFilter": {
+      "TextHint": "Фильтр по имени..."
+    },
+    "tsRunning": {
+      "Caption": "Запущенные сейчас"
+    },
+    "tsRecent": {
+      "Caption": "Недавние"
+    },
+    "lvRunning": {
+      "Columns": {
+        "0": "Приложение",
+        "1": "Процесс"
+      }
+    },
+    "lvRecent": {
+      "Columns": {
+        "0": "Приложение",
+        "1": "Последний запуск"
+      }
+    },
+    "bAdd": {
+      "Caption": "Добавить выбранные"
+    },
+    "bCancel": {
+      "Caption": "Отмена"
     }
   },
   "CustomHelpForm": {
@@ -1154,6 +1187,12 @@
       "ApplicationsInvalidName": "Укажи имя исполняемого файла (например, ssh.exe).",
       "ApplicationsDuplicate": "Приложение «%s» уже есть в списке.",
       "StyleApplyError": "Не удалось применить стиль «%s»."
+    },
+    "AppPicker": {
+      "RunningEmpty": "Нет видимых запущенных приложений.",
+      "RunningFound": "Запущенных приложений: %d",
+      "RecentEmpty": "Список недавних приложений пуст.",
+      "RecentFound": "Недавних приложений: %d"
     },
     "Category": {
       "DeleteConfirm": "Уверен, что хочешь удалить эту категорию?",

@@ -733,6 +733,9 @@
     "bAppDelete": {
       "Caption": "Delete"
     },
+    "bAppPick": {
+      "Caption": "From list..."
+    },
     "tsLocalSync": {
       "Caption": "Markdown Sync"
     },
@@ -805,6 +808,36 @@
     },
     "lbVCLStyle": {
       "Caption": "Interface style:"
+    }
+  },
+  "AppPickerForm": {
+    "Caption": "Add applications",
+    "ebFilter": {
+      "TextHint": "Filter by name..."
+    },
+    "tsRunning": {
+      "Caption": "Running now"
+    },
+    "tsRecent": {
+      "Caption": "Recent"
+    },
+    "lvRunning": {
+      "Columns": {
+        "0": "Application",
+        "1": "Process"
+      }
+    },
+    "lvRecent": {
+      "Columns": {
+        "0": "Application",
+        "1": "Last run"
+      }
+    },
+    "bAdd": {
+      "Caption": "Add selected"
+    },
+    "bCancel": {
+      "Caption": "Cancel"
     }
   },
   "CustomHelpForm": {
@@ -1082,6 +1115,12 @@
       "ApplicationsInvalidName": "Specify an executable file name (e.g., ssh.exe).",
       "ApplicationsDuplicate": "Application \"%s\" is already in the list.",
       "StyleApplyError": "Failed to apply style \"%s\"."
+    },
+    "AppPicker": {
+      "RunningEmpty": "No visible running applications.",
+      "RunningFound": "Running applications: %d",
+      "RecentEmpty": "The recent applications list is empty.",
+      "RecentFound": "Recent applications: %d"
     },
     "Category": {
       "DeleteConfirm": "Are you sure you want to delete this category?",
