@@ -443,6 +443,15 @@ begin
     case Key of
         VK_ESCAPE:
             begin
+                if Trim(ebQuickSearch.Text) <> '' then
+                begin
+                    ebQuickSearch.Text := '';
+                    FSearchTimer.Enabled := False;
+                    UpdateResults;
+                    Key := 0;
+                    Exit;
+                end;
+
                 Close;
                 Exit;
             end;
@@ -532,7 +541,6 @@ begin
         BringWindowToTop(Handle);
     end;
 
-    ebQuickSearch.Text := '';
     UpdateResults;
     QuickSearchForm.SetFocus;
     ebQuickSearch.SetFocus;
@@ -601,6 +609,8 @@ var
     Item: TListItem;
     ViewData: TSnippetViewData;
     SelectedUserID: Integer;
+    I: Integer;
+    IsFavoritesMode: Boolean;
 begin
     // Принудительно гасим подсказку, если она висит, чтобы не было "призраков"
     Application.CancelHint;
@@ -609,26 +619,40 @@ begin
     if cbUser.ItemIndex >= 0 then
         SelectedUserID := Integer(cbUser.Items.Objects[cbUser.ItemIndex]);
 
+    IsFavoritesMode := Trim(ebQuickSearch.Text) = '';
+
     lvQuickResults.Items.BeginUpdate;
     try
         lvQuickResults.Items.Clear;
 
-        if Trim(ebQuickSearch.Text) = '' then
+        if IsFavoritesMode then
             // Пустой запрос: показываем избранное (первые 10 - горячие слоты)
             Snippets := FSnippetService.GetFavorites(SelectedUserID)
         else
             Snippets := FSnippetService.SearchSnippets(ebQuickSearch.Text, rbFTS.Checked, SelectedUserID);
 
+        I := 0;
         for Snip in Snippets do
         begin
             Item := lvQuickResults.Items.Add;
-            Item.Caption := Snip.Title;
+
+            if IsFavoritesMode then
+            begin
+                if I <= 9 then
+                    Item.Caption := #9733 + IntToStr((I + 1) mod 10) + ' ' + Snip.Title
+                else
+                    Item.Caption := #9733 + ' ' + Snip.Title;
+            end
+            else
+                Item.Caption := Snip.Title;
+
             ViewData := TSnippetViewData.Create;
             ViewData.ID := Snip.ID;
             ViewData.Title := Snip.Title;
             ViewData.Content := Snip.Content;
             ViewData.Comment := Snip.Comment;
             Item.Data := ViewData;
+            Inc(I);
         end;
 
         if lvQuickResults.Items.Count > 0 then
