@@ -3,7 +3,7 @@
         <ProjectGuid>{810A4712-AF34-44C0-AC10-3D1AAD1C40D5}</ProjectGuid>
         <MainSource>SSHSnippetsKeeper.dpr</MainSource>
         <Base>True</Base>
-        <Config Condition="'$(Config)'==''">Debug</Config>
+        <Config Condition="'$(Config)'==''">Release</Config>
         <TargetedPlatforms>3</TargetedPlatforms>
         <AppType>Application</AppType>
         <FrameworkType>VCL</FrameworkType>
