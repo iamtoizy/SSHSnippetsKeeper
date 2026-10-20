@@ -4,7 +4,7 @@ interface
 
 uses
     Core.Interfaces.Settings, Core.Interfaces.Automation,
-    System.Classes
+    System.Classes, System.SysUtils
     ;
 
 type
@@ -37,20 +37,27 @@ type
         property CurrentLanguage: string read GetCurrentLanguage write SetCurrentLanguage;
     end;
 
+function ProtectSecret(const Value: string): string;
+function UnprotectSecretToBytes(const Value: string): TBytes;
+function IsProtectedSecret(const Value: string): Boolean;
+procedure WipeSecretBytes(var ABytes: TBytes);
+
 implementation
 
 uses
     Common.Helpers,
     JSONSerializer,
+    System.Hash,
     System.NetEncoding,
     System.IOUtils,
     System.JSON,
-    System.SysUtils,
     Winapi.Windows
     ;
 
 const
     SECRET_PREFIX = 'dpapi:';
+    SECRET_PREFIX_OLD = 'dpapi2:';
+    PLACEHOLDER_API_KEY = 'Paste-your-API-key-here';
     CRYPTPROTECT_UI_FORBIDDEN = $1;
 
 type
@@ -63,50 +70,109 @@ type
 function CryptProtectData(pDataIn: PDataBlob; szDataDescr: LPCWSTR; pOptionalEntropy: Pointer; pvReserved: Pointer; pPromptStruct: Pointer; dwFlags: DWORD; pDataOut: PDataBlob): BOOL; stdcall; external 'crypt32' name 'CryptProtectData';
 function CryptUnprotectData(pDataIn: PDataBlob; ppszDataDescr: PLPWSTR; pOptionalEntropy: Pointer; pvReserved: Pointer; pPromptStruct: Pointer; dwFlags: DWORD; pDataOut: PDataBlob): BOOL; stdcall; external 'crypt32' name 'CryptUnprotectData';
 
-function ProtectSecret(const Value: string): string;
-var
-    InBlob, OutBlob: TDataBlob;
-    RawBytes: TBytes;
+procedure WipeSecretBytes(var ABytes: TBytes);
 begin
-    Result := Value;
-    if Value.IsEmpty then Exit;
+    if Length(ABytes) > 0 then
+        FillChar(ABytes[0], Length(ABytes), 0);
+    ABytes := nil;
+end;
 
-    InBlob.cbData := Length(Value) * SizeOf(Char);
-    InBlob.pbData := PByte(PChar(Value));
-    if not CryptProtectData(@InBlob, nil, nil, nil, nil, CRYPTPROTECT_UI_FORBIDDEN, @OutBlob) then Exit;
-
+function BuildSecretEntropy: TBytes;
+var
+    Raw: TBytes;
+    Hasher: THashSHA2;
+    X: UInt32;
+    I: Integer;
+begin
+    SetLength(Raw, 64);
     try
-        SetLength(RawBytes, OutBlob.cbData);
-        if OutBlob.cbData > 0 then
-            Move(OutBlob.pbData^, RawBytes[0], OutBlob.cbData);
-        Result := SECRET_PREFIX + System.NetEncoding.TNetEncoding.Base64.EncodeBytesToString(RawBytes);
-        Result := Result.Replace(#13, '').Replace(#10, '');
+        X := $9E3779B9;
+        for I := 0 to High(Raw) do
+        begin
+            X := X xor (X shl 13);
+            X := X xor (X shr 17);
+            X := X xor (X shl 5);
+            X := X + $85EBCA6B + UInt32(I) * $C2B2AE3D;
+            Raw[I] := Byte(X shr ((I and 3) shl 3));
+        end;
+        Hasher := THashSHA2.Create(SHA256);
+        Hasher.Update(Raw);
+        Result := Hasher.HashAsBytes;
     finally
-        LocalFree(HLOCAL(OutBlob.pbData));
+        WipeSecretBytes(Raw);
     end;
 end;
 
-function UnprotectSecret(const Value: string): string;
+function IsProtectedSecret(const Value: string): Boolean;
+begin
+    Result := Value.StartsWith(SECRET_PREFIX, True);
+end;
+
+function ProtectSecret(const Value: string): string;
 var
-    InBlob, OutBlob: TDataBlob;
-    RawBytes: TBytes;
+    InBlob, OutBlob, EntropyBlob: TDataBlob;
+    RawBytes, Entropy: TBytes;
 begin
     Result := Value;
-    if not Value.StartsWith(SECRET_PREFIX, True) then Exit;
+    if Value.IsEmpty or IsProtectedSecret(Value) then Exit;
+
+    Entropy := BuildSecretEntropy;
+    try
+        InBlob.cbData := Length(Value) * SizeOf(Char);
+        InBlob.pbData := PByte(PChar(Value));
+        EntropyBlob.cbData := Length(Entropy);
+        EntropyBlob.pbData := @Entropy[0];
+
+        if not CryptProtectData(@InBlob, nil, @EntropyBlob, nil, nil, CRYPTPROTECT_UI_FORBIDDEN, @OutBlob) then Exit;
+
+        try
+            SetLength(RawBytes, OutBlob.cbData);
+            if OutBlob.cbData > 0 then
+                Move(OutBlob.pbData^, RawBytes[0], OutBlob.cbData);
+            Result := SECRET_PREFIX + System.NetEncoding.TNetEncoding.Base64.EncodeBytesToString(RawBytes);
+            Result := Result.Replace(#13, '').Replace(#10, '');
+        finally
+            LocalFree(HLOCAL(OutBlob.pbData));
+        end;
+    finally
+        WipeSecretBytes(Entropy);
+    end;
+end;
+
+function UnprotectSecretToBytes(const Value: string): TBytes;
+var
+    InBlob, OutBlob, EntropyBlob: TDataBlob;
+    RawBytes, Plain16, Entropy: TBytes;
+begin
+    Result := nil;
+    if not IsProtectedSecret(Value) then
+        Exit(TEncoding.UTF8.GetBytes(Value));
 
     RawBytes := System.NetEncoding.TNetEncoding.Base64.DecodeStringToBytes(Value.Substring(Length(SECRET_PREFIX)));
-    if Length(RawBytes) = 0 then Exit('');
+    if Length(RawBytes) = 0 then Exit;
 
     InBlob.cbData := Length(RawBytes);
     InBlob.pbData := @RawBytes[0];
-    if not CryptUnprotectData(@InBlob, nil, nil, nil, nil, CRYPTPROTECT_UI_FORBIDDEN, @OutBlob) then Exit('');
 
+    Plain16 := nil;
+    Entropy := BuildSecretEntropy;
     try
-        SetLength(Result, OutBlob.cbData div SizeOf(Char));
-        if Length(Result) > 0 then
-            Move(OutBlob.pbData^, Pointer(Result)^, Length(Result) * SizeOf(Char));
+        EntropyBlob.cbData := Length(Entropy);
+        EntropyBlob.pbData := @Entropy[0];
+
+        if not CryptUnprotectData(@InBlob, nil, @EntropyBlob, nil, nil, CRYPTPROTECT_UI_FORBIDDEN, @OutBlob) then Exit;
+
+        try
+            SetLength(Plain16, OutBlob.cbData);
+            if OutBlob.cbData > 0 then
+                Move(OutBlob.pbData^, Plain16[0], OutBlob.cbData);
+            Result := TEncoding.Convert(TEncoding.Unicode, TEncoding.UTF8, Plain16);
+        finally
+            LocalFree(HLOCAL(OutBlob.pbData));
+        end;
     finally
-        LocalFree(HLOCAL(OutBlob.pbData));
+        WipeSecretBytes(Entropy);
+        WipeSecretBytes(Plain16);
     end;
 end;
 
@@ -116,18 +182,24 @@ var
 begin
     for HubIdx := 0 to High(Settings.AISettings.Items) do
         for KeyIdx := 0 to High(Settings.AISettings.Items[HubIdx].Items.Items) do
-            Settings.AISettings.Items[HubIdx].Items.Items[KeyIdx].APIKey :=
-                ProtectSecret(Settings.AISettings.Items[HubIdx].Items.Items[KeyIdx].APIKey);
+            if Settings.AISettings.Items[HubIdx].Items.Items[KeyIdx].APIKey <> PLACEHOLDER_API_KEY then
+                Settings.AISettings.Items[HubIdx].Items.Items[KeyIdx].APIKey :=
+                    ProtectSecret(Settings.AISettings.Items[HubIdx].Items.Items[KeyIdx].APIKey);
 end;
 
-procedure DecryptAIKeys(var Settings: TAppSettings);
+procedure NormalizeSecretPrefixes(var Settings: TAppSettings);
 var
     HubIdx, KeyIdx: Integer;
+    Key: string;
 begin
     for HubIdx := 0 to High(Settings.AISettings.Items) do
         for KeyIdx := 0 to High(Settings.AISettings.Items[HubIdx].Items.Items) do
-            Settings.AISettings.Items[HubIdx].Items.Items[KeyIdx].APIKey :=
-                UnprotectSecret(Settings.AISettings.Items[HubIdx].Items.Items[KeyIdx].APIKey);
+        begin
+            Key := Settings.AISettings.Items[HubIdx].Items.Items[KeyIdx].APIKey;
+            if Key.StartsWith(SECRET_PREFIX_OLD, True) then
+                Settings.AISettings.Items[HubIdx].Items.Items[KeyIdx].APIKey :=
+                    SECRET_PREFIX + Key.Substring(Length(SECRET_PREFIX_OLD));
+        end;
 end;
 
 const
@@ -208,7 +280,7 @@ begin
     with FSettings.AISettings.Items[0].Items.Items[0] do
     begin
         Name := 'Qwen3.6-35B (1024 токена)';
-        APIKey := 'Paste-your-API-key-here';
+        APIKey := PLACEHOLDER_API_KEY;
         Folder := 'Paste-your-folder-id-here';
         Model := '';
         Agent := 'Paste-your-agent-id-here';
@@ -227,7 +299,7 @@ begin
     with FSettings.AISettings.Items[1].Items.Items[0] do
     begin
         Name := 'YandexGPT 5 Lite (1024 токена)';
-        APIKey := 'Paste-your-API-key-here';
+        APIKey := PLACEHOLDER_API_KEY;
         Folder := 'Paste-your-folder-id-here';
         Model := 'yandexgpt-5-lite/latest';
         Agent := 'Paste-your-agent-id-here';
@@ -240,7 +312,7 @@ begin
     with FSettings.AISettings.Items[1].Items.Items[1] do
     begin
         Name := 'YandexGPT 5 Lite (32к токенов)';
-        APIKey := 'Paste-your-API-key-here';
+        APIKey := PLACEHOLDER_API_KEY;
         Folder := 'Paste-your-folder-id-here';
         Model := 'yandexgpt-5-lite/latest';
         Agent := 'Paste-your-agent-id-here';
@@ -253,7 +325,7 @@ begin
     with FSettings.AISettings.Items[1].Items.Items[2] do
     begin
         Name := 'DeepSeek V4 Flash (1024 токена)';
-        APIKey := 'Paste-your-API-key-here';
+        APIKey := PLACEHOLDER_API_KEY;
         Folder := 'Paste-your-folder-id-here';
         Model := 'deepseek-v4-flash/latest';
         Agent := 'Paste-your-agent-id-here';
@@ -266,7 +338,7 @@ begin
     with FSettings.AISettings.Items[1].Items.Items[3] do
     begin
         Name := 'AliceAI LLM Flash (1024 токена)';
-        APIKey := 'Paste-your-API-key-here';
+        APIKey := PLACEHOLDER_API_KEY;
         Folder := 'Paste-your-folder-id-here';
         Model := 'aliceai-llm-flash/latest';
         Agent := 'Paste-your-agent-id-here';
@@ -392,8 +464,8 @@ begin
         if Length(FSettings.AISettings.Items) = 0 then
             InitDefaultAISettings;
 
-        // 4. API-ключи хранятся на диске в виде DPAPI, в памяти работаем с открытым текстом
-        DecryptAIKeys(FSettings);
+        // 4. API-ключи остаются DPAPI-блобами: расшифровка только в момент использования
+        NormalizeSecretPrefixes(FSettings);
 
     except
         on E: Exception do

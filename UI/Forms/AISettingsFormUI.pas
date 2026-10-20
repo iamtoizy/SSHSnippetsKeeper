@@ -107,10 +107,14 @@ implementation
 
 uses
     Common.Localization,
+    Common.Settings,
     System.SysUtils
     ;
 
 {$R *.dfm}
+
+const
+    SECRET_MASK = '********';
 
 procedure TAISettingsForm.actCreateModelExecute(Sender: TObject);
 var
@@ -379,7 +383,8 @@ begin
         AIItem := FLocalSettings.AISettings[HubIdx].Items[ModIdx];
 
         AIItem.Name := ebModelName.Text;
-        AIItem.APIKey := ebAPIKey.Text;
+        if ebAPIKey.Text <> SECRET_MASK then
+            AIItem.APIKey := ebAPIKey.Text;
         AIItem.Folder := ebFolderID.Text;
         AIItem.Model := ebModelPath.Text;
         AIItem.Agent := ebAgentID.Text;
@@ -414,7 +419,10 @@ begin
         var ModelItem := FLocalSettings.AISettings[Data^.HubIndex].Items[Data^.ModelIndex];
 
         ebModelName.Text := ModelItem.Name;
-        ebAPIKey.Text := ModelItem.APIKey;
+        if IsProtectedSecret(ModelItem.APIKey) then
+            ebAPIKey.Text := SECRET_MASK
+        else
+            ebAPIKey.Text := ModelItem.APIKey;
         ebFolderID.Text := ModelItem.Folder;
         ebModelPath.Text := ModelItem.Model;
         ebAgentID.Text := ModelItem.Agent;

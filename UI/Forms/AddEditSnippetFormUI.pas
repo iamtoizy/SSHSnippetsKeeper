@@ -158,6 +158,7 @@ uses
     UI.Services.AITextCleaner,
     AISettingsFormUI,
     Common.Localization,
+    Common.Settings,
     Common.Helpers,
     Core.Entities.Tag,
     MainFormUI,
@@ -482,6 +483,8 @@ var
     IsSelection: Boolean;
     HubIdx, ModIdx: Integer;
     SelectedAI: TAIItem;
+    KeyBytes: TBytes;
+    KeyText: string;
 begin
     Instruction := string(mAIPrompt.Text).Trim;
     if Instruction.IsEmpty then Exit;
@@ -499,9 +502,16 @@ begin
     // Берем нужную модель из настроек
     SelectedAI := AppContext.SettingsManager.Data.AISettings[HubIdx].Items[ModIdx];
 
+    KeyBytes := UnprotectSecretToBytes(SelectedAI.APIKey);
+    try
+        KeyText := TEncoding.UTF8.GetString(KeyBytes);
+    finally
+        WipeSecretBytes(KeyBytes);
+    end;
+
     // Создаем сервис с её параметрами
     FAIService := TYandexAIService.Create(
-        SelectedAI.APIKey,
+        KeyText,
         SelectedAI.Folder,
         SelectedAI.Model,
         SelectedAI.Agent
