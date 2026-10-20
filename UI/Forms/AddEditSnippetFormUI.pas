@@ -157,6 +157,7 @@ implementation
 uses
     UI.Services.AITextCleaner,
     AISettingsFormUI,
+    Common.Consts,
     Common.Localization,
     Common.Settings,
     Common.Helpers,
@@ -678,6 +679,13 @@ begin
     else
         DstLV := lvAllTags;
 
+    if (DstLV = lvSelectedTags) and (lvSelectedTags.Items.Count >= MAX_SNIPPET_TAGS) then
+    begin
+        MessagesHandler.ShowWarning(
+            TUIStateLoader.GetMessage('Tag.MaxSnippetTagsReached', [MAX_SNIPPET_TAGS]));
+        Exit;
+    end;
+
     Item := SrcLV.Selected;
     if Assigned(Item) then
     begin
@@ -714,6 +722,14 @@ begin
         for i := 0 to SrcLV.Items.Count - 1 do
             if SrcLV.Items[i].Selected then
                 ItemsToMove.Add(SrcLV.Items[i]);
+
+        if (DstLV = lvSelectedTags)
+            and (DstLV.Items.Count + ItemsToMove.Count > MAX_SNIPPET_TAGS) then
+        begin
+            MessagesHandler.ShowWarning(
+                TUIStateLoader.GetMessage('Tag.MaxSnippetTagsReached', [MAX_SNIPPET_TAGS]));
+            Exit;
+        end;
 
         SrcLV.Items.BeginUpdate;
         DstLV.Items.BeginUpdate;

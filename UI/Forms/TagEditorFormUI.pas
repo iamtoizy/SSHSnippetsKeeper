@@ -73,6 +73,7 @@ implementation
 {$R *.dfm}
 
 uses
+    Common.Consts,
     System.SysUtils,
     System.UITypes,
     Core.Entities.Tag,
@@ -171,6 +172,13 @@ begin
     begin
         NewName := Trim(NewName);
 
+        if Length(NewName) > MAX_TAG_NAME_LENGTH then
+        begin
+            MessagesHandler.ShowWarning(
+                TUIStateLoader.GetMessage('Tag.NameTooLong', [MAX_TAG_NAME_LENGTH]));
+            Exit;
+        end;
+
         Item := lvTags.Items.Add;
         Item.Caption := NewName;
         Item.Data := Pointer(0);
@@ -233,6 +241,14 @@ begin
 
     if (S = '') or (S = Item.Caption) then
     begin
+        S := Item.Caption;
+        Exit;
+    end;
+
+    if Length(S) > MAX_TAG_NAME_LENGTH then
+    begin
+        MessagesHandler.ShowWarning(
+            TUIStateLoader.GetMessage('Tag.NameTooLong', [MAX_TAG_NAME_LENGTH]));
         S := Item.Caption;
         Exit;
     end;

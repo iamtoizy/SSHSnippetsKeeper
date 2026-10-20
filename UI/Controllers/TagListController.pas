@@ -57,6 +57,7 @@ type
 implementation
 
 uses
+    Common.Consts,
     Common.Localization,
     System.Types,
     UI.Helpers,
@@ -94,6 +95,13 @@ begin
     NewName := Trim(NewName);
     if NewName = '' then
         Exit;
+
+    if Length(NewName) > MAX_TAG_NAME_LENGTH then
+    begin
+        FContext.MessagesHandler.ShowWarning(
+            TUIStateLoader.GetMessage('Tag.NameTooLong', [MAX_TAG_NAME_LENGTH]));
+        Exit;
+    end;
 
     try
         NewID := FContext.TagService.CreateTag(NewName);
@@ -179,6 +187,14 @@ begin
     S := Trim(S);
     if (S = '') or (S = OldName) then
     begin
+        S := OldName;
+        Exit;
+    end;
+
+    if Length(S) > MAX_TAG_NAME_LENGTH then
+    begin
+        FContext.MessagesHandler.ShowWarning(
+            TUIStateLoader.GetMessage('Tag.NameTooLong', [MAX_TAG_NAME_LENGTH]));
         S := OldName;
         Exit;
     end;

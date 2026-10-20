@@ -3,6 +3,7 @@
 interface
 
 uses
+    Common.Consts,
     Core.Entities.Category,
     Core.Entities.Snippet,
     Core.Entities.Tag,
@@ -16,6 +17,10 @@ uses
     System.IOUtils,
     System.SysUtils
     ;
+
+const
+    MIN_IMPORT_UNIX_TS = 946684800;
+    MAX_IMPORT_UNIX_TS = 4102444800;
 
 type
     // Временная структура парсинга одного .md файла
@@ -53,9 +58,10 @@ implementation
 
 class function TMarkdownImporter.ExtractTagsFromYaml(const TagsStr: string): TArray<string>;
 var
-    CleanStr, TagName: string;
+    CleanStr, TagName, T: string;
     Parts: TArray<string>;
     ResultList: TList<string>;
+    I: Integer;
 begin
     ResultList := TList<string>.Create;
     try
@@ -65,8 +71,19 @@ begin
 
         for TagName in Parts do
         begin
-            if Trim(TagName) <> '' then
-                ResultList.Add(Trim(TagName));
+            T := Trim(TagName);
+
+            for I := Length(T) downto 1 do
+                if T[I] < #32 then
+                    Delete(T, I, 1);
+
+            if (T = '') or (Length(T) > MAX_TAG_NAME_LENGTH) then
+                Continue;
+
+            if ResultList.Count >= MAX_SNIPPET_TAGS then
+                Break;
+
+            ResultList.Add(T);
         end;
         Result := ResultList.ToArray;
     finally
@@ -132,12 +149,27 @@ begin
                        (Value.StartsWith('''') and Value.EndsWith('''')) then
                         Value := Value.Substring(1, Value.Length - 2);
 
-                    if Key = 'id' then Parsed.ID := StrToIntDef(Value, 0)
+                    if Key = 'id' then
+                    begin
+                        Parsed.ID := StrToIntDef(Value, 0);
+                        if Parsed.ID < 0 then
+                            Parsed.ID := 0;
+                    end
                     else if Key = 'title' then Parsed.Title := Value
                     else if Key = 'generator' then Parsed.HasKeeperMarker := SameText(Value, 'SSHSnippetsKeeper')
                     else if Key = 'tags' then Parsed.Tags := ExtractTagsFromYaml(Value)
-                    else if Key = 'created_at' then Parsed.CreatedAt := StrToInt64Def(Value, DateTimeToUnix(Now))
-                    else if Key = 'updated_at' then Parsed.UpdatedAt := StrToInt64Def(Value, DateTimeToUnix(Now));
+                    else if Key = 'created_at' then
+                    begin
+                        Parsed.CreatedAt := StrToInt64Def(Value, DateTimeToUnix(Now));
+                        if (Parsed.CreatedAt < MIN_IMPORT_UNIX_TS) or (Parsed.CreatedAt > MAX_IMPORT_UNIX_TS) then
+                            Parsed.CreatedAt := DateTimeToUnix(Now);
+                    end
+                    else if Key = 'updated_at' then
+                    begin
+                        Parsed.UpdatedAt := StrToInt64Def(Value, DateTimeToUnix(Now));
+                        if (Parsed.UpdatedAt < MIN_IMPORT_UNIX_TS) or (Parsed.UpdatedAt > MAX_IMPORT_UNIX_TS) then
+                            Parsed.UpdatedAt := DateTimeToUnix(Now);
+                    end;
                 end;
             end;
         end;

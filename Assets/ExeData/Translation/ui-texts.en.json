@@ -1176,7 +1176,9 @@
       "FilterReset": "Filter reset.",
       "InvalidIdError": "Invalid identifier for the tag.",
       "EmptyNameError": "Tag name cannot be empty.",
-      "DuplicateNameError": "Tag with name \"%s\" already exists."
+      "DuplicateNameError": "Tag with name \"%s\" already exists.",
+      "MaxSnippetTagsReached": "A snippet can have at most %d tags.",
+      "NameTooLong": "Tag name cannot be longer than %d characters."
     },
     "User": {
       "InvalidIdError": "Invalid user identifier"
