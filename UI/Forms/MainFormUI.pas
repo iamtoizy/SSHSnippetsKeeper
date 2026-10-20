@@ -137,6 +137,22 @@ type
         actSyncDatabase: TAction;
         actRunSnippet: TAction;
         actClearTagFilter: TAction;
+        actToggleFavorite: TAction;
+        actFavMoveTop: TAction;
+        actFavMoveUp: TAction;
+        actFavMoveDown: TAction;
+        actFavMoveEnd: TAction;
+        actFavSlot1: TAction;
+        actFavSlot2: TAction;
+        actFavSlot3: TAction;
+        actFavSlot4: TAction;
+        actFavSlot5: TAction;
+        actFavSlot6: TAction;
+        actFavSlot7: TAction;
+        actFavSlot8: TAction;
+        actFavSlot9: TAction;
+        actFavSlot0: TAction;
+        puFavMove: TMenuItem;
         tmrAutoSync: TTimer;
         procedure actAddCategoryExecute(Sender: TObject);
         procedure actAddSnippetExecute(Sender: TObject);
@@ -161,6 +177,14 @@ type
         procedure actRunSnippetExecute(Sender: TObject);
         procedure actSearchExecute(Sender: TObject);
         procedure actSettingsExecute(Sender: TObject);
+        procedure actToggleFavoriteExecute(Sender: TObject);
+        procedure actFavMoveTopExecute(Sender: TObject);
+        procedure actFavMoveUpExecute(Sender: TObject);
+        procedure actFavMoveDownExecute(Sender: TObject);
+        procedure actFavMoveEndExecute(Sender: TObject);
+        procedure actFavSlotExecute(Sender: TObject);
+        procedure lvSnippetsDragOver(Sender, Source: TObject; X, Y: Integer; State: TDragState; var Accept: Boolean);
+        procedure lvSnippetsDragDrop(Sender, Source: TObject; X, Y: Integer);
         procedure bManageWorkspacesClick(Sender: TObject);
         procedure cbUserChange(Sender: TObject);
         procedure tvCategoriesChange(Sender: TObject; Node: TTreeNode);
@@ -221,11 +245,16 @@ type
         procedure DoAddSnippet;
         procedure DoEditSnippet;
         procedure DoDeleteSnippet;
+        procedure DoToggleFavorite;
+        procedure DoMoveFavorite(Direction: TFavoriteMoveDirection);
+        procedure DoRunFavoriteSlot(Index: Integer);
+        procedure ReloadSnippetListKeepingSelection;
 
         // UI Helpers
         procedure SetUserFilter(UserID: Integer);
         procedure LoadUsersToComboBox;
         procedure UpdateMenuState;
+        procedure UpdateFavoriteMenuState;
         procedure RefreshCurrentSnippetList;
         procedure ReloadUI(PreserveCategoryID: Integer);
         procedure RefreshCaches;
@@ -542,6 +571,22 @@ begin
                 actDeleteTag.Enabled := False;
                 actClearTagFilter.Enabled := False;
 
+                actToggleFavorite.Enabled := False;
+                actFavMoveTop.Enabled := False;
+                actFavMoveUp.Enabled := False;
+                actFavMoveDown.Enabled := False;
+                actFavMoveEnd.Enabled := False;
+                actFavSlot1.Enabled := False;
+                actFavSlot2.Enabled := False;
+                actFavSlot3.Enabled := False;
+                actFavSlot4.Enabled := False;
+                actFavSlot5.Enabled := False;
+                actFavSlot6.Enabled := False;
+                actFavSlot7.Enabled := False;
+                actFavSlot8.Enabled := False;
+                actFavSlot9.Enabled := False;
+                actFavSlot0.Enabled := False;
+
                 // Очищаем списки
                 lvSnippets.Items.Clear;
                 lvTags.Items.Clear;
@@ -606,12 +651,55 @@ begin
     actEditSnippet.Enabled := (lvSnippets.Selected <> nil);
     actRunSnippet.Enabled := (lvSnippets.Selected <> nil);
 
+    // --- ИЗБРАННОЕ ---
+    UpdateFavoriteMenuState;
+
     // --- ТЕГИ ---
     actAddTag.Enabled := True; // Создать новый тег можно всегда
     actDeleteTag.Enabled := (lvTags.Selected <> nil);
     actEditTag.Enabled := (lvTags.Selected <> nil);
     // Пункт активен, пока висит фильтр по тегам
     actClearTagFilter.Enabled := Length(FTags.FilterTagIDs) > 0;
+end;
+
+procedure TMainForm.UpdateFavoriteMenuState;
+var
+    HasSelection, IsFav, InFavoritesView: Boolean;
+    Node: TTreeNode;
+begin
+    HasSelection := (lvSnippets.Selected <> nil) and Assigned(lvSnippets.Selected.Data);
+    IsFav := HasSelection and TSnippetViewData(lvSnippets.Selected.Data).IsFavorite;
+
+    Node := tvCategories.Selected;
+    InFavoritesView := (Node <> nil) and FCategoryTree.IsVirtualCategory(Node) and
+        (Integer(IntPtr(Node.Data)) = -3);
+
+    // В обычных списках - только добавить/убрать; в избранном - только убрать
+    actToggleFavorite.Visible := (not InFavoritesView) or IsFav;
+    actToggleFavorite.Enabled := HasSelection;
+
+    // Перестановка и перетаскивание имеют смысл только внутри избранного
+    puFavMove.Visible := InFavoritesView;
+    actFavMoveTop.Enabled := IsFav;
+    actFavMoveUp.Enabled := IsFav;
+    actFavMoveDown.Enabled := IsFav;
+    actFavMoveEnd.Enabled := IsFav;
+
+    if IsFav then
+        actToggleFavorite.Caption := TUIStateLoader.GetMessage('Actions.MainForm.Favorites.ToggleRemove')
+    else
+        actToggleFavorite.Caption := TUIStateLoader.GetMessage('Actions.MainForm.Favorites.ToggleAdd');
+
+    actFavSlot1.Enabled := True;
+    actFavSlot2.Enabled := True;
+    actFavSlot3.Enabled := True;
+    actFavSlot4.Enabled := True;
+    actFavSlot5.Enabled := True;
+    actFavSlot6.Enabled := True;
+    actFavSlot7.Enabled := True;
+    actFavSlot8.Enabled := True;
+    actFavSlot9.Enabled := True;
+    actFavSlot0.Enabled := True;
 end;
 
 procedure TMainForm.actClearTagFilterExecute(Sender: TObject);
@@ -676,6 +764,8 @@ begin
                 Snippets := AppContext.SnippetService.GetTopSnippets(FUserID, 10);
             -2:
                 Snippets := AppContext.SnippetService.GetRecentSnippets(FUserID, 10);
+            -3:
+                Snippets := AppContext.SnippetService.GetFavorites(FFilterUserID);
         else
             Snippets := [];
         end;
@@ -969,19 +1059,146 @@ begin
     end;
 end;
 
+procedure TMainForm.ReloadSnippetListKeepingSelection;
+var
+    SelID, I: Integer;
+begin
+    SelID := 0;
+    if (lvSnippets.Selected <> nil) and Assigned(lvSnippets.Selected.Data) then
+        SelID := TSnippetViewData(lvSnippets.Selected.Data).ID;
+
+    if Trim(ebSearch.Text) <> '' then
+        PerformSearchAsync(ebSearch.Text)
+    else
+        RefreshCurrentSnippetList;
+
+    if SelID > 0 then
+        for I := 0 to lvSnippets.Items.Count - 1 do
+            if Assigned(lvSnippets.Items[I].Data) and
+               (TSnippetViewData(lvSnippets.Items[I].Data).ID = SelID) then
+            begin
+                lvSnippets.Selected := lvSnippets.Items[I];
+                lvSnippets.ItemFocused := lvSnippets.Items[I];
+                Break;
+            end;
+
+    UpdateMenuState;
+    UpdateSnippetCount;
+end;
+
+procedure TMainForm.DoToggleFavorite;
+var
+    Item: TListItem;
+    ViewData: TSnippetViewData;
+begin
+    Item := lvSnippets.Selected;
+    if (Item = nil) or (not Assigned(Item.Data)) then
+        Exit;
+
+    ViewData := TSnippetViewData(Item.Data);
+
+    if ViewData.IsFavorite then
+        AppContext.SnippetService.RemoveFavorite(ViewData.ID, ViewData.UserID)
+    else
+        AppContext.SnippetService.AddFavorite(ViewData.ID, ViewData.UserID);
+
+    ReloadSnippetListKeepingSelection;
+end;
+
+procedure TMainForm.DoMoveFavorite(Direction: TFavoriteMoveDirection);
+var
+    Item: TListItem;
+    ViewData: TSnippetViewData;
+    ScopeUserID: Integer;
+begin
+    Item := lvSnippets.Selected;
+    if (Item = nil) or (not Assigned(Item.Data)) then
+        Exit;
+
+    ViewData := TSnippetViewData(Item.Data);
+    if not ViewData.IsFavorite then
+        Exit;
+
+    // Область перестановки совпадает с областью отображаемого списка
+    if FFilterUserID > 0 then
+        ScopeUserID := FFilterUserID
+    else
+        ScopeUserID := 0;
+
+    AppContext.SnippetService.MoveFavorite(ViewData.ID, ScopeUserID, Direction);
+    ReloadSnippetListKeepingSelection;
+end;
+
+procedure TMainForm.DoRunFavoriteSlot(Index: Integer);
+var
+    ScopeUserID: Integer;
+    Favorites: TArray<TSnippetDTO>;
+    Runner: TSnippetRunner;
+begin
+    if (not Assigned(AppContext.DatabaseManager)) or (not AppContext.DatabaseManager.IsConnected) then
+        Exit;
+
+    ScopeUserID := FFilterUserID;
+    Favorites := AppContext.SnippetService.GetFavorites(ScopeUserID);
+
+    if Index >= Length(Favorites) then
+        Exit;
+
+    Runner := TSnippetRunner.Create(Favorites[Index].UserID, AppContext);
+    try
+        Runner.ExecuteSnippet(Favorites[Index]);
+    finally
+        Runner.Free;
+    end;
+end;
+
 procedure TMainForm.FillSnippetListView(const Snippets: TArray<TSnippetDTO>);
 var
     Item: TListItem;
     Snippet: TSnippetDTO;
     ViewData: TSnippetViewData;
+    FavList: TArray<TSnippetDTO>;
+    FavPos: TDictionary<Integer, Integer>;
+    I, Pos: Integer;
+    Prefix: string;
+    IsFav: Boolean;
 begin
+    FavPos := nil;
+    if Assigned(AppContext.DatabaseManager) and AppContext.DatabaseManager.IsConnected then
+    begin
+        FavList := AppContext.SnippetService.GetFavorites(FFilterUserID);
+
+        FavPos := TDictionary<Integer, Integer>.Create;
+        for I := 0 to High(FavList) do
+            if not FavPos.ContainsKey(FavList[I].ID) then
+                FavPos.Add(FavList[I].ID, I);
+    end;
+
     lvSnippets.Items.BeginUpdate;
     try
         lvSnippets.Items.Clear;
         for Snippet in Snippets do
         begin
             Item := lvSnippets.Items.Add;
-            Item.Caption := Snippet.Title;
+
+            Prefix := '';
+            Pos := -1;
+            // TryGetValue объявлен с out-параметром: при неудаче Pos обнуляется,
+            // поэтому признак избранности берём строго из результата функции
+            if Assigned(FavPos) then
+                IsFav := FavPos.TryGetValue(Snippet.ID, Pos)
+            else
+                IsFav := False;
+
+            if IsFav then
+            begin
+                if Pos <= 9 then
+                    Prefix := #9733 + IntToStr((Pos + 1) mod 10) + ' '
+                else
+                    Prefix := #9733 + ' ';
+            end;
+
+            Item.Caption := Prefix + Snippet.Title;
             Item.SubItems.Add(DateTimeToStr(UnixToDateTime(Snippet.CreatedAt, False)));
             Item.StateIndex := 0;
 
@@ -997,10 +1214,16 @@ begin
             ViewData.Title := Snippet.Title;
             ViewData.Content := Snippet.Content;
             ViewData.Comment := Snippet.Comment;
+            ViewData.IsFavorite := IsFav;
+            if (Pos >= 0) and (Pos <= 9) then
+                ViewData.FavoriteSlot := Pos
+            else
+                ViewData.FavoriteSlot := -1;
             Item.Data := ViewData;
         end;
     finally
         lvSnippets.Items.EndUpdate;
+        FreeAndNil(FavPos);
     end;
     UpdateSnippetCount;
 end;
@@ -1037,7 +1260,14 @@ begin
     HitTest.pt := Point(X, Y);
     ListView_SubItemHitTest(lvSnippets.Handle, @HitTest);
     if HitTest.iItem >= 0 then
+    begin
+        // Перетаскивание избранного внутри списка
+        if (Button = mbLeft) and (not (ssDouble in Shift)) and
+           Assigned(lvSnippets.Items[HitTest.iItem].Data) and
+           TSnippetViewData(lvSnippets.Items[HitTest.iItem].Data).IsFavorite then
+            lvSnippets.BeginDrag(False, 8);
         Exit;
+    end;
 
     for I := 0 to lvSnippets.Items.Count - 1 do
     begin
@@ -1074,6 +1304,107 @@ begin
     finally
         Runner.Free;
     end;
+end;
+
+procedure TMainForm.actToggleFavoriteExecute(Sender: TObject);
+begin
+    DoToggleFavorite;
+end;
+
+procedure TMainForm.actFavMoveTopExecute(Sender: TObject);
+begin
+    DoMoveFavorite(fmTop);
+end;
+
+procedure TMainForm.actFavMoveUpExecute(Sender: TObject);
+begin
+    DoMoveFavorite(fmUp);
+end;
+
+procedure TMainForm.actFavMoveDownExecute(Sender: TObject);
+begin
+    DoMoveFavorite(fmDown);
+end;
+
+procedure TMainForm.actFavMoveEndExecute(Sender: TObject);
+begin
+    DoMoveFavorite(fmEnd);
+end;
+
+procedure TMainForm.actFavSlotExecute(Sender: TObject);
+begin
+    if Sender is TAction then
+        DoRunFavoriteSlot(TAction(Sender).Tag);
+end;
+
+procedure TMainForm.lvSnippetsDragOver(Sender, Source: TObject; X, Y: Integer; State: TDragState; var Accept: Boolean);
+var
+    Item, Selected: TListItem;
+begin
+    Accept := False;
+
+    if (Source <> lvSnippets) or (lvSnippets.Selected = nil) then
+        Exit;
+    if (not Assigned(AppContext.DatabaseManager)) or (not AppContext.DatabaseManager.IsConnected) then
+        Exit;
+
+    Selected := lvSnippets.Selected;
+    if (not Assigned(Selected.Data)) or (not TSnippetViewData(Selected.Data).IsFavorite) then
+        Exit;
+
+    Item := lvSnippets.GetItemAt(X, Y);
+    if (Item = nil) or (Item = Selected) or (not Assigned(Item.Data)) then
+        Exit;
+
+    Accept := TSnippetViewData(Item.Data).IsFavorite;
+end;
+
+procedure TMainForm.lvSnippetsDragDrop(Sender, Source: TObject; X, Y: Integer);
+var
+    Item, Selected: TListItem;
+    SrcData, DstData: TSnippetViewData;
+    FavList: TArray<TSnippetDTO>;
+    ScopeUserID, SrcIdx, DstIdx, NewPos: Integer;
+begin
+    Selected := lvSnippets.Selected;
+    if Selected = nil then
+        Exit;
+
+    Item := lvSnippets.GetItemAt(X, Y);
+    if (Item = nil) or (Item = Selected) then
+        Exit;
+
+    SrcData := TSnippetViewData(Selected.Data);
+    DstData := TSnippetViewData(Item.Data);
+    if (SrcData = nil) or (DstData = nil) then
+        Exit;
+    if (not SrcData.IsFavorite) or (not DstData.IsFavorite) then
+        Exit;
+
+    if FFilterUserID > 0 then
+        ScopeUserID := FFilterUserID
+    else
+        ScopeUserID := 0;
+
+    FavList := AppContext.SnippetService.GetFavorites(ScopeUserID);
+
+    SrcIdx := -1;
+    DstIdx := -1;
+    for var I := 0 to High(FavList) do
+    begin
+        if FavList[I].ID = SrcData.ID then SrcIdx := I;
+        if FavList[I].ID = DstData.ID then DstIdx := I;
+    end;
+
+    if (SrcIdx < 0) or (DstIdx < 0) then
+        Exit;
+
+    // После удаления источника вставка по индексу цели даёт:
+    // перетаскивание вверх -> выше цели, вниз -> ниже цели
+    NewPos := DstIdx;
+
+    AppContext.SnippetService.MoveFavoriteToPosition(SrcData.ID, ScopeUserID, NewPos);
+    ReloadSnippetListKeepingSelection;
 end;
 
 procedure TMainForm.lvTagsEdited(Sender: TObject; Item: TListItem; var S: string);

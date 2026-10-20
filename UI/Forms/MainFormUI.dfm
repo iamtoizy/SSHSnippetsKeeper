@@ -225,6 +225,8 @@ object MainForm: TMainForm
       OnClick = lvSnippetsClick
       OnDblClick = lvSnippetsDblClick
       OnDeletion = lvSnippetsDeletion
+      OnDragDrop = lvSnippetsDragDrop
+      OnDragOver = lvSnippetsDragOver
       OnInfoTip = lvSnippetsInfoTip
       OnMouseDown = lvSnippetsMouseDown
       OnContextPopup = lvSnippetsContextPopup
@@ -2716,6 +2718,27 @@ object MainForm: TMainForm
     object puDeleteSnippet: TMenuItem
       Action = actDeleteSnippet
     end
+    object puFavSep: TMenuItem
+      Caption = '-'
+    end
+    object puToggleFavorite: TMenuItem
+      Action = actToggleFavorite
+    end
+    object puFavMove: TMenuItem
+      Caption = 'puFavMove'
+      object puFavMoveTop: TMenuItem
+        Action = actFavMoveTop
+      end
+      object puFavMoveUp: TMenuItem
+        Action = actFavMoveUp
+      end
+      object puFavMoveDown: TMenuItem
+        Action = actFavMoveDown
+      end
+      object puFavMoveEnd: TMenuItem
+        Action = actFavMoveEnd
+      end
+    end
   end
   object pmTags: TPopupMenu
     Left = 680
@@ -2853,6 +2876,91 @@ object MainForm: TMainForm
       Category = 'Snippets'
       Caption = 'actClearTagFilter'
       OnExecute = actClearTagFilterExecute
+    end
+    object actToggleFavorite: TAction
+      Category = 'Favorites'
+      Caption = 'actToggleFavorite'
+      OnExecute = actToggleFavoriteExecute
+    end
+    object actFavMoveTop: TAction
+      Category = 'Favorites'
+      Caption = 'actFavMoveTop'
+      OnExecute = actFavMoveTopExecute
+    end
+    object actFavMoveUp: TAction
+      Category = 'Favorites'
+      Caption = 'actFavMoveUp'
+      OnExecute = actFavMoveUpExecute
+    end
+    object actFavMoveDown: TAction
+      Category = 'Favorites'
+      Caption = 'actFavMoveDown'
+      OnExecute = actFavMoveDownExecute
+    end
+    object actFavMoveEnd: TAction
+      Category = 'Favorites'
+      Caption = 'actFavMoveEnd'
+      OnExecute = actFavMoveEndExecute
+    end
+    object actFavSlot1: TAction
+      Tag = 0
+      Category = 'Favorites'
+      Caption = 'actFavSlot1'
+      OnExecute = actFavSlotExecute
+    end
+    object actFavSlot2: TAction
+      Tag = 1
+      Category = 'Favorites'
+      Caption = 'actFavSlot2'
+      OnExecute = actFavSlotExecute
+    end
+    object actFavSlot3: TAction
+      Tag = 2
+      Category = 'Favorites'
+      Caption = 'actFavSlot3'
+      OnExecute = actFavSlotExecute
+    end
+    object actFavSlot4: TAction
+      Tag = 3
+      Category = 'Favorites'
+      Caption = 'actFavSlot4'
+      OnExecute = actFavSlotExecute
+    end
+    object actFavSlot5: TAction
+      Tag = 4
+      Category = 'Favorites'
+      Caption = 'actFavSlot5'
+      OnExecute = actFavSlotExecute
+    end
+    object actFavSlot6: TAction
+      Tag = 5
+      Category = 'Favorites'
+      Caption = 'actFavSlot6'
+      OnExecute = actFavSlotExecute
+    end
+    object actFavSlot7: TAction
+      Tag = 6
+      Category = 'Favorites'
+      Caption = 'actFavSlot7'
+      OnExecute = actFavSlotExecute
+    end
+    object actFavSlot8: TAction
+      Tag = 7
+      Category = 'Favorites'
+      Caption = 'actFavSlot8'
+      OnExecute = actFavSlotExecute
+    end
+    object actFavSlot9: TAction
+      Tag = 8
+      Category = 'Favorites'
+      Caption = 'actFavSlot9'
+      OnExecute = actFavSlotExecute
+    end
+    object actFavSlot0: TAction
+      Tag = 9
+      Category = 'Favorites'
+      Caption = 'actFavSlot0'
+      OnExecute = actFavSlotExecute
     end
   end
   object tmrAutoSync: TTimer

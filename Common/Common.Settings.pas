@@ -296,6 +296,14 @@ begin
     FSettings.Hotkeys.PasswordGen.Key := Ord('G');
     FSettings.Hotkeys.PasswordGen.Enabled := True;
 
+    FSettings.Hotkeys.RepeatLast.Modifiers := MOD_ALT;
+    FSettings.Hotkeys.RepeatLast.Key := Ord('V');
+    FSettings.Hotkeys.RepeatLast.Enabled := True;
+
+    FSettings.Hotkeys.FavoriteSlots.Modifiers := MOD_ALT;
+    FSettings.Hotkeys.FavoriteSlots.Key := Ord('1');
+    FSettings.Hotkeys.FavoriteSlots.Enabled := True;
+
     // Инициализируем массивы-справочники
     InitDefaultAllowedApplications;
     InitDefaultAISettings;
@@ -360,6 +368,20 @@ begin
             FSettings.Hotkeys.PasswordGen.Modifiers := MOD_CONTROL or MOD_ALT;
             FSettings.Hotkeys.PasswordGen.Key := Ord('G');
             FSettings.Hotkeys.PasswordGen.Enabled := True;
+        end;
+
+        if FSettings.Hotkeys.RepeatLast.Key = 0 then
+        begin
+            FSettings.Hotkeys.RepeatLast.Modifiers := MOD_ALT;
+            FSettings.Hotkeys.RepeatLast.Key := Ord('V');
+            FSettings.Hotkeys.RepeatLast.Enabled := True;
+        end;
+
+        if FSettings.Hotkeys.FavoriteSlots.Modifiers = 0 then
+        begin
+            FSettings.Hotkeys.FavoriteSlots.Modifiers := MOD_ALT;
+            FSettings.Hotkeys.FavoriteSlots.Key := Ord('1');
+            FSettings.Hotkeys.FavoriteSlots.Enabled := True;
         end;
 
         // 3. Восстановление списков, если они оказались пустыми

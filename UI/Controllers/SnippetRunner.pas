@@ -20,10 +20,14 @@ type
         FAppContext: IAppContext;
         function SelectTargetWindow(out TargetWindow: TWindowMonitorInfo): Boolean;
         function BuildMacroContext(SnippetID: Integer; TargetHWND: HWND): TMacroContext;
+        function ValidateBeforeType(const Snippet: TSnippetDTO): Boolean;
+        procedure TypeIntoWindow(const Snippet: TSnippetDTO; TargetHWND: HWND);
+        procedure DoExecuteInWindow(const Snippet: TSnippetDTO; TargetHWND: HWND; RequireConfirmation: Boolean);
     public
         class var IsExecuting: Boolean;
         constructor Create(UserID: Integer; AppContext: IAppContext);
         procedure ExecuteSnippet(const Snippet: TSnippetDTO; RequireConfirmation: Boolean = True);
+        procedure ExecuteSnippetInWindow(const Snippet: TSnippetDTO; TargetHWND: HWND; RequireConfirmation: Boolean = False);
     end;
 
 implementation
@@ -131,12 +135,59 @@ begin
     Result := Context;
 end;
 
+function TSnippetRunner.ValidateBeforeType(const Snippet: TSnippetDTO): Boolean;
+var
+    WarningReason: string;
+begin
+    Result := False;
+
+    if Trim(Snippet.Content).IsEmpty then
+    begin
+        FAppContext.MessagesHandler.ShowInfo(
+            TUIStateLoader.GetMessage('Snippet.NoContentError')
+        );
+        Exit;
+    end;
+
+    // Анализ безопасности
+    if not Snippet.IsSecurityCheckIgnored then
+    begin
+        if FAppContext.SecurityScanner.HasSensitiveData(Snippet.Content, WarningReason) then
+        begin
+            // Если пользователь нажал "Нет" - прерываем.
+            if not FAppContext.MessagesHandler.AskWarning(
+                TUIStateLoader.GetMessage('Snippet.SensitiveDataFound', [WarningReason]),
+                TUIStateLoader.GetMessage('Common.Warning')
+            ) then Exit;
+        end;
+    end;
+
+    Result := True;
+end;
+
+procedure TSnippetRunner.TypeIntoWindow(const Snippet: TSnippetDTO; TargetHWND: HWND);
+var
+    Context: TMacroContext;
+begin
+    // Блокируем смену фокуса для нашего процесса (ASFW_ANY = 2)
+    // Это не позволит MainForm "выпрыгнуть" вперед при переключении
+    LockSetForegroundWindow(LSFW_LOCK);
+    try
+        Context := BuildMacroContext(Snippet.ID, TargetHWND);
+        SetForegroundWindow(TargetHWND);
+        var TickEnd := GetTickCount + 100;
+        while (GetForegroundWindow <> TargetHWND) and (GetTickCount < TickEnd) do
+            Sleep(5);
+        FAppContext.WindowHelper.SetTargetWindow(TargetHWND);
+        FAppContext.WindowHelper.TypeTextIntoWindowWithContext(Snippet.Content, Context);
+    finally
+        LockSetForegroundWindow(LSFW_UNLOCK);
+    end;
+end;
+
 procedure TSnippetRunner.ExecuteSnippet(const Snippet: TSnippetDTO; RequireConfirmation: Boolean = True);
 var
     TargetWindow: TWindowMonitorInfo;
-    Context: TMacroContext;
-    WarningReason: string;
-    WarningMsg: string;
 begin
     // Защита от повторного входа: диалоги ниже прокачивают очередь сообщений,
     // так что второй вызов возможен, пока предыдущий макрос ещё печатается
@@ -150,69 +201,68 @@ begin
 
     IsExecuting := True;
     try
-        if Trim(Snippet.Content).IsEmpty then
-        begin
-            FAppContext.MessagesHandler.ShowInfo(
-                TUIStateLoader.GetMessage('Snippet.NoContentError')
-            );
+        if not ValidateBeforeType(Snippet) then
             Exit;
-        end;
 
-        // Анализ безопасности
-        if not Snippet.IsSecurityCheckIgnored then
-        begin
-            if FAppContext.SecurityScanner.HasSensitiveData(Snippet.Content, WarningReason) then
-            begin
-                WarningMsg :=
-                    TUIStateLoader.GetMessage('Snippet.SensitiveDataFound', [WarningReason]);
-
-                // Если пользователь нажал "Нет" - прерываем.
-                if not FAppContext.MessagesHandler.AskWarning(
-                    WarningMsg,
-                    TUIStateLoader.GetMessage('Common.Warning')
-                ) then Exit;
-            end;
-        end;
-
-        // Выбор окна и подтверждение
+        // Выбор окна
         if not SelectTargetWindow(TargetWindow) then
             Exit;
 
-        if not IsWindow(TargetWindow.HWND) then
-        begin
-            FAppContext.MessagesHandler.ShowInfo(
-                TUIStateLoader.GetMessage('Terminal.WindowNoLongerExists')
-            );
-            Exit;
-        end;
-
-        if RequireConfirmation then
-        begin
-            // Используем наш обычный диалог подтверждения
-            if not FAppContext.MessagesHandler.AskConfirmation(
-                TUIStateLoader.GetMessage('Terminal.ConfirmTarget', [TargetWindow.WindowTitle]),
-                TUIStateLoader.GetMessage('Common.Confirmation'),
-                MB_YESNO or MB_ICONQUESTION
-            ) then Exit;
-        end;
-
-        // Блокируем смену фокуса для нашего процесса (ASFW_ANY = 2)
-        // Это не позволит MainForm "выпрыгнуть" вперед при переключении
-        LockSetForegroundWindow(LSFW_LOCK);
-        try
-            Context := BuildMacroContext(Snippet.ID, TargetWindow.HWND);
-            SetForegroundWindow(TargetWindow.HWND);
-            var TickEnd := GetTickCount + 100;
-            while (GetForegroundWindow <> TargetWindow.HWND) and (GetTickCount < TickEnd) do
-                Sleep(5);
-            FAppContext.WindowHelper.SetTargetWindow(TargetWindow.HWND);
-            FAppContext.WindowHelper.TypeTextIntoWindowWithContext(Snippet.Content, Context);
-        finally
-            LockSetForegroundWindow(LSFW_UNLOCK);
-        end;
+        DoExecuteInWindow(Snippet, TargetWindow.HWND, RequireConfirmation);
     finally
         IsExecuting := False;
     end;
+end;
+
+procedure TSnippetRunner.ExecuteSnippetInWindow(const Snippet: TSnippetDTO; TargetHWND: HWND; RequireConfirmation: Boolean = False);
+begin
+    // Защита от повторного входа: см. ExecuteSnippet
+    if IsExecuting then
+    begin
+        {$IFDEF DEBUG}
+        OutputDebugString('[SnippetRunner] ExecuteSnippetInWindow re-entry blocked');
+        {$ENDIF}
+        Exit;
+    end;
+
+    IsExecuting := True;
+    try
+        DoExecuteInWindow(Snippet, TargetHWND, RequireConfirmation);
+    finally
+        IsExecuting := False;
+    end;
+end;
+
+procedure TSnippetRunner.DoExecuteInWindow(const Snippet: TSnippetDTO; TargetHWND: HWND; RequireConfirmation: Boolean);
+var
+    Title: string;
+    Len: Integer;
+begin
+    if not ValidateBeforeType(Snippet) then
+        Exit;
+
+    if not IsWindow(TargetHWND) then
+    begin
+        FAppContext.MessagesHandler.ShowInfo(
+            TUIStateLoader.GetMessage('Terminal.WindowNoLongerExists')
+        );
+        Exit;
+    end;
+
+    if RequireConfirmation then
+    begin
+        SetLength(Title, 512);
+        Len := GetWindowText(TargetHWND, PChar(Title), 512);
+        SetLength(Title, Len);
+
+        if not FAppContext.MessagesHandler.AskConfirmation(
+            TUIStateLoader.GetMessage('Terminal.ConfirmTarget', [Title]),
+            TUIStateLoader.GetMessage('Common.Confirmation'),
+            MB_YESNO or MB_ICONQUESTION
+        ) then Exit;
+    end;
+
+    TypeIntoWindow(Snippet, TargetHWND);
 end;
 
 end.

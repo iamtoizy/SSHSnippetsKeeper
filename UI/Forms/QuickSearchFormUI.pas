@@ -612,7 +612,12 @@ begin
     lvQuickResults.Items.BeginUpdate;
     try
         lvQuickResults.Items.Clear;
-        Snippets := FSnippetService.SearchSnippets(ebQuickSearch.Text, rbFTS.Checked, SelectedUserID);
+
+        if Trim(ebQuickSearch.Text) = '' then
+            // Пустой запрос: показываем избранное (первые 10 - горячие слоты)
+            Snippets := FSnippetService.GetFavorites(SelectedUserID)
+        else
+            Snippets := FSnippetService.SearchSnippets(ebQuickSearch.Text, rbFTS.Checked, SelectedUserID);
 
         for Snip in Snippets do
         begin
@@ -677,11 +682,34 @@ begin
 end;
 
 procedure TQuickSearchForm.lvQuickResultsKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+var
+    SlotIndex: Integer;
 begin
     if Key = VK_RETURN then
     begin
         lvQuickResultsDblClick(lvQuickResults);
         Key := 0;
+        Exit;
+    end;
+
+    // Цифровые слоты 1..9, 0 работают в списке при пустом запросе (режим избранного)
+    if (Shift = []) and (Trim(ebQuickSearch.Text) = '') then
+    begin
+        SlotIndex := -1;
+        case Key of
+            Ord('1')..Ord('9'): SlotIndex := Key - Ord('1');
+            Ord('0'):           SlotIndex := 9;
+            VK_NUMPAD1..VK_NUMPAD9: SlotIndex := Key - VK_NUMPAD1;
+            VK_NUMPAD0:         SlotIndex := 9;
+        end;
+
+        if (SlotIndex >= 0) and (SlotIndex < lvQuickResults.Items.Count) then
+        begin
+            lvQuickResults.Selected := lvQuickResults.Items[SlotIndex];
+            lvQuickResults.ItemFocused := lvQuickResults.Items[SlotIndex];
+            lvQuickResultsDblClick(lvQuickResults);
+            Key := 0;
+        end;
     end;
 end;
 

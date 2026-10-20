@@ -94,6 +94,8 @@ type
     THotkeySettings = record
         QuickSearch: THotkeyConfig; // HUD Быстрого поиска (Alt + Q)
         PasswordGen: THotkeyConfig; // Генератор паролей (Ctrl + Alt + G)
+        RepeatLast: THotkeyConfig;  // Повтор последнего сниппета (Alt + V)
+        FavoriteSlots: THotkeyConfig; // Слоты избранного 1..0: используются Modifiers и Enabled, Key игнорируется
     end;
 
     // В настройках храним только измененные юзером шорткаты

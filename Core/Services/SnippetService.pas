@@ -47,6 +47,13 @@ type
         function SearchSnippets(const Query: string; UseFTS: Boolean; UserID: Integer = 0): TArray<TSnippetDTO>;
 
         procedure RecordRun(SnippetID, UserID: Integer);
+        function GetFavorites(UserID: Integer): TArray<TSnippetDTO>;
+        function IsFavorite(SnippetID, UserID: Integer): Boolean;
+        procedure AddFavorite(SnippetID, UserID: Integer);
+        procedure RemoveFavorite(SnippetID, UserID: Integer);
+        procedure MoveFavorite(SnippetID, UserID: Integer; Direction: TFavoriteMoveDirection);
+        procedure MoveFavoriteToPosition(SnippetID, UserID, NewPosition: Integer);
+        function GetLastRunSnippetID(UserID: Integer): Integer;
     end;
 
 implementation
@@ -193,6 +200,79 @@ end;
 procedure TSnippetService.RecordRun(SnippetID, UserID: Integer);
 begin
     FSnippetRepo.RecordRun(SnippetID, UserID);
+end;
+
+function TSnippetService.GetFavorites(UserID: Integer): TArray<TSnippetDTO>;
+begin
+    Result := FSnippetRepo.GetFavorites(UserID);
+end;
+
+function TSnippetService.IsFavorite(SnippetID, UserID: Integer): Boolean;
+begin
+    Result := FSnippetRepo.IsFavorite(SnippetID, UserID);
+end;
+
+procedure TSnippetService.AddFavorite(SnippetID, UserID: Integer);
+begin
+    if SnippetID <= 0 then raise ESnippetValidationException.Create(
+        TUIStateLoader.GetMessage('Snippet.InvalidIdError')
+    );
+    FSnippetRepo.AddFavorite(SnippetID, UserID);
+end;
+
+procedure TSnippetService.RemoveFavorite(SnippetID, UserID: Integer);
+begin
+    if SnippetID <= 0 then raise ESnippetValidationException.Create(
+        TUIStateLoader.GetMessage('Snippet.InvalidIdError')
+    );
+    FSnippetRepo.RemoveFavorite(SnippetID, UserID);
+end;
+
+procedure TSnippetService.MoveFavorite(SnippetID, UserID: Integer; Direction: TFavoriteMoveDirection);
+var
+    Order: TArray<Integer>;
+    I, Idx, NewPos: Integer;
+begin
+    if SnippetID <= 0 then raise ESnippetValidationException.Create(
+        TUIStateLoader.GetMessage('Snippet.InvalidIdError')
+    );
+
+    Order := FSnippetRepo.GetFavoriteOrder(UserID);
+
+    Idx := -1;
+    for I := 0 to High(Order) do
+        if Order[I] = SnippetID then
+        begin
+            Idx := I;
+            Break;
+        end;
+
+    if Idx < 0 then
+        Exit;
+
+    case Direction of
+        fmTop:  NewPos := 0;
+        fmUp:   NewPos := Idx - 1;
+        fmDown: NewPos := Idx + 1;
+        fmEnd:  NewPos := High(Order);
+    else
+        NewPos := Idx;
+    end;
+
+    FSnippetRepo.MoveFavorite(SnippetID, UserID, NewPos);
+end;
+
+function TSnippetService.GetLastRunSnippetID(UserID: Integer): Integer;
+begin
+    Result := FSnippetRepo.GetLastRunSnippetID(UserID);
+end;
+
+procedure TSnippetService.MoveFavoriteToPosition(SnippetID, UserID, NewPosition: Integer);
+begin
+    if SnippetID <= 0 then raise ESnippetValidationException.Create(
+        TUIStateLoader.GetMessage('Snippet.InvalidIdError')
+    );
+    FSnippetRepo.MoveFavorite(SnippetID, UserID, NewPosition);
 end;
 
 end.

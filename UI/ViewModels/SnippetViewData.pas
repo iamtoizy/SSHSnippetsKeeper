@@ -10,6 +10,8 @@ type
         Title: string;
         Content: string;
         Comment: string;
+        IsFavorite: Boolean;
+        FavoriteSlot: Integer; // 0..8 = слоты клавиш 1..9, 9 = клавиша 0, -1 = вне слотов
     end;
 
 implementation

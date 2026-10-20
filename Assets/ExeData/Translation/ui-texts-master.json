@@ -98,6 +98,24 @@
     "puDeleteSnippet": {
       "Caption": "Удалить"
     },
+    "puToggleFavorite": {
+      "Caption": "Добавить в избранное"
+    },
+    "puFavMove": {
+      "Caption": "Переместить в избранном"
+    },
+    "puFavMoveTop": {
+      "Caption": "В начало"
+    },
+    "puFavMoveUp": {
+      "Caption": "Вверх"
+    },
+    "puFavMoveDown": {
+      "Caption": "Вниз"
+    },
+    "puFavMoveEnd": {
+      "Caption": "В конец"
+    },
     "puAddTag": {
       "Caption": "Добавить"
     },
@@ -800,6 +818,12 @@
     "chkEnablePassGen": {
       "Caption": "Глобальный вызов \"Генератора паролей\""
     },
+    "chkEnableRepeatLast": {
+      "Caption": "Повтор последнего сниппета (используется последний запуск)"
+    },
+    "chkEnableFavSlots": {
+      "Caption": "Слоты избранного 1..0 (цифра подставляется автоматически, важны только модификаторы)"
+    },
     "gbAppHotkeys": {
       "Caption": "Локальные горячие клавиши"
     },
@@ -883,7 +907,8 @@
           "Expanded": "В фокусе строки поиска печатай запрос, он будет применён автоматически.<br><br>Управление тегами (глобально):<br><code>CTRL+ALT+A</code> - Добавить тег<br><code>CTRL+ALT+E</code> - Редактировать тег<br><code>CTRL+ALT+D</code> - Удалить тег"
         },
         "FrequentlyUsed": "Часто используемые",
-        "Recent": "Недавние"
+        "Recent": "Недавние",
+        "Favorites": "Избранное"
       },
       "AddEditSnippet": {
         "mContent": {
@@ -1027,6 +1052,26 @@
         "Other": {
           "Caption": "Прочее",
           "Settings": "Настройки"
+        },
+        "Favorites": {
+          "Caption": "Избранное",
+          "Toggle": "Добавить в избранное",
+          "ToggleAdd": "Добавить в избранное",
+          "ToggleRemove": "Убрать из избранного",
+          "MoveTop": "В начало",
+          "MoveUp": "Вверх",
+          "MoveDown": "Вниз",
+          "MoveEnd": "В конец",
+          "Slot1": "Слот 1",
+          "Slot2": "Слот 2",
+          "Slot3": "Слот 3",
+          "Slot4": "Слот 4",
+          "Slot5": "Слот 5",
+          "Slot6": "Слот 6",
+          "Slot7": "Слот 7",
+          "Slot8": "Слот 8",
+          "Slot9": "Слот 9",
+          "Slot0": "Слот 0"
         }
       },
       "AddEditSnippetForm": {
@@ -1057,7 +1102,9 @@
         "actEditWorkspace": "Изменить пространство"
       },
       "GlobalQuickSearch": "Панель быстрого поиска",
-      "GlobalPasswordGen": "Генератор паролей"
+      "GlobalPasswordGen": "Генератор паролей",
+      "GlobalRepeatLast": "Повтор последнего сниппета",
+      "FavoriteSlot": "Слот избранного"
     },
     "Common": {
       "CopyTooltip": "Кликните, чтобы скопировать",

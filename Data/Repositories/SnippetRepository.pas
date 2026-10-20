@@ -34,6 +34,13 @@ type
         function GetRecentSnippets(UserID: Integer; Limit: Integer): TArray<TSnippetDTO>;
         function GetTopSnippets(UserID: Integer; Limit: Integer): TArray<TSnippetDTO>;
         function GetSnippetCountByCategory(UserID: Integer): TDictionary<Integer, Integer>;
+        function GetFavorites(UserID: Integer): TArray<TSnippetDTO>;
+        function GetFavoriteOrder(UserID: Integer): TArray<Integer>;
+        function IsFavorite(SnippetID, UserID: Integer): Boolean;
+        procedure AddFavorite(SnippetID, UserID: Integer);
+        procedure RemoveFavorite(SnippetID, UserID: Integer);
+        procedure MoveFavorite(SnippetID, UserID, NewPosition: Integer);
+        function GetLastRunSnippetID(UserID: Integer): Integer;
     end;
 
 implementation
@@ -113,6 +120,29 @@ const
         'GROUP BY s.id ' +
         'HAVING COUNT(DISTINCT st.tag_id) = %d ' +
         'ORDER BY s.title';
+
+    SQL_GET_FAVORITES_ALL =
+        'SELECT s.id, s.user_id, s.title, s.content, s.comment, s.category_id, s.created_at, s.updated_at ' +
+        'FROM snippet_favorites f ' +
+        'JOIN snippets s ON s.id = f.snippet_id ' +
+        'ORDER BY f.user_id, f.sort_order, f.created_at';
+    SQL_GET_FAVORITES_BY_USER =
+        'SELECT s.id, s.user_id, s.title, s.content, s.comment, s.category_id, s.created_at, s.updated_at ' +
+        'FROM snippet_favorites f ' +
+        'JOIN snippets s ON s.id = f.snippet_id ' +
+        'WHERE f.user_id = ? ' +
+        'ORDER BY f.sort_order, f.created_at';
+    SQL_GET_FAVORITE_ORDER = 'SELECT snippet_id FROM snippet_favorites WHERE user_id = ? ORDER BY sort_order, created_at';
+    SQL_GET_FAVORITE_ORDER_ALL = 'SELECT snippet_id FROM snippet_favorites ORDER BY user_id, sort_order, created_at';
+    SQL_IS_FAVORITE = 'SELECT COUNT(*) FROM snippet_favorites WHERE user_id = ? AND snippet_id = ?';
+    SQL_ADD_FAVORITE =
+        'INSERT OR IGNORE INTO snippet_favorites (user_id, snippet_id, sort_order) ' +
+        'VALUES (?, ?, (SELECT COALESCE(MAX(sort_order) + 1, 0) FROM snippet_favorites WHERE user_id = ?))';
+    SQL_REMOVE_FAVORITE = 'DELETE FROM snippet_favorites WHERE user_id = ? AND snippet_id = ?';
+    SQL_UPDATE_FAVORITE_ORDER = 'UPDATE snippet_favorites SET sort_order = ? WHERE snippet_id = ?';
+    SQL_GET_LAST_RUN =
+        'SELECT snippet_id FROM snippet_runs WHERE executed_by_user_id = ? ORDER BY run_at DESC, id DESC LIMIT 1';
+    SQL_GET_LAST_RUN_NO_USER = 'SELECT snippet_id FROM snippet_runs ORDER BY run_at DESC, id DESC LIMIT 1';
 
 function SanitizeFTS5(const Input: string): string;
 var
@@ -632,6 +662,134 @@ end;
 function TSnippetRepository.GetRecentSnippets(UserID, Limit: Integer): TArray<TSnippetDTO>;
 begin
     Result := InternalLoadSnippets(SQL_GET_RECENT_SNIPPETS, [UserID, Limit]);
+end;
+
+function TSnippetRepository.GetFavorites(UserID: Integer): TArray<TSnippetDTO>;
+begin
+    if UserID > 0 then
+        Result := InternalLoadSnippets(SQL_GET_FAVORITES_BY_USER, [UserID])
+    else
+        Result := InternalLoadSnippets(SQL_GET_FAVORITES_ALL, []);
+end;
+
+function TSnippetRepository.GetFavoriteOrder(UserID: Integer): TArray<Integer>;
+var
+    Q: TFDQuery;
+    List: TList<Integer>;
+begin
+    List := TList<Integer>.Create;
+    Q := CreateQuery;
+    try
+        if UserID > 0 then
+        begin
+            Q.SQL.Text := SQL_GET_FAVORITE_ORDER;
+            Q.Params[0].AsInteger := UserID;
+        end
+        else
+            Q.SQL.Text := SQL_GET_FAVORITE_ORDER_ALL;
+
+        Q.Open;
+        while not Q.Eof do
+        begin
+            List.Add(Q.Fields[0].AsInteger);
+            Q.Next;
+        end;
+        Result := List.ToArray;
+    finally
+        List.Free;
+        Q.Free;
+    end;
+end;
+
+function TSnippetRepository.IsFavorite(SnippetID, UserID: Integer): Boolean;
+begin
+    Result := ExecuteSQLScalar(SQL_IS_FAVORITE, [UserID, SnippetID]) > 0;
+end;
+
+procedure TSnippetRepository.AddFavorite(SnippetID, UserID: Integer);
+begin
+    if IsFavorite(SnippetID, UserID) then
+        Exit;
+    FConnection.ExecSQL(SQL_ADD_FAVORITE, [UserID, SnippetID, UserID]);
+end;
+
+procedure TSnippetRepository.RemoveFavorite(SnippetID, UserID: Integer);
+begin
+    FConnection.ExecSQL(SQL_REMOVE_FAVORITE, [UserID, SnippetID]);
+end;
+
+procedure TSnippetRepository.MoveFavorite(SnippetID, UserID, NewPosition: Integer);
+var
+    Q: TFDQuery;
+    Order: TList<Integer>;
+    I, OldIndex, Target: Integer;
+begin
+    Order := TList<Integer>.Create;
+    Q := CreateQuery;
+    try
+        if UserID > 0 then
+        begin
+            Q.SQL.Text := SQL_GET_FAVORITE_ORDER;
+            Q.Params[0].AsInteger := UserID;
+        end
+        else
+            Q.SQL.Text := SQL_GET_FAVORITE_ORDER_ALL;
+
+        Q.Open;
+        while not Q.Eof do
+        begin
+            Order.Add(Q.Fields[0].AsInteger);
+            Q.Next;
+        end;
+        Q.Close;
+
+        OldIndex := Order.IndexOf(SnippetID);
+        if OldIndex < 0 then
+            Exit;
+
+        Target := NewPosition;
+        if Target < 0 then
+            Target := 0;
+        if Target > Order.Count - 1 then
+            Target := Order.Count - 1;
+        if Target = OldIndex then
+            Exit;
+
+        Order.Delete(OldIndex);
+        Order.Insert(Target, SnippetID);
+
+        FConnection.StartTransaction;
+        try
+            Q.SQL.Text := SQL_UPDATE_FAVORITE_ORDER;
+            for I := 0 to Order.Count - 1 do
+            begin
+                Q.Params[0].AsInteger := I;
+                Q.Params[1].AsInteger := Order[I];
+                Q.ExecSQL;
+            end;
+            FConnection.Commit;
+        except
+            FConnection.Rollback;
+            raise;
+        end;
+    finally
+        Q.Free;
+        Order.Free;
+    end;
+end;
+
+function TSnippetRepository.GetLastRunSnippetID(UserID: Integer): Integer;
+var
+    V: Variant;
+begin
+    Result := 0;
+    if UserID > 0 then
+        V := ExecuteSQLScalar(SQL_GET_LAST_RUN, [UserID])
+    else
+        V := ExecuteSQLScalar(SQL_GET_LAST_RUN_NO_USER, []);
+
+    if (not VarIsNull(V)) and (not VarIsEmpty(V)) then
+        Result := Integer(V);
 end;
 
 end.

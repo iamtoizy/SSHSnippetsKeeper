@@ -12,6 +12,9 @@ uses
     ;
 
 type
+    // Направление перемещения внутри избранного
+    TFavoriteMoveDirection = (fmTop, fmUp, fmDown, fmEnd);
+
     // Сервисы
     ISnippetService = interface
         ['{A445FA2B-005B-4CEF-937C-C9A8413D46E6}']
@@ -27,6 +30,13 @@ type
         function GetRecentSnippets(UserID: Integer; Count: Integer): TArray<TSnippetDTO>;
         function SearchSnippets(const Query: string; UseFTS: Boolean; UserID: Integer = 0): TArray<TSnippetDTO>;
         procedure RecordRun(SnippetID, UserID: Integer);
+        function GetFavorites(UserID: Integer): TArray<TSnippetDTO>;
+        function IsFavorite(SnippetID, UserID: Integer): Boolean;
+        procedure AddFavorite(SnippetID, UserID: Integer);
+        procedure RemoveFavorite(SnippetID, UserID: Integer);
+        procedure MoveFavorite(SnippetID, UserID: Integer; Direction: TFavoriteMoveDirection);
+        procedure MoveFavoriteToPosition(SnippetID, UserID, NewPosition: Integer);
+        function GetLastRunSnippetID(UserID: Integer): Integer;
     end;
 
     ICategoryService = interface

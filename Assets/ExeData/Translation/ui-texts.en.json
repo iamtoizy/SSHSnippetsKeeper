@@ -98,6 +98,24 @@
     "puDeleteSnippet": {
       "Caption": "Delete"
     },
+    "puToggleFavorite": {
+      "Caption": "Add to favorites"
+    },
+    "puFavMove": {
+      "Caption": "Move in favorites"
+    },
+    "puFavMoveTop": {
+      "Caption": "To top"
+    },
+    "puFavMoveUp": {
+      "Caption": "Up"
+    },
+    "puFavMoveDown": {
+      "Caption": "Down"
+    },
+    "puFavMoveEnd": {
+      "Caption": "To end"
+    },
     "puAddTag": {
       "Caption": "Add"
     },
@@ -727,6 +745,12 @@
     "chkEnablePassGen": {
       "Caption": "Global call of \"Password Generator\""
     },
+    "chkEnableRepeatLast": {
+      "Caption": "Repeat last snippet (uses most recent run)"
+    },
+    "chkEnableFavSlots": {
+      "Caption": "Favorite slots 1..0 (digit is substituted automatically, only modifiers matter)"
+    },
     "gbAppHotkeys": {
       "Caption": "Local Hotkeys"
     },
@@ -810,7 +834,8 @@
           "Expanded": "Type a query while the search bar is focused, and it will be applied automatically.<br><br>Tag Management (Global):<br><code>CTRL+ALT+A</code> - Add tag<br><code>CTRL+ALT+E</code> - Edit tag<br><code>CTRL+ALT+D</code> - Delete tag"
         },
         "FrequentlyUsed": "Frequently Used",
-        "Recent": "Recent"
+        "Recent": "Recent",
+        "Favorites": "Favorites"
       },
       "AddEditSnippet": {
         "mContent": {
@@ -954,6 +979,26 @@
         "Other": {
           "Caption": "Other",
           "Settings": "Program Settings"
+        },
+        "Favorites": {
+          "Caption": "Favorites",
+          "Toggle": "Add to favorites",
+          "ToggleAdd": "Add to favorites",
+          "ToggleRemove": "Remove from favorites",
+          "MoveTop": "To top",
+          "MoveUp": "Up",
+          "MoveDown": "Down",
+          "MoveEnd": "To end",
+          "Slot1": "Slot 1",
+          "Slot2": "Slot 2",
+          "Slot3": "Slot 3",
+          "Slot4": "Slot 4",
+          "Slot5": "Slot 5",
+          "Slot6": "Slot 6",
+          "Slot7": "Slot 7",
+          "Slot8": "Slot 8",
+          "Slot9": "Slot 9",
+          "Slot0": "Slot 0"
         }
       },
       "AddEditSnippetForm": {
@@ -984,7 +1029,9 @@
         "actEditWorkspace": "Edit workspace"
       },
       "GlobalQuickSearch": "Quick Search Panel",
-      "GlobalPasswordGen": "Password Generator"
+      "GlobalPasswordGen": "Password Generator",
+      "GlobalRepeatLast": "Repeat Last Snippet",
+      "FavoriteSlot": "Favorite Slot"
     },
     "Common": {
       "CopyTooltip": "Click to copy",

@@ -40,6 +40,10 @@ type
         chkEnableQuickSearch: TCheckBox;
         hkPassGen: THotKey;
         chkEnablePassGen: TCheckBox;
+        hkRepeatLast: THotKey;
+        chkEnableRepeatLast: TCheckBox;
+        hkFavSlots: THotKey;
+        chkEnableFavSlots: TCheckBox;
         gbAppHotkeys: TGroupBox;
         ebSearchHotkeys: TEdit;
         lvHotkeys: TListView;
@@ -156,6 +160,12 @@ begin
 
     Win32HotkeyToVCL(Setts.Hotkeys.PasswordGen, hkPassGen);
     chkEnablePassGen.Checked := Setts.Hotkeys.PasswordGen.Enabled;
+
+    Win32HotkeyToVCL(Setts.Hotkeys.RepeatLast, hkRepeatLast);
+    chkEnableRepeatLast.Checked := Setts.Hotkeys.RepeatLast.Enabled;
+
+    Win32HotkeyToVCL(Setts.Hotkeys.FavoriteSlots, hkFavSlots);
+    chkEnableFavSlots.Checked := Setts.Hotkeys.FavoriteSlots.Enabled;
 
     // --- Блок синхронизации Markdown ---
     if Setts.SyncDirectory.IsEmpty then
@@ -507,6 +517,8 @@ begin
 
     Setts.Hotkeys.QuickSearch := VCLHotkeyToWin32(hkQuickSearch, chkEnableQuickSearch.Checked);
     Setts.Hotkeys.PasswordGen := VCLHotkeyToWin32(hkPassGen, chkEnablePassGen.Checked);
+    Setts.Hotkeys.RepeatLast := VCLHotkeyToWin32(hkRepeatLast, chkEnableRepeatLast.Checked);
+    Setts.Hotkeys.FavoriteSlots := VCLHotkeyToWin32(hkFavSlots, chkEnableFavSlots.Checked);
 
     // --- Сохраняем настройки синхронизации ---
     Setts.SyncDirectory := Trim(ledMarkdownPath.Text);
@@ -592,6 +604,10 @@ begin
             .Append(chkEnableQuickSearch.Checked).Append('|')
             .Append(hkPassGen.HotKey).Append('|')
             .Append(chkEnablePassGen.Checked).Append('|')
+            .Append(hkRepeatLast.HotKey).Append('|')
+            .Append(chkEnableRepeatLast.Checked).Append('|')
+            .Append(hkFavSlots.HotKey).Append('|')
+            .Append(chkEnableFavSlots.Checked).Append('|')
             .Append(ledMarkdownPath.Text).Append('|')
             .Append(cbSyncOnStart.Checked).Append('|')
             .Append(cbSyncOnExit.Checked).Append('|')

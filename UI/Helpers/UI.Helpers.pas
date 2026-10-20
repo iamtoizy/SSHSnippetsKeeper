@@ -192,6 +192,17 @@ begin
         TreeView.Items.Clear;
 
         // 1. Виртуальные узлы
+        // AddObjectFirst: «Избранное» оказывается самым верхним узлом
+        Node := TreeView.Items.AddObjectFirst(
+            nil,
+            TUIStateLoader.GetMessage('Help.MainForm.Favorites'),
+            Pointer(IntPtr(-3))
+        );
+        Node.ImageIndex := 1;
+        Node.SelectedIndex := 1;
+        if SelectID = -3 then
+            Node.Selected := True;
+
         Node := TreeView.Items.AddObjectFirst(
             nil,
             TUIStateLoader.GetMessage('Help.MainForm.FrequentlyUsed'),

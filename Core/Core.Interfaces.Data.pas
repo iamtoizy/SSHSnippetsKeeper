@@ -36,6 +36,13 @@ type
         function SearchByMaskFTS(const Mask: string; UserID: Integer = 0): TArray<TSnippetDTO>;
         function SearchByMaskSimple(const Mask: string; UserID: Integer = 0): TArray<TSnippetDTO>;
         procedure RecordRun(SnippetID, UserID: Integer);
+        function GetFavorites(UserID: Integer): TArray<TSnippetDTO>;
+        function GetFavoriteOrder(UserID: Integer): TArray<Integer>;
+        function IsFavorite(SnippetID, UserID: Integer): Boolean;
+        procedure AddFavorite(SnippetID, UserID: Integer);
+        procedure RemoveFavorite(SnippetID, UserID: Integer);
+        procedure MoveFavorite(SnippetID, UserID, NewPosition: Integer);
+        function GetLastRunSnippetID(UserID: Integer): Integer;
     end;
 
     ICategoryRepository = interface

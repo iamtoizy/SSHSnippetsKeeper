@@ -107,6 +107,23 @@ begin
 
     // --- ПРОЧЕЕ ---
     RegisterAction('TMainForm.actSettings', 'Actions.MainForm.Other.Settings', 'Actions.MainForm.Other.Caption', 'Ctrl+Alt+P');
+
+    // --- БЛОК ИЗБРАННОГО ---
+    RegisterAction('TMainForm.actToggleFavorite', 'Actions.MainForm.Favorites.Toggle',   'Actions.MainForm.Favorites.Caption', 'Ctrl+Alt+F');
+    RegisterAction('TMainForm.actFavMoveTop',     'Actions.MainForm.Favorites.MoveTop',  'Actions.MainForm.Favorites.Caption', 'Ctrl+Alt+Home');
+    RegisterAction('TMainForm.actFavMoveUp',      'Actions.MainForm.Favorites.MoveUp',   'Actions.MainForm.Favorites.Caption', 'Ctrl+Alt+Up');
+    RegisterAction('TMainForm.actFavMoveDown',    'Actions.MainForm.Favorites.MoveDown', 'Actions.MainForm.Favorites.Caption', 'Ctrl+Alt+Down');
+    RegisterAction('TMainForm.actFavMoveEnd',     'Actions.MainForm.Favorites.MoveEnd',  'Actions.MainForm.Favorites.Caption', 'Ctrl+Alt+End');
+    RegisterAction('TMainForm.actFavSlot1', 'Actions.MainForm.Favorites.Slot1', 'Actions.MainForm.Favorites.Caption', 'Alt+1');
+    RegisterAction('TMainForm.actFavSlot2', 'Actions.MainForm.Favorites.Slot2', 'Actions.MainForm.Favorites.Caption', 'Alt+2');
+    RegisterAction('TMainForm.actFavSlot3', 'Actions.MainForm.Favorites.Slot3', 'Actions.MainForm.Favorites.Caption', 'Alt+3');
+    RegisterAction('TMainForm.actFavSlot4', 'Actions.MainForm.Favorites.Slot4', 'Actions.MainForm.Favorites.Caption', 'Alt+4');
+    RegisterAction('TMainForm.actFavSlot5', 'Actions.MainForm.Favorites.Slot5', 'Actions.MainForm.Favorites.Caption', 'Alt+5');
+    RegisterAction('TMainForm.actFavSlot6', 'Actions.MainForm.Favorites.Slot6', 'Actions.MainForm.Favorites.Caption', 'Alt+6');
+    RegisterAction('TMainForm.actFavSlot7', 'Actions.MainForm.Favorites.Slot7', 'Actions.MainForm.Favorites.Caption', 'Alt+7');
+    RegisterAction('TMainForm.actFavSlot8', 'Actions.MainForm.Favorites.Slot8', 'Actions.MainForm.Favorites.Caption', 'Alt+8');
+    RegisterAction('TMainForm.actFavSlot9', 'Actions.MainForm.Favorites.Slot9', 'Actions.MainForm.Favorites.Caption', 'Alt+9');
+    RegisterAction('TMainForm.actFavSlot0', 'Actions.MainForm.Favorites.Slot0', 'Actions.MainForm.Favorites.Caption', 'Alt+0');
     //
     // TAddEditSnippetForm
     //

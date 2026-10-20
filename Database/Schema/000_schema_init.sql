@@ -2,7 +2,7 @@ PRAGMA foreign_keys = ON;
 PRAGMA journal_mode = WAL;
 PRAGMA synchronous = NORMAL;
 PRAGMA temp_store = MEMORY;
-PRAGMA user_version = 7; -- v7: Добавлено поле is_security_ignored для отключения сканера утилиты
+PRAGMA user_version = 8; -- v8: Добавлена таблица snippet_favorites (избранное и порядок для горячих слотов)
 PRAGMA recursive_triggers = OFF;
 PRAGMA busy_timeout = 5000;
 PRAGMA cache_size = -20000;
@@ -113,7 +113,22 @@ CREATE INDEX IF NOT EXISTS ix_runs_snippet_time ON snippet_runs(snippet_id, run_
 CREATE INDEX IF NOT EXISTS ix_snippet_runs_time ON snippet_runs(run_at DESC);
 
 ---------------------------------------------------------
--- 8. AGGREGATES (Статистика для быстрого доступа)
+-- 8. FAVORITES (Избранное: порядок для горячих слотов 1..0)
+---------------------------------------------------------
+CREATE TABLE IF NOT EXISTS snippet_favorites (
+  user_id    INTEGER NOT NULL,
+  snippet_id INTEGER NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+  PRIMARY KEY (user_id, snippet_id),
+  FOREIGN KEY (user_id)    REFERENCES users(id)    ON DELETE CASCADE,
+  FOREIGN KEY (snippet_id) REFERENCES snippets(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS ix_snippet_favorites_order ON snippet_favorites(user_id, sort_order);
+
+---------------------------------------------------------
+-- 9. AGGREGATES (Статистика для быстрого доступа)
 ---------------------------------------------------------
 CREATE TABLE IF NOT EXISTS snippet_stats (
   snippet_id   INTEGER PRIMARY KEY,
@@ -125,7 +140,7 @@ CREATE TABLE IF NOT EXISTS snippet_stats (
 CREATE INDEX IF NOT EXISTS ix_snippet_stats_order ON snippet_stats(exec_count DESC, last_exec_at DESC);
 
 ---------------------------------------------------------
--- 9. TRIGGERS (Бизнес-правила БД и синхронизация FTS)
+-- 10. TRIGGERS (Бизнес-правила БД и синхронизация FTS)
 ---------------------------------------------------------
 
 -- Запрет перемещения категорий в чужие workspace
@@ -265,7 +280,7 @@ BEGIN
 END;
 
 ---------------------------------------------------------
--- 10. VIEWS (Представления)
+-- 11. VIEWS (Представления)
 ---------------------------------------------------------
 CREATE VIEW IF NOT EXISTS v_snippet_top_overall AS
 SELECT s.id AS snippet_id,

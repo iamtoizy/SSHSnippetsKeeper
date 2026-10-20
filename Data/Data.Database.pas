@@ -45,6 +45,7 @@ type
     private
         procedure InitializeDatabase(Filename: string);
         procedure ApplyPRAGMA;
+        procedure ApplySchemaMigrations;
         procedure FlushToDisk;
         function LoadSQLFromResource(const ResourceName: string): string;
     public
@@ -81,6 +82,7 @@ begin
     FDConnection.Connected := True;
 
     ApplyPRAGMA;
+    ApplySchemaMigrations;
 end;
 
 procedure TAppDatabase.InitializeDatabase(Filename: string);
@@ -140,6 +142,24 @@ begin
     FDConnection.ExecSQL('PRAGMA recursive_triggers = OFF;');
     FDConnection.ExecSQL('PRAGMA busy_timeout = 5000;');
     FDConnection.ExecSQL('PRAGMA cache_size = -20000;');
+end;
+
+procedure TAppDatabase.ApplySchemaMigrations;
+begin
+    FDScript.Connection := FDConnection;
+    FDScript.SQLScripts.Clear;
+
+    with FDScript.SQLScripts.Add do
+        SQL.Text := LoadSQLFromResource('SCHEMA_MIGRATE_SQL');
+
+    try
+        FDScript.ExecuteAll;
+    except
+        on E: Exception do
+            raise Exception.Create(
+                TUIStateLoader.GetMessage('SQLExecutionError', [E.Message])
+            );
+    end;
 end;
 
 procedure TAppDatabase.CloseDatabase;

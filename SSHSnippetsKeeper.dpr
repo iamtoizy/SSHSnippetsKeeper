@@ -1,6 +1,6 @@
 ﻿program SSHSnippetsKeeper;
 
-{$R '000_schema_init.res' 'Database\Schema\000_schema_init.rc'}
+{$R 'Resources\000_schema_init.res' 'Database\Schema\000_schema_init.rc'}
 {$R *.dres}
 
 {$IFDEF RELEASE}
