@@ -55,18 +55,18 @@ object MainForm: TMainForm
       Images = vilCategory
       Indent = 19
       ParentShowHint = False
+      PopupMenu = pmCategories
       ShowHint = False
       TabOrder = 0
       OnChange = tvCategoriesChange
       OnClick = tvCategoriesClick
+      OnContextPopup = tvCategoriesContextPopup
       OnDblClick = tvCategoriesDblClick
       OnDragDrop = tvCategoriesDragDrop
       OnDragOver = tvCategoriesDragOver
       OnEdited = tvCategoriesEdited
       OnEndDrag = tvCategoriesEndDrag
       OnMouseDown = tvCategoriesMouseDown
-      OnContextPopup = tvCategoriesContextPopup
-      PopupMenu = pmCategories
     end
   end
   object sbBottom: TStatusBar
@@ -102,6 +102,7 @@ object MainForm: TMainForm
     Alignment = taLeftJustify
     BevelOuter = bvLowered
     TabOrder = 2
+    ExplicitWidth = 624
     object spSearch: TSplitter
       Left = 598
       Top = 1
@@ -215,23 +216,24 @@ object MainForm: TMainForm
       HideSelection = False
       HotTrack = True
       HotTrackStyles = [htHandPoint, htUnderlineHot]
-      TileOptions.SubLineCount = 2
+      MultiSelect = True
       ReadOnly = True
+      RowSelect = True
       ParentFont = False
       ParentShowHint = False
+      PopupMenu = pmSnippets
       ShowHint = False
       SmallImages = vilSnippets
       TabOrder = 0
       ViewStyle = vsList
       OnClick = lvSnippetsClick
+      OnContextPopup = lvSnippetsContextPopup
       OnDblClick = lvSnippetsDblClick
       OnDeletion = lvSnippetsDeletion
       OnDragDrop = lvSnippetsDragDrop
       OnDragOver = lvSnippetsDragOver
       OnInfoTip = lvSnippetsInfoTip
       OnMouseDown = lvSnippetsMouseDown
-      OnContextPopup = lvSnippetsContextPopup
-      PopupMenu = pmSnippets
     end
     object pRight: TPanel
       Left = 429
@@ -251,13 +253,13 @@ object MainForm: TMainForm
         HideSelection = False
         TileOptions.SubLineCount = 2
         MultiSelect = True
+        PopupMenu = pmTags
         StateImages = vilTags
         TabOrder = 0
         ViewStyle = vsList
         OnClick = lvTagsClick
         OnContextPopup = lvTagsContextPopup
         OnEdited = lvTagsEdited
-        PopupMenu = pmTags
       end
     end
   end
@@ -2749,6 +2751,9 @@ object MainForm: TMainForm
     object puAddTagToSnippets: TMenuItem
       Action = actAddTagToSnippets
     end
+    object puRemoveTagFromSnippets: TMenuItem
+      Action = actRemoveTagFromSnippets
+    end
     object puMoveToCategory: TMenuItem
       Action = actMoveToCategory
     end
@@ -2954,6 +2959,11 @@ object MainForm: TMainForm
       Caption = 'actAddTagToSnippets'
       OnExecute = actAddTagToSnippetsExecute
     end
+    object actRemoveTagFromSnippets: TAction
+      Category = 'Snippets'
+      Caption = 'actRemoveTagFromSnippets'
+      OnExecute = actRemoveTagFromSnippetsExecute
+    end
     object actMoveToCategory: TAction
       Category = 'Snippets'
       Caption = 'actMoveToCategory'
@@ -2990,7 +3000,6 @@ object MainForm: TMainForm
       OnExecute = actFavMoveEndExecute
     end
     object actFavSlot1: TAction
-      Tag = 0
       Category = 'Favorites'
       Caption = 'actFavSlot1'
       OnExecute = actFavSlotExecute

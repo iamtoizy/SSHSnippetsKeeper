@@ -140,6 +140,7 @@ type
         actRunSequence: TAction;
         actExportSnippets: TAction;
         actAddTagToSnippets: TAction;
+        actRemoveTagFromSnippets: TAction;
         actMoveToCategory: TAction;
         actClearTagFilter: TAction;
         actToggleFavorite: TAction;
@@ -194,6 +195,7 @@ type
         procedure actRunSequenceExecute(Sender: TObject);
         procedure actExportSnippetsExecute(Sender: TObject);
         procedure actAddTagToSnippetsExecute(Sender: TObject);
+        procedure actRemoveTagFromSnippetsExecute(Sender: TObject);
         procedure actMoveToCategoryExecute(Sender: TObject);
         procedure actSearchExecute(Sender: TObject);
         procedure actSnippetHistoryExecute(Sender: TObject);
@@ -274,6 +276,7 @@ type
         procedure DoRunSequence;
         procedure DoExportSnippets;
         procedure DoAddTagToSnippets;
+        procedure DoRemoveTagFromSnippets;
         procedure DoMoveToCategory;
         function GetSelectedSnippets: TArray<TSnippetDTO>;
         procedure ReloadSnippetListKeepingSelection;
@@ -336,6 +339,7 @@ uses
     NetworkFormUI,
     PasswordGenFormUI,
     QuickSearchFormUI,
+    SequenceOrderDialogUI,
     SettingsFormUI,
     SnippetRunner,
     SnippetViewData,
@@ -693,9 +697,10 @@ begin
     actEditSnippet.Enabled := (lvSnippets.Selected <> nil);
     actRunSnippet.Enabled := (lvSnippets.Selected <> nil);
     actChainCreateFromSnippet.Enabled := (lvSnippets.Selected <> nil);
-    actRunSequence.Enabled := (lvSnippets.Selected <> nil);
+    actRunSequence.Enabled := (lvSnippets.SelCount >= 2);
     actExportSnippets.Enabled := (lvSnippets.Selected <> nil);
     actAddTagToSnippets.Enabled := (lvSnippets.Selected <> nil);
+    actRemoveTagFromSnippets.Enabled := (lvSnippets.Selected <> nil);
     actMoveToCategory.Enabled := (lvSnippets.Selected <> nil);
 
     // --- ИЗБРАННОЕ ---
@@ -1126,6 +1131,7 @@ begin
     actRunSequence.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.RunSequence');
     actExportSnippets.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.Export');
     actAddTagToSnippets.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.AddTag');
+    actRemoveTagFromSnippets.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.RemoveTag');
     actMoveToCategory.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.MoveToCategory');
 end;
 
@@ -1572,6 +1578,11 @@ begin
     DoMoveToCategory;
 end;
 
+procedure TMainForm.actRemoveTagFromSnippetsExecute(Sender: TObject);
+begin
+    DoRemoveTagFromSnippets;
+end;
+
 function TMainForm.GetSelectedSnippets: TArray<TSnippetDTO>;
 var
     I: Integer;
@@ -1589,8 +1600,15 @@ begin
 end;
 
 procedure TMainForm.DoRunSequence;
+var
+    Snippets, Ordered: TArray<TSnippetDTO>;
 begin
-    TChainRunner.ExecuteSnippetSequence(AppContext, GetSelectedSnippets);
+    Snippets := GetSelectedSnippets;
+    if Length(Snippets) < 2 then
+        Exit;
+
+    if TSequenceOrderForm.Execute(Self, AppContext, Snippets, Ordered) then
+        TChainRunner.ExecuteSnippetSequence(AppContext, Ordered);
 end;
 
 procedure TMainForm.DoExportSnippets;
@@ -1663,23 +1681,82 @@ begin
         end;
     end;
 
+    RefreshCaches;
     lvSnippetsClick(lvSnippets);
     FStatus.Flash(TUIStateLoader.GetMessage('MultiSelect.AddTag.DoneMsg', [TagName, Added, Skipped]));
 end;
 
-procedure TMainForm.DoMoveToCategory;
+procedure TMainForm.DoRemoveTagFromSnippets;
 var
     Snippets: TArray<TSnippetDTO>;
-    CategoryID, TargetUserID, Moved, Skipped, I, K: Integer;
-    Cat: TCategoryDTO;
-    Tags: TArray<TTagDTO>;
-    TagIDs: TArray<Integer>;
+    IDs, TagIDs: TArray<Integer>;
+    TagID, Removed, Absent, I: Integer;
+    Existing: TArray<TTagDTO>;
+    Tag: TTagDTO;
+    HasTag: Boolean;
 begin
     Snippets := GetSelectedSnippets;
     if Length(Snippets) = 0 then
         Exit;
 
-    if not TCategorySelectForm.Execute(Self, AppContext, Snippets[0].UserID, CategoryID) then
+    SetLength(IDs, Length(Snippets));
+    for I := 0 to High(Snippets) do
+        IDs[I] := Snippets[I].ID;
+
+    if not TTagSelectForm.ExecuteForSnippets(Self, AppContext, IDs, TagIDs) then
+        Exit;
+
+    if Length(TagIDs) = 0 then
+        Exit;
+
+    Removed := 0;
+    Absent := 0;
+    for I := 0 to High(Snippets) do
+    begin
+        Existing := AppContext.TagService.GetSnippetTags(Snippets[I].ID);
+        for TagID in TagIDs do
+        begin
+            HasTag := False;
+            for Tag in Existing do
+                if Tag.ID = TagID then
+                begin
+                    HasTag := True;
+                    Break;
+                end;
+
+            if HasTag then
+            begin
+                AppContext.TagService.UnlinkTagFromSnippet(Snippets[I].ID, TagID);
+                Inc(Removed);
+            end
+            else
+                Inc(Absent);
+        end;
+    end;
+
+    RefreshCaches;
+    lvSnippetsClick(lvSnippets);
+    FStatus.Flash(TUIStateLoader.GetMessage('MultiSelect.RemoveTag.DoneMsg', [Removed, Absent]));
+end;
+
+procedure TMainForm.DoMoveToCategory;
+var
+    Snippets: TArray<TSnippetDTO>;
+    CategoryID, Moved, Skipped, I, K: Integer;
+    Cat: TCategoryDTO;
+    Tags: TArray<TTagDTO>;
+    TagIDs: TArray<Integer>;
+    PreferredUserID: Integer;
+begin
+    Snippets := GetSelectedSnippets;
+    if Length(Snippets) = 0 then
+        Exit;
+
+    PreferredUserID := 0;
+    if Length(Snippets) > 0 then
+        PreferredUserID := Snippets[0].UserID;
+
+    if not TCategorySelectForm.Execute(Self, AppContext, PreferredUserID, CategoryID) then
         Exit;
 
     Cat := AppContext.CategoryService.GetCategoryByID(CategoryID);
@@ -1690,19 +1767,25 @@ begin
     Skipped := 0;
     for I := 0 to High(Snippets) do
     begin
-        if (Snippets[I].UserID <> Cat.UserID) or (Snippets[I].CategoryID = Cat.ID) then
+        if Snippets[I].CategoryID = Cat.ID then
         begin
             Inc(Skipped);
             Continue;
         end;
 
-        Tags := AppContext.TagService.GetSnippetTags(Snippets[I].ID);
-        SetLength(TagIDs, Length(Tags));
-        for K := 0 to High(Tags) do
-            TagIDs[K] := Tags[K].ID;
+        if Snippets[I].UserID = Cat.UserID then
+        begin
+            Tags := AppContext.TagService.GetSnippetTags(Snippets[I].ID);
+            SetLength(TagIDs, Length(Tags));
+            for K := 0 to High(Tags) do
+                TagIDs[K] := Tags[K].ID;
 
-        Snippets[I].CategoryID := Cat.ID;
-        AppContext.SnippetService.UpdateSnippet(Snippets[I], TagIDs);
+            Snippets[I].CategoryID := Cat.ID;
+            AppContext.SnippetService.UpdateSnippet(Snippets[I], TagIDs);
+        end
+        else
+            AppContext.SnippetService.MoveSnippet(Snippets[I].ID, Cat.ID);
+
         Inc(Moved);
     end;
 

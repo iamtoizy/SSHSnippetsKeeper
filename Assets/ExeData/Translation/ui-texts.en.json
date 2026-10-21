@@ -983,6 +983,13 @@
           "Expanded": "The 'Workspace' column shows the snippet's workspace - a chain can combine steps from different workspaces."
         }
       },
+      "SequenceDialog": {
+        "lvOrder": {
+          "Title": "Execution order",
+          "Main": "Snippets are typed top to bottom into the chosen target window. Change the order with buttons or CTRL+Up/CTRL+Down, DEL removes a snippet from the sequence. The Run button (or ENTER) starts typing.",
+          "Expanded": ""
+        }
+      },
       "TagSelectDialog": {
         "edSearch": {
           "Title": "Tag search",
@@ -998,7 +1005,7 @@
       "CategorySelectDialog": {
         "tvCategories": {
           "Title": "Workspace categories",
-          "Main": "Category tree of the first selected snippet's workspace. Select the target category and click OK (or double-click). Snippets from other workspaces will be skipped and reported.",
+          "Main": "Tree of all workspaces and their categories; the first selected snippet's workspace is expanded. Select the target category and click OK (or double-click). Snippets are moved into it; when the workspace changes, the snippet's workspace changes too and its favorite is transferred.",
           "Expanded": ""
         }
       },
@@ -1278,6 +1285,7 @@
       "EmptyNameError": "Category name cannot be empty."
     },
     "Snippet": {
+      "NotFound": "Snippet not found.",
       "TypeToWindowConfirm": "Enter the snippet in the window: \"%s\"?",
       "SelectPrompt": "Select a specific category to add a snippet.",
       "WorkspaceUndefined": "Failed to determine the workspace for the snippet (UserID=%d). Try selecting a specific workspace in the filter.",
@@ -1393,7 +1401,18 @@
         "RunSequence": "Run in order",
         "Export": "Export...",
         "AddTag": "Add tag...",
-        "MoveToCategory": "Move to category..."
+        "MoveToCategory": "Move to category...",
+        "RemoveTag": "Remove tag..."
+      },
+      "Sequence": {
+        "Caption": "Execution order",
+        "Hint": "Order is top to bottom. Buttons or CTRL+Up/CTRL+Down change the order, DEL removes a snippet from the sequence.",
+        "ColNum": "#",
+        "ColSnippet": "Snippet",
+        "Up": "Up",
+        "Down": "Down",
+        "Remove": "Remove",
+        "Run": "Run"
       },
       "RunSequence": {
         "PanelTitle": "Running in order",
@@ -1407,8 +1426,14 @@
       "AddTag": {
         "Caption": "Add tag to selected snippets",
         "SearchHint": "Search the list or type a new tag name...",
+        "Hint": "Tag not in the list? Just type a new name in the field above - the tag will be created and added to all selected snippets.",
         "ColTag": "Tag",
         "DoneMsg": "Tag \"%s\" added to %d snippets (already had: %d)."
+      },
+      "RemoveTag": {
+        "Caption": "Remove tag from selected snippets",
+        "Hint": "The list shows tags of the selected snippets. Pick one or more tags (you can search in the field above) - they will be removed from every selected snippet that has them.",
+        "DoneMsg": "Removed %d tag links, skipped (tag not present): %d."
       },
       "Move": {
         "Caption": "Move to category",

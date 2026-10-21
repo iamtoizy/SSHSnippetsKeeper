@@ -20,6 +20,7 @@ uses
 type
     TTagSelectForm = class(TBaseForm)
         edSearch: TEdit;
+        lblHint: TLabel;
         lvTags: TListView;
         btnOK: TButton;
         btnCancel: TButton;
@@ -30,13 +31,23 @@ type
     private
         FAllTags: TArray<TTagDTO>;
         FSelectedTag: string;
+        FSelectedTagID: Integer;
+        FSelectedTagIDs: TArray<Integer>;
+        FForSnippets: Boolean;
+        procedure SortTags;
         procedure RefreshList;
         function MatchMask(const Mask, Value: string): Boolean;
+        function ListViewHelpOffset(LV: TListView): Integer;
     protected
         procedure DoInitialize; override;
     public
         property SelectedTag: string read FSelectedTag;
+        property SelectedTagID: Integer read FSelectedTagID;
+        property SelectedTagIDs: TArray<Integer> read FSelectedTagIDs;
+        procedure LoadSnippetsTags(const SnippetIDs: TArray<Integer>);
         class function Execute(Owner: TComponent; AppContext: IAppContext; out TagName: string): Boolean; static;
+        class function ExecuteForSnippets(Owner: TComponent; AppContext: IAppContext;
+            const SnippetIDs: TArray<Integer>; out TagIDs: TArray<Integer>): Boolean; static;
     end;
 
 implementation
@@ -44,6 +55,7 @@ implementation
 uses
     Common.Localization,
     System.Generics.Defaults,
+    System.Math,
     UI.HoverHelpManager
     ;
 
@@ -65,24 +77,96 @@ begin
     end;
 end;
 
+class function TTagSelectForm.ExecuteForSnippets(Owner: TComponent; AppContext: IAppContext;
+    const SnippetIDs: TArray<Integer>; out TagIDs: TArray<Integer>): Boolean;
+var
+    Form: TTagSelectForm;
+begin
+    TagIDs := nil;
+    Form := TTagSelectForm.Create(Owner);
+    try
+        Form.Initialize(AppContext);
+        Form.LoadSnippetsTags(SnippetIDs);
+        Result := Form.ShowModal = mrOk;
+        if Result then
+            TagIDs := Form.SelectedTagIDs;
+    finally
+        Form.Free;
+    end;
+end;
+
 procedure TTagSelectForm.DoInitialize;
 begin
     Caption := TUIStateLoader.GetMessage('MultiSelect.AddTag.Caption');
     edSearch.TextHint := TUIStateLoader.GetMessage('MultiSelect.AddTag.SearchHint');
+    lblHint.Caption := TUIStateLoader.GetMessage('MultiSelect.AddTag.Hint');
     lvTags.Columns[0].Caption := TUIStateLoader.GetMessage('MultiSelect.AddTag.ColTag');
     btnOK.Caption := TUIStateLoader.GetMessage('Common.OK');
     btnCancel.Caption := TUIStateLoader.GetMessage('Common.Cancel');
 
     FAllTags := AppContext.TagService.GetAllTags;
+    SortTags;
+    RefreshList;
+
+    RegisterHelp(edSearch, hipTopRight, 'Help.TagSelectDialog.edSearch');
+    RegisterHelp(lvTags, hipTopRight, 'Help.TagSelectDialog.lvTags', hkCustomForm, 0, ListViewHelpOffset(lvTags));
+end;
+
+procedure TTagSelectForm.LoadSnippetsTags(const SnippetIDs: TArray<Integer>);
+var
+    Seen: TDictionary<Integer, Boolean>;
+    List: TList<TTagDTO>;
+    SnippetTags: TArray<TTagDTO>;
+    Tag: TTagDTO;
+    SnippetID: Integer;
+begin
+    FForSnippets := True;
+    lvTags.MultiSelect := True;
+    Caption := TUIStateLoader.GetMessage('MultiSelect.RemoveTag.Caption');
+    lblHint.Caption := TUIStateLoader.GetMessage('MultiSelect.RemoveTag.Hint');
+
+    Seen := TDictionary<Integer, Boolean>.Create;
+    List := TList<TTagDTO>.Create;
+    try
+        for SnippetID in SnippetIDs do
+        begin
+            SnippetTags := AppContext.TagService.GetSnippetTags(SnippetID);
+            for Tag in SnippetTags do
+                if not Seen.ContainsKey(Tag.ID) then
+                begin
+                    Seen.Add(Tag.ID, True);
+                    List.Add(Tag);
+                end;
+        end;
+        FAllTags := List.ToArray;
+    finally
+        List.Free;
+        Seen.Free;
+    end;
+
+    SortTags;
+    RefreshList;
+end;
+
+function TTagSelectForm.ListViewHelpOffset(LV: TListView): Integer;
+var
+    HeaderWnd: HWND;
+    R: TRect;
+begin
+    Result := 2;
+    HeaderWnd := FindWindowEx(LV.Handle, 0, 'SysHeader32', nil);
+    if (HeaderWnd = 0) or not GetWindowRect(HeaderWnd, R) then
+        Exit;
+    Result := Max(1, MulDiv(R.Bottom - R.Top, 96, LV.CurrentPPI)) + 2;
+end;
+
+procedure TTagSelectForm.SortTags;
+begin
     TArray.Sort<TTagDTO>(FAllTags, TComparer<TTagDTO>.Construct(
         function(const Left, Right: TTagDTO): Integer
         begin
             Result := CompareText(Left.Name, Right.Name);
         end));
-    RefreshList;
-
-    RegisterHelp(edSearch, hipTopRight, 'Help.TagSelectDialog.edSearch');
-    RegisterHelp(lvTags, hipTopRight, 'Help.TagSelectDialog.lvTags');
 end;
 
 function TTagSelectForm.MatchMask(const Mask, Value: string): Boolean;
@@ -128,11 +212,39 @@ begin
 end;
 
 procedure TTagSelectForm.btnOKClick(Sender: TObject);
+var
+    I: Integer;
+    IDs: TList<Integer>;
 begin
+    if FForSnippets then
+    begin
+        if lvTags.SelCount = 0 then
+            Exit;
+
+        IDs := TList<Integer>.Create;
+        try
+            for I := 0 to lvTags.Items.Count - 1 do
+                if lvTags.Items[I].Selected then
+                    IDs.Add(Integer(IntPtr(lvTags.Items[I].Data)));
+            FSelectedTagIDs := IDs.ToArray;
+        finally
+            IDs.Free;
+        end;
+
+        ModalResult := mrOk;
+        Exit;
+    end;
+
     if lvTags.Selected <> nil then
-        FSelectedTag := lvTags.Selected.Caption
+    begin
+        FSelectedTag := lvTags.Selected.Caption;
+        FSelectedTagID := Integer(IntPtr(lvTags.Selected.Data));
+    end
     else
+    begin
         FSelectedTag := Trim(edSearch.Text);
+        FSelectedTagID := 0;
+    end;
 
     if FSelectedTag = '' then
         Exit;

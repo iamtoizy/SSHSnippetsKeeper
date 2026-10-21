@@ -33,6 +33,7 @@ type
         function CreateSnippet(const Snippet: TSnippetDTO; const TagIDs: TArray<Integer>): Integer;
         procedure UpdateSnippet(const Snippet: TSnippetDTO; const TagIDs: TArray<Integer>);
         procedure DeleteSnippet(const SnippetID: Integer);
+        procedure MoveSnippet(SnippetID, NewCategoryID: Integer);
 
         // Методы для UI
         function GetSnippetByID(SnippetID: Integer): TSnippetDTO;
@@ -123,6 +124,42 @@ begin
 
     FSnippetRepo.Update(Snippet);
     FSnippetRepo.UpdateTags(Snippet.ID, TagIDs);
+end;
+
+procedure TSnippetService.MoveSnippet(SnippetID, NewCategoryID: Integer);
+var
+    Snip: TSnippetDTO;
+    CatUserID: Integer;
+begin
+    if SnippetID <= 0 then
+        raise ESnippetValidationException.Create(
+            TUIStateLoader.GetMessage('Snippet.InvalidIdError')
+        );
+
+    if NewCategoryID <= 0 then
+        raise ESnippetValidationException.Create(
+            TUIStateLoader.GetMessage('Category.InvalidIdError')
+        );
+
+    Snip := FSnippetRepo.GetByID(SnippetID);
+    if Snip.ID = 0 then
+        raise ESnippetValidationException.Create(
+            TUIStateLoader.GetMessage('Snippet.NotFound')
+        );
+
+    CatUserID := FCategoryRepo.GetUserID(NewCategoryID);
+    if CatUserID = -1 then
+        raise ESnippetValidationException.Create(
+            TUIStateLoader.GetMessage('Category.CategoryNotFound')
+        );
+
+    if CatUserID = Snip.UserID then
+    begin
+        Snip.CategoryID := NewCategoryID;
+        FSnippetRepo.Update(Snip);
+    end
+    else
+        FSnippetRepo.MoveToWorkspace(SnippetID, CatUserID, NewCategoryID);
 end;
 
 procedure TSnippetService.DeleteSnippet(const SnippetID: Integer);

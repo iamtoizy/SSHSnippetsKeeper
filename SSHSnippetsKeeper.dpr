@@ -118,6 +118,7 @@ uses
   ChainRunnerController in 'UI\Controllers\ChainRunnerController.pas',
   CategorySelectDialogUI in 'UI\Forms\CategorySelectDialogUI.pas' {CategorySelectForm},
   TagSelectDialogUI in 'UI\Forms\TagSelectDialogUI.pas' {TagSelectForm},
+  SequenceOrderDialogUI in 'UI\Forms\SequenceOrderDialogUI.pas' {SequenceOrderForm},
   GlobalHotkeyManager in 'UI\Controllers\GlobalHotkeyManager.pas',
   TrackBarEx in 'UI\Controls\TrackBarEx.pas',
   UI.Services.AIService in 'UI\Services\UI.Services.AIService.pas',

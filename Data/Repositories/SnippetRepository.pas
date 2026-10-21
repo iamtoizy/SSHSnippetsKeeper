@@ -33,6 +33,7 @@ type
         function SearchByMaskSimple(const Mask: string; UserID: Integer = 0): TArray<TSnippetDTO>;
         function SearchAdvanced(const Query: TStructuredQuery; UseFTS: Boolean; UserID: Integer = 0): TArray<TSnippetDTO>;
         procedure UpdateTags(SnippetID: Integer; const TagIDs: TArray<Integer>);
+        procedure MoveToWorkspace(SnippetID, NewUserID, NewCategoryID: Integer);
         function GetRecentSnippets(UserID: Integer; Limit: Integer): TArray<TSnippetDTO>;
         function GetTopSnippets(UserID: Integer; Limit: Integer): TArray<TSnippetDTO>;
         function GetSnippetCountByCategory(UserID: Integer): TDictionary<Integer, Integer>;
@@ -485,6 +486,32 @@ begin
         finally
             QTags.Free;
         end;
+    end;
+end;
+
+procedure TSnippetRepository.MoveToWorkspace(SnippetID, NewUserID, NewCategoryID: Integer);
+var
+    OldUserID: Variant;
+begin
+    OldUserID := FConnection.ExecSQLScalar('SELECT user_id FROM snippets WHERE id = ?', [SnippetID]);
+    if VarIsNull(OldUserID) or (Integer(OldUserID) = 0) then
+        raise Exception.Create('Snippet not found: ' + SnippetID.ToString);
+
+    FConnection.StartTransaction;
+    try
+        FConnection.ExecSQL('UPDATE snippets SET user_id = ?, category_id = ? WHERE id = ?',
+            [NewUserID, NewCategoryID, SnippetID]);
+
+        FConnection.ExecSQL('UPDATE OR IGNORE snippet_favorites SET user_id = ? WHERE snippet_id = ? AND user_id = ?',
+            [NewUserID, SnippetID, Integer(OldUserID)]);
+
+        FConnection.ExecSQL('DELETE FROM snippet_favorites WHERE snippet_id = ? AND user_id = ?',
+            [SnippetID, Integer(OldUserID)]);
+
+        FConnection.Commit;
+    except
+        FConnection.Rollback;
+        raise;
     end;
 end;
 

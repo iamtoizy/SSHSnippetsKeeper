@@ -16,26 +16,25 @@ object ChainEditorForm: TChainEditorForm
   Position = poMainFormCenter
   OnDestroy = FormDestroy
   OnKeyDown = FormKeyDown
-  PixelsPerInch = 96
   TextHeight = 15
   object lblName: TLabel
     Left = 12
     Top = 15
-    Width = 41
+    Width = 35
     Height = 15
     Caption = 'Name:'
   end
   object lblSteps: TLabel
     Left = 12
     Top = 47
-    Width = 77
+    Width = 61
     Height = 15
     Caption = 'Chain steps'
   end
   object lblPause: TLabel
     Left = 12
     Top = 352
-    Width = 120
+    Width = 109
     Height = 15
     Caption = 'Pause after step, sec:'
   end
@@ -57,7 +56,7 @@ object ChainEditorForm: TChainEditorForm
   object lblLibrary: TLabel
     Left = 352
     Top = 47
-    Width = 91
+    Width = 76
     Height = 15
     Caption = 'Snippet library'
   end

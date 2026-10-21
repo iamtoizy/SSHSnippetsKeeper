@@ -38,6 +38,8 @@ type
         procedure MoveFavorite(SnippetID, UserID: Integer; Direction: TFavoriteMoveDirection);
         procedure MoveFavoriteToPosition(SnippetID, UserID, NewPosition: Integer);
         function GetLastRunSnippetID(UserID: Integer): Integer;
+        // Перенос сниппета в категорию (в т.ч. другого пространства, с миграцией избранного)
+        procedure MoveSnippet(SnippetID, NewCategoryID: Integer);
     end;
 
     ICategoryService = interface
@@ -61,6 +63,8 @@ type
         function GetOrCreateTag(const Name: string): Integer;
         // Привязка тега к сниппету (дубликат игнорируется)
         procedure LinkTagToSnippet(SnippetID, TagID: Integer);
+        // Отвязка тега от сниппета
+        procedure UnlinkTagFromSnippet(SnippetID, TagID: Integer);
     end;
 
     ISnippetHistoryService = interface

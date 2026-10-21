@@ -28,6 +28,8 @@ type
         procedure Update(const Snippet: TSnippetDTO);
         procedure Delete(SnippetID: Integer);
         procedure UpdateTags(SnippetID: Integer; const TagIDs: TArray<Integer>);
+        // Перенос сниппета в другое пространство: user_id + category_id + миграция избранного
+        procedure MoveToWorkspace(SnippetID, NewUserID, NewCategoryID: Integer);
         function GetById(SnippetID: Integer): TSnippetDTO;
         function GetAll(UserID: Integer = 0): TArray<TSnippetDTO>;
         function GetSnippetByCategory(const CategoryID, UserID: Integer): TArray<TSnippetDTO>;

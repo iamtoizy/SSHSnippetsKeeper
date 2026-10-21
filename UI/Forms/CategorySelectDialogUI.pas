@@ -5,6 +5,7 @@ interface
 uses
     BaseFormUI,
     Core.Entities.Category,
+    Core.Entities.User,
     Core.Interfaces.App,
     System.Classes,
     System.SysUtils,
@@ -26,13 +27,13 @@ type
         procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     private
         FCategoryID: Integer;
-        procedure BuildTree(UserID: Integer);
+        procedure BuildTree(PreferredUserID: Integer);
         procedure AddCategoryNode(ParentNode: TTreeNode; const Categories: TArray<TCategoryDTO>; const Cat: TCategoryDTO);
     protected
         procedure DoInitialize; override;
     public
         property CategoryID: Integer read FCategoryID;
-        class function Execute(Owner: TComponent; AppContext: IAppContext; UserID: Integer; out CategoryID: Integer): Boolean; static;
+        class function Execute(Owner: TComponent; AppContext: IAppContext; PreferredUserID: Integer; out CategoryID: Integer): Boolean; static;
     end;
 
 implementation
@@ -44,7 +45,7 @@ uses
 
 {$R *.dfm}
 
-class function TCategorySelectForm.Execute(Owner: TComponent; AppContext: IAppContext; UserID: Integer; out CategoryID: Integer): Boolean;
+class function TCategorySelectForm.Execute(Owner: TComponent; AppContext: IAppContext; PreferredUserID: Integer; out CategoryID: Integer): Boolean;
 var
     Form: TCategorySelectForm;
 begin
@@ -52,7 +53,7 @@ begin
     Form := TCategorySelectForm.Create(Owner);
     try
         Form.Initialize(AppContext);
-        Form.BuildTree(UserID);
+        Form.BuildTree(PreferredUserID);
         Result := Form.ShowModal = mrOk;
         if Result then
             CategoryID := Form.CategoryID;
@@ -70,26 +71,48 @@ begin
     RegisterHelp(tvCategories, hipTopRight, 'Help.CategorySelectDialog.tvCategories');
 end;
 
-procedure TCategorySelectForm.BuildTree(UserID: Integer);
+procedure TCategorySelectForm.BuildTree(PreferredUserID: Integer);
 var
+    Users: TArray<TUserDTO>;
     Categories: TArray<TCategoryDTO>;
+    User: TUserDTO;
     Cat: TCategoryDTO;
+    Root: TTreeNode;
+    Node: TTreeNode;
+    FirstCategory: TTreeNode;
 begin
     tvCategories.Items.BeginUpdate;
     try
         tvCategories.Items.Clear;
-        Categories := AppContext.CategoryService.GetAllCategories(UserID);
-        for Cat in Categories do
-            if Cat.ParentID = 0 then
-                AddCategoryNode(nil, Categories, Cat);
+        Users := AppContext.UserService.GetAllUsers;
+        for User in Users do
+        begin
+            Root := tvCategories.Items.AddChildObject(nil, User.Name, Pointer(IntPtr(-User.ID)));
+            Categories := AppContext.CategoryService.GetAllCategories(User.ID);
+            for Cat in Categories do
+                if Cat.ParentID = 0 then
+                    AddCategoryNode(Root, Categories, Cat);
+
+            if User.ID = PreferredUserID then
+            begin
+                Root.Expand(True);
+                FirstCategory := nil;
+                Node := Root.GetFirstChild;
+                while Node <> nil do
+                begin
+                    if Integer(IntPtr(Node.Data)) > 0 then
+                    begin
+                        FirstCategory := Node;
+                        Break;
+                    end;
+                    Node := Node.GetNextSibling;
+                end;
+                if FirstCategory <> nil then
+                    FirstCategory.Selected := True;
+            end;
+        end;
     finally
         tvCategories.Items.EndUpdate;
-    end;
-
-    if tvCategories.Items.Count > 0 then
-    begin
-        tvCategories.Items.GetFirstNode.Expand(False);
-        tvCategories.Items.GetFirstNode.Selected := True;
     end;
 end;
 

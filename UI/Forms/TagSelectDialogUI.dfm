@@ -4,7 +4,7 @@ object TagSelectForm: TTagSelectForm
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'TagSelect'
-  ClientHeight = 368
+  ClientHeight = 400
   ClientWidth = 360
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -25,11 +25,19 @@ object TagSelectForm: TTagSelectForm
     TabOrder = 0
     OnChange = edSearchChange
   end
+  object lblHint: TLabel
+    Left = 12
+    Top = 42
+    Width = 336
+    Height = 32
+    AutoSize = False
+    WordWrap = True
+  end
   object lvTags: TListView
     Left = 12
-    Top = 43
+    Top = 80
     Width = 336
-    Height = 268
+    Height = 272
     Columns = <
       item
         Caption = 'Tag'
@@ -44,7 +52,7 @@ object TagSelectForm: TTagSelectForm
   end
   object btnOK: TButton
     Left = 12
-    Top = 324
+    Top = 358
     Width = 120
     Height = 30
     Caption = 'OK'
@@ -54,7 +62,7 @@ object TagSelectForm: TTagSelectForm
   end
   object btnCancel: TButton
     Left = 228
-    Top = 324
+    Top = 358
     Width = 120
     Height = 30
     Cancel = True

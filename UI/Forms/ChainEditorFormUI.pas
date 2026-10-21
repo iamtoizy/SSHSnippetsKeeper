@@ -222,7 +222,6 @@ procedure TChainEditorForm.ApplySearchFilter;
 var
     Filter: string;
     Snippet: TSnippetDTO;
-    Idx: Integer;
     Title: string;
 begin
     Filter := LowerCase(Trim(edSearch.Text));

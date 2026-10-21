@@ -22,6 +22,7 @@ type
         procedure RenameTag(TagID: Integer; const NewName: string);
         function GetOrCreateTag(const Name: string): Integer;
         procedure LinkTagToSnippet(SnippetID, TagID: Integer);
+        procedure UnlinkTagFromSnippet(SnippetID, TagID: Integer);
     end;
 
 implementation
@@ -88,6 +89,14 @@ begin
         Exit;
 
     FTagRepo.LinkTagToSnippet(SnippetID, TagID);
+end;
+
+procedure TTagService.UnlinkTagFromSnippet(SnippetID, TagID: Integer);
+begin
+    if (SnippetID <= 0) or (TagID <= 0) then
+        Exit;
+
+    FTagRepo.UnlinkTagFromSnippet(SnippetID, TagID);
 end;
 
 procedure TTagService.DeleteTag(TagID: Integer);

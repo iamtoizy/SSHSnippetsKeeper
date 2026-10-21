@@ -41,6 +41,10 @@ type
         [Test]
         procedure MoveSnippet_KeepsTags_AndChangesCategory;
         [Test]
+        procedure MoveSnippet_CrossWorkspace_UserAndFavoriteTransfer;
+        [Test]
+        procedure UnlinkTagFromSnippet_RemovesLink;
+        [Test]
         procedure Export_WritesOneFilePerSnippet;
         [Test]
         procedure Export_DuplicateTitles_GetSuffixes;
@@ -266,6 +270,71 @@ begin
     try
         Assert.AreEqual(1, Length(TagRepo.GetSnippetTags(SnipID)));
         Assert.AreEqual('keepme', TagRepo.GetSnippetTags(SnipID)[0].Name);
+    finally
+        TagRepo.Free;
+    end;
+end;
+
+procedure TMultiSelectTests.MoveSnippet_CrossWorkspace_UserAndFavoriteTransfer;
+var
+    Svc: ISnippetService;
+    SnipRepo: TSnippetRepository;
+    TagRepo: TTagRepository;
+    Snip: TSnippetDTO;
+    Cat2, SnipID, T1: Integer;
+begin
+    Cat2 := AddCategoryRaw('TargetW2', 2);
+    SnipID := AddSnippetRaw('traveler', 1);
+    T1 := AddTagRaw('movetag');
+    FConn.ExecSQL('INSERT INTO snippet_tags (snippet_id, tag_id) VALUES (?, ?)', [SnipID, T1]);
+    FConn.ExecSQL('INSERT INTO snippet_favorites (user_id, snippet_id, sort_order) VALUES (1, ?, 0)', [SnipID]);
+
+    Svc := TSnippetService.Create(
+        TSnippetRepository.Create(FConn),
+        TCategoryRepository.Create(FConn),
+        TTagRepository.Create(FConn),
+        TUserRepository.Create(FConn));
+
+    Svc.MoveSnippet(SnipID, Cat2);
+
+    Snip := Svc.GetSnippetByID(SnipID);
+    Assert.AreEqual(2, Snip.UserID);
+    Assert.AreEqual(Cat2, Snip.CategoryID);
+
+    SnipRepo := TSnippetRepository.Create(FConn);
+    try
+        Assert.IsTrue(SnipRepo.IsFavorite(SnipID, 2));
+        Assert.IsFalse(SnipRepo.IsFavorite(SnipID, 1));
+    finally
+        SnipRepo.Free;
+    end;
+
+    TagRepo := TTagRepository.Create(FConn);
+    try
+        Assert.AreEqual(1, Length(TagRepo.GetSnippetTags(SnipID)));
+    finally
+        TagRepo.Free;
+    end;
+end;
+
+procedure TMultiSelectTests.UnlinkTagFromSnippet_RemovesLink;
+var
+    TagRepo: TTagRepository;
+    SnipID, T1: Integer;
+begin
+    SnipID := AddSnippetRaw('untag');
+    T1 := AddTagRaw('temp');
+
+    TagRepo := TTagRepository.Create(FConn);
+    try
+        TagRepo.LinkTagToSnippet(SnipID, T1);
+        TagRepo.LinkTagToSnippet(SnipID, T1);
+        Assert.AreEqual(1, Length(TagRepo.GetSnippetTags(SnipID)));
+
+        TagRepo.UnlinkTagFromSnippet(SnipID, T1);
+        Assert.AreEqual(0, Length(TagRepo.GetSnippetTags(SnipID)));
+        TagRepo.UnlinkTagFromSnippet(SnipID, T1);
+        Assert.AreEqual(0, Length(TagRepo.GetSnippetTags(SnipID)));
     finally
         TagRepo.Free;
     end;
