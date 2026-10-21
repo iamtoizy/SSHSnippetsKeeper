@@ -23,6 +23,8 @@ type
         procedure TypeTextIntoWindowWithContext(const Text: string; Context: TMacroContext);
         procedure SetTargetWindow(Handle: HWND);
         function GetWindowInfo: TWindowHelperInfo;
+        function IsTypingBusy: Boolean;
+        procedure CancelTyping;
     end;
 
 implementation

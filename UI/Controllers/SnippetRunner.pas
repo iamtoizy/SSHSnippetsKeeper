@@ -26,6 +26,7 @@ type
     public
         class var IsExecuting: Boolean;
         constructor Create(UserID: Integer; AppContext: IAppContext);
+        function PickTargetWindow(out TargetHWND: HWND): Boolean;
         procedure ExecuteSnippet(const Snippet: TSnippetDTO; RequireConfirmation: Boolean = True);
         procedure ExecuteSnippetInWindow(const Snippet: TSnippetDTO; TargetHWND: HWND; RequireConfirmation: Boolean = False);
     end;
@@ -183,6 +184,15 @@ begin
     finally
         LockSetForegroundWindow(LSFW_UNLOCK);
     end;
+end;
+
+function TSnippetRunner.PickTargetWindow(out TargetHWND: HWND): Boolean;
+var
+    TargetWindow: TWindowMonitorInfo;
+begin
+    Result := SelectTargetWindow(TargetWindow);
+    if Result then
+        TargetHWND := TargetWindow.HWND;
 end;
 
 procedure TSnippetRunner.ExecuteSnippet(const Snippet: TSnippetDTO; RequireConfirmation: Boolean = True);

@@ -4,6 +4,7 @@ interface
 
 uses
     Core.Entities.Category,
+    Core.Entities.Chain,
     Core.Entities.Tag,
     Core.Entities.User,
     Vcl.ComCtrls
@@ -24,6 +25,7 @@ type
             TreeView: TTreeView;
             const Categories: TArray<TCategoryDTO>;
             const Users: TArray<TUserDTO>;
+            const Chains: TArray<TChainDTO>;
             FilterUserID: Integer;
             SelectID: Integer = -1); static;
     end;
@@ -105,7 +107,7 @@ begin
     end;
 end;
 
-class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categories: TArray<TCategoryDTO>; const Users: TArray<TUserDTO>; FilterUserID: Integer; SelectID: Integer = -1);
+class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categories: TArray<TCategoryDTO>; const Users: TArray<TUserDTO>; const Chains: TArray<TChainDTO>; FilterUserID: Integer; SelectID: Integer = -1);
 
     // Вспомогательная рекурсивная процедура для добавления узлов
     procedure AddNodesRecursive(ParentNode: TTreeNode; ParentCatID: Integer; const CatMap: TDictionary<Integer, TList<TCategoryDTO>>);
@@ -181,10 +183,11 @@ class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categori
     end;
 
 var
-    Node: TTreeNode;
+    Node, ChainNode: TTreeNode;
     User: TUserDTO;
     UserCats: TList<TCategoryDTO>;
     Cat: TCategoryDTO;
+    Chain: TChainDTO;
 begin
     TreeView.Items.BeginUpdate;
     UserCats := TList<TCategoryDTO>.Create;
@@ -222,6 +225,26 @@ begin
         Node.SelectedIndex := 2;
         if SelectID = -2 then
             Node.Selected := True;
+
+        Node := TreeView.Items.AddObject(
+            nil,
+            TUIStateLoader.GetMessage('Help.MainForm.Chains'),
+            Pointer(IntPtr(CHAINS_ROOT_NODE_ID))
+        );
+        Node.ImageIndex := 1;
+        Node.SelectedIndex := 1;
+        if SelectID = CHAINS_ROOT_NODE_ID then
+            Node.Selected := True;
+
+        for Chain in Chains do
+        begin
+            ChainNode := TreeView.Items.AddChild(Node, Chain.Name);
+            ChainNode.Data := Pointer(IntPtr(-(CHAIN_NODE_ID_BASE + Chain.ID)));
+            ChainNode.ImageIndex := 1;
+            ChainNode.SelectedIndex := 1;
+            if SelectID = -(CHAIN_NODE_ID_BASE + Chain.ID) then
+                ChainNode.Selected := True;
+        end;
 
         // 2. Группировка
         if FilterUserID = 0 then

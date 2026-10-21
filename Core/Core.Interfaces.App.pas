@@ -33,6 +33,7 @@ type
         function GetLocalAIService: ILocalAIService;
         function GetSecurityScanner: ISecurityScanner;
         function GetHistoryService: ISnippetHistoryService;
+        function GetChainService: IChainService;
         function GetDBConnection: TFDConnection;
 
         // Фабрика для фоновых потоков. Возвращает готовый сервис и ссылку на коннект для его очистки.
@@ -54,6 +55,7 @@ type
         property LocalAIService: ILocalAIService read GetLocalAIService;
         property SecurityScanner: ISecurityScanner read GetSecurityScanner;
         property HistoryService: ISnippetHistoryService read GetHistoryService;
+        property ChainService: IChainService read GetChainService;
         property DBConnection: TFDConnection read GetDBConnection;
     end;
 

@@ -5,6 +5,7 @@ interface
 uses
     Common.QueryLanguage,
     Core.Entities.Category,
+    Core.Entities.Chain,
     Core.Entities.Snippet,
     Core.Entities.Tag,
     Core.Entities.User
@@ -100,6 +101,18 @@ type
         function GetAll: TArray<TUserDTO>;
         function GetByName(const Name: string): TArray<TUserDTO>;
         function TryGetByID(ID: Integer; out User: TUserDTO): Boolean;
+    end;
+
+    IChainRepository = interface
+        ['{5E2C81F4-9A6D-4B37-A8C1-3D90E47B26F5}']
+        function GetAll(UserID: Integer = 0): TArray<TChainDTO>;
+        function GetByID(ID: Integer): TChainDTO;
+        function Add(const Chain: TChainDTO): Integer;
+        procedure UpdateName(ID: Integer; const NewName: string);
+        procedure Delete(ID: Integer);
+        function GetSteps(ChainID: Integer): TArray<TChainStepDTO>;
+        procedure ReplaceSteps(ChainID: Integer; const Steps: TArray<TChainStepDTO>);
+        function NameExists(const Name: string; UserID, ExcludeChainID: Integer): Boolean;
     end;
 
 implementation

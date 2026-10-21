@@ -59,6 +59,7 @@ object MainForm: TMainForm
       TabOrder = 0
       OnChange = tvCategoriesChange
       OnClick = tvCategoriesClick
+      OnDblClick = tvCategoriesDblClick
       OnDragDrop = tvCategoriesDragDrop
       OnDragOver = tvCategoriesDragOver
       OnEdited = tvCategoriesEdited
@@ -2695,6 +2696,21 @@ object MainForm: TMainForm
     object N2: TMenuItem
       Caption = '-'
     end
+    object puChainCreate: TMenuItem
+      Action = actChainCreate
+    end
+    object puChainRun: TMenuItem
+      Action = actChainRun
+    end
+    object puChainEdit: TMenuItem
+      Action = actChainEdit
+    end
+    object puChainDelete: TMenuItem
+      Action = actChainDelete
+    end
+    object N2b: TMenuItem
+      Caption = '-'
+    end
     object puCatWorkspaces: TMenuItem
       Caption = 'Workspaces'
       OnClick = bManageWorkspacesClick
@@ -2705,6 +2721,9 @@ object MainForm: TMainForm
     Top = 441
     object puRunSnippet: TMenuItem
       Action = actRunSnippet
+    end
+    object puChainCreateFromSnippet: TMenuItem
+      Action = actChainCreateFromSnippet
     end
     object N4: TMenuItem
       Caption = '-'
@@ -2859,6 +2878,31 @@ object MainForm: TMainForm
       Category = 'Tools'
       Caption = 'actChmodCalculator'
       OnExecute = actChmodCalculatorExecute
+    end
+    object actChainCreate: TAction
+      Category = 'Chains'
+      Caption = 'actChainCreate'
+      OnExecute = actChainCreateExecute
+    end
+    object actChainRun: TAction
+      Category = 'Chains'
+      Caption = 'actChainRun'
+      OnExecute = actChainRunExecute
+    end
+    object actChainEdit: TAction
+      Category = 'Chains'
+      Caption = 'actChainEdit'
+      OnExecute = actChainEditExecute
+    end
+    object actChainDelete: TAction
+      Category = 'Chains'
+      Caption = 'actChainDelete'
+      OnExecute = actChainDeleteExecute
+    end
+    object actChainCreateFromSnippet: TAction
+      Category = 'Chains'
+      Caption = 'actChainCreateFromSnippet'
+      OnExecute = actChainCreateFromSnippetExecute
     end
     object actArchiveBuilder: TAction
       Category = 'Tools'

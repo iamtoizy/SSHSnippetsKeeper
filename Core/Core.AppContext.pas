@@ -5,6 +5,8 @@ interface
 uses
     CategoryRepository,
     CategoryService,
+    ChainRepository,
+    ChainService,
     Core.Interfaces.App,
     Core.Interfaces.Automation,
     Core.Interfaces.Data,
@@ -47,6 +49,7 @@ type
         FLocalAIService: ILocalAIService;
         FSecurityScanner: ISecurityScanner;
         FHistoryService: ISnippetHistoryService;
+        FChainService: IChainService;
         FDBConnection: TFDConnection;
 
         function GetDatabaseManager: IDatabaseManager;
@@ -63,6 +66,7 @@ type
         function GetLocalAIService: ILocalAIService;
         function GetSecurityScanner: ISecurityScanner;
         function GetHistoryService: ISnippetHistoryService;
+        function GetChainService: IChainService;
         function GetDBConnection: TFDConnection;
     public
         // Основной конструктор (для UI-потока)
@@ -93,6 +97,7 @@ type
         property LocalAIService: ILocalAIService read GetLocalAIService;
         property SecurityScanner: ISecurityScanner read GetSecurityScanner;
         property HistoryService: ISnippetHistoryService read GetHistoryService;
+        property ChainService: IChainService read GetChainService;
         property DBConnection: TFDConnection read GetDBConnection;
 
         function CreateIsolatedSnippetService(out BackgroundConnection: TComponent): ISnippetService;
@@ -151,6 +156,8 @@ begin
     HistoryRepo := TSnippetHistoryRepository.Create(DBConnection);
     FHistoryService := TSnippetHistoryService.Create(HistoryRepo, FSnippetService);
 
+    FChainService := TChainService.Create(TChainRepository.Create(DBConnection), FSnippetService);
+
     // Локальные сервисы, создающиеся в AppContext
     FPasswordService := TPasswordService.Create;
     FEpochService := TEpochService.Create;
@@ -201,6 +208,8 @@ begin
 
     HistoryRepo := TSnippetHistoryRepository.Create(DBConnection);
     FHistoryService := TSnippetHistoryService.Create(HistoryRepo, FSnippetService);
+
+    FChainService := TChainService.Create(TChainRepository.Create(DBConnection), FSnippetService);
 
     FPasswordService := TPasswordService.Create;
     FEpochService := TEpochService.Create;
@@ -339,6 +348,11 @@ end;
 function TAppContext.GetHistoryService: ISnippetHistoryService;
 begin
     Result := FHistoryService;
+end;
+
+function TAppContext.GetChainService: IChainService;
+begin
+    Result := FChainService;
 end;
 
 function TAppContext.GetDBConnection: TFDConnection;

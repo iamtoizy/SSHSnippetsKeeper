@@ -164,12 +164,24 @@
   },
   "TagEditorForm": {
     "Caption": "Tag Editor",
-    "nActions": { "Caption": "Actions" },
-    "nTagAdd": { "Caption": "Add" },
-    "nTagDelete": { "Caption": "Delete" },
-    "nTagRename": { "Caption": "Rename" },
-    "bOK": { "Caption": "OK" },
-    "bCancel": { "Caption": "Cancel" }
+    "nActions": {
+      "Caption": "Actions"
+    },
+    "nTagAdd": {
+      "Caption": "Add"
+    },
+    "nTagDelete": {
+      "Caption": "Delete"
+    },
+    "nTagRename": {
+      "Caption": "Rename"
+    },
+    "bOK": {
+      "Caption": "OK"
+    },
+    "bCancel": {
+      "Caption": "Cancel"
+    }
   },
   "HistoryForm": {
     "Caption": "Version History",
@@ -188,10 +200,16 @@
     }
   },
   "InputForm": {
-      "Caption": "Input Value",
-      "bOK": { "Caption": "OK" },
-      "bCancel": { "Caption": "Cancel" },
-      "lbPrompt": { "Caption": "Enter value:" }
+    "Caption": "Input Value",
+    "bOK": {
+      "Caption": "OK"
+    },
+    "bCancel": {
+      "Caption": "Cancel"
+    },
+    "lbPrompt": {
+      "Caption": "Enter value:"
+    }
   },
   "AddEditSnippetForm": {
     "Caption": "SSH Snippets Keeper - Add/Edit Snippet",
@@ -637,47 +655,102 @@
   },
   "ChmodForm": {
     "Caption": "chmod Calculator",
-    
-    "cbUr": { "Caption": "Read (r)" },
-    "cbUw": { "Caption": "Write (w)" },
-    "cbUx": { "Caption": "Execute (x)" },
-    
-    "cbGr": { "Caption": "Read (r)" },
-    "cbGw": { "Caption": "Write (w)" },
-    "cbGx": { "Caption": "Execute (x)" },
-    
-    "cbOr": { "Caption": "Read (r)" },
-    "cbOw": { "Caption": "Write (w)" },
-    "cbOx": { "Caption": "Execute (x)" },
-    
-    "cbSuid": { "Caption": "SUID" },
-    "cbSgid": { "Caption": "SGID" },
-    "cbSticky": { "Caption": "Sticky" },
-    
-    "cbIsDir": { "Caption": "Is Directory" },
-    "cbRecursive": { "Caption": "Recursive (-R)" },  
-    "cbSudo": { "Caption": "sudo" },
-    "cbSmartExecute": { "Caption": "Smart +X for directories" },
-    "cbSeparateMode": { "Caption": "Separate files (644) and directories (755)" },  
-    
-    "gbOwner": { "Caption": "Owner (User)" },
-    "gbGroup": { "Caption": "Group" },
-    "gbPublic": { "Caption": "Public (Other)" },
-    "gbSpecialBits": { "Caption": "Special Bits" },
-    "gbCommand": { "Caption": "Command" },
-
-    "ebOctal": { "EditLabel.Caption": "Octal" },
-    "ebSymbolic": { "EditLabel.Caption": "Symbolic" },    
-    "lbUser": { "Caption": "User" },
-    "lbGroup": { "Caption": "Group Name" },
-    "lbFileName": { "Caption": "File/Directory Name" },
-    "ebCommand": { "EditLabel.Caption": "Resulting Command" },
-
-    "lbPresets": { "Caption": "Presets" },
-    
-    "bSavePreset": { "Caption": "💾" },
-    "bDeletePreset": { "Caption": "🗑" },
-    "bCopyCommand": { "Caption": "📋" }
+    "cbUr": {
+      "Caption": "Read (r)"
+    },
+    "cbUw": {
+      "Caption": "Write (w)"
+    },
+    "cbUx": {
+      "Caption": "Execute (x)"
+    },
+    "cbGr": {
+      "Caption": "Read (r)"
+    },
+    "cbGw": {
+      "Caption": "Write (w)"
+    },
+    "cbGx": {
+      "Caption": "Execute (x)"
+    },
+    "cbOr": {
+      "Caption": "Read (r)"
+    },
+    "cbOw": {
+      "Caption": "Write (w)"
+    },
+    "cbOx": {
+      "Caption": "Execute (x)"
+    },
+    "cbSuid": {
+      "Caption": "SUID"
+    },
+    "cbSgid": {
+      "Caption": "SGID"
+    },
+    "cbSticky": {
+      "Caption": "Sticky"
+    },
+    "cbIsDir": {
+      "Caption": "Is Directory"
+    },
+    "cbRecursive": {
+      "Caption": "Recursive (-R)"
+    },
+    "cbSudo": {
+      "Caption": "sudo"
+    },
+    "cbSmartExecute": {
+      "Caption": "Smart +X for directories"
+    },
+    "cbSeparateMode": {
+      "Caption": "Separate files (644) and directories (755)"
+    },
+    "gbOwner": {
+      "Caption": "Owner (User)"
+    },
+    "gbGroup": {
+      "Caption": "Group"
+    },
+    "gbPublic": {
+      "Caption": "Public (Other)"
+    },
+    "gbSpecialBits": {
+      "Caption": "Special Bits"
+    },
+    "gbCommand": {
+      "Caption": "Command"
+    },
+    "ebOctal": {
+      "EditLabel.Caption": "Octal"
+    },
+    "ebSymbolic": {
+      "EditLabel.Caption": "Symbolic"
+    },
+    "lbUser": {
+      "Caption": "User"
+    },
+    "lbGroup": {
+      "Caption": "Group Name"
+    },
+    "lbFileName": {
+      "Caption": "File/Directory Name"
+    },
+    "ebCommand": {
+      "EditLabel.Caption": "Resulting Command"
+    },
+    "lbPresets": {
+      "Caption": "Presets"
+    },
+    "bSavePreset": {
+      "Caption": "💾"
+    },
+    "bDeletePreset": {
+      "Caption": "🗑"
+    },
+    "bCopyCommand": {
+      "Caption": "📋"
+    }
   },
   "ArchiveBuilderForm": {
     "Caption": "Archive Commands",
@@ -870,7 +943,7 @@
       "MainForm": {
         "tvCategories": {
           "Title": "Category List",
-          "Main": "Tree list of categories in the current workspace. If \"All Workspaces\" is selected, workspaces are displayed as root categories, but snippets cannot be added to them.<br><blockquote><b>Virtual categories</b> \"Recent\" and \"Frequently used\": snippets cannot be added manually to these categories, only modified or deleted.</blockquote>",
+          "Main": "Tree list of categories in the current workspace. If \"All Workspaces\" is selected, workspaces are displayed as root categories, but snippets cannot be added to them.<br><blockquote><b>Virtual categories</b> \"Recent\" and \"Frequently used\": snippets cannot be added manually to these categories, only modified or deleted.</blockquote><br><blockquote><b>Chains</b> - a named sequence of snippets executed one by one. Create: right-click the \"Chains\" node and choose \"New chain\", or right-click a snippet and choose \"Create chain from snippet\". Run by double-clicking the chain or via its context menu; a progress panel with a \"Stop\" button (Esc works too) appears during execution. Edit and delete via the chain's context menu.</blockquote>",
           "Expanded": "<code>ALT+A</code> - Add category<br><code>ALT+E</code> - Edit category<br><code>ALT+D</code> - Delete category"
         },
         "lvSnippets": {
@@ -890,7 +963,25 @@
         },
         "FrequentlyUsed": "Frequently Used",
         "Recent": "Recent",
-        "Favorites": "Favorites"
+        "Favorites": "Favorites",
+        "Chains": "Chains"
+      },
+      "ChainEditorForm": {
+        "lvSteps": {
+          "Title": "Chain steps",
+          "Main": "The chain's snippets run top to bottom, each typed into the selected target terminal window. Reorder by dragging rows or with the Up/Down buttons. The 'Remove step' button deletes the selected step from the chain. The field below the list sets the pause for the selected step.",
+          "Expanded": "Hotkeys (while the steps list has focus):<br><code>CTRL+↑ / CTRL+↓</code> - move the selected step;<br><code>DEL</code> - remove the selected step.<br>Adding: double-click a snippet in the library on the right, or use the 'Add step' button."
+        },
+        "edPause": {
+          "Title": "Pause after step",
+          "Main": "Delay in seconds after the selected step finishes, before the next one starts. 0 - the next step starts immediately after the previous one finishes typing. The value is stored in milliseconds in the database.",
+          "Expanded": "Applied when the field loses focus and when the chain is saved (OK button)."
+        },
+        "lvLibrary": {
+          "Title": "Snippet library",
+          "Main": "All snippets from all workspaces; search filters by title substring. Double-clicking a snippet or the 'Add step' button appends it as a step to the end of the chain.",
+          "Expanded": "The 'Workspace' column shows the snippet's workspace - a chain can combine steps from different workspaces."
+        }
       },
       "AddEditSnippet": {
         "mContent": {
@@ -1231,6 +1322,53 @@
       "EmptyNameError": "Workspace name cannot be empty.",
       "SystemSpaceError": "This workspace cannot be deleted (it is a system space)."
     },
+    "Chains": {
+      "Menu": {
+        "Create": "New chain",
+        "CreateFromSnippet": "Create chain from snippet",
+        "Run": "Run",
+        "Edit": "Edit",
+        "Delete": "Delete"
+      },
+      "Editor": {
+        "CaptionAdd": "New chain",
+        "CaptionEdit": "Edit chain",
+        "Name": "Name:",
+        "Steps": "Chain steps",
+        "AddStep": "Add step",
+        "RemoveStep": "Remove step",
+        "MoveUp": "Up",
+        "MoveDown": "Down",
+        "PauseSec": "Pause after step, sec:",
+        "PauseHint": "Delay after the selected step before the next one",
+        "Library": "Snippet library",
+        "Search": "Search...",
+        "LibraryHint": "Or double-click a snippet",
+        "ColStep": "No",
+        "ColSnippet": "Snippet",
+        "ColPause": "Pause, sec",
+        "ColWorkspace": "Workspace",
+        "Untitled": "(untitled)"
+      },
+      "Run": {
+        "PanelTitle": "Chain execution",
+        "Progress": "Chain \"%s\" - step %d/%d: %s",
+        "Stop": "Stop",
+        "Empty": "Chain \"%s\" has no steps.",
+        "ErrorActive": "A chain is already running.",
+        "ErrorMissingSnippet": "Step %d: snippet not found, chain stopped.",
+        "ErrorWindow": "Target window is unavailable, chain stopped."
+      },
+      "DeleteConfirm": "Delete chain \"%s\"?",
+      "CreatedMsg": "Chain \"%s\" created.",
+      "DeletedMsg": "Chain \"%s\" deleted.",
+      "Error": {
+        "EmptyName": "Enter chain name.",
+        "DuplicateName": "Chain \"%s\" already exists.",
+        "NotFound": "Chain not found.",
+        "SnippetNotFound": "Step %d: snippet not found."
+      }
+    },
     "Search": {
       "BackgroundError": "Background search error: %s"
     },
@@ -1286,22 +1424,18 @@
       "EveryStep": "Every %d %s",
       "Range": "%s - %s",
       "Range-Base": "%s - %s",
-
       "Prefix-Minutes": "Minutes: %s",
       "Prefix-Hours": "Hours: %s",
       "Prefix-DaysOfMonth": "Days of month: %s",
       "Prefix-Months": "Months: %s",
       "Prefix-DaysOfWeek": "Days of week: %s",
-
       "Every-Minutes": "Every minute",
       "Every-Hours": "Every hour",
       "Every-DaysOfMonth": "Every day of the month",
       "Every-Months": "Every month",
       "Every-DaysOfWeek": "Any day of the week",
-
       "Dow-WorkDays": "Monday through Friday",
       "Dow-Weekends": "on weekends",
-
       "Word-Minute-1": "minute",
       "Word-Minute-2": "minutes",
       "Word-Minute-5": "minutes",
@@ -1317,7 +1451,6 @@
       "Word-Dow-1": "day of the week",
       "Word-Dow-2": "days of the week",
       "Word-Dow-5": "days of the week",
-
       "Month-Prep-1": "in January",
       "Month-Prep-2": "in February",
       "Month-Prep-3": "in March",
@@ -1330,7 +1463,6 @@
       "Month-Prep-10": "in October",
       "Month-Prep-11": "in November",
       "Month-Prep-12": "in December",
-
       "Dow-Prep-0": "on Sunday",
       "Dow-Prep-1": "on Monday",
       "Dow-Prep-2": "on Tuesday",
@@ -1338,7 +1470,6 @@
       "Dow-Prep-4": "on Thursday",
       "Dow-Prep-5": "on Friday",
       "Dow-Prep-6": "on Saturday",
-
       "Month-1": "January",
       "Month-2": "February",
       "Month-3": "March",
@@ -1351,7 +1482,6 @@
       "Month-10": "October",
       "Month-11": "November",
       "Month-12": "December",
-
       "Dow-0": "Sunday",
       "Dow-1": "Monday",
       "Dow-2": "Tuesday",

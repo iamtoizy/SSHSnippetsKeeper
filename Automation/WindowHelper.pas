@@ -37,6 +37,8 @@ type
         procedure TypeTextIntoWindowWithContext(const Text: string; Context: TMacroContext);
         procedure SetTargetWindow(Handle: HWND);
         function GetWindowInfo: TWindowHelperInfo;
+        function IsTypingBusy: Boolean;
+        procedure CancelTyping;
 
         // ITextExecutor
         procedure TypeRawText(const Text: string);
@@ -133,6 +135,20 @@ begin
     // Обнуляем указатель только если это тот самый поток, который мы отслеживали
     if Sender = FMacroThread then
         FMacroThread := nil;
+end;
+
+function TWindowHelper.IsTypingBusy: Boolean;
+begin
+    Result := Assigned(FMacroThread);
+end;
+
+procedure TWindowHelper.CancelTyping;
+begin
+    if Assigned(FMacroThread) then
+    begin
+        FMacroThread.Cancel;
+        FMacroThread := nil;
+    end;
 end;
 
 procedure TWindowHelper.SendUnicodeChar(CharCode: Word);

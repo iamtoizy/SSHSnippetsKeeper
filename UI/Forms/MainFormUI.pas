@@ -5,6 +5,7 @@ interface
 uses
     BaseFormUI,
     CategoryTreeController,
+    Core.Entities.Chain,
     Core.Entities.Snippet,
     Core.Entities.Tag,
     Core.Entities.User,
@@ -152,6 +153,11 @@ type
         actFavSlot8: TAction;
         actFavSlot9: TAction;
         actFavSlot0: TAction;
+        actChainCreate: TAction;
+        actChainRun: TAction;
+        actChainEdit: TAction;
+        actChainDelete: TAction;
+        actChainCreateFromSnippet: TAction;
         puFavMove: TMenuItem;
         actSnippetHistory: TAction;
         tmrAutoSync: TTimer;
@@ -159,6 +165,11 @@ type
         procedure actAddSnippetExecute(Sender: TObject);
         procedure actAddTagExecute(Sender: TObject);
         procedure actArchiveBuilderExecute(Sender: TObject);
+        procedure actChainCreateExecute(Sender: TObject);
+        procedure actChainCreateFromSnippetExecute(Sender: TObject);
+        procedure actChainDeleteExecute(Sender: TObject);
+        procedure actChainEditExecute(Sender: TObject);
+        procedure actChainRunExecute(Sender: TObject);
         procedure actChmodCalculatorExecute(Sender: TObject);
         procedure actClearTagFilterExecute(Sender: TObject);
         procedure actCloseDatabaseExecute(Sender: TObject);
@@ -221,6 +232,7 @@ type
         procedure tmrSearchTimerTimer(Sender: TObject);
         procedure tvCategoriesClick(Sender: TObject);
         procedure tvCategoriesEndDrag(Sender, Target: TObject; X, Y: Integer);
+        procedure tvCategoriesDblClick(Sender: TObject);
     private
         FHotItemIndex: Integer;
         FUserID: Integer;
@@ -258,6 +270,9 @@ type
         procedure LoadUsersToComboBox;
         procedure UpdateMenuState;
         procedure UpdateFavoriteMenuState;
+        procedure UpdateChainMenuState;
+        function GetSelectedChainID: Integer;
+        function ShowChainEditor(ChainID: Integer; InitialSnippetID: Integer = 0): Integer;
         procedure RefreshCurrentSnippetList;
         procedure ReloadUI(PreserveCategoryID: Integer);
         procedure RefreshCaches;
@@ -275,6 +290,7 @@ type
         procedure DoInitialize; override;
     public
         procedure UpdateUI(const State: TBaseFormState); override;
+        procedure ApplyLanguage; override;
     end;
 
 var
@@ -289,6 +305,8 @@ uses
     UI.Services.AppStateManager,
     ArchiveBuilderFormUI,
     ArrayHelper,
+    ChainEditorFormUI,
+    ChainRunnerController,
     Core.Entities.Category,
     ChmodFormUI,
     Common.Consts,
@@ -659,9 +677,13 @@ begin
     actDeleteSnippet.Enabled := (lvSnippets.Selected <> nil);
     actEditSnippet.Enabled := (lvSnippets.Selected <> nil);
     actRunSnippet.Enabled := (lvSnippets.Selected <> nil);
+    actChainCreateFromSnippet.Enabled := (lvSnippets.Selected <> nil);
 
     // --- ИЗБРАННОЕ ---
     UpdateFavoriteMenuState;
+
+    // --- ЦЕПОЧКИ ---
+    UpdateChainMenuState;
 
     // --- ТЕГИ ---
     actAddTag.Enabled := True; // Создать новый тег можно всегда
@@ -711,6 +733,155 @@ begin
     actFavSlot0.Enabled := True;
 end;
 
+procedure TMainForm.UpdateChainMenuState;
+var
+    Node: TTreeNode;
+    NodeValue, ChainID: Integer;
+    IsChainNode: Boolean;
+begin
+    Node := tvCategories.Selected;
+    NodeValue := 0;
+    if Node <> nil then
+        NodeValue := Integer(IntPtr(Node.Data));
+
+    actChainCreate.Visible := (Node <> nil) and FCategoryTree.IsVirtualCategory(Node) and
+        (NodeValue = CHAINS_ROOT_NODE_ID);
+
+    IsChainNode := TChainRunner.TryGetChainID(NodeValue, ChainID);
+    actChainRun.Visible := IsChainNode;
+    actChainEdit.Visible := IsChainNode;
+    actChainDelete.Visible := IsChainNode;
+end;
+
+function TMainForm.GetSelectedChainID: Integer;
+var
+    Node: TTreeNode;
+begin
+    Result := 0;
+    Node := tvCategories.Selected;
+    if Node = nil then
+        Exit;
+    TChainRunner.TryGetChainID(Integer(IntPtr(Node.Data)), Result);
+end;
+
+function TMainForm.ShowChainEditor(ChainID: Integer; InitialSnippetID: Integer): Integer;
+var
+    Editor: TChainEditorForm;
+    DefaultUserID: Integer;
+begin
+    Result := 0;
+
+    DefaultUserID := FCategoryTree.GetWorkspaceUserID(tvCategories.Selected);
+
+    Editor := TChainEditorForm.Create(nil);
+    try
+        Editor.Initialize(AppContext);
+        Editor.Setup(ChainID, InitialSnippetID, DefaultUserID);
+        if Editor.ShowModal = mrOk then
+            Result := Editor.ChainID;
+    finally
+        Editor.Free;
+    end;
+end;
+
+procedure TMainForm.actChainCreateExecute(Sender: TObject);
+var
+    NewChainID: Integer;
+begin
+    NewChainID := ShowChainEditor(0);
+    if NewChainID > 0 then
+    begin
+        ReloadUI(TChainRunner.EncodeChainNodeID(NewChainID));
+        FStatus.Flash(TUIStateLoader.GetMessage('Chains.CreatedMsg', [
+            AppContext.ChainService.GetChainByID(NewChainID).Name]));
+        MarkDataChanged;
+    end;
+end;
+
+procedure TMainForm.actChainCreateFromSnippetExecute(Sender: TObject);
+var
+    Item: TListItem;
+    Snippet: TSnippetDTO;
+    NewChainID: Integer;
+begin
+    if TChainRunner.IsChainRunning then
+        Exit;
+
+    Item := lvSnippets.Selected;
+    if Item = nil then
+        Exit;
+
+    Snippet := ExtractSnippetByListItem(Item);
+    NewChainID := ShowChainEditor(0, Snippet.ID);
+    if NewChainID > 0 then
+    begin
+        ReloadUI(TChainRunner.EncodeChainNodeID(NewChainID));
+        FStatus.Flash(TUIStateLoader.GetMessage('Chains.CreatedMsg', [
+            AppContext.ChainService.GetChainByID(NewChainID).Name]));
+        MarkDataChanged;
+    end;
+end;
+
+procedure TMainForm.actChainRunExecute(Sender: TObject);
+var
+    ChainID: Integer;
+begin
+    ChainID := GetSelectedChainID;
+    if ChainID > 0 then
+        TChainRunner.ExecuteChain(AppContext, ChainID);
+end;
+
+procedure TMainForm.actChainEditExecute(Sender: TObject);
+var
+    ChainID, EditedChainID: Integer;
+begin
+    ChainID := GetSelectedChainID;
+    if ChainID = 0 then
+        Exit;
+
+    EditedChainID := ShowChainEditor(ChainID);    if EditedChainID > 0 then
+    begin
+        ReloadUI(TChainRunner.EncodeChainNodeID(EditedChainID));
+        MarkDataChanged;
+    end;
+end;
+
+procedure TMainForm.actChainDeleteExecute(Sender: TObject);
+var
+    ChainID: Integer;
+    Chain: TChainDTO;
+begin
+    ChainID := GetSelectedChainID;
+    if ChainID = 0 then
+        Exit;
+
+    Chain := AppContext.ChainService.GetChainByID(ChainID);
+    if Chain.ID = 0 then
+        Exit;
+
+    if AppContext.MessagesHandler.AskConfirmation(
+        TUIStateLoader.GetMessage('Chains.DeleteConfirm', [Chain.Name]),
+        TUIStateLoader.GetMessage('Common.Confirmation'),
+        MB_YESNO or MB_ICONQUESTION
+    ) then begin
+        try
+            AppContext.ChainService.DeleteChain(ChainID);
+            ReloadUI(CHAINS_ROOT_NODE_ID);
+            FStatus.Flash(TUIStateLoader.GetMessage('Chains.DeletedMsg', [Chain.Name]));
+            MarkDataChanged;
+        except
+            on E: Exception do
+                AppContext.MessagesHandler.ShowError(E.Message);
+        end;
+    end;
+end;
+
+procedure TMainForm.tvCategoriesDblClick(Sender: TObject);
+begin
+    if GetSelectedChainID > 0 then
+        actChainRunExecute(Sender);
+end;
+
 procedure TMainForm.actClearTagFilterExecute(Sender: TObject);
 begin
     FTags.ClearFilter;
@@ -727,7 +898,8 @@ begin
         Cats := AppContext.CategoryService.GetAllCategories(FFilterUserID);
 
         // Используем UIHelper
-        TUIHelpers.BuildCategoryTree(tvCategories, Cats, FUsersCache, FFilterUserID, PreserveCategoryID);
+        TUIHelpers.BuildCategoryTree(tvCategories, Cats, FUsersCache,
+            AppContext.ChainService.GetAllChains(FFilterUserID), FFilterUserID, PreserveCategoryID);
         RefreshCurrentSnippetList;
     finally
         FIgnoreCategoryChange := False;
@@ -908,6 +1080,8 @@ begin
     RegisterHelp(lvTags, hipTopRight, 'Help.MainForm.lvTags', hkCustomForm);
     RegisterHelp(ebSearch, hipTopRight, 'Help.MainForm.ebSearch', hkCustomForm);
 
+    ApplyLanguage;
+
     FHotkeyMgr := TGlobalHotkeyManager.Create(
         AppContext
     );
@@ -920,6 +1094,16 @@ begin
     TStateMgr.Instance.FirstRun;
 
     GWinMonitor.StartMonitoring;
+end;
+
+procedure TMainForm.ApplyLanguage;
+begin
+    inherited;
+    actChainCreate.Caption := TUIStateLoader.GetMessage('Chains.Menu.Create');
+    actChainCreateFromSnippet.Caption := TUIStateLoader.GetMessage('Chains.Menu.CreateFromSnippet');
+    actChainRun.Caption := TUIStateLoader.GetMessage('Chains.Menu.Run');
+    actChainEdit.Caption := TUIStateLoader.GetMessage('Chains.Menu.Edit');
+    actChainDelete.Caption := TUIStateLoader.GetMessage('Chains.Menu.Delete');
 end;
 
 procedure TMainForm.lvSnippetsClick(Sender: TObject);
@@ -1330,6 +1514,9 @@ var
     Item: TListItem;
     Runner: TSnippetRunner;
 begin
+    if TChainRunner.IsChainRunning then
+        Exit;
+
     Item := lvSnippets.Selected;
     if Item = nil then
         Exit;

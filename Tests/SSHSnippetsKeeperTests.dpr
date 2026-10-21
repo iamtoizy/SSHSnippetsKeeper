@@ -12,7 +12,8 @@ uses
     Tests.HotkeyService in 'Tests.HotkeyService.pas',
     Tests.TextDiff in 'Tests.TextDiff.pas',
     Tests.QueryLanguage in 'Tests.QueryLanguage.pas',
-    Tests.SearchTags in 'Tests.SearchTags.pas'
+    Tests.SearchTags in 'Tests.SearchTags.pas',
+    Tests.Chains in 'Tests.Chains.pas'
     ;
 
 var
@@ -28,6 +29,7 @@ begin
         TDUnitX.RegisterTestFixture(TTextDiffTests);
         TDUnitX.RegisterTestFixture(TQueryLanguageTests);
         TDUnitX.RegisterTestFixture(TSearchTagsTests);
+        TDUnitX.RegisterTestFixture(TChainsTests);
         Runner := TDUnitX.CreateRunner([TDUnitXConsoleLogger.Create(False)]);
         Runner.UseRTTI := True;
         Results := Runner.Execute;

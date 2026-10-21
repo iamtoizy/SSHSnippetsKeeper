@@ -4,6 +4,7 @@ interface
 
 uses
     Core.Entities.Category,
+    Core.Entities.Chain,
     Core.Entities.Snippet,
     Core.Entities.Tag,
     Core.Entities.User,
@@ -77,6 +78,17 @@ type
         function AddUser(const User: TUserDTO): Integer;
         procedure UpdateUser(const User: TUserDTO);
         procedure DeleteUser(UserID: Integer);
+    end;
+
+    IChainService = interface
+        ['{C91D4E07-6B2F-4D58-9E3A-F07D82C4A619}']
+        function GetAllChains(UserID: Integer): TArray<TChainDTO>;
+        function GetChainByID(ID: Integer): TChainDTO;
+        function CreateChain(UserID: Integer; const Name: string): Integer;
+        procedure RenameChain(ID: Integer; const NewName: string);
+        procedure DeleteChain(ID: Integer);
+        function GetSteps(ChainID: Integer): TArray<TChainStepDTO>;
+        procedure SaveSteps(ChainID: Integer; const Steps: TArray<TChainStepDTO>);
     end;
 
     // Описывает одно настраиваемое действие
