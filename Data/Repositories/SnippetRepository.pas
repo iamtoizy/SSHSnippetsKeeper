@@ -614,9 +614,9 @@ begin
     // executed_by_user_id nullable (ON DELETE SET NULL): отдельный SQL с литеральным NULL,
     // т.к. FireDAC не выводит тип параметра из нетипизированного Null (ошибка -335).
     if UserID > 0 then
-        FConnection.ExecSQL(SQL_RECORD_RUN, [SnippetID, UserID])
+        ExecuteSQL(SQL_RECORD_RUN, [SnippetID, UserID])
     else
-        FConnection.ExecSQL(SQL_RECORD_RUN_NO_USER, [SnippetID]);
+        ExecuteSQL(SQL_RECORD_RUN_NO_USER, [SnippetID]);
 end;
 
 function TSnippetRepository.GetSnippetByCategory(const CategoryID, UserID: Integer): TArray<TSnippetDTO>;
@@ -714,12 +714,12 @@ procedure TSnippetRepository.AddFavorite(SnippetID, UserID: Integer);
 begin
     if IsFavorite(SnippetID, UserID) then
         Exit;
-    FConnection.ExecSQL(SQL_ADD_FAVORITE, [UserID, SnippetID, UserID]);
+    ExecuteSQL(SQL_ADD_FAVORITE, [UserID, SnippetID, UserID]);
 end;
 
 procedure TSnippetRepository.RemoveFavorite(SnippetID, UserID: Integer);
 begin
-    FConnection.ExecSQL(SQL_REMOVE_FAVORITE, [UserID, SnippetID]);
+    ExecuteSQL(SQL_REMOVE_FAVORITE, [UserID, SnippetID]);
 end;
 
 procedure TSnippetRepository.MoveFavorite(SnippetID, UserID, NewPosition: Integer);

@@ -140,7 +140,7 @@ begin
     FDConnection.ExecSQL('PRAGMA synchronous = NORMAL;');
     FDConnection.ExecSQL('PRAGMA temp_store = MEMORY;');
     FDConnection.ExecSQL('PRAGMA recursive_triggers = OFF;');
-    FDConnection.ExecSQL('PRAGMA busy_timeout = 5000;');
+    FDConnection.ExecSQL('PRAGMA busy_timeout = 1000;');
     FDConnection.ExecSQL('PRAGMA cache_size = -20000;');
 end;
 

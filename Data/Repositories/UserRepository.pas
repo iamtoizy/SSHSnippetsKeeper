@@ -104,7 +104,7 @@ var
     NewID: Variant;
 begin
     // Безопасная вставка, исключающая гонку потоков
-    NewID := FConnection.ExecSQLScalar(
+    NewID := ExecuteSQLScalar(
         'INSERT INTO users (name, created_at) VALUES (?, ?) RETURNING id',
         [User.Name, User.CreatedAt]
     );
@@ -113,12 +113,12 @@ end;
 
 procedure TUserRepository.Update(const User: TUserDTO);
 begin
-    FConnection.ExecSQL('UPDATE users ' + 'SET name = ? ' + 'WHERE id = ?', [User.Name, User.Id]);
+    ExecuteSQL('UPDATE users ' + 'SET name = ? ' + 'WHERE id = ?', [User.Name, User.Id]);
 end;
 
 procedure TUserRepository.Delete(Id: Integer);
 begin
-    FConnection.ExecSQL('DELETE FROM users WHERE id = ?', [Id]);
+    ExecuteSQL('DELETE FROM users WHERE id = ?', [Id]);
 end;
 
 function TUserRepository.TryGetByID(ID: Integer; out User: TUserDTO): Boolean;

@@ -14,6 +14,7 @@ type
 
         function CreateQuery: TFDQuery;
         procedure SetQueryParams(Query: TFDQuery; const Params: array of Variant);
+        function IsTransientLockError(E: Exception): Boolean;
 
         // Централизованный метод для выполнения запросов с автоочисткой памяти
         procedure ExecuteQuery(const SQL: string; const Params: array of Variant; Proc: TProc<TFDQuery>);
@@ -26,9 +27,18 @@ type
 implementation
 
 uses
+    Common.Localization,
+    FireDAC.Stan.Error,
     FireDAC.Stan.Param,
-    System.Classes
+    System.Classes,
+    System.Variants
     ;
+
+const
+    SQLITE_BUSY = 5;
+    SQLITE_LOCKED = 6;
+    BUSY_RETRY_COUNT = 3;
+    BUSY_RETRY_DELAY_MS = 200;
 
 { TRepositoryBase }
 
@@ -44,6 +54,29 @@ begin
     Result.Connection := FConnection;
     // Настройки для оптимизации выборок
     Result.FetchOptions.Unidirectional := True;
+end;
+
+procedure TRepositoryBase.SetQueryParams(Query: TFDQuery; const Params: array of Variant);
+var
+    I: Integer;
+begin
+    for I := 0 to High(Params) do
+        Query.Params[I].Value := Params[I];
+end;
+
+function TRepositoryBase.IsTransientLockError(E: Exception): Boolean;
+var
+    I: Integer;
+begin
+    Result := False;
+    if not (E is EFDDBEngineException) then
+        Exit;
+    for I := 0 to EFDDBEngineException(E).ErrorCount - 1 do
+        if EFDDBEngineException(E).Errors[I].ErrorCode in [SQLITE_BUSY, SQLITE_LOCKED] then
+        begin
+            Result := True;
+            Break;
+        end;
 end;
 
 procedure TRepositoryBase.ExecuteQuery(const SQL: string; const Params: array of Variant; Proc: TProc<TFDQuery>);
@@ -62,21 +95,43 @@ begin
 end;
 
 function TRepositoryBase.ExecuteSQL(const SQL: string; const Params: array of Variant): Integer;
+var
+    Attempt: Integer;
 begin
-    Result := FConnection.ExecSQL(SQL, Params);
+    Result := 0;
+    for Attempt := 1 to BUSY_RETRY_COUNT do
+        try
+            Result := FConnection.ExecSQL(SQL, Params);
+            Exit;
+        except
+            on E: Exception do
+                if (Attempt < BUSY_RETRY_COUNT) and IsTransientLockError(E) then
+                    TThread.Sleep(BUSY_RETRY_DELAY_MS)
+                else if IsTransientLockError(E) then
+                    raise Exception.Create(TUIStateLoader.GetMessage('Common.DatabaseBusy', [E.Message]))
+                else
+                    raise;
+        end;
 end;
 
 function TRepositoryBase.ExecuteSQLScalar(const SQL: string; const Params: array of Variant): Variant;
-begin
-    Result := FConnection.ExecSQLScalar(SQL, Params);
-end;
-
-procedure TRepositoryBase.SetQueryParams(Query: TFDQuery; const Params: array of Variant);
 var
-    I: Integer;
+    Attempt: Integer;
 begin
-    for I := 0 to High(Params) do
-        Query.Params[I].Value := Params[I];
+    Result := Null;
+    for Attempt := 1 to BUSY_RETRY_COUNT do
+        try
+            Result := FConnection.ExecSQLScalar(SQL, Params);
+            Exit;
+        except
+            on E: Exception do
+                if (Attempt < BUSY_RETRY_COUNT) and IsTransientLockError(E) then
+                    TThread.Sleep(BUSY_RETRY_DELAY_MS)
+                else if IsTransientLockError(E) then
+                    raise Exception.Create(TUIStateLoader.GetMessage('Common.DatabaseBusy', [E.Message]))
+                else
+                    raise;
+        end;
 end;
 
 end.

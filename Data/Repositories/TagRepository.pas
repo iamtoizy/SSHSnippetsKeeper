@@ -99,7 +99,7 @@ end;
 
 function TTagRepository.Add(const Tag: TTagDTO): Integer;
 begin
-    Result := FConnection.ExecSQLScalar(
+    Result := ExecuteSQLScalar(
         'INSERT INTO tags(name) VALUES(?) RETURNING id',
         [Tag.Name]
     );
