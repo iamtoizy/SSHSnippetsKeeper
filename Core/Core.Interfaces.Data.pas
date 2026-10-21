@@ -3,6 +3,7 @@ unit Core.Interfaces.Data;
 interface
 
 uses
+    Common.QueryLanguage,
     Core.Entities.Category,
     Core.Entities.Snippet,
     Core.Entities.Tag,
@@ -35,6 +36,7 @@ type
         function GetRecentSnippets(UserID: Integer; Count: Integer): TArray<TSnippetDTO>;
         function SearchByMaskFTS(const Mask: string; UserID: Integer = 0): TArray<TSnippetDTO>;
         function SearchByMaskSimple(const Mask: string; UserID: Integer = 0): TArray<TSnippetDTO>;
+        function SearchAdvanced(const Query: TStructuredQuery; UseFTS: Boolean; UserID: Integer = 0): TArray<TSnippetDTO>;
         procedure RecordRun(SnippetID, UserID: Integer);
         function GetFavorites(UserID: Integer): TArray<TSnippetDTO>;
         function GetFavoriteOrder(UserID: Integer): TArray<Integer>;

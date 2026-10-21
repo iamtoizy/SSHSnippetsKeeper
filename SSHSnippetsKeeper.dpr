@@ -88,6 +88,7 @@ uses
   Core.BashCompletionEngine in 'Core\Core.BashCompletionEngine.pas',
   Common.Consts in 'Common\Common.Consts.pas',
   Common.Helpers in 'Common\Common.Helpers.pas',
+  Common.QueryLanguage in 'Common\Common.QueryLanguage.pas',
   Common.VCLStyleService in 'Common\Common.VCLStyleService.pas',
   SnippetService in 'Core\Services\SnippetService.pas',
   SnippetHistoryService in 'Core\Services\SnippetHistoryService.pas',

@@ -59,7 +59,8 @@ type
 implementation
 
 uses
-    Common.Localization
+    Common.Localization,
+    Common.QueryLanguage
     ;
 
 { TSnippetService }
@@ -181,17 +182,21 @@ end;
 function TSnippetService.SearchSnippets(const Query: string; UseFTS: Boolean; UserID: Integer = 0): TArray<TSnippetDTO>;
 var
     CleanQuery: string;
+    Parsed: TStructuredQuery;
 begin
     CleanQuery := Trim(Query);
     Result := [];
 
     if Length(CleanQuery) < 3 then
-    begin
-//        Exit(GetAllSnippets(UserID));
         Exit(Result);
-    end;
 
-    if UseFTS then
+    Parsed := TQueryLanguageParser.Parse(CleanQuery);
+    if Parsed.IsEmpty then
+        Exit(Result);
+
+    if Parsed.HasStructuredFilters then
+        Result := FSnippetRepo.SearchAdvanced(Parsed, UseFTS, UserID)
+    else if UseFTS then
         Result := FSnippetRepo.SearchByMaskFTS(CleanQuery, UserID)
     else
         Result := FSnippetRepo.SearchByMaskSimple(CleanQuery, UserID);

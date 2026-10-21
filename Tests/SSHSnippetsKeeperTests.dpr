@@ -10,7 +10,9 @@ uses
     Tests.PasswordService in 'Tests.PasswordService.pas',
     Tests.MacroEngine in 'Tests.MacroEngine.pas',
     Tests.HotkeyService in 'Tests.HotkeyService.pas',
-    Tests.TextDiff in 'Tests.TextDiff.pas'
+    Tests.TextDiff in 'Tests.TextDiff.pas',
+    Tests.QueryLanguage in 'Tests.QueryLanguage.pas',
+    Tests.SearchTags in 'Tests.SearchTags.pas'
     ;
 
 var
@@ -24,6 +26,8 @@ begin
         TDUnitX.RegisterTestFixture(TMacroEngineTests);
         TDUnitX.RegisterTestFixture(THotkeyServiceTests);
         TDUnitX.RegisterTestFixture(TTextDiffTests);
+        TDUnitX.RegisterTestFixture(TQueryLanguageTests);
+        TDUnitX.RegisterTestFixture(TSearchTagsTests);
         Runner := TDUnitX.CreateRunner([TDUnitXConsoleLogger.Create(False)]);
         Runner.UseRTTI := True;
         Results := Runner.Execute;

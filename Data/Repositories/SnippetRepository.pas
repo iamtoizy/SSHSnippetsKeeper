@@ -6,6 +6,7 @@ uses
     Core.Entities.Snippet,
     Core.Entities.Tag,
     Core.Interfaces.Data,
+    Common.QueryLanguage,
     FireDAC.Comp.Client,
     RepositoryBase,
     System.Generics.Collections
@@ -30,6 +31,7 @@ type
         function Search(const Query: string): TArray<TSnippetDTO>;
         function SearchByMaskFTS(const Mask: string; UserID: Integer = 0): TArray<TSnippetDTO>;
         function SearchByMaskSimple(const Mask: string; UserID: Integer = 0): TArray<TSnippetDTO>;
+        function SearchAdvanced(const Query: TStructuredQuery; UseFTS: Boolean; UserID: Integer = 0): TArray<TSnippetDTO>;
         procedure UpdateTags(SnippetID: Integer; const TagIDs: TArray<Integer>);
         function GetRecentSnippets(UserID: Integer; Limit: Integer): TArray<TSnippetDTO>;
         function GetTopSnippets(UserID: Integer; Limit: Integer): TArray<TSnippetDTO>;
@@ -593,18 +595,146 @@ begin
 
     SQL := 'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at ' +
            'FROM snippets ' +
-           'WHERE (title LIKE ? COLLATE NOCASE OR content LIKE ? COLLATE NOCASE) ';
+           'WHERE (title LIKE ? COLLATE NOCASE OR content LIKE ? COLLATE NOCASE ' +
+           'OR EXISTS (SELECT 1 FROM snippet_tags st JOIN tags t ON t.id = st.tag_id ' +
+           'WHERE st.snippet_id = snippets.id AND t.name LIKE ? COLLATE NOCASE)) ';
 
     if UserID > 0 then
     begin
         SQL := SQL + ' AND user_id = ? ORDER BY updated_at DESC, title ASC';
-        // Передаем SearchStr дважды: для title и для content, и третьим идет UserID
-        Result := InternalLoadSnippets(SQL, [SearchStr, SearchStr, UserID]);
+        // Передаем SearchStr трижды: для title, content и имени тега, четвертым идет UserID
+        Result := InternalLoadSnippets(SQL, [SearchStr, SearchStr, SearchStr, UserID]);
     end
     else
     begin
         SQL := SQL + ' ORDER BY updated_at DESC, title ASC';
-        Result := InternalLoadSnippets(SQL, [SearchStr, SearchStr]);
+        Result := InternalLoadSnippets(SQL, [SearchStr, SearchStr, SearchStr]);
+    end;
+end;
+
+function TSnippetRepository.SearchAdvanced(const Query: TStructuredQuery; UseFTS: Boolean; UserID: Integer): TArray<TSnippetDTO>;
+var
+    Sb: TStringBuilder;
+    Params: TList<Variant>;
+    FTSInclude, Safe, Word: string;
+    I: Integer;
+begin
+    Result := nil;
+
+    FTSInclude := '';
+    if UseFTS and (Length(Query.BareWords) > 0) then
+    begin
+        FTSInclude := SanitizeFTS5(string.Join(' ', Query.BareWords));
+        if FTSInclude = '' then
+            Exit(nil);
+        FTSInclude := '"' + FTSInclude + '" *';
+    end;
+
+    Sb := TStringBuilder.Create;
+    Params := TList<Variant>.Create;
+    try
+        Sb.Append('SELECT s.id, s.user_id, s.title, s.content, s.comment, s.category_id, s.created_at, s.updated_at ');
+        Sb.Append('FROM snippets s ');
+
+        if FTSInclude <> '' then
+            Sb.Append('JOIN snippet_fts fts ON fts.rowid = s.id ');
+
+        Sb.Append('WHERE 1 = 1 ');
+
+        if UserID > 0 then
+        begin
+            Sb.Append('AND s.user_id = ? ');
+            Params.Add(UserID);
+        end;
+
+        if Query.OnlyFavorites then
+        begin
+            Sb.Append('AND EXISTS (SELECT 1 FROM snippet_favorites f WHERE f.snippet_id = s.id ');
+            if UserID > 0 then
+                Sb.Append('AND f.user_id = ? ');
+            Sb.Append(') ');
+            if UserID > 0 then
+                Params.Add(UserID);
+        end;
+
+        if FTSInclude <> '' then
+        begin
+            Sb.Append('AND snippet_fts MATCH ? ');
+            Params.Add(FTSInclude);
+        end;
+
+        for Word in Query.ExcludedWords do
+        begin
+            if UseFTS then
+            begin
+                Safe := SanitizeFTS5(Word);
+                if Safe = '' then
+                    Continue;
+                Sb.Append('AND s.id NOT IN (SELECT rowid FROM snippet_fts WHERE snippet_fts MATCH ?) ');
+                Params.Add('"' + Safe + '" *');
+            end
+            else
+            begin
+                Sb.Append('AND NOT (s.title LIKE ? COLLATE NOCASE OR s.content LIKE ? COLLATE NOCASE ' +
+                    'OR EXISTS (SELECT 1 FROM snippet_tags st JOIN tags t ON t.id = st.tag_id ' +
+                    'WHERE st.snippet_id = s.id AND t.name LIKE ? COLLATE NOCASE)) ');
+                Params.Add('%' + Word + '%');
+                Params.Add('%' + Word + '%');
+                Params.Add('%' + Word + '%');
+            end;
+        end;
+
+        for Word in Query.TagValues do
+        begin
+            Sb.Append('AND EXISTS (SELECT 1 FROM snippet_tags st JOIN tags t ON t.id = st.tag_id ' +
+                'WHERE st.snippet_id = s.id AND t.name LIKE ? COLLATE NOCASE) ');
+            Params.Add('%' + Word + '%');
+        end;
+
+        if Length(Query.CategoryValues) > 0 then
+        begin
+            Sb.Append('AND s.category_id IN (SELECT id FROM snippet_categories WHERE (name LIKE ? COLLATE NOCASE) ');
+            Params.Add('%' + Query.CategoryValues[0] + '%');
+            for I := 1 to High(Query.CategoryValues) do
+            begin
+                Sb.Append('OR (name LIKE ? COLLATE NOCASE) ');
+                Params.Add('%' + Query.CategoryValues[I] + '%');
+            end;
+            Sb.Append(') ');
+        end;
+
+        for Word in Query.TitleValues do
+        begin
+            Sb.Append('AND s.title LIKE ? COLLATE NOCASE ');
+            Params.Add('%' + Word + '%');
+        end;
+
+        for Word in Query.CommentValues do
+        begin
+            Sb.Append('AND s.comment LIKE ? COLLATE NOCASE ');
+            Params.Add('%' + Word + '%');
+        end;
+
+        if (not UseFTS) and (Length(Query.BareWords) > 0) then
+            for Word in Query.BareWords do
+            begin
+                Sb.Append('AND (s.title LIKE ? COLLATE NOCASE OR s.content LIKE ? COLLATE NOCASE ' +
+                    'OR EXISTS (SELECT 1 FROM snippet_tags st JOIN tags t ON t.id = st.tag_id ' +
+                    'WHERE st.snippet_id = s.id AND t.name LIKE ? COLLATE NOCASE)) ');
+                Params.Add('%' + Word + '%');
+                Params.Add('%' + Word + '%');
+                Params.Add('%' + Word + '%');
+            end;
+
+        if FTSInclude <> '' then
+            Sb.Append('ORDER BY fts.rank ASC')
+        else
+            Sb.Append('ORDER BY s.updated_at DESC, s.title ASC');
+
+        Result := InternalLoadSnippets(Sb.ToString, Params.ToArray);
+    finally
+        Params.Free;
+        Sb.Free;
     end;
 end;
 
