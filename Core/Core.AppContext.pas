@@ -18,6 +18,8 @@ uses
     HotkeyService,
     PasswordService,
     SecurityScanner,
+    SnippetHistoryRepository,
+    SnippetHistoryService,
     SnippetRepository,
     SnippetService,
     System.Classes,
@@ -44,6 +46,7 @@ type
         FHotkeyService: IHotkeyService;
         FLocalAIService: ILocalAIService;
         FSecurityScanner: ISecurityScanner;
+        FHistoryService: ISnippetHistoryService;
         FDBConnection: TFDConnection;
 
         function GetDatabaseManager: IDatabaseManager;
@@ -59,6 +62,7 @@ type
         function GetHotkeyService: IHotkeyService;
         function GetLocalAIService: ILocalAIService;
         function GetSecurityScanner: ISecurityScanner;
+        function GetHistoryService: ISnippetHistoryService;
         function GetDBConnection: TFDConnection;
     public
         // Основной конструктор (для UI-потока)
@@ -88,6 +92,7 @@ type
         property HotkeyService: IHotkeyService read GetHotkeyService;
         property LocalAIService: ILocalAIService read GetLocalAIService;
         property SecurityScanner: ISecurityScanner read GetSecurityScanner;
+        property HistoryService: ISnippetHistoryService read GetHistoryService;
         property DBConnection: TFDConnection read GetDBConnection;
 
         function CreateIsolatedSnippetService(out BackgroundConnection: TComponent): ISnippetService;
@@ -117,6 +122,7 @@ var
     CategoryRepo: ICategoryRepository;
     TagRepo: ITagRepository;
     UserRepo: IUserRepository;
+    HistoryRepo: ISnippetHistoryRepository;
 begin
     inherited Create;
 
@@ -142,6 +148,9 @@ begin
     FTagService := TTagService.Create(TagRepo);
     FUserService := TUserService.Create(UserRepo);
 
+    HistoryRepo := TSnippetHistoryRepository.Create(DBConnection);
+    FHistoryService := TSnippetHistoryService.Create(HistoryRepo, FSnippetService);
+
     // Локальные сервисы, создающиеся в AppContext
     FPasswordService := TPasswordService.Create;
     FEpochService := TEpochService.Create;
@@ -163,6 +172,7 @@ var
     CategoryRepo: ICategoryRepository;
     TagRepo: ITagRepository;
     UserRepo: IUserRepository;
+    HistoryRepo: ISnippetHistoryRepository;
 begin
     inherited Create;
 
@@ -188,6 +198,9 @@ begin
     FCategoryService := TCategoryService.Create(CategoryRepo);
     FTagService := TTagService.Create(TagRepo);
     FUserService := TUserService.Create(UserRepo);
+
+    HistoryRepo := TSnippetHistoryRepository.Create(DBConnection);
+    FHistoryService := TSnippetHistoryService.Create(HistoryRepo, FSnippetService);
 
     FPasswordService := TPasswordService.Create;
     FEpochService := TEpochService.Create;
@@ -321,6 +334,11 @@ end;
 function TAppContext.GetSecurityScanner: ISecurityScanner;
 begin
     Result := FSecurityScanner;
+end;
+
+function TAppContext.GetHistoryService: ISnippetHistoryService;
+begin
+    Result := FHistoryService;
 end;
 
 function TAppContext.GetDBConnection: TFDConnection;

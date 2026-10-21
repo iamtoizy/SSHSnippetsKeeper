@@ -2,7 +2,7 @@ PRAGMA foreign_keys = ON;
 PRAGMA journal_mode = WAL;
 PRAGMA synchronous = NORMAL;
 PRAGMA temp_store = MEMORY;
-PRAGMA user_version = 8; -- v8: Добавлена таблица snippet_favorites (избранное и порядок для горячих слотов)
+PRAGMA user_version = 9; -- v9: Добавлены история версий сниппетов (snippet_history) и служебные флаги (service_flags)
 PRAGMA recursive_triggers = OFF;
 PRAGMA busy_timeout = 5000;
 PRAGMA cache_size = -20000;
@@ -140,7 +140,33 @@ CREATE TABLE IF NOT EXISTS snippet_stats (
 CREATE INDEX IF NOT EXISTS ix_snippet_stats_order ON snippet_stats(exec_count DESC, last_exec_at DESC);
 
 ---------------------------------------------------------
--- 10. TRIGGERS (Бизнес-правила БД и синхронизация FTS)
+-- 10. SNIPPET HISTORY (История версий: снимок заменяемого контента)
+---------------------------------------------------------
+CREATE TABLE IF NOT EXISTS snippet_history (
+  id          INTEGER PRIMARY KEY,
+  snippet_id  INTEGER NOT NULL,
+  title       TEXT COLLATE NOCASE,
+  content     TEXT NOT NULL COLLATE NOCASE,
+  comment     TEXT NOT NULL DEFAULT '',
+  category_id INTEGER,
+  changed_at  INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+  FOREIGN KEY (snippet_id) REFERENCES snippets(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS ix_snippet_history_snippet ON snippet_history(snippet_id, changed_at DESC);
+
+---------------------------------------------------------
+-- 11. SERVICE FLAGS (Служебные флаги: подавление истории на время импорта)
+---------------------------------------------------------
+CREATE TABLE IF NOT EXISTS service_flags (
+  name  TEXT PRIMARY KEY,
+  value TEXT NOT NULL DEFAULT ''
+);
+
+INSERT OR IGNORE INTO service_flags(name, value) VALUES ('history_suppressed', '0');
+
+---------------------------------------------------------
+-- 12. TRIGGERS (Бизнес-правила БД и синхронизация FTS)
 ---------------------------------------------------------
 
 -- Запрет перемещения категорий в чужие workspace
@@ -199,6 +225,17 @@ BEGIN
                      THEN excluded.last_exec_at
                      ELSE snippet_stats.last_exec_at
                    END;
+END;
+
+-- История версий: снимок заменяемой версии при реальном изменении контента.
+-- Не срабатывает, пока установлен флаг history_suppressed (массовый импорт).
+CREATE TRIGGER IF NOT EXISTS trg_snippets_history_au
+AFTER UPDATE ON snippets
+WHEN OLD.content <> NEW.content
+ AND (SELECT value FROM service_flags WHERE name = 'history_suppressed') <> '1'
+BEGIN
+  INSERT INTO snippet_history (snippet_id, title, content, comment, category_id)
+  VALUES (OLD.id, OLD.title, OLD.content, OLD.comment, OLD.category_id);
 END;
 
 -- FTS: Синхронизация при обновлении названия тега
@@ -280,7 +317,7 @@ BEGIN
 END;
 
 ---------------------------------------------------------
--- 11. VIEWS (Представления)
+-- 13. VIEWS (Представления)
 ---------------------------------------------------------
 CREATE VIEW IF NOT EXISTS v_snippet_top_overall AS
 SELECT s.id AS snippet_id,

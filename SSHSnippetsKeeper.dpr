@@ -51,6 +51,7 @@ uses
    Data.Database in 'Data\Data.Database.pas' {AppDatabase: TDataModule},
    Core.Entities.Snippet in 'Core\Entities\Core.Entities.Snippet.pas',
   SnippetRepository in 'Data\Repositories\SnippetRepository.pas',
+  SnippetHistoryRepository in 'Data\Repositories\SnippetHistoryRepository.pas',
    Core.Entities.Tag in 'Core\Entities\Core.Entities.Tag.pas',
    Core.Entities.Category in 'Core\Entities\Core.Entities.Category.pas',
   CategoryRepository in 'Data\Repositories\CategoryRepository.pas',
@@ -89,6 +90,7 @@ uses
   Common.Helpers in 'Common\Common.Helpers.pas',
   Common.VCLStyleService in 'Common\Common.VCLStyleService.pas',
   SnippetService in 'Core\Services\SnippetService.pas',
+  SnippetHistoryService in 'Core\Services\SnippetHistoryService.pas',
   TagService in 'Core\Services\TagService.pas',
   CategoryService in 'Core\Services\CategoryService.pas',
   UserService in 'Core\Services\UserService.pas',
@@ -135,6 +137,8 @@ uses
   Bcrypt in 'ThirdParty\Bcrypt.pas',
   Core.MarkdownExporter in 'Core\Core.MarkdownExporter.pas',
   Core.MarkdownImporter in 'Core\Core.MarkdownImporter.pas',
+  Core.TextDiff in 'Core\Core.TextDiff.pas',
+  HistoryFormUI in 'UI\Forms\HistoryFormUI.pas' {HistoryForm},
   Core.LocalAIService in 'Core\Core.LocalAIService.pas';
 
 {$R *.res}

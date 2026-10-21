@@ -45,6 +45,15 @@ type
         function GetLastRunSnippetID(UserID: Integer): Integer;
     end;
 
+    ISnippetHistoryRepository = interface
+        ['{7C1D9E42-5A3B-4F6E-9C08-2D45A1B7E3F9}']
+        function GetVersions(SnippetID, Limit: Integer): TArray<TSnippetVersionDTO>;
+        function GetVersion(VersionID: Integer): TSnippetVersionDTO;
+        function GetVersionCount(SnippetID: Integer): Integer;
+        procedure DeleteOldest(SnippetID, KeepCount: Integer);
+        procedure SetSuppressed(Suppressed: Boolean);
+    end;
+
     ICategoryRepository = interface
         ['{BC294608-2FA0-4AE5-B163-7EA9F05435A8}']
         function GetAll(UserID: Integer = 0): TArray<TCategoryDTO>;

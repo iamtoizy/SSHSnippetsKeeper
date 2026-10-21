@@ -150,6 +150,18 @@ object AddEditSnippetForm: TAddEditSnippetForm
       TabOrder = 1
       OnClick = bCancelClick
     end
+    object bHistory: TButton
+      Left = 449
+      Top = 3
+      Width = 90
+      Height = 25
+      Anchors = [akTop, akRight]
+      Caption = 'bHistory'
+      ParentShowHint = False
+      ShowHint = True
+      TabOrder = 2
+      OnClick = bHistoryClick
+    end
   end
   object sbBottom: TStatusBar
     Left = 0

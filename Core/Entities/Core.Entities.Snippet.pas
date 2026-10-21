@@ -22,6 +22,16 @@ type
         IsSecurityCheckIgnored: Boolean;
     end;
 
+    TSnippetVersionDTO = record
+        ID: Integer;
+        SnippetID: Integer;
+        Title: string;
+        Content: string;
+        Comment: string;
+        CategoryID: Integer;
+        ChangedAt: Int64;
+    end;
+
 implementation
 
 end.

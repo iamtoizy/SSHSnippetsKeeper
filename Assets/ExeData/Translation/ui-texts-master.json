@@ -95,6 +95,9 @@
     "puEditSnippet": {
       "Caption": "Редактировать"
     },
+    "puSnippetHistory": {
+      "Caption": "История версий…"
+    },
     "puDeleteSnippet": {
       "Caption": "Удалить"
     },
@@ -180,6 +183,22 @@
       "Caption": "Отмена"
     }
   },
+  "HistoryForm": {
+    "Caption": "История версий",
+    "bRestore": {
+      "Caption": "Восстановить"
+    },
+    "bClose": {
+      "Caption": "Закрыть"
+    },
+    "lvVersions": {
+      "Columns": {
+        "0": "Дата",
+        "1": "Заголовок",
+        "2": "Символов"
+      }
+    }
+  },
   "InputForm": {
     "Caption": "Ввод значения",
     "bOK": {
@@ -208,6 +227,9 @@
     },
     "bCancel": {
       "Caption": "Отмена"
+    },
+    "bHistory": {
+      "Caption": "История…"
     },
     "nAI": {
       "Caption": "ИИ-ассистент"
@@ -1233,6 +1255,15 @@
       "NoContentError": "Текст сниппета пуст.",
       "SQLExecutionError": "Ошибка выполнения SQL-запроса: %s",
       "InvalidIdError": "Некорректный идентификатор сниппета."
+    },
+    "History": {
+      "Caption": "История версий",
+      "RestoreConfirm": "Восстановить версию от %s?\nТекущий текст будет сохранён в истории.",
+      "RestoreDone": "Версия восстановлена.",
+      "RestoreError": "Ошибка восстановления: %s",
+      "VersionNotFound": "Выбранная версия не найдена.",
+      "Legend": "Зелёные строки — вернутся из версии, красные — уйдут из текущего текста.",
+      "CurrentRow": "Текущая версия"
     },
     "Tag": {
       "NewPrompt": "Введите имя тега:",

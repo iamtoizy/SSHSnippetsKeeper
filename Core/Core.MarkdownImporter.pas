@@ -360,6 +360,8 @@ begin
                 end;
             end;
 
+            AppContext.HistoryService.SetSuppressed(True);
+
             // === ПРЕДЗАГРУЗКА КЭША ===
             for User in AppContext.UserService.GetAllUsers do
                 UserCache.Add(User.Name.ToLower, User.ID);
@@ -422,6 +424,7 @@ begin
             raise;
         end;
     finally
+        AppContext.HistoryService.SetSuppressed(False);
         FileList.Free;
         UserCache.Free;
         CatCache.Free;

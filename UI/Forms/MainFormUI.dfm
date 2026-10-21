@@ -2715,6 +2715,9 @@ object MainForm: TMainForm
     object puEditSnippet: TMenuItem
       Action = actEditSnippet
     end
+    object puSnippetHistory: TMenuItem
+      Action = actSnippetHistory
+    end
     object puDeleteSnippet: TMenuItem
       Action = actDeleteSnippet
     end
@@ -2771,6 +2774,11 @@ object MainForm: TMainForm
       Category = 'Snippets'
       Caption = 'actEditSnippet'
       OnExecute = actEditSnippetExecute
+    end
+    object actSnippetHistory: TAction
+      Category = 'Snippets'
+      Caption = 'actSnippetHistory'
+      OnExecute = actSnippetHistoryExecute
     end
     object actDeleteSnippet: TAction
       Category = 'Snippets'

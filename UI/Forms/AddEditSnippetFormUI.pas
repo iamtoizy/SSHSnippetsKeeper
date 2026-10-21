@@ -51,6 +51,7 @@ type
         pBottom: TPanel;
         bOK: TButton;
         bCancel: TButton;
+        bHistory: TButton;
         lvAllTags: TListView;
         SynUNIXShellScriptSyn: TSynUNIXShellScriptSyn;
         SynEditRegexSearch: TSynEditRegexSearch;
@@ -86,6 +87,7 @@ type
         procedure actConfigureAIExecute(Sender: TObject);
         procedure actShowAIFormExecute(Sender: TObject);
         procedure bAISettingsClick(Sender: TObject);
+        procedure bHistoryClick(Sender: TObject);
         procedure FormDestroy(Sender: TObject);
         procedure FormCreate(Sender: TObject);
         function GetSnippet: TSnippetDTO;
@@ -128,6 +130,7 @@ type
         FAIThread: TThread;
         FAIInProgress: Boolean;
         FWasSecuritySafe: Boolean;
+        FRestoredInDB: Boolean;
 
         procedure ShowAIOverlay;
         procedure ExecuteAICommand;
@@ -144,6 +147,7 @@ type
         property Snippet: TSnippetDTO read FSnippet write FSnippet;
         property CategoryID: Integer read FCategoryID write FCategoryID;
         property UserID: Integer read FUserID write FUserID;
+        property Restored: Boolean read FRestoredInDB;
 
         constructor Create(Owner: TComponent); override;
         procedure DoInitialize; override;
@@ -162,6 +166,7 @@ uses
     Common.Settings,
     Common.Helpers,
     Core.Entities.Tag,
+    HistoryFormUI,
     MainFormUI,
     SecurityScanner,
     SynEditKeyCmds,
@@ -215,6 +220,27 @@ procedure TAddEditSnippetForm.bAISettingsClick(Sender: TObject);
 begin
     TAISettingsForm.ExecuteGlobal(Application, AppContext);
     PopulateHubs;
+end;
+
+procedure TAddEditSnippetForm.bHistoryClick(Sender: TObject);
+var
+    Ver: TSnippetVersionDTO;
+begin
+    if FSnippet.ID <= 0 then
+        Exit;
+
+    Ver := Default(TSnippetVersionDTO);
+    if THistoryForm.Execute(Self, AppContext, FSnippet.ID, Ver) then
+    begin
+        ebTitle.Text := Ver.Title;
+        mContent.Text := Ver.Content;
+        mComment.Text := Ver.Comment;
+
+        FOriginalSnippet.Title := Ver.Title;
+        FOriginalSnippet.Content := Ver.Content;
+        FOriginalSnippet.Comment := Ver.Comment;
+        FRestoredInDB := True;
+    end;
 end;
 
 procedure TAddEditSnippetForm.FormDestroy(Sender: TObject);
@@ -610,7 +636,7 @@ begin
         Frm.WarmUpPaint;
         Frm.PrepareGuardedShow;
 
-        Result := (Frm.ShowModal = mrOk);
+        Result := (Frm.ShowModal = mrOk) or Frm.Restored;
     finally
         Frm.Free;
     end;
@@ -870,6 +896,7 @@ begin
     FSnippet := Snippet;
     FCategoryID := CatID;
     FUserID := UserID;
+    bHistory.Visible := IsEditMode;
 
     FIsAICanceled := False;
 

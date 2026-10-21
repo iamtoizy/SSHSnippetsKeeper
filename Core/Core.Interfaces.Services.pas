@@ -60,6 +60,16 @@ type
         function GetOrCreateTag(const Name: string): Integer;
     end;
 
+    ISnippetHistoryService = interface
+        ['{E84A2C61-9B3D-4A57-8F12-6C90D4E7B2A5}']
+        function GetVersions(SnippetID: Integer; Limit: Integer = 0): TArray<TSnippetVersionDTO>;
+        function GetVersion(VersionID: Integer): TSnippetVersionDTO;
+        function GetVersionCount(SnippetID: Integer): Integer;
+        procedure RestoreVersion(SnippetID, VersionID: Integer);
+        procedure Prune(SnippetID: Integer);
+        procedure SetSuppressed(Suppressed: Boolean);
+    end;
+
     IUserService = interface
         ['{8CEF8F08-07F0-47EA-BCF9-450F87204747}']
         function GetAllUsers: TArray<TUserDTO>;

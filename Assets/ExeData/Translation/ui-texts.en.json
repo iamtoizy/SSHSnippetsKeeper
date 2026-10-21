@@ -95,6 +95,9 @@
     "puEditSnippet": {
       "Caption": "Edit"
     },
+    "puSnippetHistory": {
+      "Caption": "Version history…"
+    },
     "puDeleteSnippet": {
       "Caption": "Delete"
     },
@@ -168,6 +171,22 @@
     "bOK": { "Caption": "OK" },
     "bCancel": { "Caption": "Cancel" }
   },
+  "HistoryForm": {
+    "Caption": "Version History",
+    "bRestore": {
+      "Caption": "Restore"
+    },
+    "bClose": {
+      "Caption": "Close"
+    },
+    "lvVersions": {
+      "Columns": {
+        "0": "Date",
+        "1": "Title",
+        "2": "Chars"
+      }
+    }
+  },
   "InputForm": {
       "Caption": "Input Value",
       "bOK": { "Caption": "OK" },
@@ -190,6 +209,9 @@
     },
     "bCancel": {
       "Caption": "Cancel"
+    },
+    "bHistory": {
+      "Caption": "History…"
     },
     "nAI": {
       "Caption": "AI Assistant"
@@ -1097,6 +1119,7 @@
       "StatusSnippetCountSel": "Snippets: %d (selected: %d)",
       "DebugComponentNotFound": "Component not found on form: %s",
       "DiscardChangesConfirm": "Changes detected that will be lost if you close this window.\n\nClose window without saving changes?",
+      "DatabaseBusy": "The database is busy (possibly syncing). Please try again in a few seconds. Details: %s",
       "UnsyncedDataWarning": "There are changes that have not been exported to the Markdown vault yet.\nThey will not be written to the vault files on exit.\n\nExit anyway?"
     },
     "DB": {
@@ -1105,7 +1128,6 @@
       "CreateError": "Error creating database: %s",
       "OpenedSuccess": "SQLite database opened.",
       "CreatedSuccess": "SQLite database created.",
-      "SQLExecutionError": "Error executing SQL query: %s",
       "NoConnectionError": "Error: No connection to the database."
     },
     "Settings": {
@@ -1158,7 +1180,17 @@
       "CaptionAdd": "Add Snippet",
       "TitleEmptyError": "Enter snippet title.",
       "NoContentError": "Snippet text is empty.",
+      "SQLExecutionError": "Error executing SQL query: %s",
       "InvalidIdError": "Invalid identifier for the snippet."
+    },
+    "History": {
+      "Caption": "Version History",
+      "RestoreConfirm": "Restore the version from %s?\nThe current text will be saved to history.",
+      "RestoreDone": "Version restored.",
+      "RestoreError": "Restore error: %s",
+      "VersionNotFound": "The selected version was not found.",
+      "Legend": "Green lines will come back from the version, red lines will be removed from the current text.",
+      "CurrentRow": "Current version"
     },
     "Tag": {
       "NewPrompt": "Enter tag name:",

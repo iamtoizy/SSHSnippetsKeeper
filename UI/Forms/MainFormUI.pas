@@ -153,6 +153,7 @@ type
         actFavSlot9: TAction;
         actFavSlot0: TAction;
         puFavMove: TMenuItem;
+        actSnippetHistory: TAction;
         tmrAutoSync: TTimer;
         procedure actAddCategoryExecute(Sender: TObject);
         procedure actAddSnippetExecute(Sender: TObject);
@@ -176,6 +177,7 @@ type
         procedure actPasswordGeneratorExecute(Sender: TObject);
         procedure actRunSnippetExecute(Sender: TObject);
         procedure actSearchExecute(Sender: TObject);
+        procedure actSnippetHistoryExecute(Sender: TObject);
         procedure actSettingsExecute(Sender: TObject);
         procedure actToggleFavoriteExecute(Sender: TObject);
         procedure actFavMoveTopExecute(Sender: TObject);
@@ -245,6 +247,7 @@ type
         procedure DoAddSnippet;
         procedure DoEditSnippet;
         procedure DoDeleteSnippet;
+        procedure DoShowSnippetHistory;
         procedure DoToggleFavorite;
         procedure DoMoveFavorite(Direction: TFavoriteMoveDirection);
         procedure DoRunFavoriteSlot(Index: Integer);
@@ -294,6 +297,7 @@ uses
     Core.MarkdownImporter,
     CronGenFormUI,
     EpochConverterFormUI,
+    HistoryFormUI,
     HotkeyService,
     Core.LocalAIService,
     MacroInputTypes,
@@ -452,6 +456,11 @@ procedure TMainForm.actSearchExecute(Sender: TObject);
 begin
     if AppContext.DatabaseManager.IsConnected then
         ebSearch.SetFocus;
+end;
+
+procedure TMainForm.actSnippetHistoryExecute(Sender: TObject);
+begin
+    DoShowSnippetHistory;
 end;
 
 procedure TMainForm.actSettingsExecute(Sender: TObject);
@@ -1020,6 +1029,33 @@ begin
     end;
 
     ebSearch.OnChange(ebSearch);
+end;
+
+procedure TMainForm.DoShowSnippetHistory;
+var
+    Item: TListItem;
+    Snippet: TSnippetDTO;
+    Ver: TSnippetVersionDTO;
+    SelectedCatID: Integer;
+begin
+    Item := lvSnippets.Selected;
+    if Item = nil then
+        Exit;
+
+    Snippet := ExtractSnippetByListItem(Item);
+
+    Ver := Default(TSnippetVersionDTO);
+    if THistoryForm.Execute(Self, AppContext, Snippet.ID, Ver) then
+    begin
+        if tvCategories.Selected <> nil then
+            SelectedCatID := Integer(IntPtr(tvCategories.Selected.Data))
+        else
+            SelectedCatID := PRESERVE_CATEGORY_EMPTY_ID;
+
+        ReloadUI(SelectedCatID);
+        MarkDataChanged;
+        FStatus.Flash(TUIStateLoader.GetMessage('History.RestoreDone'));
+    end;
 end;
 
 procedure TMainForm.DoDeleteSnippet;

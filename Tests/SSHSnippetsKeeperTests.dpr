@@ -9,7 +9,8 @@ uses
     Tests.EpochService in 'Tests.EpochService.pas',
     Tests.PasswordService in 'Tests.PasswordService.pas',
     Tests.MacroEngine in 'Tests.MacroEngine.pas',
-    Tests.HotkeyService in 'Tests.HotkeyService.pas'
+    Tests.HotkeyService in 'Tests.HotkeyService.pas',
+    Tests.TextDiff in 'Tests.TextDiff.pas'
     ;
 
 var
@@ -22,6 +23,7 @@ begin
         TDUnitX.RegisterTestFixture(TPasswordServiceTests);
         TDUnitX.RegisterTestFixture(TMacroEngineTests);
         TDUnitX.RegisterTestFixture(THotkeyServiceTests);
+        TDUnitX.RegisterTestFixture(TTextDiffTests);
         Runner := TDUnitX.CreateRunner([TDUnitXConsoleLogger.Create(False)]);
         Runner.UseRTTI := True;
         Results := Runner.Execute;
