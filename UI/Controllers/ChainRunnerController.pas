@@ -15,11 +15,19 @@ type
     TChainRunner = class
     private class var
         FRunning: Boolean;
+    private
+        class procedure RunSteps(
+            AppContext: IAppContext;
+            const PanelCaption, SequenceName: string;
+            const Steps: TArray<TChainStepDTO>;
+            RunnerUserID: Integer;
+            TargetHWND: HWND); static;
     public
         class function IsChainRunning: Boolean; static;
         class function EncodeChainNodeID(ChainID: Integer): Integer; static;
         class function TryGetChainID(NodeValue: Integer; out ChainID: Integer): Boolean; static;
         class procedure ExecuteChain(AppContext: IAppContext; ChainID: Integer); static;
+        class procedure ExecuteSnippetSequence(AppContext: IAppContext; const Snippets: TArray<TSnippetDTO>); static;
     end;
 
 implementation
@@ -55,11 +63,6 @@ var
     Chain: TChainDTO;
     Steps: TArray<TChainStepDTO>;
     TargetHWND: HWND;
-    Panel: TChainRunPanel;
-    I: Integer;
-    Snippet: TSnippetDTO;
-    StopReason: string;
-    RemainingPause: Integer;
 begin
     if FRunning then
     begin
@@ -90,9 +93,76 @@ begin
     end;
 
     FRunning := True;
+    try
+        RunSteps(AppContext, TUIStateLoader.GetMessage('Chains.Run.PanelTitle'), Chain.Name,
+            Steps, Chain.UserID, TargetHWND);
+    finally
+        FRunning := False;
+    end;
+end;
+
+class procedure TChainRunner.ExecuteSnippetSequence(AppContext: IAppContext; const Snippets: TArray<TSnippetDTO>);
+var
+    Steps: TArray<TChainStepDTO>;
+    TargetHWND: HWND;
+    I: Integer;
+    PanelCaption: string;
+begin
+    if FRunning then
+    begin
+        AppContext.MessagesHandler.ShowInfo(TUIStateLoader.GetMessage('MultiSelect.RunSequence.ErrorActive'));
+        Exit;
+    end;
+
+    if TSnippetRunner.IsExecuting then
+        Exit;
+
+    if Length(Snippets) = 0 then
+        Exit;
+
+    with TSnippetRunner.Create(Snippets[0].UserID, AppContext) do
+    try
+        if not PickTargetWindow(TargetHWND) then
+            Exit;
+    finally
+        Free;
+    end;
+
+    SetLength(Steps, Length(Snippets));
+    for I := 0 to High(Snippets) do
+    begin
+        Steps[I] := Default(TChainStepDTO);
+        Steps[I].Position := I + 1;
+        Steps[I].SnippetID := Snippets[I].ID;
+        Steps[I].PauseMs := 0;
+    end;
+
+    PanelCaption := TUIStateLoader.GetMessage('MultiSelect.RunSequence.PanelTitle');
+    FRunning := True;
+    try
+        RunSteps(AppContext, PanelCaption, PanelCaption, Steps, 0, TargetHWND);
+    finally
+        FRunning := False;
+    end;
+end;
+
+class procedure TChainRunner.RunSteps(
+    AppContext: IAppContext;
+    const PanelCaption, SequenceName: string;
+    const Steps: TArray<TChainStepDTO>;
+    RunnerUserID: Integer;
+    TargetHWND: HWND);
+var
+    Panel: TChainRunPanel;
+    I: Integer;
+    Snippet: TSnippetDTO;
+    RunnerID: Integer;
+    StopReason: string;
+    RemainingPause: Integer;
+begin
     Panel := TChainRunPanel.Create(nil);
     try
-        Panel.Initialize(Chain.Name, Length(Steps));
+        Panel.Initialize(PanelCaption, SequenceName, Length(Steps));
         Panel.Show;
         Panel.Update;
 
@@ -117,7 +187,11 @@ begin
 
             Panel.SetStep(I + 1, Length(Steps), Snippet.Title);
 
-            with TSnippetRunner.Create(Chain.UserID, AppContext) do
+            RunnerID := RunnerUserID;
+            if RunnerID <= 0 then
+                RunnerID := Snippet.UserID;
+
+            with TSnippetRunner.Create(RunnerID, AppContext) do
             try
                 ExecuteSnippetInWindow(Snippet, TargetHWND, False);
             finally
@@ -154,7 +228,6 @@ begin
             AppContext.MessagesHandler.ShowError(StopReason);
     finally
         Panel.Free;
-        FRunning := False;
     end;
 end;
 

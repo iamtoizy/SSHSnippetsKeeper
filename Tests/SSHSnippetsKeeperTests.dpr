@@ -13,7 +13,8 @@ uses
     Tests.TextDiff in 'Tests.TextDiff.pas',
     Tests.QueryLanguage in 'Tests.QueryLanguage.pas',
     Tests.SearchTags in 'Tests.SearchTags.pas',
-    Tests.Chains in 'Tests.Chains.pas'
+    Tests.Chains in 'Tests.Chains.pas',
+    Tests.MultiSelect in 'Tests.MultiSelect.pas'
     ;
 
 var
@@ -30,6 +31,7 @@ begin
         TDUnitX.RegisterTestFixture(TQueryLanguageTests);
         TDUnitX.RegisterTestFixture(TSearchTagsTests);
         TDUnitX.RegisterTestFixture(TChainsTests);
+        TDUnitX.RegisterTestFixture(TMultiSelectTests);
         Runner := TDUnitX.CreateRunner([TDUnitXConsoleLogger.Create(False)]);
         Runner.UseRTTI := True;
         Results := Runner.Execute;

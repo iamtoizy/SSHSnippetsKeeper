@@ -137,6 +137,10 @@ type
         nSyncDatabase: TMenuItem;
         actSyncDatabase: TAction;
         actRunSnippet: TAction;
+        actRunSequence: TAction;
+        actExportSnippets: TAction;
+        actAddTagToSnippets: TAction;
+        actMoveToCategory: TAction;
         actClearTagFilter: TAction;
         actToggleFavorite: TAction;
         actFavMoveTop: TAction;
@@ -187,6 +191,10 @@ type
         procedure actOpenDatabaseExecute(Sender: TObject);
         procedure actPasswordGeneratorExecute(Sender: TObject);
         procedure actRunSnippetExecute(Sender: TObject);
+        procedure actRunSequenceExecute(Sender: TObject);
+        procedure actExportSnippetsExecute(Sender: TObject);
+        procedure actAddTagToSnippetsExecute(Sender: TObject);
+        procedure actMoveToCategoryExecute(Sender: TObject);
         procedure actSearchExecute(Sender: TObject);
         procedure actSnippetHistoryExecute(Sender: TObject);
         procedure actSettingsExecute(Sender: TObject);
@@ -263,6 +271,11 @@ type
         procedure DoToggleFavorite;
         procedure DoMoveFavorite(Direction: TFavoriteMoveDirection);
         procedure DoRunFavoriteSlot(Index: Integer);
+        procedure DoRunSequence;
+        procedure DoExportSnippets;
+        procedure DoAddTagToSnippets;
+        procedure DoMoveToCategory;
+        function GetSelectedSnippets: TArray<TSnippetDTO>;
         procedure ReloadSnippetListKeepingSelection;
 
         // UI Helpers
@@ -307,6 +320,7 @@ uses
     ArrayHelper,
     ChainEditorFormUI,
     ChainRunnerController,
+    CategorySelectDialogUI,
     Core.Entities.Category,
     ChmodFormUI,
     Common.Consts,
@@ -328,6 +342,7 @@ uses
     System.Math,
     System.UITypes,
     TagEditorFormUI,
+    TagSelectDialogUI,
     UI.Helpers,
     UI.HoverHelpManager,
     Common.Localization,
@@ -678,6 +693,10 @@ begin
     actEditSnippet.Enabled := (lvSnippets.Selected <> nil);
     actRunSnippet.Enabled := (lvSnippets.Selected <> nil);
     actChainCreateFromSnippet.Enabled := (lvSnippets.Selected <> nil);
+    actRunSequence.Enabled := (lvSnippets.Selected <> nil);
+    actExportSnippets.Enabled := (lvSnippets.Selected <> nil);
+    actAddTagToSnippets.Enabled := (lvSnippets.Selected <> nil);
+    actMoveToCategory.Enabled := (lvSnippets.Selected <> nil);
 
     // --- ИЗБРАННОЕ ---
     UpdateFavoriteMenuState;
@@ -1104,6 +1123,10 @@ begin
     actChainRun.Caption := TUIStateLoader.GetMessage('Chains.Menu.Run');
     actChainEdit.Caption := TUIStateLoader.GetMessage('Chains.Menu.Edit');
     actChainDelete.Caption := TUIStateLoader.GetMessage('Chains.Menu.Delete');
+    actRunSequence.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.RunSequence');
+    actExportSnippets.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.Export');
+    actAddTagToSnippets.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.AddTag');
+    actMoveToCategory.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.MoveToCategory');
 end;
 
 procedure TMainForm.lvSnippetsClick(Sender: TObject);
@@ -1144,7 +1167,7 @@ begin
     // (заполнение панели + UpdateMenuState) нужно ВСЕГДА, иначе попап
     // покажет Enabled-состояние с предыдущего события
     Item := lvSnippets.GetItemAt(MousePos.X, MousePos.Y);
-    if (Item <> nil) and (Item <> lvSnippets.Selected) then
+    if (Item <> nil) and (not Item.Selected) then
     begin
         lvSnippets.Selected := Item;
         Item.Focused := True;
@@ -1527,6 +1550,172 @@ begin
     finally
         Runner.Free;
     end;
+end;
+
+procedure TMainForm.actRunSequenceExecute(Sender: TObject);
+begin
+    DoRunSequence;
+end;
+
+procedure TMainForm.actExportSnippetsExecute(Sender: TObject);
+begin
+    DoExportSnippets;
+end;
+
+procedure TMainForm.actAddTagToSnippetsExecute(Sender: TObject);
+begin
+    DoAddTagToSnippets;
+end;
+
+procedure TMainForm.actMoveToCategoryExecute(Sender: TObject);
+begin
+    DoMoveToCategory;
+end;
+
+function TMainForm.GetSelectedSnippets: TArray<TSnippetDTO>;
+var
+    I: Integer;
+    List: TList<TSnippetDTO>;
+begin
+    List := TList<TSnippetDTO>.Create;
+    try
+        for I := 0 to lvSnippets.Items.Count - 1 do
+            if lvSnippets.Items[I].Selected then
+                List.Add(ExtractSnippetByListItem(lvSnippets.Items[I]));
+        Result := List.ToArray;
+    finally
+        List.Free;
+    end;
+end;
+
+procedure TMainForm.DoRunSequence;
+begin
+    TChainRunner.ExecuteSnippetSequence(AppContext, GetSelectedSnippets);
+end;
+
+procedure TMainForm.DoExportSnippets;
+var
+    Snippets: TArray<TSnippetDTO>;
+    Dir: string;
+    Count: Integer;
+begin
+    Snippets := GetSelectedSnippets;
+    if Length(Snippets) = 0 then
+        Exit;
+
+    Dir := '';
+    if not SelectDirectory(TUIStateLoader.GetMessage('MultiSelect.Export.FilePickerTitle'), '', Dir) then
+        Exit;
+
+    try
+        Count := TMarkdownExporter.ExportSnippets(AppContext, Dir, Snippets);
+    except
+        on E: Exception do
+        begin
+            MessagesHandler.ShowError(TUIStateLoader.GetMessage('MultiSelect.Export.Error', [E.Message]));
+            Exit;
+        end;
+    end;
+
+    FStatus.Flash(TUIStateLoader.GetMessage('MultiSelect.Export.DoneMsg', [Count]));
+end;
+
+procedure TMainForm.DoAddTagToSnippets;
+var
+    Snippets: TArray<TSnippetDTO>;
+    TagName: string;
+    TagID: Integer;
+    Added, Skipped, I: Integer;
+    Existing: TArray<TTagDTO>;
+    Tag: TTagDTO;
+    HasTag: Boolean;
+begin
+    Snippets := GetSelectedSnippets;
+    if Length(Snippets) = 0 then
+        Exit;
+
+    if not TTagSelectForm.Execute(Self, AppContext, TagName) then
+        Exit;
+
+    TagID := AppContext.TagService.GetOrCreateTag(TagName);
+    if TagID <= 0 then
+        Exit;
+
+    Added := 0;
+    Skipped := 0;
+    for I := 0 to High(Snippets) do
+    begin
+        HasTag := False;
+        Existing := AppContext.TagService.GetSnippetTags(Snippets[I].ID);
+        for Tag in Existing do
+            if Tag.ID = TagID then
+            begin
+                HasTag := True;
+                Break;
+            end;
+
+        if HasTag or (Length(Existing) >= MAX_SNIPPET_TAGS) then
+            Inc(Skipped)
+        else
+        begin
+            AppContext.TagService.LinkTagToSnippet(Snippets[I].ID, TagID);
+            Inc(Added);
+        end;
+    end;
+
+    lvSnippetsClick(lvSnippets);
+    FStatus.Flash(TUIStateLoader.GetMessage('MultiSelect.AddTag.DoneMsg', [TagName, Added, Skipped]));
+end;
+
+procedure TMainForm.DoMoveToCategory;
+var
+    Snippets: TArray<TSnippetDTO>;
+    CategoryID, TargetUserID, Moved, Skipped, I, K: Integer;
+    Cat: TCategoryDTO;
+    Tags: TArray<TTagDTO>;
+    TagIDs: TArray<Integer>;
+begin
+    Snippets := GetSelectedSnippets;
+    if Length(Snippets) = 0 then
+        Exit;
+
+    if not TCategorySelectForm.Execute(Self, AppContext, Snippets[0].UserID, CategoryID) then
+        Exit;
+
+    Cat := AppContext.CategoryService.GetCategoryByID(CategoryID);
+    if Cat.ID = 0 then
+        Exit;
+
+    Moved := 0;
+    Skipped := 0;
+    for I := 0 to High(Snippets) do
+    begin
+        if (Snippets[I].UserID <> Cat.UserID) or (Snippets[I].CategoryID = Cat.ID) then
+        begin
+            Inc(Skipped);
+            Continue;
+        end;
+
+        Tags := AppContext.TagService.GetSnippetTags(Snippets[I].ID);
+        SetLength(TagIDs, Length(Tags));
+        for K := 0 to High(Tags) do
+            TagIDs[K] := Tags[K].ID;
+
+        Snippets[I].CategoryID := Cat.ID;
+        AppContext.SnippetService.UpdateSnippet(Snippets[I], TagIDs);
+        Inc(Moved);
+    end;
+
+    if Moved > 0 then
+    begin
+        if tvCategories.Selected <> nil then
+            ReloadUI(Integer(IntPtr(tvCategories.Selected.Data)))
+        else
+            ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
+        MarkDataChanged;
+    end;
+
+    FStatus.Flash(TUIStateLoader.GetMessage('MultiSelect.Move.DoneMsg', [Moved, Skipped]));
 end;
 
 procedure TMainForm.actToggleFavoriteExecute(Sender: TObject);

@@ -23,7 +23,7 @@ type
         FStopRequested: Boolean;
         FChainName: string;
     public
-        procedure Initialize(const ChainName: string; TotalSteps: Integer);
+        procedure Initialize(const PanelCaption, SequenceName: string; TotalSteps: Integer);
         procedure SetStep(Index, Total: Integer; const SnippetTitle: string);
         property StopRequested: Boolean read FStopRequested;
     end;
@@ -38,14 +38,14 @@ uses
 
 { TChainRunPanel }
 
-procedure TChainRunPanel.Initialize(const ChainName: string; TotalSteps: Integer);
+procedure TChainRunPanel.Initialize(const PanelCaption, SequenceName: string; TotalSteps: Integer);
 var
     WorkArea: TRect;
 begin
     FStopRequested := False;
-    FChainName := ChainName;
+    FChainName := SequenceName;
 
-    Caption := TUIStateLoader.GetMessage('Chains.Run.PanelTitle');
+    Caption := PanelCaption;
     btnStop.Caption := TUIStateLoader.GetMessage('Chains.Run.Stop');
     lblProgress.Caption := '';
 

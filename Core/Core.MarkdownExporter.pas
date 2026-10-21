@@ -4,6 +4,8 @@ interface
 
 uses
     Core.Entities.Category,
+    Core.Entities.Snippet,
+    Core.Entities.Tag,
     Core.Entities.User,
     Core.Interfaces.App,
     Core.Interfaces.Services,
@@ -28,18 +30,28 @@ type
             CatDict: TDictionary<Integer, TCategoryDTO>;
             UserDict: TDictionary<Integer, TUserDTO>;
             UserID, CategoryID: Integer): string;
+
+        class function BuildSnippetMarkdown(
+            const Snippet: TSnippetDTO;
+            const Tags: TArray<TTagDTO>): string;
     public
         class procedure ExportDatabase(const AppContext: IAppContext; const BaseDir: string);
+
+        class function ExportSnippets(
+            const AppContext: IAppContext;
+            const BaseDir: string;
+            const Snippets: TArray<TSnippetDTO>): Integer; overload;
+
+        class function ExportSnippets(
+            const BaseDir: string;
+            const Snippets: TArray<TSnippetDTO>;
+            const GetTags: TFunc<Integer, TArray<TTagDTO>>): Integer; overload;
     end;
 
 implementation
 
 uses
-    Common.Localization,
-
-    Core.Entities.Tag,
-
-    Core.Entities.Snippet
+    Common.Localization
     ;
 
 class function TMarkdownExporter.SanitizeFileName(const Name: string): string;
@@ -95,15 +107,50 @@ begin
     end;
 end;
 
+class function TMarkdownExporter.BuildSnippetMarkdown(
+    const Snippet: TSnippetDTO;
+    const Tags: TArray<TTagDTO>): string;
+var
+    Tag: TTagDTO;
+    TagsList: string;
+    TagSB: TStringBuilder;
+begin
+    TagSB := TStringBuilder.Create;
+    try
+        for Tag in Tags do
+            TagSB.Append('"').Append(Tag.Name).Append('", ');
+        TagsList := TagSB.ToString;
+        if TagsList.EndsWith(', ') then
+            Delete(TagsList, TagsList.Length - 1, 2);
+    finally
+        TagSB.Free;
+    end;
+
+    Result :=
+        '---' + sLineBreak +
+        'id: ' + Snippet.ID.ToString + sLineBreak +
+        'title: "' + Snippet.Title.Replace('"', '\"') + '"' + sLineBreak +
+        SYNC_MARKER + sLineBreak +
+        'tags: [' + TagsList + ']' + sLineBreak +
+        'created_at: ' + Snippet.CreatedAt.ToString + sLineBreak +
+        'updated_at: ' + Snippet.UpdatedAt.ToString + sLineBreak +
+        '---' + sLineBreak + sLineBreak +
+        '# ' + Snippet.Title + sLineBreak + sLineBreak;
+
+    if Trim(Snippet.Comment) <> '' then
+        Result := Result + Snippet.Comment + sLineBreak + sLineBreak;
+
+    Result := Result + '```bash' + sLineBreak + Snippet.Content + sLineBreak + '```' + sLineBreak;
+end;
+
 class procedure TMarkdownExporter.ExportDatabase(const AppContext: IAppContext; const BaseDir: string);
 var
     Snippets: TArray<TSnippetDTO>;
     Snippet: TSnippetDTO;
     Tags: TArray<TTagDTO>;
-    Tag: TTagDTO;
     Cat: TCategoryDTO;
     User: TUserDTO;
-    CatPath, FullDir, BaseFileName, FinalFileName, FileContent, TagsList: string;
+    CatPath, FullDir, BaseFileName, FinalFileName, FileContent: string;
     Counter: Integer;
     BaseAbs: string;
     GeneratedFiles: TDictionary<string, Boolean>;
@@ -111,7 +158,6 @@ var
     UserDict: TDictionary<Integer, TUserDTO>;
     ExistingFiles, AllDirs: TArray<string>;
     OldFile, Dir: string;
-    TagSB: TStringBuilder;
     QuarantineDir: string;
     QuarantineIdx: Integer;
 
@@ -132,7 +178,6 @@ begin
     GeneratedFiles := TDictionary<string, Boolean>.Create;
     CatDict := TDictionary<Integer, TCategoryDTO>.Create;
     UserDict := TDictionary<Integer, TUserDTO>.Create;
-    TagSB := TStringBuilder.Create;
     try
         // === ПРЕДЗАГРУЗКА КЭША (Всего 2 SQL запроса на всю базу) ===
         for Cat in AppContext.CategoryService.GetAllCategories(0) do
@@ -168,27 +213,7 @@ begin
             GeneratedFiles.Add(LowerCase(FinalFileName), True);
 
             Tags := AppContext.TagService.GetSnippetTags(Snippet.ID);
-            TagSB.Clear;
-            for Tag in Tags do
-                TagSB.Append('"').Append(Tag.Name).Append('", ');
-            TagsList := TagSB.ToString;
-            if TagsList.EndsWith(', ') then Delete(TagsList, TagsList.Length - 1, 2);
-
-            FileContent :=
-                '---' + sLineBreak +
-                'id: ' + Snippet.ID.ToString + sLineBreak +
-                'title: "' + Snippet.Title.Replace('"', '\"') + '"' + sLineBreak +
-                SYNC_MARKER + sLineBreak +
-                'tags: [' + TagsList + ']' + sLineBreak +
-                'created_at: ' + Snippet.CreatedAt.ToString + sLineBreak +
-                'updated_at: ' + Snippet.UpdatedAt.ToString + sLineBreak +
-                '---' + sLineBreak + sLineBreak +
-                '# ' + Snippet.Title + sLineBreak + sLineBreak;
-
-            if Trim(Snippet.Comment) <> '' then
-                FileContent := FileContent + Snippet.Comment + sLineBreak + sLineBreak;
-
-            FileContent := FileContent + '```bash' + sLineBreak + Snippet.Content + sLineBreak + '```' + sLineBreak;
+            FileContent := BuildSnippetMarkdown(Snippet, Tags);
             TFile.WriteAllText(FinalFileName, FileContent, TEncoding.UTF8);
         end;
 
@@ -221,10 +246,77 @@ begin
         end;
 
     finally
-        TagSB.Free;
         GeneratedFiles.Free;
         CatDict.Free;
         UserDict.Free;
+    end;
+end;
+
+class function TMarkdownExporter.ExportSnippets(
+    const AppContext: IAppContext;
+    const BaseDir: string;
+    const Snippets: TArray<TSnippetDTO>): Integer;
+begin
+    Result := ExportSnippets(BaseDir, Snippets,
+        function(SnippetID: Integer): TArray<TTagDTO>
+        begin
+            Result := AppContext.TagService.GetSnippetTags(SnippetID);
+        end);
+end;
+
+class function TMarkdownExporter.ExportSnippets(
+    const BaseDir: string;
+    const Snippets: TArray<TSnippetDTO>;
+    const GetTags: TFunc<Integer, TArray<TTagDTO>>): Integer;
+var
+    Snippet: TSnippetDTO;
+    Tags: TArray<TTagDTO>;
+    BaseFileName, FinalFileName, FileContent: string;
+    Counter, Written: Integer;
+    BaseAbs: string;
+    ExistingFiles: TArray<string>;
+    Taken: TDictionary<string, Boolean>;
+    OldFile: string;
+begin
+    Result := 0;
+    if Length(Snippets) = 0 then
+        Exit;
+
+    if not TDirectory.Exists(BaseDir) then
+        TDirectory.CreateDirectory(BaseDir);
+
+    BaseAbs := IncludeTrailingPathDelimiter(TPath.GetFullPath(BaseDir));
+    Taken := TDictionary<string, Boolean>.Create;
+    try
+        ExistingFiles := TDirectory.GetFiles(BaseAbs, '*.md', TSearchOption.soTopDirectoryOnly);
+        for OldFile in ExistingFiles do
+            Taken.AddOrSetValue(LowerCase(OldFile), True);
+
+        Written := 0;
+        for Snippet in Snippets do
+        begin
+            if Snippet.ID = 0 then
+                Continue;
+
+            BaseFileName := SanitizeFileName(Snippet.Title);
+            FinalFileName := TPath.Combine(BaseAbs, BaseFileName + '.md');
+            Counter := 1;
+            while Taken.ContainsKey(LowerCase(FinalFileName)) do
+            begin
+                FinalFileName := TPath.Combine(BaseAbs, Format('%s (%d).md', [BaseFileName, Counter]));
+                Inc(Counter);
+            end;
+            Taken.AddOrSetValue(LowerCase(FinalFileName), True);
+
+            Tags := GetTags(Snippet.ID);
+            FileContent := BuildSnippetMarkdown(Snippet, Tags);
+            TFile.WriteAllText(FinalFileName, FileContent, TEncoding.UTF8);
+            Inc(Written);
+        end;
+
+        Result := Written;
+    finally
+        Taken.Free;
     end;
 end;
 

@@ -2722,6 +2722,9 @@ object MainForm: TMainForm
     object puRunSnippet: TMenuItem
       Action = actRunSnippet
     end
+    object puRunSequence: TMenuItem
+      Action = actRunSequence
+    end
     object puChainCreateFromSnippet: TMenuItem
       Action = actChainCreateFromSnippet
     end
@@ -2739,6 +2742,18 @@ object MainForm: TMainForm
     end
     object puDeleteSnippet: TMenuItem
       Action = actDeleteSnippet
+    end
+    object puMultiSelectSep: TMenuItem
+      Caption = '-'
+    end
+    object puAddTagToSnippets: TMenuItem
+      Action = actAddTagToSnippets
+    end
+    object puMoveToCategory: TMenuItem
+      Action = actMoveToCategory
+    end
+    object puExportSnippets: TMenuItem
+      Action = actExportSnippets
     end
     object puFavSep: TMenuItem
       Caption = '-'
@@ -2923,6 +2938,26 @@ object MainForm: TMainForm
       Category = 'Snippets'
       Caption = 'actRunSnippet'
       OnExecute = actRunSnippetExecute
+    end
+    object actRunSequence: TAction
+      Category = 'Snippets'
+      Caption = 'actRunSequence'
+      OnExecute = actRunSequenceExecute
+    end
+    object actExportSnippets: TAction
+      Category = 'Snippets'
+      Caption = 'actExportSnippets'
+      OnExecute = actExportSnippetsExecute
+    end
+    object actAddTagToSnippets: TAction
+      Category = 'Snippets'
+      Caption = 'actAddTagToSnippets'
+      OnExecute = actAddTagToSnippetsExecute
+    end
+    object actMoveToCategory: TAction
+      Category = 'Snippets'
+      Caption = 'actMoveToCategory'
+      OnExecute = actMoveToCategoryExecute
     end
     object actClearTagFilter: TAction
       Category = 'Snippets'

@@ -116,6 +116,8 @@ uses
   ChainEditorFormUI in 'UI\Forms\ChainEditorFormUI.pas' {ChainEditorForm},
   ChainRunPanelUI in 'UI\Forms\ChainRunPanelUI.pas' {ChainRunPanel},
   ChainRunnerController in 'UI\Controllers\ChainRunnerController.pas',
+  CategorySelectDialogUI in 'UI\Forms\CategorySelectDialogUI.pas' {CategorySelectForm},
+  TagSelectDialogUI in 'UI\Forms\TagSelectDialogUI.pas' {TagSelectForm},
   GlobalHotkeyManager in 'UI\Controllers\GlobalHotkeyManager.pas',
   TrackBarEx in 'UI\Controls\TrackBarEx.pas',
   UI.Services.AIService in 'UI\Services\UI.Services.AIService.pas',

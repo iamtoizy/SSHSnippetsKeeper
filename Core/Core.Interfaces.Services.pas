@@ -59,6 +59,8 @@ type
         procedure DeleteTag(ID: Integer);
         // Создание тега при его отсутствии
         function GetOrCreateTag(const Name: string): Integer;
+        // Привязка тега к сниппету (дубликат игнорируется)
+        procedure LinkTagToSnippet(SnippetID, TagID: Integer);
     end;
 
     ISnippetHistoryService = interface

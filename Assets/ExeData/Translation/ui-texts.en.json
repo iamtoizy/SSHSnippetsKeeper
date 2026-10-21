@@ -948,7 +948,7 @@
         },
         "lvSnippets": {
           "Title": "Snippet List",
-          "Main": "Flat list of snippets in the selected workspace.",
+          "Main": "Flat list of snippets in the selected workspace. Multi-selection is supported (CTRL+click / SHIFT+click): the context menu offers bulk actions - Run in order, Export, Add tag, Move to category.",
           "Expanded": "<code>CTRL+A</code> - Add snippet<br><code>CTRL+E</code> - Edit snippet<br><code>CTRL+D</code> - Delete snippet"
         },
         "lvTags": {
@@ -981,6 +981,25 @@
           "Title": "Snippet library",
           "Main": "All snippets from all workspaces; search filters by title substring. Double-clicking a snippet or the 'Add step' button appends it as a step to the end of the chain.",
           "Expanded": "The 'Workspace' column shows the snippet's workspace - a chain can combine steps from different workspaces."
+        }
+      },
+      "TagSelectDialog": {
+        "edSearch": {
+          "Title": "Tag search",
+          "Main": "Filters the list of existing tags by substring. If a tag with the entered name does not exist, it will be created after clicking OK and added to all selected snippets.",
+          "Expanded": "<code>ENTER</code> - confirm the choice."
+        },
+        "lvTags": {
+          "Title": "Existing tags",
+          "Main": "All database tags. Select a tag and click OK (or double-click the row) to add it to all selected snippets at once. Tags already attached to a snippet are not duplicated.",
+          "Expanded": ""
+        }
+      },
+      "CategorySelectDialog": {
+        "tvCategories": {
+          "Title": "Workspace categories",
+          "Main": "Category tree of the first selected snippet's workspace. Select the target category and click OK (or double-click). Snippets from other workspaces will be skipped and reported.",
+          "Expanded": ""
         }
       },
       "AddEditSnippet": {
@@ -1367,6 +1386,33 @@
         "DuplicateName": "Chain \"%s\" already exists.",
         "NotFound": "Chain not found.",
         "SnippetNotFound": "Step %d: snippet not found."
+      }
+    },
+    "MultiSelect": {
+      "Menu": {
+        "RunSequence": "Run in order",
+        "Export": "Export...",
+        "AddTag": "Add tag...",
+        "MoveToCategory": "Move to category..."
+      },
+      "RunSequence": {
+        "PanelTitle": "Running in order",
+        "ErrorActive": "A sequence is already running."
+      },
+      "Export": {
+        "FilePickerTitle": "Choose export folder",
+        "DoneMsg": "Snippets exported: %d",
+        "Error": "Export error: %s"
+      },
+      "AddTag": {
+        "Caption": "Add tag to selected snippets",
+        "SearchHint": "Search the list or type a new tag name...",
+        "ColTag": "Tag",
+        "DoneMsg": "Tag \"%s\" added to %d snippets (already had: %d)."
+      },
+      "Move": {
+        "Caption": "Move to category",
+        "DoneMsg": "Moved: %d, skipped: %d."
       }
     },
     "Search": {
