@@ -218,8 +218,8 @@ class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categori
 
             ChainNode := TreeView.Items.AddChild(ChainRoot, Chain.Name);
             ChainNode.Data := Pointer(IntPtr(-(CHAIN_NODE_ID_BASE + Chain.ID)));
-            ChainNode.ImageIndex := 5;
-            ChainNode.SelectedIndex := 5;
+            ChainNode.ImageIndex := 6;
+            ChainNode.SelectedIndex := 6;
             if SelectID = -(CHAIN_NODE_ID_BASE + Chain.ID) then
                 ChainNode.Selected := True;
         end;
