@@ -27,13 +27,15 @@ type
             const Users: TArray<TUserDTO>;
             const Chains: TArray<TChainDTO>;
             FilterUserID: Integer;
-            SelectID: Integer = -1); static;
+            SelectID: Integer = -1;
+            const ChainNameFilter: string = ''); static;
     end;
 
 implementation
 
 uses
     System.Generics.Collections,
+    System.StrUtils,
     Common.Localization
     ;
 
@@ -107,7 +109,7 @@ begin
     end;
 end;
 
-class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categories: TArray<TCategoryDTO>; const Users: TArray<TUserDTO>; const Chains: TArray<TChainDTO>; FilterUserID: Integer; SelectID: Integer = -1);
+class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categories: TArray<TCategoryDTO>; const Users: TArray<TUserDTO>; const Chains: TArray<TChainDTO>; FilterUserID: Integer; SelectID: Integer = -1; const ChainNameFilter: string = '');
 
     // Вспомогательная рекурсивная процедура для добавления узлов
     procedure AddNodesRecursive(ParentNode: TTreeNode; ParentCatID: Integer; const CatMap: TDictionary<Integer, TList<TCategoryDTO>>);
@@ -182,12 +184,39 @@ class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categori
         end;
     end;
 
+    // Отрисовка ветки цепочек под указанным родителем с фильтром по имени
+    procedure RenderChains(ParentNode: TTreeNode);
+    var
+        ChainRoot, ChainNode: TTreeNode;
+        Chain: TChainDTO;
+    begin
+        ChainRoot := TreeView.Items.AddChild(ParentNode,
+            TUIStateLoader.GetMessage('Help.MainForm.Chains'));
+        ChainRoot.Data := Pointer(IntPtr(CHAINS_ROOT_NODE_ID));
+        ChainRoot.ImageIndex := 5;
+        ChainRoot.SelectedIndex := 5;
+        if SelectID = CHAINS_ROOT_NODE_ID then
+            ChainRoot.Selected := True;
+
+        for Chain in Chains do
+        begin
+            if (ChainNameFilter <> '') and not AnsiContainsText(Chain.Name, ChainNameFilter) then
+                Continue;
+
+            ChainNode := TreeView.Items.AddChild(ChainRoot, Chain.Name);
+            ChainNode.Data := Pointer(IntPtr(-(CHAIN_NODE_ID_BASE + Chain.ID)));
+            ChainNode.ImageIndex := 5;
+            ChainNode.SelectedIndex := 5;
+            if SelectID = -(CHAIN_NODE_ID_BASE + Chain.ID) then
+                ChainNode.Selected := True;
+        end;
+    end;
+
 var
-    Node, ChainNode: TTreeNode;
+    Node: TTreeNode;
     User: TUserDTO;
     UserCats: TList<TCategoryDTO>;
     Cat: TCategoryDTO;
-    Chain: TChainDTO;
 begin
     TreeView.Items.BeginUpdate;
     UserCats := TList<TCategoryDTO>.Create;
@@ -226,26 +255,6 @@ begin
         if SelectID = -2 then
             Node.Selected := True;
 
-        Node := TreeView.Items.AddObject(
-            nil,
-            TUIStateLoader.GetMessage('Help.MainForm.Chains'),
-            Pointer(IntPtr(CHAINS_ROOT_NODE_ID))
-        );
-        Node.ImageIndex := 5;
-        Node.SelectedIndex := 5;
-        if SelectID = CHAINS_ROOT_NODE_ID then
-            Node.Selected := True;
-
-        for Chain in Chains do
-        begin
-            ChainNode := TreeView.Items.AddChild(Node, Chain.Name);
-            ChainNode.Data := Pointer(IntPtr(-(CHAIN_NODE_ID_BASE + Chain.ID)));
-            ChainNode.ImageIndex := 5;
-            ChainNode.SelectedIndex := 5;
-            if SelectID = -(CHAIN_NODE_ID_BASE + Chain.ID) then
-                ChainNode.Selected := True;
-        end;
-
         // 2. Группировка
         if FilterUserID = 0 then
         begin
@@ -262,6 +271,7 @@ begin
                         UserCats.Add(Cat);
 
                 RenderCategories(Node, UserCats);
+                RenderChains(Node);
             end;
         end
         else
@@ -273,6 +283,7 @@ begin
                     UserCats.Add(Cat);
 
             RenderCategories(nil, UserCats);
+            RenderChains(nil);
         end;
     finally
         UserCats.Free;
