@@ -1389,6 +1389,9 @@
       "DeleteConfirm": "Delete chain \"%s\"?",
       "CreatedMsg": "Chain \"%s\" created.",
       "DeletedMsg": "Chain \"%s\" deleted.",
+      "Panel": {
+        "Caption": "Chain \"%s\" - steps: %d"
+      },
       "Error": {
         "EmptyName": "Enter chain name.",
         "DuplicateName": "Chain \"%s\" already exists.",

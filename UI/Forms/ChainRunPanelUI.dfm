@@ -36,4 +36,10 @@ object ChainRunPanel: TChainRunPanel
     TabOrder = 0
     OnClick = btnStopClick
   end
+  object tmTopMost: TTimer
+    Interval = 200
+    OnTimer = tmTopMostTimer
+    Left = 8
+    Top = 56
+  end
 end

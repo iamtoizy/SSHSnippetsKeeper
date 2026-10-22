@@ -200,6 +200,60 @@ object MainForm: TMainForm
       ExplicitTop = 304
       ExplicitHeight = 100
     end
+    object pChainActions: TPanel
+      Left = 0
+      Top = 0
+      Width = 426
+      Height = 41
+      Align = alTop
+      BevelOuter = bvNone
+      TabOrder = 2
+      Visible = False
+      object lblChainName: TLabel
+        Left = 8
+        Top = 13
+        Width = 3
+        Height = 15
+        Align = alClient
+        Layout = tlCenter
+      end
+      object btnChainDelete: TButton
+        Left = 338
+        Top = 6
+        Width = 88
+        Height = 28
+        Margins.Left = 4
+        Margins.Top = 6
+        Margins.Bottom = 6
+        Action = actChainDelete
+        Align = alRight
+        TabOrder = 0
+      end
+      object btnChainEdit: TButton
+        Left = 246
+        Top = 6
+        Width = 88
+        Height = 28
+        Margins.Left = 4
+        Margins.Top = 6
+        Margins.Bottom = 6
+        Action = actChainEdit
+        Align = alRight
+        TabOrder = 1
+      end
+      object btnChainRun: TButton
+        Left = 154
+        Top = 6
+        Width = 88
+        Height = 28
+        Margins.Left = 4
+        Margins.Top = 6
+        Margins.Bottom = 6
+        Action = actChainRun
+        Align = alRight
+        TabOrder = 2
+      end
+    end
     object lvSnippets: TListView
       Left = 0
       Top = 0

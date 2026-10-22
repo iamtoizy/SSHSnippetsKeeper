@@ -81,6 +81,8 @@ type
         spSearch: TSplitter;
         pCenter: TPanel;
         splRight: TSplitter;
+        pChainActions: TPanel;
+        lblChainName: TLabel;
         lvSnippets: TListView;
         pRight: TPanel;
         lvTags: TListView;
@@ -248,6 +250,7 @@ type
         FUserID: Integer;
         FFilterUserID: Integer;
         FIgnoreCategoryChange: Boolean;
+        FCloseAfterChainStop: Boolean;
         FHotkeyMgr: TGlobalHotkeyManager;
         FSync: TSyncController;
         FStatus: TAppStatusBar;
@@ -290,6 +293,8 @@ type
         function GetSelectedChainID: Integer;
         function ShowChainEditor(ChainID: Integer; InitialSnippetID: Integer = 0): Integer;
         procedure RefreshCurrentSnippetList;
+        procedure ChainStarted;
+        procedure ChainFinished;
         procedure ReloadUI(PreserveCategoryID: Integer);
         procedure RefreshCaches;
         procedure CloseDatabase;
@@ -546,6 +551,14 @@ end;
 
 procedure TMainForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
+    if TChainRunner.IsChainRunning then
+    begin
+        TChainRunner.RequestStop;
+        FCloseAfterChainStop := True;
+        CanClose := False;
+        Exit;
+    end;
+
     if Assigned(AppContext.DatabaseManager) and AppContext.DatabaseManager.IsConnected
         and GetSyncEngine.Dirty
         and (not AppContext.SettingsManager.Data.SyncOnExit) then
@@ -761,7 +774,7 @@ procedure TMainForm.UpdateChainMenuState;
 var
     Node: TTreeNode;
     NodeValue, ChainID: Integer;
-    IsChainNode: Boolean;
+    IsChainNode, ChainBusy: Boolean;
 begin
     Node := tvCategories.Selected;
     NodeValue := 0;
@@ -775,6 +788,17 @@ begin
     actChainRun.Visible := IsChainNode;
     actChainEdit.Visible := IsChainNode;
     actChainDelete.Visible := IsChainNode;
+
+    ChainBusy := TChainRunner.IsChainRunning;
+    actChainRun.Enabled := not ChainBusy;
+    actChainEdit.Enabled := not ChainBusy;
+    actChainDelete.Enabled := not ChainBusy;
+
+    pChainActions.Visible := IsChainNode;
+    if IsChainNode then
+        lblChainName.Caption := TUIStateLoader.GetMessage('Chains.Panel.Caption',
+            [AppContext.ChainService.GetChainByID(ChainID).Name,
+            Length(AppContext.ChainService.GetSteps(ChainID))]);
 end;
 
 function TMainForm.GetSelectedChainID: Integer;
@@ -903,7 +927,7 @@ end;
 procedure TMainForm.tvCategoriesDblClick(Sender: TObject);
 begin
     if GetSelectedChainID > 0 then
-        actChainRunExecute(Sender);
+        actChainEditExecute(Sender);
 end;
 
 procedure TMainForm.actClearTagFilterExecute(Sender: TObject);
@@ -947,8 +971,9 @@ end;
 procedure TMainForm.RefreshCurrentSnippetList;
 var
     Node: TTreeNode;
-    CatID: Integer;
+    CatID, ChainID, I: Integer;
     Snippets: TArray<TSnippetDTO>;
+    Steps: TArray<TChainStepDTO>;
 begin
     Node := tvCategories.Selected;
     if Node = nil then
@@ -959,6 +984,18 @@ begin
 
     if AppContext.DatabaseManager.IsConnected = False then
         Exit;
+
+    if TChainRunner.TryGetChainID(Integer(IntPtr(Node.Data)), ChainID) then
+    begin
+        Steps := AppContext.ChainService.GetSteps(ChainID);
+        SetLength(Snippets, Length(Steps));
+        for I := 0 to High(Steps) do
+            Snippets[I] := AppContext.SnippetService.GetSnippetByID(Steps[I].SnippetID);
+        FillSnippetListView(Snippets);
+        for I := 0 to lvSnippets.Items.Count - 1 do
+            lvSnippets.Items[I].Caption := IntToStr(I + 1) + '. ' + lvSnippets.Items[I].Caption;
+        Exit;
+    end;
 
     CatID := Integer(IntPtr(Node.Data));
 
@@ -986,6 +1023,21 @@ begin
     end;
 
     FillSnippetListView(Snippets);
+end;
+
+procedure TMainForm.ChainStarted;
+begin
+    UpdateMenuState;
+end;
+
+procedure TMainForm.ChainFinished;
+begin
+    if FCloseAfterChainStop then
+    begin
+        FCloseAfterChainStop := False;
+        Close;
+    end;
+    UpdateMenuState;
 end;
 
 procedure TMainForm.tvCategoriesChange(Sender: TObject; Node: TTreeNode);
@@ -1055,6 +1107,8 @@ begin
     OnKeyDown := FormKeyDown;
 
     lvTags.OnMouseDown := lvTagsMouseDown;
+    TChainRunner.OnStarted := ChainStarted;
+    TChainRunner.OnFinished := ChainFinished;
 
     FStatus := TAppStatusBar.Create(sbBottom);
     FStatus.Layout;

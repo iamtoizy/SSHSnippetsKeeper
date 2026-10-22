@@ -15,6 +15,9 @@ type
     TChainRunner = class
     private class var
         FRunning: Boolean;
+        FStopRequested: Boolean;
+        FOnStarted: TProc;
+        FOnFinished: TProc;
     private
         class procedure RunSteps(
             AppContext: IAppContext;
@@ -24,6 +27,9 @@ type
             TargetHWND: HWND); static;
     public
         class function IsChainRunning: Boolean; static;
+        class procedure RequestStop; static;
+        class property OnStarted: TProc read FOnStarted write FOnStarted;
+        class property OnFinished: TProc read FOnFinished write FOnFinished;
         class function EncodeChainNodeID(ChainID: Integer): Integer; static;
         class function TryGetChainID(NodeValue: Integer; out ChainID: Integer): Boolean; static;
         class procedure ExecuteChain(AppContext: IAppContext; ChainID: Integer); static;
@@ -44,6 +50,11 @@ uses
 class function TChainRunner.IsChainRunning: Boolean;
 begin
     Result := FRunning;
+end;
+
+class procedure TChainRunner.RequestStop;
+begin
+    FStopRequested := True;
 end;
 
 class function TChainRunner.EncodeChainNodeID(ChainID: Integer): Integer;
@@ -93,11 +104,15 @@ begin
     end;
 
     FRunning := True;
+    if Assigned(FOnStarted) then
+        FOnStarted;
     try
         RunSteps(AppContext, TUIStateLoader.GetMessage('Chains.Run.PanelTitle'), Chain.Name,
             Steps, Chain.UserID, TargetHWND);
     finally
         FRunning := False;
+        if Assigned(FOnFinished) then
+            FOnFinished;
     end;
 end;
 
@@ -139,10 +154,14 @@ begin
 
     PanelCaption := TUIStateLoader.GetMessage('MultiSelect.RunSequence.PanelTitle');
     FRunning := True;
+    if Assigned(FOnStarted) then
+        FOnStarted;
     try
         RunSteps(AppContext, PanelCaption, PanelCaption, Steps, 0, TargetHWND);
     finally
         FRunning := False;
+        if Assigned(FOnFinished) then
+            FOnFinished;
     end;
 end;
 
@@ -165,11 +184,13 @@ begin
         Panel.Initialize(PanelCaption, SequenceName, Length(Steps));
         Panel.Show;
         Panel.Update;
+        Panel.EnsureTopMost;
 
+        FStopRequested := False;
         StopReason := '';
         for I := 0 to High(Steps) do
         begin
-            if Panel.StopRequested then
+            if Panel.StopRequested or FStopRequested then
                 Break;
 
             Snippet := AppContext.SnippetService.GetSnippetByID(Steps[I].SnippetID);
@@ -198,13 +219,13 @@ begin
                 Free;
             end;
 
-            while AppContext.WindowHelper.IsTypingBusy and not Panel.StopRequested do
+            while AppContext.WindowHelper.IsTypingBusy and not (Panel.StopRequested or FStopRequested) do
             begin
                 Sleep(30);
                 Application.ProcessMessages;
             end;
 
-            if Panel.StopRequested then
+            if Panel.StopRequested or FStopRequested then
             begin
                 AppContext.WindowHelper.CancelTyping;
                 while AppContext.WindowHelper.IsTypingBusy do
@@ -216,7 +237,7 @@ begin
             end;
 
             RemainingPause := Max(0, Steps[I].PauseMs);
-            while (RemainingPause > 0) and not Panel.StopRequested do
+            while (RemainingPause > 0) and not (Panel.StopRequested or FStopRequested) do
             begin
                 Sleep(30);
                 Dec(RemainingPause, 30);
