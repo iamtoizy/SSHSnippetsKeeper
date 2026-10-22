@@ -27,15 +27,13 @@ type
             const Users: TArray<TUserDTO>;
             const Chains: TArray<TChainDTO>;
             FilterUserID: Integer;
-            SelectID: Integer = -1;
-            const ChainNameFilter: string = ''); static;
+            SelectID: Integer = -1); static;
     end;
 
 implementation
 
 uses
     System.Generics.Collections,
-    System.StrUtils,
     Common.Localization
     ;
 
@@ -109,7 +107,7 @@ begin
     end;
 end;
 
-class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categories: TArray<TCategoryDTO>; const Users: TArray<TUserDTO>; const Chains: TArray<TChainDTO>; FilterUserID: Integer; SelectID: Integer = -1; const ChainNameFilter: string = '');
+class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categories: TArray<TCategoryDTO>; const Users: TArray<TUserDTO>; const Chains: TArray<TChainDTO>; FilterUserID: Integer; SelectID: Integer = -1);
 
     // Вспомогательная рекурсивная процедура для добавления узлов
     procedure AddNodesRecursive(ParentNode: TTreeNode; ParentCatID: Integer; const CatMap: TDictionary<Integer, TList<TCategoryDTO>>);
@@ -184,23 +182,38 @@ class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categori
         end;
     end;
 
-    // Отрисовка ветки цепочек под указанным родителем с фильтром по имени
-    procedure RenderChains(ParentNode: TTreeNode);
+    // Отрисовка ветки цепочек; WorkspaceScoped - ветка внутри пространства
+    // (скрывается без цепочек и не претендует на выбор по корню)
+    procedure RenderChains(ParentNode: TTreeNode; OnlyUserID: Integer; WorkspaceScoped: Boolean);
     var
         ChainRoot, ChainNode: TTreeNode;
         Chain: TChainDTO;
+        HasChains: Boolean;
     begin
+        if WorkspaceScoped then
+        begin
+            HasChains := False;
+            for Chain in Chains do
+                if Chain.UserID = OnlyUserID then
+                begin
+                    HasChains := True;
+                    Break;
+                end;
+            if not HasChains then
+                Exit;
+        end;
+
         ChainRoot := TreeView.Items.AddChild(ParentNode,
             TUIStateLoader.GetMessage('Help.MainForm.Chains'));
         ChainRoot.Data := Pointer(IntPtr(CHAINS_ROOT_NODE_ID));
         ChainRoot.ImageIndex := 5;
         ChainRoot.SelectedIndex := 5;
-        if SelectID = CHAINS_ROOT_NODE_ID then
+        if (not WorkspaceScoped) and (SelectID = CHAINS_ROOT_NODE_ID) then
             ChainRoot.Selected := True;
 
         for Chain in Chains do
         begin
-            if (ChainNameFilter <> '') and not AnsiContainsText(Chain.Name, ChainNameFilter) then
+            if (OnlyUserID > 0) and (Chain.UserID <> OnlyUserID) then
                 Continue;
 
             ChainNode := TreeView.Items.AddChild(ChainRoot, Chain.Name);
@@ -259,6 +272,7 @@ begin
         if FilterUserID = 0 then
         begin
             // === РЕЖИМ "ВСЕ ПРОСТРАНСТВА" ===
+            RenderChains(nil, 0, False);
             for User in Users do
             begin
                 Node := TreeView.Items.Add(nil, User.Name);
@@ -271,7 +285,7 @@ begin
                         UserCats.Add(Cat);
 
                 RenderCategories(Node, UserCats);
-                RenderChains(Node);
+                RenderChains(Node, User.ID, True);
             end;
         end
         else
@@ -283,7 +297,7 @@ begin
                     UserCats.Add(Cat);
 
             RenderCategories(nil, UserCats);
-            RenderChains(nil);
+            RenderChains(nil, FilterUserID, False);
         end;
     finally
         UserCats.Free;

@@ -255,7 +255,6 @@ type
         FSync: TSyncController;
         FStatus: TAppStatusBar;
         FSearch: TMainSearchController;
-        FChainNameFilter: string;
         FUsersCache: TArray<TUserDTO>;
         FAllTagsCache: TArray<TTagDTO>;
         FCategoryTree: TCategoryTreeController;
@@ -265,7 +264,6 @@ type
         procedure MarkDataChanged;
         function GetSyncEngine: TSyncController;
         function GetSearchEngine: TMainSearchController;
-        function IsChainBranchSelected: Boolean;
         procedure FillSnippetListView(const Snippets: TArray<TSnippetDTO>);
         function ExtractSnippetByListItem(Item: TListItem): TSnippetDTO;
         procedure FillUserInterfaceFromSnippet(const Snippet: TSnippetDTO);
@@ -803,18 +801,6 @@ begin
             Length(AppContext.ChainService.GetSteps(ChainID))]);
 end;
 
-function TMainForm.IsChainBranchSelected: Boolean;
-var
-    NodeValue, Dummy: Integer;
-begin
-    Result := False;
-    if tvCategories.Selected = nil then
-        Exit;
-    NodeValue := Integer(IntPtr(tvCategories.Selected.Data));
-    Result := (NodeValue = CHAINS_ROOT_NODE_ID) or
-        TChainRunner.TryGetChainID(NodeValue, Dummy);
-end;
-
 function TMainForm.GetSelectedChainID: Integer;
 var
     Node: TTreeNode;
@@ -962,7 +948,7 @@ begin
         // Используем UIHelper
         TUIHelpers.BuildCategoryTree(tvCategories, Cats, FUsersCache,
             AppContext.ChainService.GetAllChains(FFilterUserID), FFilterUserID,
-            PreserveCategoryID, FChainNameFilter);
+            PreserveCategoryID);
         RefreshCurrentSnippetList;
     finally
         FIgnoreCategoryChange := False;
@@ -1061,15 +1047,6 @@ begin
         Exit;
     if Node = nil then
         Exit;
-
-    if (FChainNameFilter <> '') and not IsChainBranchSelected then
-    begin
-        FChainNameFilter := '';
-        if Node.Data <> nil then
-            ReloadUI(Integer(IntPtr(Node.Data)))
-        else
-            ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
-    end;
 
     FTags.ResetFilterState;
     RefreshCurrentSnippetList;
@@ -2061,7 +2038,6 @@ begin
     FFilterUserID := UserID;
     FCategoryTree.FilterUserID := UserID;
     GetSearchEngine.SetUserFilter(UserID);
-    FChainNameFilter := '';
 
     // 1. Сначала перестраиваем дерево категорий (слева) для нового пространства
     ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
@@ -2344,12 +2320,6 @@ end;
 procedure TMainForm.tmrSearchTimerTimer(Sender: TObject);
 begin
     tmrSearchTimer.Enabled := False; // Останавливаем таймер
-    if IsChainBranchSelected then
-    begin
-        FChainNameFilter := Trim(ebSearch.Text);
-        ReloadUI(Integer(IntPtr(tvCategories.Selected.Data)));
-        Exit;
-    end;
     PerformSearchAsync(ebSearch.Text); // Запускаем тяжелый поиск 1 раз
 end;
 
