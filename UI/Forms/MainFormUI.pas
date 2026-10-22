@@ -711,6 +711,7 @@ begin
     actDeleteSnippet.Enabled := (lvSnippets.Selected <> nil);
     actEditSnippet.Enabled := (lvSnippets.Selected <> nil);
     actRunSnippet.Enabled := (lvSnippets.Selected <> nil);
+    actSnippetHistory.Enabled := (lvSnippets.Selected <> nil);
     actChainCreateFromSnippet.Enabled := (lvSnippets.Selected <> nil);
     actRunSequence.Enabled := (lvSnippets.SelCount >= 2);
     actExportSnippets.Enabled := (lvSnippets.Selected <> nil);
