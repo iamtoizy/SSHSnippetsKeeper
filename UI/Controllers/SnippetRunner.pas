@@ -197,31 +197,35 @@ var
     Context: TMacroContext;
     Panel: TMacroStopPanel;
     ShowPanel: Boolean;
+    WindowHelper: IWindowHelper;
 begin
     // Блокируем смену фокуса для нашего процесса (ASFW_ANY = 2)
     // Это не позволит MainForm "выпрыгнуть" вперед при переключении
     LockSetForegroundWindow(LSFW_LOCK);
     Panel := nil;
+    WindowHelper := FAppContext.WindowHelper;
     try
         Context := BuildMacroContext(Snippet.ID, TargetHWND);
         SetForegroundWindow(TargetHWND);
         var TickEnd := GetTickCount + 100;
         while (GetForegroundWindow <> TargetHWND) and (GetTickCount < TickEnd) do
             Sleep(5);
-        FAppContext.WindowHelper.SetTargetWindow(TargetHWND);
+        WindowHelper.SetTargetWindow(TargetHWND);
 
         // Панель Stop имеет смысл только для долгой печати: при 0.5 с
         // пользователь просто не успеет нажать кнопку. В цепочках Stop уже
         // есть на панели прогресса - вторая панель только перекроет её
         ShowPanel := (not TChainRunner.IsChainRunning) and
-            (FAppContext.WindowHelper.EstimateTypingMs(Snippet.Content) > MIN_TYPING_STOP_PANEL_MS);
+            (WindowHelper.EstimateTypingMs(Snippet.Content) > MIN_TYPING_STOP_PANEL_MS);
         if ShowPanel then
         begin
             Panel := TMacroStopPanel.Create(nil);
+            // Кнопка сработает после освобождения TSnippetRunner: замыканию
+            // нельзя захватывать Self (FAppContext) - только локальный интерфейс
             Panel.Initialize(TUIStateLoader.GetMessage('Macro.StopPanelTitle'),
                 procedure
                 begin
-                    FAppContext.WindowHelper.CancelTyping;
+                    WindowHelper.CancelTyping;
                 end);
             Context.OnTypingFinished :=
                 procedure
@@ -235,11 +239,11 @@ begin
         end;
 
         try
-            FAppContext.WindowHelper.TypeTextIntoWindowWithContext(Snippet.Content, Context);
+            WindowHelper.TypeTextIntoWindowWithContext(Snippet.Content, Context);
 
             if ShowPanel then
             begin
-                if FAppContext.WindowHelper.IsTypingBusy then
+                if WindowHelper.IsTypingBusy then
                     Panel.ShowNoActivate
                 else
                     FreeAndNil(Panel);
