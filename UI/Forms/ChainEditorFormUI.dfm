@@ -33,7 +33,7 @@ object ChainEditorForm: TChainEditorForm
   end
   object lblPause: TLabel
     Left = 12
-    Top = 352
+    Top = 350
     Width = 109
     Height = 15
     Caption = 'Pause after step, sec:'
@@ -111,8 +111,8 @@ object ChainEditorForm: TChainEditorForm
     OnSelectItem = lvStepsSelectItem
   end
   object edPause: TEdit
-    Left = 175
-    Top = 349
+    Left = 272
+    Top = 345
     Width = 60
     Height = 23
     MaxLength = 5

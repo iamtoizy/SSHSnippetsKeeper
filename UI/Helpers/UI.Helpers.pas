@@ -211,8 +211,8 @@ begin
             TUIStateLoader.GetMessage('Help.MainForm.FrequentlyUsed'),
             Pointer(IntPtr(-1))
         );
-        Node.ImageIndex := 1;
-        Node.SelectedIndex := 1;
+        Node.ImageIndex := 4;
+        Node.SelectedIndex := 4;
         if SelectID = -1 then
             Node.Selected := True;
 
@@ -231,8 +231,8 @@ begin
             TUIStateLoader.GetMessage('Help.MainForm.Chains'),
             Pointer(IntPtr(CHAINS_ROOT_NODE_ID))
         );
-        Node.ImageIndex := 1;
-        Node.SelectedIndex := 1;
+        Node.ImageIndex := 5;
+        Node.SelectedIndex := 5;
         if SelectID = CHAINS_ROOT_NODE_ID then
             Node.Selected := True;
 
@@ -240,8 +240,8 @@ begin
         begin
             ChainNode := TreeView.Items.AddChild(Node, Chain.Name);
             ChainNode.Data := Pointer(IntPtr(-(CHAIN_NODE_ID_BASE + Chain.ID)));
-            ChainNode.ImageIndex := 1;
-            ChainNode.SelectedIndex := 1;
+            ChainNode.ImageIndex := 5;
+            ChainNode.SelectedIndex := 5;
             if SelectID = -(CHAIN_NODE_ID_BASE + Chain.ID) then
                 ChainNode.Selected := True;
         end;
