@@ -1391,6 +1391,7 @@
       "StopButton": "Stop",
       "FocusLost": "Target window focus lost - typing aborted.",
       "UnknownCommand": "Unknown command %s - typing aborted.",
+      "TypingInProgress": "Snippet typing is in progress - wait for completion and run again.",
       "ProgressChars": "%d/%d characters (%d%%)",
       "PauseRemaining": "Pause: ~%d s left"
     },

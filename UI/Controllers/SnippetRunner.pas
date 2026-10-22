@@ -23,6 +23,7 @@ type
         function ValidateBeforeType(const Snippet: TSnippetDTO): Boolean;
         procedure TypeIntoWindow(const Snippet: TSnippetDTO; TargetHWND: HWND);
         procedure DoExecuteInWindow(const Snippet: TSnippetDTO; TargetHWND: HWND; RequireConfirmation: Boolean);
+        function IsTypingBlocked: Boolean;
     public
         class var IsExecuting: Boolean;
         constructor Create(UserID: Integer; AppContext: IAppContext);
@@ -268,6 +269,16 @@ begin
         TargetHWND := TargetWindow.HWND;
 end;
 
+function TSnippetRunner.IsTypingBlocked: Boolean;
+begin
+    Result := FAppContext.WindowHelper.IsTypingBusy and
+        (not TChainRunner.IsChainRunning);
+    if Result then
+        FAppContext.MessagesHandler.ShowInfo(
+            TUIStateLoader.GetMessage('Macro.TypingInProgress')
+        );
+end;
+
 procedure TSnippetRunner.ExecuteSnippet(const Snippet: TSnippetDTO; RequireConfirmation: Boolean = True);
 var
     TargetWindow: TWindowMonitorInfo;
@@ -284,6 +295,9 @@ begin
 
     IsExecuting := True;
     try
+        if IsTypingBlocked then
+            Exit;
+
         if not ValidateBeforeType(Snippet) then
             Exit;
 
@@ -310,6 +324,9 @@ begin
 
     IsExecuting := True;
     try
+        if IsTypingBlocked then
+            Exit;
+
         DoExecuteInWindow(Snippet, TargetHWND, RequireConfirmation);
     finally
         IsExecuting := False;
