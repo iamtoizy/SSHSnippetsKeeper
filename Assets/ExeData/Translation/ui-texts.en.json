@@ -733,9 +733,6 @@
     "lbGroup": {
       "Caption": "Group Name"
     },
-    "lbFileName": {
-      "Caption": "File/Directory Name"
-    },
     "ebCommand": {
       "EditLabel.Caption": "Resulting Command"
     },
@@ -847,7 +844,7 @@
       "Caption": "Repeat last snippet (uses most recent run)"
     },
     "chkEnableFavSlots": {
-      "Caption": "Favorite slots 1..0 (digit is substituted automatically, only modifiers matter)"
+      "Caption": "Favorite slots 1..0 (only modifiers matter)"
     },
     "gbAppHotkeys": {
       "Caption": "Local Hotkeys"
@@ -1206,14 +1203,13 @@
       "FavoriteSlot": "Favorite Slot"
     },
     "Common": {
+      "GeneralError": "Error: %s",
       "CopyTooltip": "Click to copy",
       "NotificationDefaultCaption": "SSH Snippets Keeper",
       "Confirmation": "Confirmation",
       "Error": "Error",
       "Warning": "Warning",
       "Information": "Information",
-      "Yes": "Yes",
-      "No": "No",
       "OK": "OK",
       "Cancel": "Cancel",
       "Help": "Help",
@@ -1240,7 +1236,7 @@
       "UnsyncedDataWarning": "There are changes that have not been exported to the Markdown vault yet.\nThey will not be written to the vault files on exit.\n\nExit anyway?"
     },
     "DB": {
-      "ConnectError": "Critical Error!\nFailed to connect to the SQLite database.\nCheck the file path.",
+      "SQLExecutionError": "Error executing SQL query: %s",
       "OpenError": "Error opening database: %s",
       "CreateError": "Error creating database: %s",
       "OpenedSuccess": "SQLite database opened.",
@@ -1249,6 +1245,7 @@
     },
     "Settings": {
       "ResetAllHotkeysConfirm": "Reset all hotkeys to their default values?",
+      "SelectVaultPath": "Select vault folder",
       "ApplicationsAddPrompt": "Application executable file name (e.g., ssh.exe):",
       "ApplicationsRenamePrompt": "New application executable file name:",
       "ApplicationsDeleteConfirm": "Delete application \"%s\" from the allowed list?",
@@ -1263,8 +1260,6 @@
       "RecentFound": "Recent applications: %d"
     },
     "Category": {
-      "DeleteConfirm": "Are you sure you want to delete this category?",
-      "DeleteSuccess": "Category successfully deleted.",
       "SelectPrompt": "First, select a workspace or category.",
       "VirtualFolderError": "Cannot add categories to virtual folders.",
       "NewNamePrompt": "Enter name:",
@@ -1276,7 +1271,6 @@
       "CreateError": "Error creating category: %s",
       "RenameError": "Error renaming category: %s",
       "MoveError": "Error moving category: %s",
-      "SourceCategoryNotFound": "Source category not found.",
       "ParentCategoryNotFound": "Parent category not found.",
       "MoveToDifferentSpaceError": "Cannot move category to a different workspace.",
       "CategoryNotFound": "Category not found.",
@@ -1286,7 +1280,6 @@
     },
     "Snippet": {
       "NotFound": "Snippet not found.",
-      "TypeToWindowConfirm": "Enter the snippet in the window: \"%s\"?",
       "SelectPrompt": "Select a specific category to add a snippet.",
       "WorkspaceUndefined": "Failed to determine the workspace for the snippet (UserID=%d). Try selecting a specific workspace in the filter.",
       "DeletedMsg": "Snippet deleted.",
@@ -1298,7 +1291,6 @@
       "CaptionAdd": "Add Snippet",
       "TitleEmptyError": "Enter snippet title.",
       "NoContentError": "Snippet text is empty.",
-      "SQLExecutionError": "Error executing SQL query: %s",
       "InvalidIdError": "Invalid identifier for the snippet."
     },
     "History": {
@@ -1307,7 +1299,6 @@
       "RestoreDone": "Version restored.",
       "RestoreError": "Restore error: %s",
       "VersionNotFound": "The selected version was not found.",
-      "Legend": "Green lines will come back from the version, red lines will be removed from the current text.",
       "CurrentRow": "Current version"
     },
     "Tag": {
@@ -1320,7 +1311,6 @@
       "DeleteError": "Error deleting tag: %s",
       "RenameError": "Error renaming tag: %s",
       "RenamedMsg": "Tag renamed: \"%s\" → \"%s\"",
-      "FilterPrefix": "Filter by tag: \"%s\"",
       "FilterPrefixAny": "Filter by tags (any): \"%s\"",
       "FilterPrefixAll": "Filter by tags (all): \"%s\"",
       "FilterReset": "Filter reset.",
@@ -1334,12 +1324,8 @@
       "InvalidIdError": "Invalid user identifier"
     },
     "Terminal": {
-      "ChoiceCaption": "Select Target Terminal Window",
       "HistoryEmpty": "History is empty. First, activate a terminal window.",
       "WindowsFound": "Found %d terminal windows. Select target window:",
-      "Column.WindowTitle": "Window Title",
-      "Column.ExeName": "Executable File",
-      "Column.ActivatedAt": "Activity Time",
       "WindowNoLongerExists": "The selected window no longer exists.",
       "ConfirmTarget": "Insert the snippet into window \"%s\"?"
     },
@@ -1443,9 +1429,6 @@
         "DoneMsg": "Moved: %d, skipped: %d."
       }
     },
-    "Search": {
-      "BackgroundError": "Background search error: %s"
-    },
     "Security": {
       "DenyReason": {
         "PrivateSSHKey": "Private SSH/RSA key",
@@ -1465,7 +1448,6 @@
       "SensitiveDataFound": "Sensitive data found:\n• %s\nPlease review the snippet text before sending it to the terminal.\n\nDo you want to proceed with the submission?"
     },
     "Markdown": {
-      "DeleteFileError": "Failed to delete file: \"%s\"",
       "DeleteFolderError": "Failed to delete folder: \"%s\""
     },
     "AI": {
@@ -1574,10 +1556,10 @@
       "SecurityToastTitle": "⚠ Security Threat",
       "AutocompleteUpdated": "Autocomplete file updated. Content will be reloaded.",
       "AIChooseModelError": "Select an AI provider and model!",
-      "AIErrorPrefix": "Error: %s",
       "EnterSnippetTextHere": "Enter snippet name here..."
     },
     "AISettingsForm": {
+      "DeleteModelConfirm": "Delete this model?",
       "AddHubPrompt": "Enter AI provider name:",
       "DeleteHubConfirm": "Delete provider and ALL its models?",
       "AddModelPrompt": "New Model/Agent"
@@ -1602,8 +1584,6 @@
       "PresetMath": "Mathematical Symbols",
       "MemoryClearConfirm": "Delete all passwords from memory?",
       "MemoryCleared": "Password memory cleared.",
-      "ClipboardCleared": "Clipboard cleared.",
-      "PasswordCopied": "Password copied. Clipboard will be cleared in 15 seconds.",
       "HtPasswdTitle": "Nginx .htpasswd",
       "HtPasswdLoginPrompt": "Enter login for Basic Auth:",
       "HtPasswdLoginError": "Login cannot be empty.",
@@ -1709,9 +1689,6 @@
         "tar": "tar.* (gz, bz2, xz, zst, lz4)",
         "7z": "7z"
       }
-    },
-    "SettingsForm": {
-      "ResetAllPrompt": "Are you sure you want to reset ALL local hotkey settings to their default values?"
     }
   }
 }

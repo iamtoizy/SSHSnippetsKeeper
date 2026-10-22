@@ -44,7 +44,7 @@ var
 begin
     if not Assigned(FConnection) or (FConnection.Connected = False) then
         raise Exception.Create(
-            TUIStateLoader.GetMessage('NoConnectionError')
+            TUIStateLoader.GetMessage('DB.NoConnectionError')
         );
 
     List := TList<TUserDTO>.Create;

@@ -162,7 +162,7 @@ begin
         QGetOwner.Open;
         if QGetOwner.Eof then
             raise Exception.Create(
-                TUIStateLoader.GetMessage('ParentCategoryNotFound')
+                TUIStateLoader.GetMessage('Category.ParentCategoryNotFound')
             );
         SourceUserID := QGetOwner.FieldByName('user_id').AsInteger;
     finally
@@ -179,7 +179,7 @@ begin
             QGetOwner.Open;
             if QGetOwner.Eof then
                 raise Exception.Create(
-                    TUIStateLoader.GetMessage('ParentCategoryNotFound')
+                    TUIStateLoader.GetMessage('Category.ParentCategoryNotFound')
                 );
             TargetUserID := QGetOwner.FieldByName('user_id').AsInteger;
         finally
@@ -189,7 +189,7 @@ begin
         // Критичная проверка: пространства
         if SourceUserID <> TargetUserID then
             raise Exception.Create(
-                TUIStateLoader.GetMessage('MoveToDifferentSpaceError')
+                TUIStateLoader.GetMessage('Category.MoveToDifferentSpaceError')
             );
     end
     else

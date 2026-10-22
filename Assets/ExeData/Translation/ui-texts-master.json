@@ -733,9 +733,6 @@
     "lbGroup": {
       "Caption": "Имя группы"
     },
-    "lbFileName": {
-      "Caption": "Имя файла/директории"
-    },
     "ebCommand": {
       "EditLabel.Caption": "Итоговая команда"
     },
@@ -1206,14 +1203,13 @@
       "FavoriteSlot": "Слот избранного"
     },
     "Common": {
+      "GeneralError": "Ошибка: %s",
       "CopyTooltip": "Кликните, чтобы скопировать",
       "NotificationDefaultCaption": "Менеджер сниппетов",
       "Confirmation": "Подтверждение",
       "Error": "Ошибка",
       "Warning": "Внимание",
       "Information": "Информация",
-      "Yes": "Да",
-      "No": "Нет",
       "OK": "ОК",
       "Cancel": "Отмена",
       "Help": "Справка",
@@ -1240,7 +1236,7 @@
       "UnsyncedDataWarning": "В сниппетах есть изменения, ещё не выгруженные в Markdown-хранилище.\nПри выходе они не попадут в файлы хранилища.\n\nЗакрыть программу?"
     },
     "DB": {
-      "ConnectError": "Критическая ошибка!\nНе удалось подключиться к базе данных SQLite.\nПроверь путь к файлу.",
+      "SQLExecutionError": "Ошибка выполнения SQL-запроса: %s",
       "OpenError": "Ошибка открытия базы данных: %s",
       "CreateError": "Ошибка создания базы данных: %s",
       "OpenedSuccess": "База данных SQLite открыта.",
@@ -1249,6 +1245,7 @@
     },
     "Settings": {
       "ResetAllHotkeysConfirm": "Сбросить все горячие клавиши к значениям по умолчанию?",
+      "SelectVaultPath": "Выбери папку хранилища",
       "ApplicationsAddPrompt": "Имя исполняемого файла (например, ssh.exe):",
       "ApplicationsRenamePrompt": "Новое имя исполняемого файла:",
       "ApplicationsDeleteConfirm": "Удалить приложение «%s» из списка разрешённых?",
@@ -1263,8 +1260,6 @@
       "RecentFound": "Недавних приложений: %d"
     },
     "Category": {
-      "DeleteConfirm": "Уверен, что хочешь удалить эту категорию?",
-      "DeleteSuccess": "Категория успешно удалена.",
       "SelectPrompt": "Сначала выбери пространство или категорию.",
       "VirtualFolderError": "Нельзя добавлять категории в виртуальные папки.",
       "NewNamePrompt": "Введите имя:",
@@ -1276,7 +1271,6 @@
       "CreateError": "Ошибка создания категории: %s",
       "RenameError": "Ошибка переименования категории: %s",
       "MoveError": "Ошибка перемещения категории: %s",
-      "SourceCategoryNotFound": "Исходная категория не найдена.",
       "ParentCategoryNotFound": "Родительская категория не найдена.",
       "MoveToDifferentSpaceError": "Нельзя переместить категорию в другое пространство.",
       "CategoryNotFound": "Категория не найдена.",
@@ -1286,7 +1280,6 @@
     },
     "Snippet": {
       "NotFound": "Сниппет не найден.",
-      "TypeToWindowConfirm": "Ввести сниппет в окно: «%s»?",
       "SelectPrompt": "Выбери конкретную категорию для добавления сниппета.",
       "WorkspaceUndefined": "Не удалось определить пространство для сниппета (UserID=%d). Попробуй выбрать конкретное пространство в фильтре.",
       "DeletedMsg": "Сниппет удалён.",
@@ -1298,7 +1291,6 @@
       "CaptionAdd": "Добавление сниппета",
       "TitleEmptyError": "Введи заголовок сниппета.",
       "NoContentError": "Текст сниппета пуст.",
-      "SQLExecutionError": "Ошибка выполнения SQL-запроса: %s",
       "InvalidIdError": "Некорректный идентификатор сниппета."
     },
     "History": {
@@ -1307,7 +1299,6 @@
       "RestoreDone": "Версия восстановлена.",
       "RestoreError": "Ошибка восстановления: %s",
       "VersionNotFound": "Выбранная версия не найдена.",
-      "Legend": "Зелёные строки — вернутся из версии, красные — уйдут из текущего текста.",
       "CurrentRow": "Текущая версия"
     },
     "Tag": {
@@ -1320,7 +1311,6 @@
       "DeleteError": "Ошибка удаления тега: %s",
       "RenameError": "Ошибка переименования тега: %s",
       "RenamedMsg": "Тег переименован: «%s» → «%s»",
-      "FilterPrefix": "Фильтр по тегу: «%s»",
       "FilterPrefixAny": "Фильтр по тегам (любой): «%s»",
       "FilterPrefixAll": "Фильтр по тегам (все): «%s»",
       "FilterReset": "Фильтр сброшен.",
@@ -1334,12 +1324,8 @@
       "InvalidIdError": "Некорректный идентификатор пользователя"
     },
     "Terminal": {
-      "ChoiceCaption": "Выбор целевого окна терминала",
       "HistoryEmpty": "История пуста. Сначала активируйте окно терминала.",
       "WindowsFound": "Найдено %d окон терминала. Выберите целевое окно:",
-      "Column.WindowTitle": "Заголовок окна",
-      "Column.ExeName": "Исполняемый файл",
-      "Column.ActivatedAt": "Время активности",
       "WindowNoLongerExists": "Выбранное окно больше не существует.",
       "ConfirmTarget": "Вставить сниппет в окно «%s»?"
     },
@@ -1443,9 +1429,6 @@
         "DoneMsg": "Перемещено: %d, пропущено: %d."
       }
     },
-    "Search": {
-      "BackgroundError": "Ошибка фонового поиска: %s"
-    },
     "Security": {
       "DenyReason": {
         "PrivateSSHKey": "Приватный SSH/RSA ключ",
@@ -1465,7 +1448,6 @@
       "SensitiveDataFound": "Обнаружены потенциально чувствительные данные:\n• %s\nНеобходимо проверить текст сниппета перед его отправкой в терминал.\n\nБерёшь ответственность на себя и хочешь продолжить отправку?"
     },
     "Markdown": {
-      "DeleteFileError": "Не удалось удалить файл: \"%s\"",
       "DeleteFolderError": "Не удалось удалить папку: \"%s\""
     },
     "AI": {
@@ -1574,10 +1556,10 @@
       "SecurityToastTitle": "⚠ Угроза безопасности",
       "AutocompleteUpdated": "Файл автозаполнения обновлён. Содержимое будет перезагружено.",
       "AIChooseModelError": "Выбери провайдера и модель ИИ!",
-      "AIErrorPrefix": "Ошибка: %s",
       "EnterSnippetTextHere": "Здесь введи имя сниппета..."
     },
     "AISettingsForm": {
+      "DeleteModelConfirm": "Удалить эту модель?",
       "AddHubPrompt": "Введите имя провайдера ИИ:",
       "DeleteHubConfirm": "Удалить провайдера и ВСЕ его модели?",
       "AddModelPrompt": "Новая модель/агент"
@@ -1602,8 +1584,6 @@
       "PresetMath": "Математические символы",
       "MemoryClearConfirm": "Удалить все пароли из памяти?",
       "MemoryCleared": "Память паролей очищена.",
-      "ClipboardCleared": "Буфер обмена безопасно очищен.",
-      "PasswordCopied": "Пароль скопирован. Буфер будет очищен через 15 сек.",
       "HtPasswdTitle": "Nginx .htpasswd",
       "HtPasswdLoginPrompt": "Введи логин для Basic Auth:",
       "HtPasswdLoginError": "Логин не может быть пустым.",
@@ -1709,9 +1689,6 @@
         "tar": "tar.* (gz, bz2, xz, zst, lz4)",
         "7z": "7z"
       }
-    },
-    "SettingsForm": {
-      "ResetAllPrompt": "Уверен, что хочешь сбросить ВСЕ локальные настройки горячих клавиш к значениям по умолчанию?"
     }
   }
 }

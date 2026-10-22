@@ -102,7 +102,7 @@ begin
     except
         on E: Exception do
             raise Exception.Create(
-                TUIStateLoader.GetMessage('SQLExecutionError', [E.Message])
+                TUIStateLoader.GetMessage('DB.SQLExecutionError', [E.Message])
             );
     end;
 
@@ -157,7 +157,7 @@ begin
     except
         on E: Exception do
             raise Exception.Create(
-                TUIStateLoader.GetMessage('SQLExecutionError', [E.Message])
+                TUIStateLoader.GetMessage('DB.SQLExecutionError', [E.Message])
             );
     end;
 end;

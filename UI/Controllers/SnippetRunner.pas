@@ -157,7 +157,7 @@ begin
         begin
             // Если пользователь нажал "Нет" - прерываем.
             if not FAppContext.MessagesHandler.AskWarning(
-                TUIStateLoader.GetMessage('Snippet.SensitiveDataFound', [WarningReason]),
+                TUIStateLoader.GetMessage('Security.SensitiveDataFound', [WarningReason]),
                 TUIStateLoader.GetMessage('Common.Warning')
             ) then Exit;
         end;
