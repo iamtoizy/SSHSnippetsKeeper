@@ -1390,7 +1390,9 @@
       "StopPanelTitle": "Идёт вставка сниппета...",
       "StopButton": "Прервать",
       "FocusLost": "Фокус целевого окна потерян - вставка прервана.",
-      "UnknownCommand": "Неизвестная команда %s - вставка прервана."
+      "UnknownCommand": "Неизвестная команда %s - вставка прервана.",
+      "ProgressChars": "%d/%d символов (%d%%)",
+      "PauseRemaining": "Пауза: осталось ~%d с"
     },
     "MultiSelect": {
       "Menu": {

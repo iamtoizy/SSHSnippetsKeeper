@@ -1390,7 +1390,9 @@
       "StopPanelTitle": "Typing snippet...",
       "StopButton": "Stop",
       "FocusLost": "Target window focus lost - typing aborted.",
-      "UnknownCommand": "Unknown command %s - typing aborted."
+      "UnknownCommand": "Unknown command %s - typing aborted.",
+      "ProgressChars": "%d/%d characters (%d%%)",
+      "PauseRemaining": "Pause: ~%d s left"
     },
     "MultiSelect": {
       "Menu": {

@@ -222,16 +222,18 @@ begin
             Panel := TMacroStopPanel.Create(nil);
             // Кнопка сработает после освобождения TSnippetRunner: замыканию
             // нельзя захватывать Self (FAppContext) - только локальный интерфейс
-            Panel.Initialize(TUIStateLoader.GetMessage('Macro.StopPanelTitle'),
+            Panel.Initialize(Snippet.Title,
                 procedure
                 begin
                     WindowHelper.CancelTyping;
-                end);
+                end,
+                Context);
             Context.OnTypingFinished :=
                 procedure
                 begin
                     if Assigned(Panel) then
                     begin
+                        Panel.StopTracking;
                         Panel.Hide;
                         Panel.Release;
                     end;

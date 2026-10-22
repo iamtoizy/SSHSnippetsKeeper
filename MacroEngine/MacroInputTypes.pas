@@ -29,6 +29,10 @@ type
         UserCanceled: Boolean;
         SnippetID: Integer;
         UserID: Integer;
+        // Прогресс печати: 32-битные поля под Interlocked, читаются панелью Stop
+        ProgressTotal: Integer;
+        TypedChars: Integer;
+        SleepRemainingMs: Integer;
     end;
 
     ITextExecutor = interface
@@ -41,6 +45,7 @@ type
     IScriptAction = interface
         ['{5D2A9360-8082-4C7F-9A70-257CCB52AA1B}']
         procedure Execute;
+        function ProgressUnits: Integer;
     end;
 
     TScriptAction = class(TInterfacedObject, IScriptAction)
@@ -49,6 +54,7 @@ type
     public
         constructor Create(Context: TMacroContext);
         procedure Execute; virtual; abstract;
+        function ProgressUnits: Integer; virtual;
     end;
 
     TTypeTextAction = class(TScriptAction)
@@ -57,6 +63,7 @@ type
     public
         constructor Create(Context: TMacroContext; const AText: string);
         procedure Execute; override;
+        function ProgressUnits: Integer; override;
     end;
 
     TSleepAction = class(TScriptAction)
@@ -71,6 +78,7 @@ type
     public
         constructor Create(Context: TMacroContext);
         procedure Execute; override;
+        function ProgressUnits: Integer; override;
     end;
 
     TSendKeyAction = class(TScriptAction)
@@ -79,6 +87,7 @@ type
     public
         constructor Create(Context: TMacroContext; AKey: Word);
         procedure Execute; override;
+        function ProgressUnits: Integer; override;
     end;
 
 implementation
@@ -97,6 +106,11 @@ begin
     FContext := Context;
 end;
 
+function TScriptAction.ProgressUnits: Integer;
+begin
+    Result := 0;
+end;
+
 { TTypeTextAction }
 
 constructor TTypeTextAction.Create(Context: TMacroContext; const AText: string);
@@ -111,6 +125,11 @@ begin
         FContext.Executor.TypeRawText(FText, FContext);
 end;
 
+function TTypeTextAction.ProgressUnits: Integer;
+begin
+    Result := Length(FText);
+end;
+
 { TSleepAction }
 
 constructor TSleepAction.Create(Context: TMacroContext; AMS: Cardinal);
@@ -122,21 +141,36 @@ end;
 procedure TSleepAction.Execute;
 var
     StartTick: Cardinal;
+    Loops: Integer;
+    Remaining: Int64;
 begin
     StartTick := GetTickCount;
+    Loops := 0;
 
     while GetTickCount - StartTick < FMilliseconds do
     begin
         // Проверяем оба флага: пользовательскую отмену И системное завершение потока
         if Assigned(FContext) and
            (TInterlocked.CompareExchange(FContext.Canceled, 0, 0) <> 0) then
-            Exit;
+            Break;
 
         if TThread.CurrentThread.CheckTerminated then
-            Exit;
+            Break;
 
         Sleep(5);
+
+        Inc(Loops);
+        if Assigned(FContext) and (Loops mod 20 = 0) then
+        begin
+            Remaining := Int64(FMilliseconds) - Int64(GetTickCount - StartTick);
+            if Remaining < 0 then
+                Remaining := 0;
+            TInterlocked.Exchange(FContext.SleepRemainingMs, Integer(Remaining));
+        end;
     end;
+
+    if Assigned(FContext) then
+        TInterlocked.Exchange(FContext.SleepRemainingMs, 0);
 end;
 
 { TEnterAction }
@@ -152,6 +186,11 @@ begin
         FContext.Executor.PressEnter(FContext);
 end;
 
+function TEnterAction.ProgressUnits: Integer;
+begin
+    Result := 1;
+end;
+
 { TSendKeyAction }
 
 constructor TSendKeyAction.Create(Context: TMacroContext; AKey: Word);
@@ -164,6 +203,11 @@ procedure TSendKeyAction.Execute;
 begin
     if Assigned(FContext.Executor) then
         FContext.Executor.PressKey(FKey, FContext);
+end;
+
+function TSendKeyAction.ProgressUnits: Integer;
+begin
+    Result := 1;
 end;
 
 end.

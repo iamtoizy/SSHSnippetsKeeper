@@ -238,6 +238,9 @@ begin
 
     SendInput(Length(Inputs), Inputs[0], SizeOf(TInput));
 
+    if Context <> nil then
+        TInterlocked.Increment(Context.TypedChars);
+
     Sleep(FActiveSettings.WindowHelper.KeyPressInterval);
 end;
 
@@ -258,6 +261,9 @@ begin
     Inputs[1].ki.dwFlags := KEYEVENTF_KEYUP;
 
     SendInput(Length(Inputs), Inputs[0], SizeOf(TInput));
+
+    if Context <> nil then
+        TInterlocked.Increment(Context.TypedChars);
 
     Sleep(FActiveSettings.WindowHelper.KeyPressInterval);
 end;
@@ -309,7 +315,11 @@ begin
         if (Text[I] = #13) or (Text[I] = #10) then
             PressEnter(Context)
         else
+        begin
             SendUnicodeChar(Ord(Text[I]));
+            if Context <> nil then
+                TInterlocked.Increment(Context.TypedChars);
+        end;
 
         Sleep(FActiveSettings.WindowHelper.KeyPressInterval);
     end;
@@ -318,6 +328,7 @@ end;
 procedure TWindowHelper.TypeTextIntoWindowWithContext(const Text: string; Context: TMacroContext);
 var
     Actions: TArray<IScriptAction>;
+    I, TotalUnits: Integer;
 begin
     FActiveSettings := FSettingsManager.Data;
     {$IFDEF DEBUG}
@@ -361,6 +372,13 @@ begin
         OutputDebugString('[WinHelper] Pre-collection completed successfully');
         {$ENDIF}
 
+        // Общий объём печати для прогресса Stop-панели: после PreCollect
+        // известны и собранные значения INPUT
+        TotalUnits := 0;
+        for I := 0 to High(Actions) do
+            Inc(TotalUnits, Actions[I].ProgressUnits);
+        TInterlocked.Exchange(Context.ProgressTotal, TotalUnits);
+
         // Создаём и запускаем поток только если ввод не был отменён.
         // Поток стартует подвешенным: привязка OnTerminate не нужна,
         // жизненным циклом владеет StopActiveThread
@@ -380,6 +398,7 @@ procedure TWindowHelper.TypeTextIntoWindow(const Text: string);
 var
     Context: TMacroContext;
     Actions: TArray<IScriptAction>;
+    I, TotalUnits: Integer;
 begin
     FActiveSettings := FSettingsManager.Data;
     StopActiveThread;
@@ -388,6 +407,11 @@ begin
     Context.Executor := Self;
 
     Actions := FMacroEngine.Parse(Text, Context);
+
+    TotalUnits := 0;
+    for I := 0 to High(Actions) do
+        Inc(TotalUnits, Actions[I].ProgressUnits);
+    TInterlocked.Exchange(Context.ProgressTotal, TotalUnits);
 
     FMacroThread := TMacroThread.Create(Actions, Context, Context.OnRecordRun, True);
     FMacroThread.Start;

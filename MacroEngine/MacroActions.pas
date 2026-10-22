@@ -23,6 +23,7 @@ type
         function GetInputType: TMacroInputType;
         function GetDefaultValue: string;
         procedure Execute; override;
+        function ProgressUnits: Integer; override;
     end;
 
 implementation
@@ -122,6 +123,15 @@ begin
         if Assigned(FContext.Executor) then
             FContext.Executor.TypeRawText(S, FContext);
     end;
+end;
+
+function TInputAction.ProgressUnits: Integer;
+begin
+    // Значение по умолчанию наиболее вероятный вариант, если ввод не собран
+    if FHasPreCollectedValue then
+        Result := Length(FPreCollectedValue)
+    else
+        Result := Length(FDefaultValue);
 end;
 
 end.

@@ -127,13 +127,18 @@ begin
             {$ENDIF}
         end;
 
+        // Коллбэк срабатывает до FreeAndNil(FContext): Stop-панель успевает
+        // отвязаться от контекста, пока он ещё жив
         if Assigned(FContext) and Assigned(FContext.OnTypingFinished) then
+        begin
+            var LOnFinished := FContext.OnTypingFinished;
             TThread.Synchronize(nil,
                 procedure
                 begin
-                    FContext.OnTypingFinished();
+                    LOnFinished();
                 end
             );
+        end;
 
         if Assigned(FContext) then
             FreeAndNil(FContext);

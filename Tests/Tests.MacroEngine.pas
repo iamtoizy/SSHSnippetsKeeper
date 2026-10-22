@@ -46,6 +46,8 @@ type
         [Test]
         procedure SendKey_Unknown_SkipsCommandAndReports;
         [Test]
+        procedure ProgressUnits_SumsActions;
+        [Test]
         procedure Cache_ReusesParsedTokens;
     end;
 
@@ -317,6 +319,43 @@ begin
 
         Unknown := Engine.ValidateCommands('{SENDKEY ABRA}');
         Assert.AreEqual(1, Integer(Length(Unknown)));
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.ProgressUnits_SumsActions;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    Total, I: Integer;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Actions := Engine.Parse('ab{ENTER}{SLEEP 50}{SENDKEY x}', Ctx);
+        Assert.AreEqual(4, Integer(Length(Actions)));
+
+        Total := 0;
+        for I := 0 to High(Actions) do
+            Inc(Total, Actions[I].ProgressUnits);
+        Assert.AreEqual(4, Total);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+
+    Ctx := MakeContext;
+    Engine := TMacroEngine.Create;
+    try
+        Actions := Engine.Parse('{INPUT Name}', Ctx);
+        Assert.AreEqual(1, Integer(Length(Actions)));
+        Assert.AreEqual(0, (Actions[0] as TInputAction).ProgressUnits);
+
+        (Actions[0] as TInputAction).SetPreCollectedValue('xyz');
+        Assert.AreEqual(3, (Actions[0] as TInputAction).ProgressUnits);
     finally
         Ctx.Free;
         Engine.Free;
