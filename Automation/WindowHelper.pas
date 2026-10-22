@@ -22,7 +22,6 @@ type
         procedure Reset;
         procedure SendUnicodeChar(CharCode: Word);
         procedure ActivateTargetWindow;
-        procedure OnMacroTerminate(Sender: TObject);
         procedure StopActiveThread;
         procedure AbortMacro(Context: TMacroContext);
         class function IsMacroCanceled(Context: TMacroContext): Boolean; static;
@@ -76,9 +75,9 @@ end;
 
 destructor TWindowHelper.Destroy;
 begin
-    // TThread.WaitFor безопасен из главного потока: он обрабатывает
-    // очередь Synchronize, поэтому дедлока с OnTerminate не возникает.
-    // FreeOnTerminate = True: после WaitFor объект уже самоосвободился.
+    // WaitFor безопасен из главного потока: он обрабатывает очередь
+    // Synchronize, поэтому дедлока с OnTypingFinished не возникает.
+    // FreeOnTerminate = False: дескриптор жив до нашего Thread.Free
     StopActiveThread;
 
     FMacroEngine.Free;
@@ -130,28 +129,27 @@ begin
     Result := True;
 end;
 
-procedure TWindowHelper.OnMacroTerminate(Sender: TObject);
-begin
-    // Обнуляем указатель только если это тот самый поток, который мы отслеживали
-    if Sender = FMacroThread then
-        FMacroThread := nil;
-end;
-
 function TWindowHelper.IsTypingBusy: Boolean;
 begin
-    Result := Assigned(FMacroThread);
+    // Указатель живёт до reap-а в StopActiveThread, занятость определяет флаг
+    Result := Assigned(FMacroThread) and not FMacroThread.IsFinished;
 end;
 
 procedure TWindowHelper.StopActiveThread;
+var
+    Thread: TMacroThread;
 begin
-    // Ссылку не обнуляем до фактического завершения: иначе новый поток
-    // стартует параллельно со старым, а Destroy пропустит ожидание
-    if Assigned(FMacroThread) then
-    begin
-        FMacroThread.Cancel;
-        FMacroThread.WaitFor;
-        FMacroThread := nil;
-    end;
+    // Единственный владелец жизненного цикла потока - этот метод: pointer
+    // забираем сразу, Cancel+WaitFor+Free. При FreeOnTerminate=False
+    // дескриптор остаётся валидным, гонки с самоосвобождением нет
+    Thread := FMacroThread;
+    if Thread = nil then
+        Exit;
+
+    FMacroThread := nil;
+    Thread.Cancel;
+    Thread.WaitFor;
+    Thread.Free;
 end;
 
 procedure TWindowHelper.AbortMacro(Context: TMacroContext);
@@ -364,10 +362,9 @@ begin
         {$ENDIF}
 
         // Создаём и запускаем поток только если ввод не был отменён.
-        // Поток стартует подвешенным: OnTerminate привязывается до запуска,
-        // иначе поток может завершиться до привязки и FMacroThread зависнет
+        // Поток стартует подвешенным: привязка OnTerminate не нужна,
+        // жизненным циклом владеет StopActiveThread
         FMacroThread := TMacroThread.Create(Actions, Context, Context.OnRecordRun, True);
-        FMacroThread.OnTerminate := OnMacroTerminate;
         FMacroThread.Start;
 
         {$IFDEF DEBUG}
@@ -392,9 +389,7 @@ begin
 
     Actions := FMacroEngine.Parse(Text, Context);
 
-    // Поток стартует подвешенным: OnTerminate привязывается до запуска
     FMacroThread := TMacroThread.Create(Actions, Context, Context.OnRecordRun, True);
-    FMacroThread.OnTerminate := OnMacroTerminate;
     FMacroThread.Start;
 end;
 

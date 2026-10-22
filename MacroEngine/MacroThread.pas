@@ -14,6 +14,7 @@ type
         FActions: TArray<IScriptAction>;
         FContext: TMacroContext;
         FCanceled: Integer;
+        FDone: Boolean;
         // Добавляем поле для коллбэка
         FOnRecordRun: TRecordRunCallback;
     protected
@@ -23,6 +24,7 @@ type
         // Suspended = True позволяет привязать OnTerminate до фактического запуска потока
         constructor Create(const Actions: TArray<IScriptAction>; Context: TMacroContext; OnRecordRun: TRecordRunCallback = nil; Suspended: Boolean = False);
         procedure Cancel;
+        function IsFinished: Boolean;
     end;
 
 implementation
@@ -40,9 +42,10 @@ begin
     FContext := Context;
     FOnRecordRun := OnRecordRun; // Сохраняем коллбэк
 
-    // FreeOnTerminate обязан быть установлен ДО запуска потока:
-    // поток может завершиться раньше, чем выполнится присвоение после Create
-    FreeOnTerminate := True;
+    // FreeOnTerminate обязан быть False: объектом владеет TWindowHelper -
+    // он же освобождает после WaitFor. Самоосвобождение закрывает дескриптор
+    // и превращает чужой WaitFor в EThread "Неверный дескриптор"
+    FreeOnTerminate := False;
 
     inherited Create(Suspended);
 end;
@@ -51,6 +54,11 @@ procedure TMacroThread.Cancel;
 begin
     TInterlocked.Exchange(FCanceled, 1);
     Terminate;
+end;
+
+function TMacroThread.IsFinished: Boolean;
+begin
+    Result := FDone;
 end;
 
 procedure TMacroThread.Execute;
@@ -129,6 +137,8 @@ begin
 
         if Assigned(FContext) then
             FreeAndNil(FContext);
+
+        FDone := True;
     end;
 end;
 
