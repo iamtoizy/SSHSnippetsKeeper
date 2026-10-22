@@ -74,7 +74,6 @@
         <VerInfo_MajorVer>0</VerInfo_MajorVer>
         <VerInfo_Debug>true</VerInfo_Debug>
         <VerInfo_AutoGenVersion>true</VerInfo_AutoGenVersion>
-        <Custom_Styles>&quot;Onyx Blue|VCLSTYLE|$(BDSCOMMONDIR)\Styles\OnyxBlue.vsf&quot;</Custom_Styles>
         <DCC_ExeOutput>Binary\$(Platform)\$(Config)</DCC_ExeOutput>
         <BRCC_OutputDir>Resources</BRCC_OutputDir>
         <DCC_UnitSearchPath>C:\DC\SynEdit\Source;C:\DC\SynEdit\Source\Highlighters;C:\DC\SynEdit\Source\Highlighters\Omni Highlighters;C:\DC\HtmlViewer\source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
@@ -146,7 +145,7 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <RcCompile Include="Database\Schema\000_schema_init.rc">
-            <Form>000_schema_init.res</Form>
+            <Form>Resources\000_schema_init.res</Form>
         </RcCompile>
         <DCCReference Include="UI\Forms\MainFormUI.pas">
             <Form>MainForm</Form>
@@ -159,13 +158,14 @@
         </DCCReference>
         <DCCReference Include="Core\Entities\Core.Entities.Snippet.pas"/>
         <DCCReference Include="Data\Repositories\SnippetRepository.pas"/>
+        <DCCReference Include="Data\Repositories\SnippetHistoryRepository.pas"/>
         <DCCReference Include="Core\Entities\Core.Entities.Tag.pas"/>
         <DCCReference Include="Core\Entities\Core.Entities.Category.pas"/>
+        <DCCReference Include="Core\Entities\Core.Entities.Chain.pas"/>
         <DCCReference Include="Data\Repositories\CategoryRepository.pas"/>
         <DCCReference Include="Data\Repositories\UserRepository.pas"/>
         <DCCReference Include="Core\Entities\Core.Entities.User.pas"/>
         <DCCReference Include="Data\Repositories\TagRepository.pas"/>
-        <DCCReference Include="Core\Entities\Core.Entities.Chain.pas"/>
         <DCCReference Include="Data\Repositories\ChainRepository.pas"/>
         <DCCReference Include="Data\RepositoryBase.pas"/>
         <DCCReference Include="ThirdParty\ArrayHelper.pas"/>
@@ -190,6 +190,10 @@
         <DCCReference Include="UI\Forms\ChooseTerminalWindowUI.pas">
             <Form>ChooseTerminalWindow</Form>
         </DCCReference>
+        <DCCReference Include="Automation\AppEnumerator.pas"/>
+        <DCCReference Include="UI\Forms\AppPickerFormUI.pas">
+            <Form>AppPickerForm</Form>
+        </DCCReference>
         <DCCReference Include="UI\Forms\InputFormUI.pas">
             <Form>InputForm</Form>
         </DCCReference>
@@ -205,8 +209,10 @@
         <DCCReference Include="Core\Core.BashCompletionEngine.pas"/>
         <DCCReference Include="Common\Common.Consts.pas"/>
         <DCCReference Include="Common\Common.Helpers.pas"/>
+        <DCCReference Include="Common\Common.QueryLanguage.pas"/>
         <DCCReference Include="Common\Common.VCLStyleService.pas"/>
         <DCCReference Include="Core\Services\SnippetService.pas"/>
+        <DCCReference Include="Core\Services\SnippetHistoryService.pas"/>
         <DCCReference Include="Core\Services\TagService.pas"/>
         <DCCReference Include="Core\Services\CategoryService.pas"/>
         <DCCReference Include="Core\Services\UserService.pas"/>
@@ -225,22 +231,29 @@
         <DCCReference Include="UI\Controllers\CategoryTreeController.pas"/>
         <DCCReference Include="UI\Controllers\LanguageMenuController.pas"/>
         <DCCReference Include="UI\Controllers\TagListController.pas"/>
-        <DCCReference Include="UI\Controllers\ChainRunnerController.pas"/>
+        <DCCReference Include="UI\Forms\QuickSearchFormUI.pas">
+            <Form>QuickSearchForm</Form>
+        </DCCReference>
         <DCCReference Include="UI\Forms\ChainEditorFormUI.pas">
             <Form>ChainEditorForm</Form>
         </DCCReference>
         <DCCReference Include="UI\Forms\ChainRunPanelUI.pas">
             <Form>ChainRunPanel</Form>
         </DCCReference>
-        <DCCReference Include="UI\Forms\QuickSearchFormUI.pas">
-            <Form>QuickSearchForm</Form>
+        <DCCReference Include="UI\Controllers\ChainRunnerController.pas"/>
+        <DCCReference Include="UI\Forms\CategorySelectDialogUI.pas">
+            <Form>CategorySelectForm</Form>
+        </DCCReference>
+        <DCCReference Include="UI\Forms\TagSelectDialogUI.pas">
+            <Form>TagSelectForm</Form>
+        </DCCReference>
+        <DCCReference Include="UI\Forms\SequenceOrderDialogUI.pas">
+            <Form>SequenceOrderForm</Form>
         </DCCReference>
         <DCCReference Include="UI\Controllers\GlobalHotkeyManager.pas"/>
         <DCCReference Include="UI\Controls\TrackBarEx.pas"/>
         <DCCReference Include="UI\Services\UI.Services.AIService.pas"/>
-
         <DCCReference Include="UI\Services\UI.Services.AITextCleaner.pas"/>
-
         <DCCReference Include="UI\Services\UI.Services.LocalAISmokeTest.pas"/>
         <DCCReference Include="UI\Forms\AISettingsFormUI.pas">
             <Form>AISettingsForm</Form>
@@ -290,6 +303,10 @@
         <DCCReference Include="ThirdParty\Bcrypt.pas"/>
         <DCCReference Include="Core\Core.MarkdownExporter.pas"/>
         <DCCReference Include="Core\Core.MarkdownImporter.pas"/>
+        <DCCReference Include="Core\Core.TextDiff.pas"/>
+        <DCCReference Include="UI\Forms\HistoryFormUI.pas">
+            <Form>HistoryForm</Form>
+        </DCCReference>
         <DCCReference Include="Core\Core.LocalAIService.pas"/>
         <RcItem Include="Database\Schema\000_schema_init.sql">
             <ContainerId>ResourceItem</ContainerId>
@@ -321,10 +338,7 @@
                 <Source>
                     <Source Name="MainSource">SSHSnippetsKeeper.dpr</Source>
                 </Source>
-                <Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k370.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp370.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
-                </Excluded_Packages>
+                <Excluded_Packages/>
             </Delphi.Personality>
             <Platforms>
                 <Platform value="Win32">True</Platform>

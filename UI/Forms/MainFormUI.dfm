@@ -65,7 +65,9 @@ object MainForm: TMainForm
       OnDragDrop = tvCategoriesDragDrop
       OnDragOver = tvCategoriesDragOver
       OnEdited = tvCategoriesEdited
+      OnEditing = tvCategoriesEditing
       OnEndDrag = tvCategoriesEndDrag
+      OnKeyDown = tvCategoriesKeyDown
       OnMouseDown = tvCategoriesMouseDown
     end
   end

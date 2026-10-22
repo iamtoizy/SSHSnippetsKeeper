@@ -1375,6 +1375,7 @@
       "DeleteConfirm": "Delete chain \"%s\"?",
       "CreatedMsg": "Chain \"%s\" created.",
       "DeletedMsg": "Chain \"%s\" deleted.",
+      "RenameError": "Failed to rename chain: %s",
       "Panel": {
         "Caption": "Chain \"%s\" - steps: %d"
       },

@@ -41,6 +41,7 @@ type
 
         function IsVirtualCategory(Node: TTreeNode): Boolean;
         function IsWorkspaceNode(Node: TTreeNode): Boolean;
+        function CanEditNode(Node: TTreeNode): Boolean;
         function IsDescendant(Parent, Node: TTreeNode): Boolean;
         function GetWorkspaceUserID(Node: TTreeNode): Integer;
         function GetSelectedCategoryUserID: Integer;
@@ -63,6 +64,7 @@ type
 implementation
 
 uses
+    ChainRunnerController,
     Common.Localization,
     System.Math
     ;
@@ -90,6 +92,17 @@ end;
 function TCategoryTreeController.IsWorkspaceNode(Node: TTreeNode): Boolean;
 begin
     Result := Assigned(Node) and (Node.Data = nil) and not IsVirtualCategory(Node);
+end;
+
+function TCategoryTreeController.CanEditNode(Node: TTreeNode): Boolean;
+var
+    ChainID: Integer;
+begin
+    if (Node = nil) or IsWorkspaceNode(Node) then
+        Exit(False);
+    if IsVirtualCategory(Node) then
+        Exit(TChainRunner.TryGetChainID(Integer(IntPtr(Node.Data)), ChainID));
+    Result := True;
 end;
 
 function TCategoryTreeController.IsDescendant(Parent, Node: TTreeNode): Boolean;
@@ -251,7 +264,7 @@ begin
         FContext.MessagesHandler.ShowError(
             TUIStateLoader.GetMessage('Workspace.RenameError')
         )
-    else if not IsVirtualCategory(Node) then
+    else if CanEditNode(Node) then
     begin
         Node.EditText;
     end;
@@ -261,7 +274,41 @@ procedure TCategoryTreeController.HandleEdited(Node: TTreeNode; var S: string);
 var
     Cat: TCategoryDTO;
     OldName: string;
+    ChainID: Integer;
+    Twin: TTreeNode;
+    NodeValue: Integer;
 begin
+    NodeValue := Integer(IntPtr(Node.Data));
+
+    if TChainRunner.TryGetChainID(NodeValue, ChainID) then
+    begin
+        OldName := Node.Text;
+        S := Trim(S);
+        if (S = '') or (S = OldName) then
+        begin
+            S := OldName;
+            Exit;
+        end;
+
+        try
+            FContext.ChainService.RenameChain(ChainID, S);
+            for Twin in FTree.Items do
+                if (Twin <> Node) and (Integer(IntPtr(Twin.Data)) = NodeValue) then
+                    Twin.Text := S;
+            if Assigned(FOnDataChanged) then
+                FOnDataChanged();
+        except
+            on E: Exception do
+            begin
+                FContext.MessagesHandler.ShowError(
+                    TUIStateLoader.GetMessage('Chains.RenameError', [E.Message])
+                );
+                S := OldName;
+            end;
+        end;
+        Exit;
+    end;
+
     if IsVirtualCategory(Node) or IsWorkspaceNode(Node) then
     begin
         S := Node.Text;

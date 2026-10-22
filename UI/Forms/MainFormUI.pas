@@ -226,6 +226,8 @@ type
         procedure tvCategoriesDragDrop(Sender, Source: TObject; X, Y: Integer);
         procedure tvCategoriesDragOver(Sender, Source: TObject; X, Y: Integer; State: TDragState; var Accept: Boolean);
         procedure tvCategoriesEdited(Sender: TObject; Node: TTreeNode; var S: string);
+        procedure tvCategoriesEditing(Sender: TObject; Node: TTreeNode; var AllowEdit: Boolean);
+        procedure tvCategoriesKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
         procedure tvCategoriesContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);
         procedure lvSnippetsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
         procedure lvTagsClick(Sender: TObject);
@@ -1066,6 +1068,17 @@ end;
 procedure TMainForm.tvCategoriesEdited(Sender: TObject; Node: TTreeNode; var S: string);
 begin
     FCategoryTree.HandleEdited(Node, S);
+end;
+
+procedure TMainForm.tvCategoriesEditing(Sender: TObject; Node: TTreeNode; var AllowEdit: Boolean);
+begin
+    AllowEdit := FCategoryTree.CanEditNode(Node);
+end;
+
+procedure TMainForm.tvCategoriesKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+    if (Key = VK_F2) and (Shift = []) then
+        FCategoryTree.StartRename;
 end;
 
 procedure TMainForm.tvCategoriesContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);
