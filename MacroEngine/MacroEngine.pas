@@ -11,6 +11,7 @@ uses
 
 const
     MAX_MACRO_CACHE = 5000;
+    MAX_SLEEP_MS = 600000;
 
 type
     TMacroToken = record
@@ -21,6 +22,9 @@ type
         DefaultValue: string;
     end;
 
+function TryParseSendKey(const AArgs: string; out AKey: Integer; out AText: string): Boolean;
+
+type
     TMacroEngine = class
     private
         FRegex: TRegEx;
@@ -32,6 +36,8 @@ type
         constructor Create;
         destructor Destroy; override;
 
+        function GetTokens(const Text: string): TArray<TMacroToken>;
+        function ValidateCommands(const Text: string): TArray<string>;
         function Parse(const Text: string; Context: TMacroContext): TArray<IScriptAction>;
         procedure PreCollectInputs(const Actions: TArray<IScriptAction>; Context: TMacroContext);
     end;
@@ -39,7 +45,9 @@ type
 implementation
 
 uses
-    MacroActions
+    MacroActions,
+    System.Math,
+    Winapi.Windows
     ;
 
 constructor TMacroEngine.Create;
@@ -59,6 +67,57 @@ begin
     inherited;
 end;
 
+function TryParseSendKey(const AArgs: string; out AKey: Integer; out AText: string): Boolean;
+var
+    KeyName: string;
+    Num: Integer;
+begin
+    AKey := 0;
+    AText := '';
+    KeyName := UpperCase(Trim(AArgs));
+
+    if KeyName = '' then
+        Exit(False);
+
+    if Length(Trim(AArgs)) = 1 then
+    begin
+        AText := Trim(AArgs);
+        Exit(True);
+    end;
+
+    if TryStrToInt(KeyName, Num) and (Num >= 1) and (Num <= 255) then
+    begin
+        AKey := Word(Num);
+        Exit(True);
+    end;
+
+    if KeyName = 'ENTER' then AKey := VK_RETURN
+    else if KeyName = 'TAB' then AKey := VK_TAB
+    else if (KeyName = 'ESC') or (KeyName = 'ESCAPE') then AKey := VK_ESCAPE
+    else if KeyName = 'SPACE' then AKey := VK_SPACE
+    else if (KeyName = 'BACKSPACE') or (KeyName = 'BS') then AKey := VK_BACK
+    else if (KeyName = 'DELETE') or (KeyName = 'DEL') then AKey := VK_DELETE
+    else if (KeyName = 'INSERT') or (KeyName = 'INS') then AKey := VK_INSERT
+    else if KeyName = 'HOME' then AKey := VK_HOME
+    else if KeyName = 'END' then AKey := VK_END
+    else if (KeyName = 'PAGEUP') or (KeyName = 'PGUP') then AKey := VK_PRIOR
+    else if (KeyName = 'PAGEDOWN') or (KeyName = 'PGDN') then AKey := VK_NEXT
+    else if KeyName = 'LEFT' then AKey := VK_LEFT
+    else if KeyName = 'UP' then AKey := VK_UP
+    else if KeyName = 'RIGHT' then AKey := VK_RIGHT
+    else if KeyName = 'DOWN' then AKey := VK_DOWN
+    else if (Length(KeyName) = 2) and (KeyName[1] = 'F') and
+        TryStrToInt(Copy(KeyName, 2, 1), Num) and (Num >= 1) and (Num <= 9) then
+        AKey := Word(VK_F1 + Num - 1)
+    else if KeyName = 'F10' then AKey := VK_F10
+    else if KeyName = 'F11' then AKey := VK_F11
+    else if KeyName = 'F12' then AKey := VK_F12
+    else
+        Exit(False);
+
+    Result := True;
+end;
+
 function TMacroEngine.ParseTokens(const Text: string): TArray<TMacroToken>;
 var
     Matches: TMatchCollection;
@@ -66,7 +125,7 @@ var
     Tokens: TList<TMacroToken>;
     Token: TMacroToken;
     LastPos, MatchStart: Integer;
-    Cmd, Name, Args, ParamStr: string;
+    Cmd, Name, Args, ParamStr, KeyChar: string;
     P, BracketEnd: Integer;
     Chunk: string;
 
@@ -125,13 +184,13 @@ begin
                 end;
             end;
 
-            Cmd := Match.Groups[1].Value;
+            Cmd := TrimLeft(Match.Groups[1].Value);
 
             P := 1;
             while (P <= Length(Cmd)) and not CharInSet(Cmd[P], [' ', '[']) do
                 Inc(P);
 
-            Name := UpperCase(Copy(Cmd, 1, P - 1));
+            Name := UpperCase(Trim(Copy(Cmd, 1, P - 1)));
             Args := Trim(Copy(Cmd, P, MaxInt));
 
             Token.Text := '';
@@ -142,7 +201,7 @@ begin
             if Name = 'SLEEP' then
             begin
                 Token.Kind := tkSleep;
-                Token.Value := StrToIntDef(Args, 0);
+                Token.Value := EnsureRange(StrToIntDef(Args, 0), 0, MAX_SLEEP_MS);
             end
             else if Name = 'ENTER' then
             begin
@@ -154,7 +213,7 @@ begin
 
                 if (Args <> '') and (Args[1] = '[') then
                 begin
-                    BracketEnd := LastDelimiter(']', Args); // Ищем последнюю ']'
+                    BracketEnd := Pos(']', Args); // Ищем первую ']' - разделитель параметров и промпта
                     if BracketEnd > 0 then
                     begin
                         ParamStr := Copy(Args, 2, BracketEnd - 2);  // Hex:FF
@@ -173,12 +232,25 @@ begin
             end
             else if Name = 'SENDKEY' then
             begin
-                Token.Kind := tkSendKey;
-                Token.Value := StrToIntDef(Args, 0);
+                if TryParseSendKey(Args, Token.Value, KeyChar) then
+                begin
+                    if KeyChar <> '' then
+                    begin
+                        Token.Kind := tkText;
+                        Token.Text := KeyChar;
+                    end
+                    else
+                        Token.Kind := tkSendKey;
+                end
+                else
+                begin
+                    Token.Kind := tkUnknown;
+                    Token.Text := Match.Value;
+                end;
             end
             else
             begin
-                Token.Kind := tkText;
+                Token.Kind := tkUnknown;
                 Token.Text := Match.Value;
             end;
 
@@ -199,6 +271,47 @@ begin
         Result := Tokens.ToArray;
     finally
         Tokens.Free;
+    end;
+end;
+
+function TMacroEngine.GetTokens(const Text: string): TArray<TMacroToken>;
+begin
+    TMonitor.Enter(FCacheLock);
+    try
+        if not FCache.TryGetValue(Text, Result) then
+        begin
+            Result := ParseTokens(Text);
+
+            // Если кэш переполнен, удаляем самый старый элемент по очереди
+            if FCache.Count >= MAX_MACRO_CACHE then
+            begin
+                if FCacheOrder.Count > 0 then
+                    FCache.Remove(FCacheOrder.Dequeue);
+            end;
+
+            FCache.Add(Text, Result);
+            FCacheOrder.Enqueue(Text);
+        end;
+    finally
+        TMonitor.Exit(FCacheLock);
+    end;
+end;
+
+function TMacroEngine.ValidateCommands(const Text: string): TArray<string>;
+var
+    Tokens: TArray<TMacroToken>;
+    Token: TMacroToken;
+    List: TList<string>;
+begin
+    Tokens := GetTokens(Text);
+    List := TList<string>.Create;
+    try
+        for Token in Tokens do
+            if Token.Kind = tkUnknown then
+                List.Add(Token.Text);
+        Result := List.ToArray;
+    finally
+        List.Free;
     end;
 end;
 
@@ -243,25 +356,7 @@ var
     Token: TMacroToken;
     Actions: TList<IScriptAction>;
 begin
-    TMonitor.Enter(FCacheLock);
-    try
-        if not FCache.TryGetValue(Text, Tokens) then
-        begin
-            Tokens := ParseTokens(Text);
-
-            // Если кэш переполнен, удаляем самый старый элемент по очереди
-            if FCache.Count >= MAX_MACRO_CACHE then
-            begin
-                if FCacheOrder.Count > 0 then
-                    FCache.Remove(FCacheOrder.Dequeue);
-            end;
-
-            FCache.Add(Text, Tokens);
-            FCacheOrder.Enqueue(Text);
-        end;
-    finally
-        TMonitor.Exit(FCacheLock);
-    end;
+    Tokens := GetTokens(Text);
 
     Actions := TList<IScriptAction>.Create;
     try
@@ -278,6 +373,8 @@ begin
                     Actions.Add(TInputAction.Create(Context, Token.Text, Token.InputType, Token.DefaultValue));
                 tkSendKey:
                     Actions.Add(TSendKeyAction.Create(Context, Token.Value));
+                tkUnknown:
+                    ;
             end;
         end;
         Result := Actions.ToArray;

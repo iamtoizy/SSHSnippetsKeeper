@@ -25,6 +25,8 @@ type
         function GetWindowInfo: TWindowHelperInfo;
         function IsTypingBusy: Boolean;
         procedure CancelTyping;
+        function EstimateTypingMs(const Text: string): Integer;
+        function FindUnknownCommands(const Text: string): TArray<string>;
     end;
 
 implementation

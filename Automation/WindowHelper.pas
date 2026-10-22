@@ -23,6 +23,9 @@ type
         procedure SendUnicodeChar(CharCode: Word);
         procedure ActivateTargetWindow;
         procedure OnMacroTerminate(Sender: TObject);
+        procedure StopActiveThread;
+        procedure AbortMacro(Context: TMacroContext);
+        class function IsMacroCanceled(Context: TMacroContext): Boolean; static;
 
         // Явная реализация IUnknown для отключения reference counting
         function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
@@ -39,11 +42,13 @@ type
         function GetWindowInfo: TWindowHelperInfo;
         function IsTypingBusy: Boolean;
         procedure CancelTyping;
+        function EstimateTypingMs(const Text: string): Integer;
+        function FindUnknownCommands(const Text: string): TArray<string>;
 
         // ITextExecutor
-        procedure TypeRawText(const Text: string);
-        procedure PressEnter;
-        procedure PressKey(Key: Word);
+        procedure TypeRawText(const Text: string; Context: TMacroContext);
+        procedure PressEnter(Context: TMacroContext);
+        procedure PressKey(Key: Word; Context: TMacroContext);
 
         property Window: TWindowHelperInfo read FWindowHelperInfo;
         property MacroEngine: TMacroEngine read FMacroEngine;
@@ -54,6 +59,7 @@ implementation
 uses
     Common.Helpers,
     System.Classes,
+    System.SyncObjs,
     System.SysUtils
     ;
 
@@ -70,16 +76,10 @@ end;
 
 destructor TWindowHelper.Destroy;
 begin
-    if Assigned(FMacroThread) then
-    begin
-        FMacroThread.Cancel;
-
-        // TThread.WaitFor безопасен из главного потока: он обрабатывает
-        // очередь Synchronize, поэтому дедлока с OnTerminate не возникает.
-        // FreeOnTerminate = True: после WaitFor объект уже самоосвободился.
-        FMacroThread.WaitFor;
-        FMacroThread := nil;
-    end;
+    // TThread.WaitFor безопасен из главного потока: он обрабатывает
+    // очередь Synchronize, поэтому дедлока с OnTerminate не возникает.
+    // FreeOnTerminate = True: после WaitFor объект уже самоосвободился.
+    StopActiveThread;
 
     FMacroEngine.Free;
     inherited;
@@ -142,13 +142,65 @@ begin
     Result := Assigned(FMacroThread);
 end;
 
-procedure TWindowHelper.CancelTyping;
+procedure TWindowHelper.StopActiveThread;
 begin
+    // Ссылку не обнуляем до фактического завершения: иначе новый поток
+    // стартует параллельно со старым, а Destroy пропустит ожидание
     if Assigned(FMacroThread) then
     begin
         FMacroThread.Cancel;
+        FMacroThread.WaitFor;
         FMacroThread := nil;
     end;
+end;
+
+procedure TWindowHelper.AbortMacro(Context: TMacroContext);
+begin
+    if Context = nil then
+        Exit;
+
+    TInterlocked.Exchange(Context.Canceled, 1);
+    if Assigned(Context.OnFocusLost) then
+        Context.OnFocusLost();
+end;
+
+class function TWindowHelper.IsMacroCanceled(Context: TMacroContext): Boolean;
+begin
+    Result := (Context = nil) or
+        (TInterlocked.CompareExchange(Context.Canceled, 0, 0) <> 0) or
+        TThread.CurrentThread.CheckTerminated;
+end;
+
+procedure TWindowHelper.CancelTyping;
+begin
+    StopActiveThread;
+end;
+
+function TWindowHelper.EstimateTypingMs(const Text: string): Integer;
+var
+    Tokens: TArray<TMacroToken>;
+    Token: TMacroToken;
+    Ms: Integer;
+begin
+    Ms := 0;
+    Tokens := FMacroEngine.GetTokens(Text);
+    for Token in Tokens do
+        case Token.Kind of
+            tkText:
+                Inc(Ms, Length(Token.Text) * FActiveSettings.WindowHelper.KeyPressInterval +
+                    FActiveSettings.WindowHelper.ActivationDelay +
+                    FActiveSettings.WindowHelper.SetFocusDelay);
+            tkSleep:
+                Inc(Ms, Token.Value);
+            tkEnter, tkSendKey:
+                Inc(Ms, FActiveSettings.WindowHelper.KeyPressInterval);
+        end;
+    Result := Ms;
+end;
+
+function TWindowHelper.FindUnknownCommands(const Text: string): TArray<string>;
+begin
+    Result := FMacroEngine.ValidateCommands(Text);
 end;
 
 procedure TWindowHelper.SendUnicodeChar(CharCode: Word);
@@ -170,10 +222,13 @@ begin
     SendInput(2, Inputs[0], SizeOf(TInput));
 end;
 
-procedure TWindowHelper.PressEnter;
+procedure TWindowHelper.PressEnter(Context: TMacroContext);
 var
     Inputs: array [0 .. 1] of TInput;
 begin
+    if IsMacroCanceled(Context) then
+        Exit;
+
     ZeroMemory(@Inputs, SizeOf(Inputs));
 
     Inputs[0].Itype := INPUT_KEYBOARD;
@@ -188,10 +243,13 @@ begin
     Sleep(FActiveSettings.WindowHelper.KeyPressInterval);
 end;
 
-procedure TWindowHelper.PressKey(Key: Word);
+procedure TWindowHelper.PressKey(Key: Word; Context: TMacroContext);
 var
     Inputs: array [0 .. 1] of TInput;
 begin
+    if IsMacroCanceled(Context) then
+        Exit;
+
     ZeroMemory(@Inputs, SizeOf(Inputs));
 
     Inputs[0].Itype := INPUT_KEYBOARD;
@@ -214,23 +272,44 @@ begin
         Result := E_NOINTERFACE;
 end;
 
-procedure TWindowHelper.TypeRawText(const Text: string);
+procedure TWindowHelper.TypeRawText(const Text: string; Context: TMacroContext);
 var
     I: Integer;
 begin
     if FWindowHelperInfo.Handle = 0 then
         Exit;
 
-    SetForegroundWindow(FWindowHelperInfo.Handle);
-    Sleep(FActiveSettings.WindowHelper.ActivationDelay);
+    // Активируем цель только если фокус ушёл: повторный SetForegroundWindow
+    // на каждый блок зря тормозит печать и дёргает оконный менеджер
+    if GetForegroundWindow <> FWindowHelperInfo.Handle then
+    begin
+        SetForegroundWindow(FWindowHelperInfo.Handle);
+        Sleep(FActiveSettings.WindowHelper.ActivationDelay);
 
-    ActivateTargetWindow; // либо вообще SetForegroundWindow(FWindow.Handle);
-    Sleep(FActiveSettings.WindowHelper.SetFocusDelay);
+        ActivateTargetWindow;
+        Sleep(FActiveSettings.WindowHelper.SetFocusDelay);
+
+        if GetForegroundWindow <> FWindowHelperInfo.Handle then
+        begin
+            AbortMacro(Context);
+            Exit;
+        end;
+    end;
 
     for I := 1 to Length(Text) do
     begin
+        if IsMacroCanceled(Context) then
+            Exit;
+
+        // Чужое окно в фокусе - печатать нельзя, уйдёт не туда
+        if GetForegroundWindow <> FWindowHelperInfo.Handle then
+        begin
+            AbortMacro(Context);
+            Exit;
+        end;
+
         if (Text[I] = #13) or (Text[I] = #10) then
-            PressEnter
+            PressEnter(Context)
         else
             SendUnicodeChar(Ord(Text[I]));
 
@@ -257,11 +336,7 @@ begin
     end;
 
     try
-        if Assigned(FMacroThread) then
-        begin
-            FMacroThread.Cancel;
-            FMacroThread := nil;
-        end;
+        StopActiveThread;
 
         Context.Executor := Self;
         Actions := FMacroEngine.Parse(Text, Context);
@@ -310,11 +385,7 @@ var
     Actions: TArray<IScriptAction>;
 begin
     FActiveSettings := FSettingsManager.Data;
-    if Assigned(FMacroThread) then
-    begin
-        FMacroThread.Cancel;
-        FMacroThread := nil;
-    end;
+    StopActiveThread;
 
     Context := TMacroContext.Create;
     Context.Executor := Self;

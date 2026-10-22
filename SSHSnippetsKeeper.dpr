@@ -115,6 +115,7 @@ uses
   QuickSearchFormUI in 'UI\Forms\QuickSearchFormUI.pas' {QuickSearchForm},
   ChainEditorFormUI in 'UI\Forms\ChainEditorFormUI.pas' {ChainEditorForm},
   ChainRunPanelUI in 'UI\Forms\ChainRunPanelUI.pas' {ChainRunPanel},
+  MacroStopPanelUI in 'UI\Forms\MacroStopPanelUI.pas' {MacroStopPanel},
   ChainRunnerController in 'UI\Controllers\ChainRunnerController.pas',
   CategorySelectDialogUI in 'UI\Forms\CategorySelectDialogUI.pas' {CategorySelectForm},
   TagSelectDialogUI in 'UI\Forms\TagSelectDialogUI.pas' {TagSelectForm},

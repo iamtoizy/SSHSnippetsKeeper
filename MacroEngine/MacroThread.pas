@@ -119,6 +119,14 @@ begin
             {$ENDIF}
         end;
 
+        if Assigned(FContext) and Assigned(FContext.OnTypingFinished) then
+            TThread.Synchronize(nil,
+                procedure
+                begin
+                    FContext.OnTypingFinished();
+                end
+            );
+
         if Assigned(FContext) then
             FreeAndNil(FContext);
     end;

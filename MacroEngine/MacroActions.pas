@@ -96,23 +96,13 @@ procedure TInputAction.Execute;
 var
     S: string;
 begin
-    // Специальная обработка для Confirm
+    // Confirm всегда спрашивается в потоке: PreCollectInputs его пропускает
     if FInputType = mitConfirm then
     begin
-        if FHasPreCollectedValue then
+        if Assigned(FContext.OnConfirm) then
         begin
-            // Значение уже собрано при pre-collect
-            if FPreCollectedValue <> '__CONFIRMED__' then
+            if not ConfirmUser(FPrompt) then
                 TInterlocked.Exchange(FContext.Canceled, 1);
-        end
-        else
-        begin
-            // Fallback: спрашиваем прямо во время выполнения
-            if Assigned(FContext.OnConfirm) then
-            begin
-                if not ConfirmUser(FPrompt) then
-                    TInterlocked.Exchange(FContext.Canceled, 1);
-            end;
         end;
         Exit; // НЕ печатаем ничего в терминал!
     end;
@@ -121,7 +111,7 @@ begin
     if FHasPreCollectedValue then
     begin
         if Assigned(FContext.Executor) then
-            FContext.Executor.TypeRawText(FPreCollectedValue);
+            FContext.Executor.TypeRawText(FPreCollectedValue, FContext);
     end
     else
     begin
@@ -130,7 +120,7 @@ begin
 
         S := PromptUser(FPrompt);
         if Assigned(FContext.Executor) then
-            FContext.Executor.TypeRawText(S);
+            FContext.Executor.TypeRawText(S, FContext);
     end;
 end;
 

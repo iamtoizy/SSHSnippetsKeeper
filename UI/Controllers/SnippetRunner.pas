@@ -34,12 +34,17 @@ type
 implementation
 
 uses
+    ChainRunnerController,
     ChooseTerminalWindowUI,
     Common.Localization,
     InputFormUI,
+    MacroStopPanelUI,
     System.SysUtils,
     Vcl.Controls
     ;
+
+const
+    MIN_TYPING_STOP_PANEL_MS = 1500;
 
 { TSnippetRunner }
 
@@ -132,6 +137,16 @@ begin
                 Context.UserCanceled := True;
         end;
 
+    // Фокус ушёл из целевого окна - печать прервана, чтобы не утекли данные
+    Context.OnFocusLost :=
+        procedure
+        begin
+            MessageBox(0,
+                PChar(TUIStateLoader.GetMessage('Macro.FocusLost')),
+                PChar(TUIStateLoader.GetMessage('Common.Warning')),
+                MB_OK or MB_ICONWARNING or MB_TOPMOST or MB_SETFOREGROUND);
+        end;
+
     // Возвращаем готовый контекст из метода BuildMacroContext
     Result := Context;
 end;
@@ -139,6 +154,7 @@ end;
 function TSnippetRunner.ValidateBeforeType(const Snippet: TSnippetDTO): Boolean;
 var
     WarningReason: string;
+    UnknownCommands: TArray<string>;
 begin
     Result := False;
 
@@ -146,6 +162,16 @@ begin
     begin
         FAppContext.MessagesHandler.ShowInfo(
             TUIStateLoader.GetMessage('Snippet.NoContentError')
+        );
+        Exit;
+    end;
+
+    // Fail-closed: опечатка в макросе не должна молча печататься в целевое окно
+    UnknownCommands := FAppContext.WindowHelper.FindUnknownCommands(Snippet.Content);
+    if Length(UnknownCommands) > 0 then
+    begin
+        FAppContext.MessagesHandler.ShowError(
+            TUIStateLoader.GetMessage('Macro.UnknownCommand', [string.Join(', ', UnknownCommands)])
         );
         Exit;
     end;
@@ -169,10 +195,13 @@ end;
 procedure TSnippetRunner.TypeIntoWindow(const Snippet: TSnippetDTO; TargetHWND: HWND);
 var
     Context: TMacroContext;
+    Panel: TMacroStopPanel;
+    ShowPanel: Boolean;
 begin
     // Блокируем смену фокуса для нашего процесса (ASFW_ANY = 2)
     // Это не позволит MainForm "выпрыгнуть" вперед при переключении
     LockSetForegroundWindow(LSFW_LOCK);
+    Panel := nil;
     try
         Context := BuildMacroContext(Snippet.ID, TargetHWND);
         SetForegroundWindow(TargetHWND);
@@ -180,7 +209,45 @@ begin
         while (GetForegroundWindow <> TargetHWND) and (GetTickCount < TickEnd) do
             Sleep(5);
         FAppContext.WindowHelper.SetTargetWindow(TargetHWND);
-        FAppContext.WindowHelper.TypeTextIntoWindowWithContext(Snippet.Content, Context);
+
+        // Панель Stop имеет смысл только для долгой печати: при 0.5 с
+        // пользователь просто не успеет нажать кнопку. В цепочках Stop уже
+        // есть на панели прогресса - вторая панель только перекроет её
+        ShowPanel := (not TChainRunner.IsChainRunning) and
+            (FAppContext.WindowHelper.EstimateTypingMs(Snippet.Content) > MIN_TYPING_STOP_PANEL_MS);
+        if ShowPanel then
+        begin
+            Panel := TMacroStopPanel.Create(nil);
+            Panel.Initialize(TUIStateLoader.GetMessage('Macro.StopPanelTitle'),
+                procedure
+                begin
+                    FAppContext.WindowHelper.CancelTyping;
+                end);
+            Context.OnTypingFinished :=
+                procedure
+                begin
+                    if Assigned(Panel) then
+                    begin
+                        Panel.Hide;
+                        Panel.Release;
+                    end;
+                end;
+        end;
+
+        try
+            FAppContext.WindowHelper.TypeTextIntoWindowWithContext(Snippet.Content, Context);
+
+            if ShowPanel then
+            begin
+                if FAppContext.WindowHelper.IsTypingBusy then
+                    Panel.ShowNoActivate
+                else
+                    FreeAndNil(Panel);
+            end;
+        except
+            FreeAndNil(Panel);
+            raise;
+        end;
     finally
         LockSetForegroundWindow(LSFW_UNLOCK);
     end;

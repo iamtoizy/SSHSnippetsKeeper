@@ -259,7 +259,7 @@
       "Caption": "Macros"
     },
     "mInfo": {
-      "Text": "Current test macros:\n{SLEEP N} - Delay execution by N milliseconds.\n{ENTER} - Send ENTER key press.\n{SENDKEY X} - Send character X to the target window.\n{INPUT[TYPE:DEFAULT_VALUE] NAME} - Show a text input dialog and replace macro with input. Examples:\n  {INPUT Name}\n  {INPUT[STRING:test string] Name}\n  {INPUT[NUMBER:100] Size}\n  {INPUT[FLOAT:3.14] Size}\n  {INPUT[Hex:FF] Color}\n  {INPUT[Password] Password}\n  {INPUT[DATE:2026-01-31] Date}\n  {INPUT[Confirm] Text for user} - Pause execution and wait for user confirmation.\n\n..."
+      "Text": "Current test macros:\n{SLEEP N} - Delay execution by N milliseconds.\n{ENTER} - Send ENTER key press.\n{SENDKEY X} - Send character X, a key name (ENTER, TAB, F1-F12) or a VK code to the target window.\n{INPUT[TYPE:DEFAULT_VALUE] NAME} - Show a text input dialog and replace macro with input. Examples:\n  {INPUT Name}\n  {INPUT[STRING:test string] Name}\n  {INPUT[NUMBER:100] Size}\n  {INPUT[FLOAT:3.14] Size}\n  {INPUT[Hex:FF] Color}\n  {INPUT[Password] Password}\n  {INPUT[DATE:2026-01-31] Date}\n  {INPUT[Confirm] Text for user} - Pause execution and wait for user confirmation.\n\n..."
     }
   },
   "AISettingsForm": {
@@ -1385,6 +1385,12 @@
         "NotFound": "Chain not found.",
         "SnippetNotFound": "Step %d: snippet not found."
       }
+    },
+    "Macro": {
+      "StopPanelTitle": "Typing snippet...",
+      "StopButton": "Stop",
+      "FocusLost": "Target window focus lost - typing aborted.",
+      "UnknownCommand": "Unknown command %s - typing aborted."
     },
     "MultiSelect": {
       "Menu": {

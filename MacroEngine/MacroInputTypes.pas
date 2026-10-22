@@ -2,19 +2,18 @@
 
 interface
 
+uses
+    System.SysUtils
+    ;
+
 type
-    TMacroTokenKind = (tkText, tkSleep, tkEnter, tkInput, tkSendKey);
+    TMacroTokenKind = (tkText, tkSleep, tkEnter, tkInput, tkSendKey, tkUnknown);
     TMacroInputType = (mitString, mitNumber, mitHex, mitFloat, mitPassword, mitDate, mitConfirm);
     TInputCallback = reference to function(const Prompt: string): string;
     TConfirmCallback = reference to function(const Prompt: string): Boolean;
     TRecordRunCallback = reference to procedure(SnippetID, UserID: Integer);
 
-    ITextExecutor = interface
-        ['{65C96380-78F5-4B0B-9D15-65C99E3C4D4A}']
-        procedure TypeRawText(const Text: string);
-        procedure PressEnter;
-        procedure PressKey(Key: Word);
-    end;
+    ITextExecutor = interface;
 
     TMacroContext = class
     public
@@ -22,12 +21,21 @@ type
         OnInput: TInputCallback;
         OnConfirm: TConfirmCallback;
         OnRecordRun: TRecordRunCallback;
+        OnFocusLost: TProc;
+        OnTypingFinished: TProc;
         Canceled: Integer;
         CurrentInputType: TMacroInputType;
         CurrentDefaultValue: string;
         UserCanceled: Boolean;
         SnippetID: Integer;
         UserID: Integer;
+    end;
+
+    ITextExecutor = interface
+        ['{65C96380-78F5-4B0B-9D15-65C99E3C4D4A}']
+        procedure TypeRawText(const Text: string; Context: TMacroContext);
+        procedure PressEnter(Context: TMacroContext);
+        procedure PressKey(Key: Word; Context: TMacroContext);
     end;
 
     IScriptAction = interface
@@ -100,7 +108,7 @@ end;
 procedure TTypeTextAction.Execute;
 begin
     if Assigned(FContext.Executor) then
-        FContext.Executor.TypeRawText(FText);
+        FContext.Executor.TypeRawText(FText, FContext);
 end;
 
 { TSleepAction }
@@ -141,7 +149,7 @@ end;
 procedure TEnterAction.Execute;
 begin
     if Assigned(FContext.Executor) then
-        FContext.Executor.PressEnter;
+        FContext.Executor.PressEnter(FContext);
 end;
 
 { TSendKeyAction }
@@ -155,7 +163,7 @@ end;
 procedure TSendKeyAction.Execute;
 begin
     if Assigned(FContext.Executor) then
-        FContext.Executor.PressKey(FKey);
+        FContext.Executor.PressKey(FKey, FContext);
 end;
 
 end.

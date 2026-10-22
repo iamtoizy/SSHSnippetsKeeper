@@ -22,9 +22,29 @@ type
         [Test]
         procedure Sleep_ParsedAsSleepAction;
         [Test]
+        procedure Sleep_Negative_ClampedToZero;
+        [Test]
+        procedure MacroName_LeadingSpace_Trimmed;
+        [Test]
         procedure Input_WithParams_ParsedAsInputAction;
         [Test]
-        procedure UnknownMacro_BecomesPlainText;
+        procedure Input_SplitsOnFirstBracket;
+        [Test]
+        procedure UnknownMacro_SkipsCommandAndReports;
+        [Test]
+        procedure SendKey_Name_ParsedToVirtualKey;
+        [Test]
+        procedure SendKey_SingleChar_ParsedAsText;
+        [Test]
+        procedure SendKey_Number_ParsedToVirtualKey;
+        [Test]
+        procedure SendKey_Invalid_Fails;
+        [Test]
+        procedure SendKey_Char_BecomesTextAction;
+        [Test]
+        procedure SendKey_Name_BecomesSendKeyAction;
+        [Test]
+        procedure SendKey_Unknown_SkipsCommandAndReports;
         [Test]
         procedure Cache_ReusesParsedTokens;
     end;
@@ -32,6 +52,7 @@ type
 implementation
 
 uses
+    System.Diagnostics,
     System.SysUtils
     ;
 
@@ -116,7 +137,32 @@ begin
     end;
 end;
 
-procedure TMacroEngineTests.UnknownMacro_BecomesPlainText;
+procedure TMacroEngineTests.Sleep_Negative_ClampedToZero;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    SW: TStopwatch;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Actions := Engine.Parse('{SLEEP -5}', Ctx);
+        Assert.AreEqual(1, Integer(Length(Actions)));
+        Assert.IsTrue(Actions[0] is TSleepAction);
+
+        SW := TStopwatch.StartNew;
+        Actions[0].Execute;
+        SW.Stop;
+        Assert.IsTrue(SW.ElapsedMilliseconds < 5000,
+            'Negative SLEEP must be clamped, not wrapped to ~49 days');
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.MacroName_LeadingSpace_Trimmed;
 var
     Engine: TMacroEngine;
     Ctx: TMacroContext;
@@ -125,9 +171,152 @@ begin
     Engine := TMacroEngine.Create;
     Ctx := MakeContext;
     try
-        Actions := Engine.Parse('{UNKNOWN_CMD}', Ctx);
+        Actions := Engine.Parse('{ SLEEP 10}', Ctx);
+        Assert.AreEqual(1, Integer(Length(Actions)));
+        Assert.IsTrue(Actions[0] is TSleepAction);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Input_SplitsOnFirstBracket;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    InputAction: TInputAction;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Actions := Engine.Parse('{INPUT[STRING:a]b]c}', Ctx);
+        Assert.AreEqual(1, Integer(Length(Actions)));
+        Assert.IsTrue(Actions[0] is TInputAction);
+
+        InputAction := Actions[0] as TInputAction;
+        Assert.AreEqual('a', InputAction.GetDefaultValue);
+        Assert.AreEqual('b]c', InputAction.GetPrompt);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.UnknownMacro_SkipsCommandAndReports;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    Unknown: TArray<string>;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Actions := Engine.Parse('a{UNKNOWN_CMD}b', Ctx);
+        Assert.AreEqual(2, Integer(Length(Actions)));
+        Assert.IsTrue(Actions[0] is TTypeTextAction);
+        Assert.IsTrue(Actions[1] is TTypeTextAction);
+
+        Unknown := Engine.ValidateCommands('a{UNKNOWN_CMD}b');
+        Assert.AreEqual(1, Integer(Length(Unknown)));
+        Assert.AreEqual('{UNKNOWN_CMD}', Unknown[0]);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.SendKey_Name_ParsedToVirtualKey;
+var
+    Key: Integer;
+    Text: string;
+begin
+    Assert.IsTrue(TryParseSendKey('ENTER', Key, Text));
+    Assert.AreEqual(13, Integer(Key));
+    Assert.AreEqual('', Text);
+end;
+
+procedure TMacroEngineTests.SendKey_SingleChar_ParsedAsText;
+var
+    Key: Integer;
+    Text: string;
+begin
+    Assert.IsTrue(TryParseSendKey('x', Key, Text));
+    Assert.AreEqual('x', Text);
+    Assert.AreEqual(0, Integer(Key));
+end;
+
+procedure TMacroEngineTests.SendKey_Number_ParsedToVirtualKey;
+var
+    Key: Integer;
+    Text: string;
+begin
+    Assert.IsTrue(TryParseSendKey('13', Key, Text));
+    Assert.AreEqual(13, Integer(Key));
+    Assert.AreEqual('', Text);
+end;
+
+procedure TMacroEngineTests.SendKey_Invalid_Fails;
+var
+    Key: Integer;
+    Text: string;
+begin
+    Assert.IsFalse(TryParseSendKey('ABRA', Key, Text));
+    Assert.IsFalse(TryParseSendKey('', Key, Text));
+end;
+
+procedure TMacroEngineTests.SendKey_Char_BecomesTextAction;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Actions := Engine.Parse('{SENDKEY x}', Ctx);
         Assert.AreEqual(1, Integer(Length(Actions)));
         Assert.IsTrue(Actions[0] is TTypeTextAction);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.SendKey_Name_BecomesSendKeyAction;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Actions := Engine.Parse('{SENDKEY ENTER}', Ctx);
+        Assert.AreEqual(1, Integer(Length(Actions)));
+        Assert.IsTrue(Actions[0] is TSendKeyAction);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.SendKey_Unknown_SkipsCommandAndReports;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    Unknown: TArray<string>;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Actions := Engine.Parse('{SENDKEY ABRA}', Ctx);
+        Assert.AreEqual(0, Integer(Length(Actions)));
+
+        Unknown := Engine.ValidateCommands('{SENDKEY ABRA}');
+        Assert.AreEqual(1, Integer(Length(Unknown)));
     finally
         Ctx.Free;
         Engine.Free;
