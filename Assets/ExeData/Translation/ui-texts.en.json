@@ -223,6 +223,46 @@
       "Caption": "Parameters:"
     }
   },
+  "MacroBuilderForm": {
+    "Caption": "Macro Builder",
+    "lbHint": {
+      "Caption": "Macro steps:"
+    },
+    "lbAddType": {
+      "Caption": "Step type:"
+    },
+    "bAddStep": {
+      "Caption": "Add"
+    },
+    "bStepUp": {
+      "Caption": "↑"
+    },
+    "bStepDown": {
+      "Caption": "↓"
+    },
+    "bStepDelete": {
+      "Caption": "Delete"
+    },
+    "lbPreview": {
+      "Caption": "Preview:"
+    },
+    "bInsert": {
+      "Caption": "Insert at cursor"
+    },
+    "bReplaceAll": {
+      "Caption": "Replace all"
+    },
+    "bCancel": {
+      "Caption": "Cancel"
+    },
+    "lvSteps": {
+      "Columns": {
+        "0": "#",
+        "1": "Type",
+        "2": "Step"
+      }
+    }
+  },
   "AddEditSnippetForm": {
     "Caption": "SSH Snippets Keeper - Add/Edit Snippet",
     "ebTitle": {
@@ -243,20 +283,8 @@
     "bHistory": {
       "Caption": "History…"
     },
-    "bInsertParam": {
-      "Caption": "Insert"
-    },
-    "lbParamName": {
-      "Caption": "Name:"
-    },
-    "lbParamType": {
-      "Caption": "Type:"
-    },
-    "lbParamDefault": {
-      "Caption": "Default:"
-    },
-    "lbParamOptions": {
-      "Caption": "Options (|):"
+    "bMacroBuilder": {
+      "Caption": "Visual macro builder"
     },
     "nAI": {
       "Caption": "AI Assistant"
@@ -1197,7 +1225,7 @@
           "Slot0": "Slot 0"
         }
       },
-      "AddEditSnippetForm": {
+  "AddEditSnippetForm": {
         "Caption": "Snippet Editor",
         "actShowAIForm": "Show AI Assistant",
         "actConfigureAI": "Configure AI Assistant"
@@ -1593,12 +1621,7 @@
       "SecurityToastTitle": "⚠ Security Threat",
       "AutocompleteUpdated": "Autocomplete file updated. Content will be reloaded.",
       "AIChooseModelError": "Select an AI provider and model!",
-      "EnterSnippetTextHere": "Enter snippet name here...",
-      "ParamNameEmpty": "Enter the parameter name",
-      "ParamBadChars": "Name and default value must not contain } ] |",
-      "ParamOptionsEmpty": "Set SELECT options separated by |",
-      "ParamsOverviewEmpty": "No parameters - add {INPUT} to the snippet body",
-      "ParamsOverview": "Parameters (%d): %s"
+      "EnterSnippetTextHere": "Enter snippet name here..."
     },
     "AISettingsForm": {
       "DeleteModelConfirm": "Delete this model?",
@@ -1671,6 +1694,28 @@
     "ParamsForm": {
       "Hint": "Fill in the parameters - on run they will be gathered in a single dialog",
       "Error.Invalid": "Invalid parameter: %s"
+    },
+    "MacroBuilder": {
+      "StepType.Text": "Text",
+      "StepType.Sleep": "Pause",
+      "StepType.Enter": "ENTER",
+      "StepType.Key": "Key",
+      "StepType.Input": "Input",
+      "StepType.Value": "Value",
+      "StepType.ClearLine": "Clear line",
+      "StepType.KeyDelay": "Delay",
+      "PropText": "Step text:",
+      "PropMs": "Pause, ms:",
+      "PropKey": "Key (CTRL+C, F5, a):",
+      "PropName": "Name (prompt):",
+      "PropDefault": "Default value:",
+      "PropOptions": "Options separated by | (for SELECT):",
+      "PropInputType": "Input type:",
+      "PropValueType": "Value kind:",
+      "PropArg": "Argument (format/length/name):",
+      "DefaultParamName": "Parameter",
+      "Error.BadKey": "Unknown key: %s",
+      "Error.EnvEmpty": "Set a variable name for ENV"
     },
     "TagEditorForm": {
       "InputQueryTitle": "New Tag",

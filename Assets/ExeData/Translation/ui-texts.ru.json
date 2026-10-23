@@ -223,6 +223,46 @@
       "Caption": "Параметры:"
     }
   },
+  "MacroBuilderForm": {
+    "Caption": "Конструктор макросов",
+    "lbHint": {
+      "Caption": "Шаги макроса:"
+    },
+    "lbAddType": {
+      "Caption": "Тип шага:"
+    },
+    "bAddStep": {
+      "Caption": "Добавить"
+    },
+    "bStepUp": {
+      "Caption": "↑"
+    },
+    "bStepDown": {
+      "Caption": "↓"
+    },
+    "bStepDelete": {
+      "Caption": "Удалить"
+    },
+    "lbPreview": {
+      "Caption": "Превью:"
+    },
+    "bInsert": {
+      "Caption": "Вставить в курсор"
+    },
+    "bReplaceAll": {
+      "Caption": "Заменить всё"
+    },
+    "bCancel": {
+      "Caption": "Отмена"
+    },
+    "lvSteps": {
+      "Columns": {
+        "0": "#",
+        "1": "Тип",
+        "2": "Шаг"
+      }
+    }
+  },
   "AddEditSnippetForm": {
     "Caption": "SSH Snippets Keeper - Добавить/редактировать сниппет",
     "ebTitle": {
@@ -243,20 +283,8 @@
     "bHistory": {
       "Caption": "История…"
     },
-    "bInsertParam": {
-      "Caption": "Вставить"
-    },
-    "lbParamName": {
-      "Caption": "Имя:"
-    },
-    "lbParamType": {
-      "Caption": "Тип:"
-    },
-    "lbParamDefault": {
-      "Caption": "По умолчанию:"
-    },
-    "lbParamOptions": {
-      "Caption": "Опции (|):"
+    "bMacroBuilder": {
+      "Caption": "Визуальный конструктор макросов"
     },
     "nAI": {
       "Caption": "ИИ-ассистент"
@@ -1593,12 +1621,7 @@
       "SecurityToastTitle": "⚠ Угроза безопасности",
       "AutocompleteUpdated": "Файл автозаполнения обновлён. Содержимое будет перезагружено.",
       "AIChooseModelError": "Выбери провайдера и модель ИИ!",
-      "EnterSnippetTextHere": "Здесь введи имя сниппета...",
-      "ParamNameEmpty": "Введи имя параметра",
-      "ParamBadChars": "Имя и значение по умолчанию не должны содержать } ] |",
-      "ParamOptionsEmpty": "Для SELECT задай опции через |",
-      "ParamsOverviewEmpty": "Параметров нет - добавь {INPUT} в содержимое сниппета",
-      "ParamsOverview": "Параметры (%d): %s"
+      "EnterSnippetTextHere": "Здесь введи имя сниппета..."
     },
     "AISettingsForm": {
       "DeleteModelConfirm": "Удалить эту модель?",
@@ -1671,6 +1694,28 @@
     "ParamsForm": {
       "Hint": "Заполни параметры - при запуске они соберутся в одном окне",
       "Error.Invalid": "Ошибка в параметре: %s"
+    },
+    "MacroBuilder": {
+      "StepType.Text": "Текст",
+      "StepType.Sleep": "Пауза",
+      "StepType.Enter": "ENTER",
+      "StepType.Key": "Клавиша",
+      "StepType.Input": "Ввод",
+      "StepType.Value": "Значение",
+      "StepType.ClearLine": "Очистить строку",
+      "StepType.KeyDelay": "Задержка",
+      "PropText": "Текст шага:",
+      "PropMs": "Пауза, мс:",
+      "PropKey": "Клавиша (CTRL+C, F5, a):",
+      "PropName": "Имя (подсказка):",
+      "PropDefault": "Значение по умолчанию:",
+      "PropOptions": "Опции через | (для SELECT):",
+      "PropInputType": "Тип ввода:",
+      "PropValueType": "Тип значения:",
+      "PropArg": "Аргумент (формат/длина/имя):",
+      "DefaultParamName": "Параметр",
+      "Error.BadKey": "Неизвестная клавиша: %s",
+      "Error.EnvEmpty": "Для ENV задай имя переменной"
     },
     "TagEditorForm": {
       "InputQueryTitle": "New Tag",

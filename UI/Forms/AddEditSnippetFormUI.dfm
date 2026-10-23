@@ -472,103 +472,23 @@ object AddEditSnippetForm: TAddEditSnippetForm
       object tsMacros: TTabSheet
         Caption = #1052#1072#1082#1088#1086#1089#1099
         ImageIndex = 1
-        object pnlParamBuilder: TPanel
+        object pMacroTools: TPanel
           Left = 0
           Top = 0
           Width = 521
-          Height = 120
+          Height = 34
           Align = alTop
           BevelOuter = bvNone
           ParentBackground = False
           TabOrder = 1
-          object lbParamName: TLabel
+          object bMacroBuilder: TButton
             Left = 8
-            Top = 8
-            Width = 26
-            Height = 13
-            Caption = #1048#1084#1103':'
-          end
-          object ebParamName: TEdit
-            Left = 90
             Top = 5
-            Width = 200
-            Height = 21
-            TabOrder = 0
-          end
-          object lbParamType: TLabel
-            Left = 8
-            Top = 36
-            Width = 23
-            Height = 13
-            Caption = #1058#1080#1087':'
-          end
-          object cbParamType: TComboBox
-            Left = 90
-            Top = 33
-            Width = 140
-            Height = 21
-            Style = csDropDownList
-            ItemHeight = 13
-            ItemIndex = 0
-            Items.Strings = (
-              'STRING'
-              'NUMBER'
-              'HEX'
-              'FLOAT'
-              'PASSWORD'
-              'DATE'
-              'SELECT'
-              'CONFIRM'
-            )
-            TabOrder = 1
-            OnChange = cbParamTypeChange
-          end
-          object lbParamDefault: TLabel
-            Left = 244
-            Top = 36
-            Width = 82
-            Height = 13
-            Caption = #1055#1086' '#1091#1084#1086#1083#1095#1072#1085#1080#1102':'
-          end
-          object ebParamDefault: TEdit
-            Left = 330
-            Top = 33
-            Width = 183
-            Height = 21
-            TabOrder = 2
-          end
-          object lbParamOptions: TLabel
-            Left = 8
-            Top = 64
-            Width = 66
-            Height = 13
-            Caption = #1054#1087#1094#1080#1080' (|):'
-            Enabled = False
-          end
-          object ebParamOptions: TEdit
-            Left = 90
-            Top = 61
-            Width = 200
-            Height = 21
-            Enabled = False
-            TabOrder = 3
-          end
-          object bInsertParam: TButton
-            Left = 304
-            Top = 60
-            Width = 90
-            Height = 23
-            Caption = #1042#1089#1090#1072#1074#1080#1090#1100
-            TabOrder = 4
-            OnClick = bInsertParamClick
-          end
-          object lbParamsOverview: TLabel
-            Left = 8
-            Top = 92
-            Width = 505
+            Width = 230
             Height = 24
-            AutoSize = False
-            WordWrap = True
+            Caption = #1042#1080#1079#1091#1072#1083#1100#1085#1099#1081' '#1082#1086#1085#1089#1090#1088#1091#1082#1090#1086#1088' '#1084#1072#1082#1088#1086#1089#1086#1074
+            TabOrder = 0
+            OnClick = bMacroBuilderClick
           end
         end
         object mInfo: TMemo

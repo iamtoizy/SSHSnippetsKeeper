@@ -12,8 +12,6 @@ uses
     Core.Interfaces.Settings,
     Core.Interfaces.UI,
     CustomBashSyn,
-    MacroEngine,
-    MacroInputTypes,
     SynCompletionProposal,
     SynEdit,
     SynEditHighlighter,
@@ -81,17 +79,8 @@ type
         mComment: TSynEdit;
         tsMacros: TTabSheet;
         mInfo: TMemo;
-        pnlParamBuilder: TPanel;
-        lbParamName: TLabel;
-        ebParamName: TEdit;
-        lbParamType: TLabel;
-        cbParamType: TComboBox;
-        lbParamDefault: TLabel;
-        ebParamDefault: TEdit;
-        lbParamOptions: TLabel;
-        ebParamOptions: TEdit;
-        bInsertParam: TButton;
-        lbParamsOverview: TLabel;
+        pMacroTools: TPanel;
+        bMacroBuilder: TButton;
         spTopLeft: TSplitter;
         mContent: TSynEdit;
         ActionList: TActionList;
@@ -121,8 +110,7 @@ type
         procedure mContentChange(Sender: TObject);
         procedure mContentKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
         procedure mContentProcessCommand(Sender: TObject; var Command: TSynEditorCommand; var Char: WideChar; Data: Pointer);
-        procedure bInsertParamClick(Sender: TObject);
-        procedure cbParamTypeChange(Sender: TObject);
+        procedure bMacroBuilderClick(Sender: TObject);
         procedure SynCompletionProposalExecute(Kind: SynCompletionType; Sender: TObject; var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
         procedure tmrReloadCommandsTimer(Sender: TObject);
         procedure tmrSecurityScanTimer(Sender: TObject);
@@ -146,7 +134,6 @@ type
         FAIInProgress: Boolean;
         FWasSecuritySafe: Boolean;
         FRestoredInDB: Boolean;
-        FParamEngine: TMacroEngine;
 
         procedure ShowAIOverlay;
         procedure ExecuteAICommand;
@@ -156,7 +143,6 @@ type
         procedure PopulateHubs;
         procedure PopulateModels(HubIndex: Integer);
         procedure UpdateSecurityStatusUI(IsSafe: Boolean; const Reason: string);
-        procedure UpdateParamsOverview;
         procedure AIThreadTerminated(Sender: TObject);
     public
         procedure Prepare(IsEditMode: Boolean; const Snippet: TSnippetDTO; CatID, UserID: Integer);
@@ -184,6 +170,7 @@ uses
     Common.Helpers,
     Core.Entities.Tag,
     HistoryFormUI,
+    MacroBuilderFormUI,
     MainFormUI,
     SecurityScanner,
     SynEditKeyCmds,
@@ -274,9 +261,6 @@ begin
     if Assigned(FCompletionEngine) then
         FCompletionEngine.Free;
 
-    if Assigned(FParamEngine) then
-        FParamEngine.Free;
-
     FIsAICanceled := True; // Сигнал потоку остановиться
 
     if Assigned(FAIThread) then
@@ -309,9 +293,6 @@ begin
 
     // Сразу применяем подсветку синтаксиса до показа формы (не ждем таймер)
     SetSyntax;
-
-    FParamEngine := TMacroEngine.Create;
-    UpdateParamsOverview;
 
     // Регистрация подсказок
     RegisterHelp(mContent, hipTopRight, 'Help.AddEditSnippet.mContent', hkCustomForm);
@@ -888,110 +869,27 @@ begin
     end;
 end;
 
-function InputTypeToken(AType: TMacroInputType): string;
-begin
-    case AType of
-        mitNumber: Result := 'NUMBER';
-        mitHex: Result := 'HEX';
-        mitFloat: Result := 'FLOAT';
-        mitPassword: Result := 'PASSWORD';
-        mitDate: Result := 'DATE';
-        mitConfirm: Result := 'CONFIRM';
-        mitSelect: Result := 'SELECT';
-    else
-        Result := 'STRING';
-    end;
-end;
-
-procedure TAddEditSnippetForm.cbParamTypeChange(Sender: TObject);
+procedure TAddEditSnippetForm.bMacroBuilderClick(Sender: TObject);
 var
-    IsSelect: Boolean;
+    Builder: TMacroBuilderForm;
+    Res: TModalResult;
 begin
-    IsSelect := cbParamType.Text = 'SELECT';
-    ebParamOptions.Enabled := IsSelect;
-    lbParamOptions.Enabled := IsSelect;
-end;
+    Builder := TMacroBuilderForm.Create(nil);
+    try
+        Builder.Initialize(AppContext);
+        Builder.InitializeBuilder(mContent.Text);
 
-procedure TAddEditSnippetForm.bInsertParamClick(Sender: TObject);
-var
-    ParamName, ParamType, ParamDefault, Token: string;
-begin
-    ParamName := Trim(ebParamName.Text);
-    ParamType := cbParamType.Text;
-    ParamDefault := Trim(ebParamDefault.Text);
-
-    if ParamName = '' then
-    begin
-        MessagesHandler.ShowInfo(TUIStateLoader.GetMessage('AddEditSnippet.ParamNameEmpty'));
-        Exit;
+        Res := Builder.ShowModal;
+        if Res = mrOk then
+            mContent.SelText := Builder.GetMacroText
+        else if Res = mrYes then
+            mContent.Text := Builder.GetMacroText;
+    finally
+        Builder.Free;
     end;
 
-    if (Pos('}', ParamName) > 0) or (Pos(']', ParamName) > 0) or (Pos('|', ParamName) > 0) then
-    begin
-        MessagesHandler.ShowInfo(TUIStateLoader.GetMessage('AddEditSnippet.ParamBadChars'));
-        Exit;
-    end;
-
-    if ParamType = 'CONFIRM' then
-        Token := Format('{INPUT[CONFIRM] %s}', [ParamName])
-    else if ParamType = 'SELECT' then
-    begin
-        if Trim(ebParamOptions.Text) = '' then
-        begin
-            MessagesHandler.ShowInfo(TUIStateLoader.GetMessage('AddEditSnippet.ParamOptionsEmpty'));
-            Exit;
-        end;
-        Token := Format('{INPUT[SELECT:%s] %s}', [Trim(ebParamOptions.Text), ParamName]);
-    end
-    else if (ParamType = 'STRING') and (ParamDefault = '') then
-        Token := Format('{INPUT %s}', [ParamName])
-    else if ParamDefault = '' then
-        Token := Format('{INPUT[%s] %s}', [ParamType, ParamName])
-    else
-    begin
-        if (Pos('}', ParamDefault) > 0) or (Pos(']', ParamDefault) > 0) then
-        begin
-            MessagesHandler.ShowInfo(TUIStateLoader.GetMessage('AddEditSnippet.ParamBadChars'));
-            Exit;
-        end;
-        Token := Format('{INPUT[%s:%s] %s}', [ParamType, ParamDefault, ParamName]);
-    end;
-
-    mContent.SelText := Token;
-    mContent.SetFocus;
-    UpdateParamsOverview;
-end;
-
-procedure TAddEditSnippetForm.UpdateParamsOverview;
-var
-    Descs: TArray<TMacroParamDescriptor>;
-    I: Integer;
-    Text: string;
-begin
-    if not Assigned(FParamEngine) then
-        Exit;
-
-    Descs := FParamEngine.InputDescriptors(mContent.Text);
-
-    if Length(Descs) = 0 then
-    begin
-        lbParamsOverview.Caption := TUIStateLoader.GetMessage('AddEditSnippet.ParamsOverviewEmpty');
-        Exit;
-    end;
-
-    Text := '';
-    for I := 0 to High(Descs) do
-    begin
-        if I > 0 then
-            Text := Text + '; ';
-
-        if Descs[I].InputType = mitSelect then
-            Text := Text + Format('%s [SELECT: %s]', [Descs[I].Name, Descs[I].DefaultValue])
-        else
-            Text := Text + Format('%s [%s]', [Descs[I].Name, InputTypeToken(Descs[I].InputType)]);
-    end;
-
-    lbParamsOverview.Caption := Format(TUIStateLoader.GetMessage('AddEditSnippet.ParamsOverview'), [Length(Descs), Text]);
+    if mContent.CanFocus then
+        mContent.SetFocus;
 end;
 
 procedure TAddEditSnippetForm.PopulateModels(HubIndex: Integer);
@@ -1161,9 +1059,6 @@ begin
 
     // Обновляем визуальное состояние UI
     UpdateSecurityStatusUI(IsSafe, WarningReason);
-
-    // Обзор INPUT-параметров обновляем с тем же дебаунсом
-    UpdateParamsOverview;
 end;
 
 procedure TAddEditSnippetForm.UpdateSecurityStatusUI(IsSafe: Boolean; const Reason: string);
