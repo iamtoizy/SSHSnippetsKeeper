@@ -48,6 +48,8 @@ type
         procedure TypeRawText(const Text: string; Context: TMacroContext);
         procedure PressEnter(Context: TMacroContext);
         procedure PressKey(Key: Word; Modifiers: Word; Context: TMacroContext);
+    private
+        function KeyIntervalMs(Context: TMacroContext): Integer;
 
         property Window: TWindowHelperInfo read FWindowHelperInfo;
         property MacroEngine: TMacroEngine read FMacroEngine;
@@ -220,6 +222,15 @@ begin
     SendInput(2, Inputs[0], SizeOf(TInput));
 end;
 
+function TWindowHelper.KeyIntervalMs(Context: TMacroContext): Integer;
+begin
+    // Сниппет может переопределять скорость печати ({KEYDELAY N} и поле в редакторе)
+    if (Context <> nil) and (Context.KeyDelayMs > 0) then
+        Result := Context.KeyDelayMs
+    else
+        Result := FActiveSettings.WindowHelper.KeyPressInterval;
+end;
+
 procedure TWindowHelper.PressEnter(Context: TMacroContext);
 var
     Inputs: array [0 .. 1] of TInput;
@@ -241,7 +252,7 @@ begin
     if Context <> nil then
         TInterlocked.Increment(Context.TypedChars);
 
-    Sleep(FActiveSettings.WindowHelper.KeyPressInterval);
+    Sleep(KeyIntervalMs(Context));
 end;
 
 procedure TWindowHelper.PressKey(Key: Word; Modifiers: Word; Context: TMacroContext);
@@ -290,7 +301,7 @@ begin
     if Context <> nil then
         TInterlocked.Increment(Context.TypedChars);
 
-    Sleep(FActiveSettings.WindowHelper.KeyPressInterval);
+    Sleep(KeyIntervalMs(Context));
 end;
 
 function TWindowHelper.QueryInterface(const IID: TGUID; out Obj): HResult;
@@ -346,7 +357,7 @@ begin
                 TInterlocked.Increment(Context.TypedChars);
         end;
 
-        Sleep(FActiveSettings.WindowHelper.KeyPressInterval);
+        Sleep(KeyIntervalMs(Context));
     end;
 end;
 

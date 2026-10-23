@@ -476,7 +476,7 @@ object AddEditSnippetForm: TAddEditSnippetForm
           Left = 0
           Top = 0
           Width = 521
-          Height = 120
+          Height = 150
           Align = alTop
           BevelOuter = bvNone
           ParentBackground = False
@@ -562,9 +562,25 @@ object AddEditSnippetForm: TAddEditSnippetForm
             TabOrder = 4
             OnClick = bInsertParamClick
           end
-          object lbParamsOverview: TLabel
+          object lbKeyDelay: TLabel
             Left = 8
             Top = 92
+            Width = 90
+            Height = 13
+            Caption = #1057#1082#1086#1088#1086#1089#1090#1100' '#1087#1077#1095#1072#1090#1080':'
+          end
+          object cbKeyDelay: TComboBox
+            Left = 90
+            Top = 89
+            Width = 140
+            Height = 21
+            Style = csDropDownList
+            ItemHeight = 13
+            TabOrder = 5
+          end
+          object lbParamsOverview: TLabel
+            Left = 8
+            Top = 120
             Width = 505
             Height = 24
             AutoSize = False

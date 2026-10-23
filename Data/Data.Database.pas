@@ -46,6 +46,7 @@ type
         procedure InitializeDatabase(Filename: string);
         procedure ApplyPRAGMA;
         procedure ApplySchemaMigrations;
+        procedure EnsureSnippetKeyDelayColumn;
         procedure FlushToDisk;
         function LoadSQLFromResource(const ResourceName: string): string;
     public
@@ -83,6 +84,7 @@ begin
 
     ApplyPRAGMA;
     ApplySchemaMigrations;
+    EnsureSnippetKeyDelayColumn;
 end;
 
 procedure TAppDatabase.InitializeDatabase(Filename: string);
@@ -160,6 +162,39 @@ begin
                 TUIStateLoader.GetMessage('DB.SQLExecutionError', [E.Message])
             );
     end;
+end;
+
+procedure TAppDatabase.EnsureSnippetKeyDelayColumn;
+var
+    HasColumn: Boolean;
+    Q: TFDQuery;
+begin
+    // Идемпотентная миграция v11: у существующих БД нет key_delay_ms.
+    // На свежей БД таблицы ещё нет - она создастся из схемы сразу с колонкой.
+    Q := TFDQuery.Create(nil);
+    try
+        Q.Connection := FDConnection;
+        Q.SQL.Text := 'SELECT COUNT(*) FROM sqlite_master WHERE type = ''table'' AND name = ''snippets''';
+        Q.Open;
+        if Q.Fields[0].AsInteger = 0 then
+            Exit;
+
+        HasColumn := False;
+        Q.Close;
+        Q.SQL.Text := 'PRAGMA table_info(snippets)';
+        Q.Open;
+        while not Q.Eof do
+        begin
+            if SameText(Q.FieldByName('name').AsString, 'key_delay_ms') then
+                HasColumn := True;
+            Q.Next;
+        end;
+    finally
+        Q.Free;
+    end;
+
+    if not HasColumn then
+        FDConnection.ExecSQL('ALTER TABLE snippets ADD COLUMN key_delay_ms INTEGER NOT NULL DEFAULT 0');
 end;
 
 procedure TAppDatabase.CloseDatabase;

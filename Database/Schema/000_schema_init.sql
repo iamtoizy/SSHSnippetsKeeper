@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS snippets (
   content             TEXT NOT NULL COLLATE NOCASE,
   comment             TEXT NOT NULL DEFAULT '',
   is_security_ignored INTEGER NOT NULL DEFAULT 0, -- v7: 0 = проверять сканером, 1 = доверять
+  key_delay_ms        INTEGER NOT NULL DEFAULT 0, -- v11: 0 = как в настройках, иначе пауза между символами
   created_at          INTEGER NOT NULL DEFAULT (strftime('%s','now')),
   updated_at          INTEGER, 
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

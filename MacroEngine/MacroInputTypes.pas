@@ -7,7 +7,7 @@ uses
     ;
 
 type
-    TMacroTokenKind = (tkText, tkSleep, tkEnter, tkInput, tkSendKey, tkValue, tkClearLine, tkUnknown);
+    TMacroTokenKind = (tkText, tkSleep, tkEnter, tkInput, tkSendKey, tkValue, tkClearLine, tkKeyDelay, tkUnknown);
     TMacroInputType = (mitString, mitNumber, mitHex, mitFloat, mitPassword, mitDate, mitConfirm, mitSelect);
     TMacroParamDescriptor = record
         Name: string;
@@ -40,6 +40,9 @@ type
         ProgressTotal: Integer;
         TypedChars: Integer;
         SleepRemainingMs: Integer;
+        // Пауза между символами (мс), 0 = как в настройках.
+        // Печать идет в одном потоке, поэтому обычное поле без Interlocked
+        KeyDelayMs: Integer;
     end;
 
     ITextExecutor = interface
@@ -105,6 +108,14 @@ type
         constructor Create(Context: TMacroContext);
         procedure Execute; override;
         function ProgressUnits: Integer; override;
+    end;
+
+    TSetKeyDelayAction = class(TScriptAction)
+    private
+        FDelayMs: Integer;
+    public
+        constructor Create(Context: TMacroContext; ADelayMs: Integer);
+        procedure Execute; override;
     end;
 
 implementation
@@ -266,6 +277,19 @@ end;
 function TClearLineAction.ProgressUnits: Integer;
 begin
     Result := 2;
+end;
+
+{ TSetKeyDelayAction }
+
+constructor TSetKeyDelayAction.Create(Context: TMacroContext; ADelayMs: Integer);
+begin
+    inherited Create(Context);
+    FDelayMs := ADelayMs;
+end;
+
+procedure TSetKeyDelayAction.Execute;
+begin
+    FContext.KeyDelayMs := FDelayMs;
 end;
 
 end.

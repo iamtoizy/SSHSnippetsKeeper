@@ -258,6 +258,9 @@
     "lbParamOptions": {
       "Caption": "Options (|):"
     },
+    "lbKeyDelay": {
+      "Caption": "Typing speed:"
+    },
     "nAI": {
       "Caption": "AI Assistant"
     },
@@ -286,7 +289,7 @@
       "Caption": "Macros"
     },
     "mInfo": {
-      "Text": "Current test macros:\n{SLEEP N} - Delay execution by N milliseconds.\n{ENTER} - Send ENTER key press.\n{SENDKEY X} - Send character X, a key name (ENTER, TAB, F1-F12) or a VK code to the target window.\n{INPUT[TYPE:DEFAULT_VALUE] NAME} - Show a text input dialog and replace macro with input. Examples:\n  {INPUT Name}\n  {INPUT[STRING:test string] Name}\n  {INPUT[NUMBER:100] Size}\n  {INPUT[FLOAT:3.14] Size}\n  {INPUT[Hex:FF] Color}\n  {INPUT[Password] Password}\n  {INPUT[DATE:2026-01-31] Date}\n  {INPUT[SELECT:prod|stage|dev] Env} - Pick one value from the list (options separated by |).\n  {INPUT[Confirm] Text for user} - Pause execution and wait for user confirmation.\n{DATETIME:FORMAT} - Current date and time (FormatDateTime mask), default yyyy-MM-dd HH:mm:ss.\n{UUID} - New UUID (lowercase).\n{RANDOM:N} - Random string of N letters and digits (default 16).\n{COUNTER} - Snippet run number (1, 2, 3...).\n{ENV:NAME} - Value of an environment variable.\n{CLIPBOARD} - Clipboard text at run time.\n{SENDKEY CTRL+K} - Key combinations: CTRL, ALT, SHIFT + key (e.g., CTRL+C, ALT+F4, CTRL+SHIFT+T).\n{CLEAR_LINE} - Clear the current terminal line: Ctrl+C, pause, Ctrl+U.\n\n..."
+      "Text": "Current test macros:\n{SLEEP N} - Delay execution by N milliseconds.\n{ENTER} - Send ENTER key press.\n{SENDKEY X} - Send character X, a key name (ENTER, TAB, F1-F12) or a VK code to the target window.\n{INPUT[TYPE:DEFAULT_VALUE] NAME} - Show a text input dialog and replace macro with input. Examples:\n  {INPUT Name}\n  {INPUT[STRING:test string] Name}\n  {INPUT[NUMBER:100] Size}\n  {INPUT[FLOAT:3.14] Size}\n  {INPUT[Hex:FF] Color}\n  {INPUT[Password] Password}\n  {INPUT[DATE:2026-01-31] Date}\n  {INPUT[SELECT:prod|stage|dev] Env} - Pick one value from the list (options separated by |).\n  {INPUT[Confirm] Text for user} - Pause execution and wait for user confirmation.\n{DATETIME:FORMAT} - Current date and time (FormatDateTime mask), default yyyy-MM-dd HH:mm:ss.\n{UUID} - New UUID (lowercase).\n{RANDOM:N} - Random string of N letters and digits (default 16).\n{COUNTER} - Snippet run number (1, 2, 3...).\n{ENV:NAME} - Value of an environment variable.\n{CLIPBOARD} - Clipboard text at run time.\n{SENDKEY CTRL+K} - Key combinations: CTRL, ALT, SHIFT + key (e.g., CTRL+C, ALT+F4, CTRL+SHIFT+T).\n{CLEAR_LINE} - Clear the current terminal line: Ctrl+C, pause, Ctrl+U.\n{KEYDELAY N} - Delay between characters (ms) for the following text.\n\n..."
     }
   },
   "AISettingsForm": {
@@ -1598,7 +1601,9 @@
       "ParamBadChars": "Name and default value must not contain } ] |",
       "ParamOptionsEmpty": "Set SELECT options separated by |",
       "ParamsOverviewEmpty": "No parameters - add {INPUT} to the snippet body",
-      "ParamsOverview": "Parameters (%d): %s"
+      "ParamsOverview": "Parameters (%d): %s",
+      "KeyDelayDefault": "Same as settings",
+      "KeyDelayUnit": "ms"
     },
     "AISettingsForm": {
       "DeleteModelConfirm": "Delete this model?",

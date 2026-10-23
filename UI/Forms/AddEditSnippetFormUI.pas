@@ -91,6 +91,8 @@ type
         lbParamOptions: TLabel;
         ebParamOptions: TEdit;
         bInsertParam: TButton;
+        lbKeyDelay: TLabel;
+        cbKeyDelay: TComboBox;
         lbParamsOverview: TLabel;
         spTopLeft: TSplitter;
         mContent: TSynEdit;
@@ -155,6 +157,8 @@ type
         procedure SetSyntax;
         procedure PopulateHubs;
         procedure PopulateModels(HubIndex: Integer);
+        procedure PopulateKeyDelays;
+        procedure SelectKeyDelay(ADelayMs: Integer);
         procedure UpdateSecurityStatusUI(IsSafe: Boolean; const Reason: string);
         procedure UpdateParamsOverview;
         procedure AIThreadTerminated(Sender: TObject);
@@ -312,6 +316,7 @@ begin
 
     FParamEngine := TMacroEngine.Create;
     UpdateParamsOverview;
+    PopulateKeyDelays;
 
     // Регистрация подсказок
     RegisterHelp(mContent, hipTopRight, 'Help.AddEditSnippet.mContent', hkCustomForm);
@@ -390,6 +395,10 @@ begin
     Snippet.Content := UnixText;
     Snippet.Comment := mComment.Text;
     Snippet.IsSecurityCheckIgnored := cbIgnoreSecurityChecks.Checked;
+
+    Snippet.KeyDelayMs := 0;
+    if (cbKeyDelay.ItemIndex >= 0) and (cbKeyDelay.ItemIndex < cbKeyDelay.Items.Count) then
+        Snippet.KeyDelayMs := Integer(cbKeyDelay.Items.Objects[cbKeyDelay.ItemIndex]);
 
     try
         if FIsEditMode then
@@ -888,6 +897,41 @@ begin
     end;
 end;
 
+procedure TAddEditSnippetForm.PopulateKeyDelays;
+const
+    DELAYS: array [0 .. 4] of Integer = (10, 25, 50, 100, 200);
+var
+    I: Integer;
+begin
+    cbKeyDelay.Items.BeginUpdate;
+    try
+        cbKeyDelay.Items.Clear;
+        cbKeyDelay.Items.AddObject(TUIStateLoader.GetMessage('AddEditSnippet.KeyDelayDefault'), TObject(0));
+        for I := Low(DELAYS) to High(DELAYS) do
+            cbKeyDelay.Items.AddObject(
+                Format('%d %s', [DELAYS[I], TUIStateLoader.GetMessage('AddEditSnippet.KeyDelayUnit')]),
+                TObject(DELAYS[I]));
+        cbKeyDelay.ItemIndex := 0;
+    finally
+        cbKeyDelay.Items.EndUpdate;
+    end;
+end;
+
+procedure TAddEditSnippetForm.SelectKeyDelay(ADelayMs: Integer);
+var
+    I: Integer;
+begin
+    cbKeyDelay.ItemIndex := 0;
+    for I := 0 to cbKeyDelay.Items.Count - 1 do
+    begin
+        if Integer(cbKeyDelay.Items.Objects[I]) = ADelayMs then
+        begin
+            cbKeyDelay.ItemIndex := I;
+            Break;
+        end;
+    end;
+end;
+
 function InputTypeToken(AType: TMacroInputType): string;
 begin
     case AType of
@@ -1028,6 +1072,9 @@ begin
     bHistory.Visible := IsEditMode;
 
     FIsAICanceled := False;
+
+    // Скорость печати сниппета
+    SelectKeyDelay(FSnippet.KeyDelayMs);
 
     // 2. Применяем темы ДО показа на экране
     TSynThemeAdapter.ApplyTheme(mContent);

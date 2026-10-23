@@ -377,6 +377,17 @@ begin
             begin
                 Token.Kind := tkClearLine;
             end
+            else if Name = 'KEYDELAY' then
+            begin
+                Token.Value := StrToIntDef(Trim(Args), -1);
+                if (Token.Value < 0) or (Token.Value > MAX_SLEEP_MS) then
+                begin
+                    Token.Kind := tkUnknown;
+                    Token.Text := Match.Value;
+                end
+                else
+                    Token.Kind := tkKeyDelay;
+            end
             else
             begin
                 Token.Kind := tkUnknown;
@@ -633,6 +644,8 @@ begin
                     Actions.Add(TTypeTextAction.Create(Context, ResolveValueToken(Token, Context)));
                 tkClearLine:
                     Actions.Add(TClearLineAction.Create(Context));
+                tkKeyDelay:
+                    Actions.Add(TSetKeyDelayAction.Create(Context, Token.Value));
                 tkUnknown:
                     ;
             end;

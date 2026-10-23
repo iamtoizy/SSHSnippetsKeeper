@@ -99,6 +99,12 @@ type
         procedure SendKey_Modifiers_BecomesSendKeyAction;
         [Test]
         procedure ClearLine_ExecutesCtrlCAndCtrlU;
+        [Test]
+        procedure KeyDelay_SetsContextField;
+        [Test]
+        procedure KeyDelay_MidMacro_AppliesToRest;
+        [Test]
+        procedure KeyDelay_Invalid_Reports;
     end;
 
 implementation
@@ -1013,6 +1019,76 @@ begin
 
         Actions[1].Execute;
         Assert.AreEqual('[67:2][85:2]', Rec.Recorded);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.KeyDelay_SetsContextField;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    Unknown: TArray<string>;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Actions := Engine.Parse('{KEYDELAY 50}', Ctx);
+        Assert.AreEqual(1, Integer(Length(Actions)));
+        Assert.IsTrue(Actions[0] is TSetKeyDelayAction);
+
+        Actions[0].Execute;
+        Assert.AreEqual(50, Ctx.KeyDelayMs);
+
+        Actions := Engine.Parse('{KEYDELAY 0}', Ctx);
+        Actions[0].Execute;
+        Assert.AreEqual(0, Ctx.KeyDelayMs);
+
+        Unknown := Engine.ValidateCommands('{KEYDELAY -5}x{KEYDELAY abc}');
+        Assert.AreEqual(2, Integer(Length(Unknown)));
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.KeyDelay_MidMacro_AppliesToRest;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Actions := Engine.Parse('a{KEYDELAY 30}b', Ctx);
+        Assert.AreEqual(3, Integer(Length(Actions)));
+        Assert.IsTrue(Actions[0] is TTypeTextAction);
+        Assert.IsTrue(Actions[1] is TSetKeyDelayAction);
+        Assert.IsTrue(Actions[2] is TTypeTextAction);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.KeyDelay_Invalid_Reports;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    Unknown: TArray<string>;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Actions := Engine.Parse('x{KEYDELAY abc}y', Ctx);
+        Assert.AreEqual(2, Integer(Length(Actions)));
+
+        Unknown := Engine.ValidateCommands('x{KEYDELAY abc}y');
+        Assert.AreEqual(1, Integer(Length(Unknown)));
     finally
         Ctx.Free;
         Engine.Free;

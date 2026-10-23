@@ -250,6 +250,7 @@ brcc32 -fo000_schema_init.res "Database\Schema\000_schema_init.rc"
 | `{COUNTER}` | Порядковый номер запуска сниппета (1, 2, 3...) |
 | `{ENV:ИМЯ}` | Значение переменной окружения на момент запуска |
 | `{CLIPBOARD}` | Текст из буфера обмена на момент запуска |
+| `{KEYDELAY N}` | Пауза между символами (мс) для последующего текста |
 
 Типы ввода: `STRING`, `NUMBER`, `HEX`, `FLOAT`, `PASSWORD`, `DATE`, `CONFIRM`, `SELECT`.
 
