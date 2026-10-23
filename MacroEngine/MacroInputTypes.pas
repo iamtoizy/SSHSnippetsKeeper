@@ -7,7 +7,7 @@ uses
     ;
 
 type
-    TMacroTokenKind = (tkText, tkSleep, tkEnter, tkInput, tkSendKey, tkUnknown);
+    TMacroTokenKind = (tkText, tkSleep, tkEnter, tkInput, tkSendKey, tkValue, tkClearLine, tkUnknown);
     TMacroInputType = (mitString, mitNumber, mitHex, mitFloat, mitPassword, mitDate, mitConfirm, mitSelect);
     TMacroParamDescriptor = record
         Name: string;

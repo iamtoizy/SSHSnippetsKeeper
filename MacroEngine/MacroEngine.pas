@@ -12,6 +12,10 @@ uses
 const
     MAX_MACRO_CACHE = 5000;
     MAX_SLEEP_MS = 600000;
+    DEFAULT_RANDOM_LENGTH = 16;
+    MAX_RANDOM_LENGTH = 1024;
+    DEFAULT_DATETIME_FORMAT = 'yyyy-MM-dd HH:mm:ss';
+    RANDOM_CHARSET = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
 type
     TMacroToken = record
@@ -31,7 +35,12 @@ type
         FCache: TDictionary<string, TArray<TMacroToken>>;
         FCacheLock: TObject;
         FCacheOrder: TQueue<string>; // Очередь для контроля порядка кэша
+        FCounters: TDictionary<Integer, Integer>;
+        FCountersLock: TObject;
         function ParseTokens(const Text: string): TArray<TMacroToken>;
+        function NextCounter(SnippetID: Integer): Integer;
+        function GetClipboardTextSync: string;
+        function ResolveValueToken(const Token: TMacroToken; Context: TMacroContext): string;
     public
         constructor Create;
         destructor Destroy; override;
@@ -47,7 +56,9 @@ implementation
 
 uses
     MacroActions,
+    System.Classes,
     System.Math,
+    Vcl.Clipbrd,
     Winapi.Windows
     ;
 
@@ -57,6 +68,8 @@ begin
     FCache := TDictionary<string, TArray<TMacroToken>>.Create;
     FCacheOrder := TQueue<string>.Create;
     FCacheLock := TObject.Create;
+    FCounters := TDictionary<Integer, Integer>.Create;
+    FCountersLock := TObject.Create;
     FRegex := TRegEx.Create('\{([^}]*)\}');
 end;
 
@@ -65,6 +78,8 @@ begin
     FCache.Free;
     FCacheOrder.Free;
     FCacheLock.Free;
+    FCounters.Free;
+    FCountersLock.Free;
     inherited;
 end;
 
@@ -127,7 +142,8 @@ var
     Token: TMacroToken;
     LastPos, MatchStart: Integer;
     Cmd, Name, Args, ParamStr, KeyChar: string;
-    P, BracketEnd: Integer;
+    ValueDir, ValueArg: string;
+    P, BracketEnd, ValueColon: Integer;
     Chunk: string;
 
     procedure ParseInputParams(const AParamStr: string; var AType: TMacroInputType; var ADefault: string);
@@ -199,6 +215,37 @@ begin
             Token.Value := 0;
             Token.InputType := mitString;
             Token.DefaultValue := '';
+
+            // Значения, вычисляемые при каждом запуске: в кэш токенов
+            // попадает только имя директивы, не само значение
+            ValueDir := UpperCase(Name);
+            ValueArg := '';
+            ValueColon := Pos(':', ValueDir);
+            if ValueColon > 0 then
+            begin
+                ValueArg := Trim(Copy(Cmd, ValueColon + 1, MaxInt));
+                ValueDir := Copy(ValueDir, 1, ValueColon - 1);
+            end;
+
+            if (ValueDir = 'DATETIME') or (ValueDir = 'UUID') or (ValueDir = 'RANDOM') or
+               (ValueDir = 'COUNTER') or (ValueDir = 'ENV') or (ValueDir = 'CLIPBOARD') then
+            begin
+                if (ValueDir = 'ENV') and (ValueArg = '') then
+                begin
+                    Token.Kind := tkUnknown;
+                    Token.Text := Match.Value;
+                end
+                else
+                begin
+                    Token.Kind := tkValue;
+                    Token.Text := ValueDir;
+                    Token.DefaultValue := ValueArg;
+                end;
+
+                Tokens.Add(Token);
+                LastPos := MatchStart + Match.Length;
+                Continue;
+            end;
 
             if Name = 'SLEEP' then
             begin
@@ -389,6 +436,66 @@ begin
     end;
 end;
 
+function TMacroEngine.NextCounter(SnippetID: Integer): Integer;
+begin
+    TMonitor.Enter(FCountersLock);
+    try
+        if not FCounters.TryGetValue(SnippetID, Result) then
+            Result := 0;
+        Inc(Result);
+        FCounters.AddOrSetValue(SnippetID, Result);
+    finally
+        TMonitor.Exit(FCountersLock);
+    end;
+end;
+
+function TMacroEngine.GetClipboardTextSync: string;
+begin
+    try
+        Result := Clipboard.AsText;
+    except
+        Result := '';
+    end;
+end;
+
+function TMacroEngine.ResolveValueToken(const Token: TMacroToken; Context: TMacroContext): string;
+var
+    FormatMask: string;
+    Len, I: Integer;
+    GUID: TGUID;
+begin
+    Result := '';
+
+    if Token.Text = 'DATETIME' then
+    begin
+        FormatMask := Token.DefaultValue;
+        if FormatMask = '' then
+            FormatMask := DEFAULT_DATETIME_FORMAT;
+        Result := FormatDateTime(FormatMask, Now);
+    end
+    else if Token.Text = 'UUID' then
+    begin
+        CreateGUID(GUID);
+        Result := LowerCase(GUID.ToString);
+        Result := StringReplace(Result, '{', '', [rfReplaceAll]);
+        Result := StringReplace(Result, '}', '', [rfReplaceAll]);
+    end
+    else if Token.Text = 'RANDOM' then
+    begin
+        Len := StrToIntDef(Token.DefaultValue, DEFAULT_RANDOM_LENGTH);
+        Len := EnsureRange(Len, 1, MAX_RANDOM_LENGTH);
+        SetLength(Result, Len);
+        for I := 1 to Len do
+            Result[I] := RANDOM_CHARSET[Random(Length(RANDOM_CHARSET)) + 1];
+    end
+    else if Token.Text = 'COUNTER' then
+        Result := IntToStr(NextCounter(Context.SnippetID))
+    else if Token.Text = 'ENV' then
+        Result := GetEnvironmentVariable(Token.DefaultValue)
+    else if Token.Text = 'CLIPBOARD' then
+        Result := GetClipboardTextSync;
+end;
+
 function TMacroEngine.InputDescriptors(const Text: string): TArray<TMacroParamDescriptor>;
 var
     Tokens: TArray<TMacroToken>;
@@ -441,6 +548,8 @@ begin
                     Actions.Add(TInputAction.Create(Context, Token.Text, Token.InputType, Token.DefaultValue));
                 tkSendKey:
                     Actions.Add(TSendKeyAction.Create(Context, Token.Value));
+                tkValue:
+                    Actions.Add(TTypeTextAction.Create(Context, ResolveValueToken(Token, Context)));
                 tkUnknown:
                     ;
             end;
@@ -450,5 +559,8 @@ begin
         Actions.Free;
     end;
 end;
+
+initialization
+    Randomize;
 
 end.

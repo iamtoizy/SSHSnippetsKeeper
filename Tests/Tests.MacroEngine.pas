@@ -61,14 +61,59 @@ type
         procedure PreCollect_BatchSingle_FallsBackToSequential;
         [Test]
         procedure PreCollect_Sequential_NoBatchCallback;
+        [Test]
+        procedure Value_UUID_Format;
+        [Test]
+        procedure Value_DATETIME_DefaultFormat;
+        [Test]
+        procedure Value_DATETIME_CustomFormat;
+        [Test]
+        procedure Value_RANDOM_LengthAndCharset;
+        [Test]
+        procedure Value_RANDOM_DefaultLength;
+        [Test]
+        procedure Value_COUNTER_PerSnippet;
+        [Test]
+        procedure Value_ENV_Resolves;
+        [Test]
+        procedure Value_ENV_Missing_Empty;
+        [Test]
+        procedure Value_CLIPBOARD_ParsedAsTextAction;
+        [Test]
+        procedure Value_UnknownDirective_Reports;
     end;
 
 implementation
 
 uses
     System.Diagnostics,
-    System.SysUtils
+    System.SysUtils,
+    Winapi.Windows
     ;
+
+type
+    TRecorderExecutor = class(TInterfacedObject, ITextExecutor)
+    public
+        Recorded: string;
+        procedure TypeRawText(const AText: string; Context: TMacroContext);
+        procedure PressEnter(Context: TMacroContext);
+        procedure PressKey(Key: Word; Context: TMacroContext);
+    end;
+
+procedure TRecorderExecutor.TypeRawText(const AText: string; Context: TMacroContext);
+begin
+    Recorded := Recorded + AText;
+end;
+
+procedure TRecorderExecutor.PressEnter(Context: TMacroContext);
+begin
+    Recorded := Recorded + #10;
+end;
+
+procedure TRecorderExecutor.PressKey(Key: Word; Context: TMacroContext);
+begin
+    Recorded := Recorded + '[' + IntToStr(Key) + ']';
+end;
 
 { TMacroEngineTests }
 
@@ -557,6 +602,264 @@ begin
         Assert.AreEqual('P1;P2;', Prompts);
         Assert.AreEqual(6, (Actions[0] as TInputAction).ProgressUnits);
         Assert.AreEqual(3, (Actions[1] as TInputAction).ProgressUnits);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Value_UUID_Format;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    Rec: TRecorderExecutor;
+    S: string;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    Rec := TRecorderExecutor.Create;
+    try
+        Ctx.Executor := Rec;
+        Actions := Engine.Parse('a{UUID}b', Ctx);
+        Assert.AreEqual(3, Integer(Length(Actions)));
+        Assert.IsTrue(Actions[1] is TTypeTextAction);
+
+        Actions[1].Execute;
+        S := Rec.Recorded;
+        Assert.AreEqual(36, Integer(Length(S)));
+        Assert.AreEqual('-', Copy(S, 9, 1));
+        Assert.AreEqual('-', Copy(S, 14, 1));
+        Assert.AreEqual('-', Copy(S, 19, 1));
+        Assert.AreEqual('-', Copy(S, 24, 1));
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Value_DATETIME_DefaultFormat;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    Rec: TRecorderExecutor;
+    S: string;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    Rec := TRecorderExecutor.Create;
+    try
+        Ctx.Executor := Rec;
+        Actions := Engine.Parse('{DATETIME}', Ctx);
+        Assert.AreEqual(1, Integer(Length(Actions)));
+        Actions[0].Execute;
+
+        S := Rec.Recorded;
+        Assert.AreEqual(19, Integer(Length(S)));
+        Assert.AreEqual(FormatDateTime('yyyy', Now), Copy(S, 1, 4));
+        Assert.AreEqual('-', Copy(S, 5, 1));
+        Assert.AreEqual(' ', Copy(S, 11, 1));
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Value_DATETIME_CustomFormat;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    Rec: TRecorderExecutor;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    Rec := TRecorderExecutor.Create;
+    try
+        Ctx.Executor := Rec;
+        Actions := Engine.Parse('{DATETIME:yyyy}', Ctx);
+        Assert.AreEqual(1, Integer(Length(Actions)));
+        Actions[0].Execute;
+        Assert.AreEqual(FormatDateTime('yyyy', Now), Rec.Recorded);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Value_RANDOM_LengthAndCharset;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    Rec: TRecorderExecutor;
+    S: string;
+    I: Integer;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    Rec := TRecorderExecutor.Create;
+    try
+        Ctx.Executor := Rec;
+        Actions := Engine.Parse('{RANDOM:8}', Ctx);
+        Assert.AreEqual(1, Integer(Length(Actions)));
+        Actions[0].Execute;
+
+        S := Rec.Recorded;
+        Assert.AreEqual(8, Integer(Length(S)));
+        for I := 1 to Length(S) do
+            Assert.IsTrue(Pos(S[I], RANDOM_CHARSET) > 0);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Value_RANDOM_DefaultLength;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    Rec: TRecorderExecutor;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    Rec := TRecorderExecutor.Create;
+    try
+        Ctx.Executor := Rec;
+        Actions := Engine.Parse('{RANDOM}', Ctx);
+        Actions[0].Execute;
+        Assert.AreEqual(DEFAULT_RANDOM_LENGTH, Integer(Length(Rec.Recorded)));
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Value_COUNTER_PerSnippet;
+var
+    Engine: TMacroEngine;
+    Ctx, Ctx2: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    Rec, Rec2: TRecorderExecutor;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    Rec := TRecorderExecutor.Create;
+    try
+        Ctx.SnippetID := 5;
+        Ctx.Executor := Rec;
+
+        Actions := Engine.Parse('{COUNTER}', Ctx);
+        Actions[0].Execute;
+        Actions := Engine.Parse('{COUNTER}', Ctx);
+        Actions[0].Execute;
+        Assert.AreEqual('12', Rec.Recorded);
+
+        Ctx2 := MakeContext;
+        Rec2 := TRecorderExecutor.Create;
+        try
+            Ctx2.SnippetID := 6;
+            Ctx2.Executor := Rec2;
+            Actions := Engine.Parse('{COUNTER}', Ctx2);
+            Actions[0].Execute;
+            Assert.AreEqual('1', Rec2.Recorded);
+        finally
+            Ctx2.Free;
+        end;
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Value_ENV_Resolves;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    Rec: TRecorderExecutor;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    Rec := TRecorderExecutor.Create;
+    try
+        Ctx.Executor := Rec;
+        SetEnvironmentVariable('SSK_TEST_VAR', 'hello42');
+        try
+            Actions := Engine.Parse('{ENV:SSK_TEST_VAR}', Ctx);
+            Assert.AreEqual(1, Integer(Length(Actions)));
+            Actions[0].Execute;
+            Assert.AreEqual('hello42', Rec.Recorded);
+        finally
+            SetEnvironmentVariable('SSK_TEST_VAR', nil);
+        end;
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Value_ENV_Missing_Empty;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    Rec: TRecorderExecutor;
+    Unknown: TArray<string>;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    Rec := TRecorderExecutor.Create;
+    try
+        Ctx.Executor := Rec;
+        Actions := Engine.Parse('{ENV:SSK_DEFINITELY_MISSING_VAR}', Ctx);
+        Assert.AreEqual(1, Integer(Length(Actions)));
+        Actions[0].Execute;
+        Assert.AreEqual('', Rec.Recorded);
+
+        Unknown := Engine.ValidateCommands('a{ENV}b');
+        Assert.AreEqual(1, Integer(Length(Unknown)));
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Value_CLIPBOARD_ParsedAsTextAction;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Actions := Engine.Parse('{CLIPBOARD}', Ctx);
+        Assert.AreEqual(1, Integer(Length(Actions)));
+        Assert.IsTrue(Actions[0] is TTypeTextAction);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Value_UnknownDirective_Reports;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    Unknown: TArray<string>;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Actions := Engine.Parse('x{UUIDX}y', Ctx);
+        Assert.AreEqual(2, Integer(Length(Actions)));
+
+        Unknown := Engine.ValidateCommands('x{UUIDX}y');
+        Assert.AreEqual(1, Integer(Length(Unknown)));
     finally
         Ctx.Free;
         Engine.Free;
