@@ -64,8 +64,8 @@ begin
     Assert.AreEqual('hello,world', Join(Parsed.BareWords));
     Assert.IsFalse(Parsed.HasStructuredFilters);
     Assert.IsFalse(Parsed.IsEmpty);
-    Assert.AreEqual(0, Length(Parsed.TagValues));
-    Assert.AreEqual(0, Length(Parsed.ExcludedWords));
+    Assert.AreEqual(0, Integer(Length(Parsed.TagValues)));
+    Assert.AreEqual(0, Integer(Length(Parsed.ExcludedWords)));
 end;
 
 procedure TQueryLanguageTests.FavToken_SetsOnlyFavorites;
@@ -93,7 +93,7 @@ var
 begin
     Parsed := TQueryLanguageParser.Parse('TAG:Linux tag:nginx');
     Assert.AreEqual('Linux,nginx', Join(Parsed.TagValues));
-    Assert.AreEqual(0, Length(Parsed.BareWords));
+    Assert.AreEqual(0, Integer(Length(Parsed.BareWords)));
 end;
 
 procedure TQueryLanguageTests.CatTitleCommentPrefixes_Bucketed;
@@ -124,7 +124,7 @@ begin
     Assert.AreEqual('test', Join(Parsed.ExcludedWords));
     Assert.AreEqual('users', Join(Parsed.TitleValues));
     Assert.IsTrue(Parsed.OnlyFavorites);
-    Assert.AreEqual(0, Length(Parsed.BareWords));
+    Assert.AreEqual(0, Integer(Length(Parsed.BareWords)));
 end;
 
 procedure TQueryLanguageTests.EmptyPrefixValue_Ignored;

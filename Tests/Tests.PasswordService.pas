@@ -106,7 +106,7 @@ begin
     Svc := NewService;
     try
         Pwd := Svc.GeneratePassword(wpPinCode, 6, False);
-        Assert.AreEqual(6, Length(Pwd));
+        Assert.AreEqual(6, Integer(Length(Pwd)));
         Assert.IsTrue(AllCharsIn(Pwd, '0123456789'));
     finally
         Svc.Free;
@@ -121,7 +121,7 @@ begin
     Svc := NewService;
     try
         Pwd := Svc.GeneratePassword(wpHexToken, 32, False);
-        Assert.AreEqual(32, Length(Pwd));
+        Assert.AreEqual(32, Integer(Length(Pwd)));
         Assert.IsTrue(AllCharsIn(Pwd, 'abcdef0123456789'));
     finally
         Svc.Free;
@@ -136,7 +136,7 @@ begin
     Svc := NewService;
     try
         Pwd := Svc.GeneratePassword(wpMacAddress, 0, False);
-        Assert.AreEqual(17, Length(Pwd));
+        Assert.AreEqual(17, Integer(Length(Pwd)));
         Assert.IsTrue(AllCharsIn(Pwd, '0123456789abcdef:'));
         Assert.AreEqual(':', string(Pwd[3]));
         Assert.AreEqual(':', string(Pwd[6]));
@@ -157,7 +157,7 @@ begin
     Svc := NewService;
     try
         Pwd := Svc.GeneratePassword(wpUUIDv4, 0, False);
-        Assert.AreEqual(36, Length(Pwd));
+        Assert.AreEqual(36, Integer(Length(Pwd)));
         Assert.IsTrue(AllCharsIn(Pwd, '0123456789abcdef-'));
         Assert.AreEqual('-', string(Pwd[9]));
         Assert.AreEqual('-', string(Pwd[14]));
@@ -177,7 +177,7 @@ begin
     Svc := NewService;
     try
         Pwd := Svc.GeneratePassword(wpActiveDirectory, 16, False);
-        Assert.AreEqual(16, Length(Pwd));
+        Assert.AreEqual(16, Integer(Length(Pwd)));
         Assert.IsTrue(CategoriesCount(Pwd) >= 3);
     finally
         Svc.Free;
@@ -192,7 +192,7 @@ begin
     Svc := NewService;
     try
         Pwd := Svc.GeneratePassword(wpStrictAlphaNumeric, 40, True);
-        Assert.AreEqual(40, Length(Pwd));
+        Assert.AreEqual(40, Integer(Length(Pwd)));
         Assert.IsFalse(HasDuplicates(Pwd));
     finally
         Svc.Free;
@@ -241,7 +241,7 @@ begin
         Settings.UseNumbers := True;
         Settings.ExcludeChars := '019';
         Pwd := Svc.GenerateCustomPassword(Settings, 12, False);
-        Assert.AreEqual(12, Length(Pwd));
+        Assert.AreEqual(12, Integer(Length(Pwd)));
         Assert.IsTrue(AllCharsIn(Pwd, '2345678'));
     finally
         Svc.Free;
@@ -260,7 +260,7 @@ begin
         Settings.UseNumbers := True;
         Settings.IncludeChars := 'X';
         Pwd := Svc.GenerateCustomPassword(Settings, 10, False);
-        Assert.AreEqual(10, Length(Pwd));
+        Assert.AreEqual(10, Integer(Length(Pwd)));
         Assert.IsTrue(Pos('X', Pwd) > 0);
     finally
         Svc.Free;

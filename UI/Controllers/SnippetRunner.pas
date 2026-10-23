@@ -40,6 +40,7 @@ uses
     Common.Localization,
     InputFormUI,
     MacroStopPanelUI,
+    ParamsFormUI,
     System.SysUtils,
     Vcl.Controls
     ;
@@ -126,6 +127,13 @@ begin
                 Context.UserCanceled := True;
                 Exit('');
             end;
+        end;
+
+    // Единый диалог для всех INPUT-параметров сниппета
+    Context.OnBatchInput :=
+        function(const Params: TArray<TMacroParamDescriptor>; out Values: TArray<string>): Boolean
+        begin
+            Result := ShowParamsForm(Params, AppContext, Values);
         end;
 
     // Коллбэк для подтверждения

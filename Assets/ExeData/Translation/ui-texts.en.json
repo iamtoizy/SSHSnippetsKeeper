@@ -211,6 +211,18 @@
       "Caption": "Enter value:"
     }
   },
+  "ParamsForm": {
+    "Caption": "Snippet Parameters",
+    "bOK": {
+      "Caption": "OK"
+    },
+    "bCancel": {
+      "Caption": "Cancel"
+    },
+    "lbPrompt": {
+      "Caption": "Parameters:"
+    }
+  },
   "AddEditSnippetForm": {
     "Caption": "SSH Snippets Keeper - Add/Edit Snippet",
     "ebTitle": {
@@ -230,6 +242,21 @@
     },
     "bHistory": {
       "Caption": "History…"
+    },
+    "bInsertParam": {
+      "Caption": "Insert"
+    },
+    "lbParamName": {
+      "Caption": "Name:"
+    },
+    "lbParamType": {
+      "Caption": "Type:"
+    },
+    "lbParamDefault": {
+      "Caption": "Default:"
+    },
+    "lbParamOptions": {
+      "Caption": "Options (|):"
     },
     "nAI": {
       "Caption": "AI Assistant"
@@ -259,7 +286,7 @@
       "Caption": "Macros"
     },
     "mInfo": {
-      "Text": "Current test macros:\n{SLEEP N} - Delay execution by N milliseconds.\n{ENTER} - Send ENTER key press.\n{SENDKEY X} - Send character X, a key name (ENTER, TAB, F1-F12) or a VK code to the target window.\n{INPUT[TYPE:DEFAULT_VALUE] NAME} - Show a text input dialog and replace macro with input. Examples:\n  {INPUT Name}\n  {INPUT[STRING:test string] Name}\n  {INPUT[NUMBER:100] Size}\n  {INPUT[FLOAT:3.14] Size}\n  {INPUT[Hex:FF] Color}\n  {INPUT[Password] Password}\n  {INPUT[DATE:2026-01-31] Date}\n  {INPUT[Confirm] Text for user} - Pause execution and wait for user confirmation.\n\n..."
+      "Text": "Current test macros:\n{SLEEP N} - Delay execution by N milliseconds.\n{ENTER} - Send ENTER key press.\n{SENDKEY X} - Send character X, a key name (ENTER, TAB, F1-F12) or a VK code to the target window.\n{INPUT[TYPE:DEFAULT_VALUE] NAME} - Show a text input dialog and replace macro with input. Examples:\n  {INPUT Name}\n  {INPUT[STRING:test string] Name}\n  {INPUT[NUMBER:100] Size}\n  {INPUT[FLOAT:3.14] Size}\n  {INPUT[Hex:FF] Color}\n  {INPUT[Password] Password}\n  {INPUT[DATE:2026-01-31] Date}\n  {INPUT[SELECT:prod|stage|dev] Env} - Pick one value from the list (options separated by |).\n  {INPUT[Confirm] Text for user} - Pause execution and wait for user confirmation.\n\n..."
     }
   },
   "AISettingsForm": {
@@ -1566,7 +1593,12 @@
       "SecurityToastTitle": "⚠ Security Threat",
       "AutocompleteUpdated": "Autocomplete file updated. Content will be reloaded.",
       "AIChooseModelError": "Select an AI provider and model!",
-      "EnterSnippetTextHere": "Enter snippet name here..."
+      "EnterSnippetTextHere": "Enter snippet name here...",
+      "ParamNameEmpty": "Enter the parameter name",
+      "ParamBadChars": "Name and default value must not contain } ] |",
+      "ParamOptionsEmpty": "Set SELECT options separated by |",
+      "ParamsOverviewEmpty": "No parameters - add {INPUT} to the snippet body",
+      "ParamsOverview": "Parameters (%d): %s"
     },
     "AISettingsForm": {
       "DeleteModelConfirm": "Delete this model?",
@@ -1630,10 +1662,15 @@
       "Prompt.Float": "Enter a float number (e.g., 3.14)",
       "Prompt.Password": "Enter password",
       "Prompt.Date": "Enter date (YYYY-MM-DD)",
+      "Prompt.Select": "Pick a value from the list",
       "Error.Number": "Error: enter an integer",
       "Error.Hex": "Error: enter a HEX value (0-9, A-F)",
       "Error.Float": "Error: enter a float (e.g., 3.14)",
       "Error.Date": "Error: date format must be YYYY-MM-DD"
+    },
+    "ParamsForm": {
+      "Hint": "Fill in the parameters - on run they will be gathered in a single dialog",
+      "Error.Invalid": "Invalid parameter: %s"
     },
     "TagEditorForm": {
       "InputQueryTitle": "New Tag",

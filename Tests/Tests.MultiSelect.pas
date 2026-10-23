@@ -187,7 +187,7 @@ begin
         TagID := Repo.Add(Tag);
         Repo.LinkTagToSnippet(SnipID, TagID);
         Repo.LinkTagToSnippet(SnipID, TagID);
-        Assert.AreEqual(1, Length(Repo.GetSnippetTags(SnipID)));
+        Assert.AreEqual(1, Integer(Length(Repo.GetSnippetTags(SnipID))));
     finally
         Repo.Free;
     end;
@@ -205,8 +205,8 @@ begin
     try
         Repo.LinkTagToSnippet(Snip1, TagID);
         Repo.LinkTagToSnippet(Snip2, TagID);
-        Assert.AreEqual(1, Length(Repo.GetSnippetTags(Snip1)));
-        Assert.AreEqual(1, Length(Repo.GetSnippetTags(Snip2)));
+        Assert.AreEqual(1, Integer(Length(Repo.GetSnippetTags(Snip1))));
+        Assert.AreEqual(1, Integer(Length(Repo.GetSnippetTags(Snip2))));
         Assert.AreEqual('bulk', Repo.GetSnippetTags(Snip1)[0].Name);
     finally
         Repo.Free;
@@ -229,7 +229,7 @@ begin
         TagRepo.LinkTagToSnippet(SnipID, T1);
         TagRepo.LinkTagToSnippet(SnipID, T2);
         SnipRepo.UpdateTags(SnipID, [T2, T3]);
-        Assert.AreEqual(2, Length(TagRepo.GetSnippetTags(SnipID)));
+        Assert.AreEqual(2, Integer(Length(TagRepo.GetSnippetTags(SnipID))));
         Assert.AreEqual('b2', TagRepo.GetSnippetTags(SnipID)[0].Name);
         Assert.AreEqual('c3', TagRepo.GetSnippetTags(SnipID)[1].Name);
     finally
@@ -268,7 +268,7 @@ begin
 
     TagRepo := TTagRepository.Create(FConn);
     try
-        Assert.AreEqual(1, Length(TagRepo.GetSnippetTags(SnipID)));
+        Assert.AreEqual(1, Integer(Length(TagRepo.GetSnippetTags(SnipID))));
         Assert.AreEqual('keepme', TagRepo.GetSnippetTags(SnipID)[0].Name);
     finally
         TagRepo.Free;
@@ -311,7 +311,7 @@ begin
 
     TagRepo := TTagRepository.Create(FConn);
     try
-        Assert.AreEqual(1, Length(TagRepo.GetSnippetTags(SnipID)));
+        Assert.AreEqual(1, Integer(Length(TagRepo.GetSnippetTags(SnipID))));
     finally
         TagRepo.Free;
     end;
@@ -329,12 +329,12 @@ begin
     try
         TagRepo.LinkTagToSnippet(SnipID, T1);
         TagRepo.LinkTagToSnippet(SnipID, T1);
-        Assert.AreEqual(1, Length(TagRepo.GetSnippetTags(SnipID)));
+        Assert.AreEqual(1, Integer(Length(TagRepo.GetSnippetTags(SnipID))));
 
         TagRepo.UnlinkTagFromSnippet(SnipID, T1);
-        Assert.AreEqual(0, Length(TagRepo.GetSnippetTags(SnipID)));
+        Assert.AreEqual(0, Integer(Length(TagRepo.GetSnippetTags(SnipID))));
         TagRepo.UnlinkTagFromSnippet(SnipID, T1);
-        Assert.AreEqual(0, Length(TagRepo.GetSnippetTags(SnipID)));
+        Assert.AreEqual(0, Integer(Length(TagRepo.GetSnippetTags(SnipID))));
     finally
         TagRepo.Free;
     end;
@@ -360,7 +360,7 @@ begin
     TMarkdownExporter.ExportSnippets(TempDir, Arr, GetTags);
 
     Files := TDirectory.GetFiles(TempDir, '*.md');
-    Assert.AreEqual(2, Length(Files));
+    Assert.AreEqual(2, Integer(Length(Files)));
     Text := TFile.ReadAllText(TPath.Combine(TempDir, 'Alpha script.md'), TEncoding.UTF8);
     Assert.Contains(Text, 'id: 101');
     Assert.Contains(Text, 'title: "Alpha script"');

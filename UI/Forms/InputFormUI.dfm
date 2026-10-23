@@ -68,5 +68,16 @@ object InputForm: TInputForm
       OnChange = ebEditChange
       OnKeyDown = ebEditKeyDown
     end
+    object cbSelect: TComboBox
+      Left = 8
+      Top = 27
+      Width = 339
+      Height = 21
+      Style = csDropDownList
+      ItemHeight = 13
+      TabOrder = 4
+      Visible = False
+      OnKeyDown = cbSelectKeyDown
+    end
   end
 end

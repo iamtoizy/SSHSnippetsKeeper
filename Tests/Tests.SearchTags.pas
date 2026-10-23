@@ -136,7 +136,7 @@ end;
 procedure TSearchTagsTests.SimpleMask_FindsByTitle;
 begin
     AddSnippet('nginx restart', 'systemctl restart nginx');
-    Assert.AreEqual(1, Length(FRepo.SearchByMaskSimple('nginx', 1)));
+    Assert.AreEqual(1, Integer(Length(FRepo.SearchByMaskSimple('nginx', 1))));
 end;
 
 procedure TSearchTagsTests.SimpleMask_FindsByTag;
@@ -145,14 +145,14 @@ var
 begin
     ID := AddSnippet('run script', './deploy.sh');
     AddTag(ID, 'deploy-prod');
-    Assert.AreEqual(1, Length(FRepo.SearchByMaskSimple('deploy', 1)));
-    Assert.AreEqual(0, Length(FRepo.SearchByMaskSimple('zzz-nope', 1)));
+    Assert.AreEqual(1, Integer(Length(FRepo.SearchByMaskSimple('deploy', 1))));
+    Assert.AreEqual(0, Integer(Length(FRepo.SearchByMaskSimple('zzz-nope', 1))));
 end;
 
 procedure TSearchTagsTests.SimpleMask_NoMatch_ReturnsEmpty;
 begin
     AddSnippet('nginx restart', 'systemctl restart nginx');
-    Assert.AreEqual(0, Length(FRepo.SearchByMaskSimple('apache', 1)));
+    Assert.AreEqual(0, Integer(Length(FRepo.SearchByMaskSimple('apache', 1))));
 end;
 
 procedure TSearchTagsTests.SimpleMask_RespectsUserID;
@@ -163,9 +163,9 @@ begin
     AddTag(ID1, 'shared-tag');
     ID2 := AddSnippet('user two snippet', 'echo two', 2);
     AddTag(ID2, 'shared-tag');
-    Assert.AreEqual(1, Length(FRepo.SearchByMaskSimple('shared-tag', 1)));
+    Assert.AreEqual(1, Integer(Length(FRepo.SearchByMaskSimple('shared-tag', 1))));
     Assert.AreEqual('user one snippet', FRepo.SearchByMaskSimple('shared-tag', 1)[0].Title);
-    Assert.AreEqual(1, Length(FRepo.SearchByMaskSimple('shared-tag', 2)));
+    Assert.AreEqual(1, Integer(Length(FRepo.SearchByMaskSimple('shared-tag', 2))));
     Assert.AreEqual('user two snippet', FRepo.SearchByMaskSimple('shared-tag', 2)[0].Title);
 end;
 
@@ -177,7 +177,7 @@ begin
     ID := AddSnippet('run script', './deploy.sh');
     AddTag(ID, 'deploy-prod');
     Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('deploy'), False, 1);
-    Assert.AreEqual(1, Length(Found));
+    Assert.AreEqual(1, Integer(Length(Found)));
     Assert.AreEqual('run script', Found[0].Title);
 end;
 
@@ -187,7 +187,7 @@ var
 begin
     AddSnippet('nginx restart', 'systemctl restart nginx');
     Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('nginx'), False, 1);
-    Assert.AreEqual(1, Length(Found));
+    Assert.AreEqual(1, Integer(Length(Found)));
 end;
 
 procedure TSearchTagsTests.AdvancedText_Exclusion_ByTag;
@@ -199,7 +199,7 @@ begin
     AddTag(DockerID, 'docker');
     AddSnippet('plain script', 'echo hello');
     Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('-docker'), False, 1);
-    Assert.AreEqual(1, Length(Found));
+    Assert.AreEqual(1, Integer(Length(Found)));
     Assert.AreEqual('plain script', Found[0].Title);
 end;
 
@@ -211,7 +211,7 @@ begin
     ID := AddSnippet('run script', './deploy.sh');
     AddTag(ID, 'deploy-prod');
     Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('tag:deploy'), False, 1);
-    Assert.AreEqual(1, Length(Found));
+    Assert.AreEqual(1, Integer(Length(Found)));
     Assert.AreEqual('run script', Found[0].Title);
 end;
 
@@ -223,7 +223,7 @@ begin
     ID := AddSnippet('run script', './deploy.sh');
     AddTag(ID, 'deploy-prod');
     Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('deploy'), True, 1);
-    Assert.AreEqual(1, Length(Found));
+    Assert.AreEqual(1, Integer(Length(Found)));
     Assert.AreEqual('run script', Found[0].Title);
 end;
 

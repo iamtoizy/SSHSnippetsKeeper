@@ -211,6 +211,18 @@
       "Caption": "Введи значение:"
     }
   },
+  "ParamsForm": {
+    "Caption": "Параметры сниппета",
+    "bOK": {
+      "Caption": "ОК"
+    },
+    "bCancel": {
+      "Caption": "Отмена"
+    },
+    "lbPrompt": {
+      "Caption": "Параметры:"
+    }
+  },
   "AddEditSnippetForm": {
     "Caption": "SSH Snippets Keeper - Добавить/редактировать сниппет",
     "ebTitle": {
@@ -230,6 +242,21 @@
     },
     "bHistory": {
       "Caption": "История…"
+    },
+    "bInsertParam": {
+      "Caption": "Вставить"
+    },
+    "lbParamName": {
+      "Caption": "Имя:"
+    },
+    "lbParamType": {
+      "Caption": "Тип:"
+    },
+    "lbParamDefault": {
+      "Caption": "По умолчанию:"
+    },
+    "lbParamOptions": {
+      "Caption": "Опции (|):"
     },
     "nAI": {
       "Caption": "ИИ-ассистент"
@@ -259,7 +286,7 @@
       "Caption": "Макросы"
     },
     "mInfo": {
-      "Text": "Тестовые макросы на текущий момент:\n{SLEEP N} - Задержка выполнения на N миллисекунд.\n{ENTER} - Отправка нажатия клавиши ENTER.\n{SENDKEY X} - Отправка символа X, имени клавиши (ENTER, TAB, F1-F12) или VK-кода в целевое окно.\n{INPUT[ТИП:ЗНАЧЕНИЕ-ПО-УМОЛЧАНИЮ] ИМЯ} - Отобразить окно ввода текста с подстановкой в место расположения макроса. Примеры:\n  {INPUT Имя}\n  {INPUT[STRING:test string] Имя}\n  {INPUT[NUMBER:100] Размер}\n  {INPUT[FLOAT:3.14] Размер}\n  {INPUT[Hex:FF] Цвет}\n  {INPUT[Password] Пароль}\n  {INPUT[DATE:2026-01-31] Дата}\n  {INPUT[Confirm] Текст для пользователя} - Приостановить выполнение и ждать подтверждения от пользователя.\n\n..."
+      "Text": "Тестовые макросы на текущий момент:\n{SLEEP N} - Задержка выполнения на N миллисекунд.\n{ENTER} - Отправка нажатия клавиши ENTER.\n{SENDKEY X} - Отправка символа X, имени клавиши (ENTER, TAB, F1-F12) или VK-кода в целевое окно.\n{INPUT[ТИП:ЗНАЧЕНИЕ-ПО-УМОЛЧАНИЮ] ИМЯ} - Отобразить окно ввода текста с подстановкой в место расположения макроса. Примеры:\n  {INPUT Имя}\n  {INPUT[STRING:test string] Имя}\n  {INPUT[NUMBER:100] Размер}\n  {INPUT[FLOAT:3.14] Размер}\n  {INPUT[Hex:FF] Цвет}\n  {INPUT[Password] Пароль}\n  {INPUT[DATE:2026-01-31] Дата}\n  {INPUT[SELECT:prod|stage|dev] Окружение} - Выбор значения из списка (варианты через |).\n  {INPUT[Confirm] Текст для пользователя} - Приостановить выполнение и ждать подтверждения от пользователя.\n\n..."
     }
   },
   "AISettingsForm": {
@@ -1566,7 +1593,12 @@
       "SecurityToastTitle": "⚠ Угроза безопасности",
       "AutocompleteUpdated": "Файл автозаполнения обновлён. Содержимое будет перезагружено.",
       "AIChooseModelError": "Выбери провайдера и модель ИИ!",
-      "EnterSnippetTextHere": "Здесь введи имя сниппета..."
+      "EnterSnippetTextHere": "Здесь введи имя сниппета...",
+      "ParamNameEmpty": "Введи имя параметра",
+      "ParamBadChars": "Имя и значение по умолчанию не должны содержать } ] |",
+      "ParamOptionsEmpty": "Для SELECT задай опции через |",
+      "ParamsOverviewEmpty": "Параметров нет - добавь {INPUT} в содержимое сниппета",
+      "ParamsOverview": "Параметры (%d): %s"
     },
     "AISettingsForm": {
       "DeleteModelConfirm": "Удалить эту модель?",
@@ -1630,10 +1662,15 @@
       "Prompt.Float": "Введи вещественное число (например, 3.14)",
       "Prompt.Password": "Введи пароль",
       "Prompt.Date": "Введи дату (YYYY-MM-DD)",
+      "Prompt.Select": "Выбери значение из списка",
       "Error.Number": "Ошибка: введи целое число",
       "Error.Hex": "Ошибка: введи HEX значение (0-9, A-F)",
       "Error.Float": "Ошибка: введи вещественное (например, 3.14)",
       "Error.Date": "Ошибка: формат даты YYYY-MM-DD"
+    },
+    "ParamsForm": {
+      "Hint": "Заполни параметры - при запуске они соберутся в одном окне",
+      "Error.Invalid": "Ошибка в параметре: %s"
     },
     "TagEditorForm": {
       "InputQueryTitle": "New Tag",

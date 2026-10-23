@@ -472,6 +472,105 @@ object AddEditSnippetForm: TAddEditSnippetForm
       object tsMacros: TTabSheet
         Caption = #1052#1072#1082#1088#1086#1089#1099
         ImageIndex = 1
+        object pnlParamBuilder: TPanel
+          Left = 0
+          Top = 0
+          Width = 521
+          Height = 120
+          Align = alTop
+          BevelOuter = bvNone
+          ParentBackground = False
+          TabOrder = 1
+          object lbParamName: TLabel
+            Left = 8
+            Top = 8
+            Width = 26
+            Height = 13
+            Caption = #1048#1084#1103':'
+          end
+          object ebParamName: TEdit
+            Left = 90
+            Top = 5
+            Width = 200
+            Height = 21
+            TabOrder = 0
+          end
+          object lbParamType: TLabel
+            Left = 8
+            Top = 36
+            Width = 23
+            Height = 13
+            Caption = #1058#1080#1087':'
+          end
+          object cbParamType: TComboBox
+            Left = 90
+            Top = 33
+            Width = 140
+            Height = 21
+            Style = csDropDownList
+            ItemHeight = 13
+            ItemIndex = 0
+            Items.Strings = (
+              'STRING'
+              'NUMBER'
+              'HEX'
+              'FLOAT'
+              'PASSWORD'
+              'DATE'
+              'SELECT'
+              'CONFIRM'
+            )
+            TabOrder = 1
+            OnChange = cbParamTypeChange
+          end
+          object lbParamDefault: TLabel
+            Left = 244
+            Top = 36
+            Width = 82
+            Height = 13
+            Caption = #1055#1086' '#1091#1084#1086#1083#1095#1072#1085#1080#1102':'
+          end
+          object ebParamDefault: TEdit
+            Left = 330
+            Top = 33
+            Width = 183
+            Height = 21
+            TabOrder = 2
+          end
+          object lbParamOptions: TLabel
+            Left = 8
+            Top = 64
+            Width = 66
+            Height = 13
+            Caption = #1054#1087#1094#1080#1080' (|):'
+            Enabled = False
+          end
+          object ebParamOptions: TEdit
+            Left = 90
+            Top = 61
+            Width = 200
+            Height = 21
+            Enabled = False
+            TabOrder = 3
+          end
+          object bInsertParam: TButton
+            Left = 304
+            Top = 60
+            Width = 90
+            Height = 23
+            Caption = #1042#1089#1090#1072#1074#1080#1090#1100
+            TabOrder = 4
+            OnClick = bInsertParamClick
+          end
+          object lbParamsOverview: TLabel
+            Left = 8
+            Top = 92
+            Width = 505
+            Height = 24
+            AutoSize = False
+            WordWrap = True
+          end
+        end
         object mInfo: TMemo
           Left = 0
           Top = 0
@@ -488,7 +587,10 @@ object AddEditSnippetForm: TAddEditSnippetForm
             ''
             '{SLEEP N} - '#1047#1072#1076#1077#1088#1078#1082#1072' '#1074#1099#1087#1086#1083#1085#1077#1085#1080#1103' '#1085#1072' N '#1084#1080#1083#1083#1080#1089#1077#1082#1091#1085#1076'.'
             '{ENTER} - '#1054#1090#1087#1088#1072#1074#1082#1072' '#1085#1072#1078#1072#1090#1080#1103' '#1082#1083#1072#1074#1080#1096#1080' ENTER.'
-            '{SENDKEY X} - '#1054#1090#1087#1088#1072#1074#1082#1072' '#1089#1080#1084#1074#1086#1083#1072' X, '#1080#1084#1077#1085#1080' '#1082#1083#1072#1074#1080#1096#1080' (ENTER, TAB, F1-F12) '#1080#1083#1080' VK-'#1082#1086#1076#1072' '#1074' '#1094#1077#1083#1077#1074#1086#1077' '#1086#1082#1085#1086'.'
+            
+              '{SENDKEY X} - '#1054#1090#1087#1088#1072#1074#1082#1072' '#1089#1080#1084#1074#1086#1083#1072' X, '#1080#1084#1077#1085#1080' '#1082#1083#1072#1074#1080#1096#1080' (ENTER, TAB, F1-' +
+              'F12) '
+            #1080#1083#1080' VK-'#1082#1086#1076#1072' '#1074' '#1094#1077#1083#1077#1074#1086#1077' '#1086#1082#1085#1086'.'
             
               '{INPUT['#1058#1048#1055':'#1047#1053#1040#1063#1045#1053#1048#1045'-'#1055#1054'-'#1059#1052#1054#1051#1063#1040#1053#1048#1070'] '#1048#1052#1071'} - '#1054#1090#1086#1073#1088#1072#1079#1080#1090#1100' '#1086#1082#1085#1086' '#1074#1074#1086#1076#1072' '#1090 +
               #1077#1082#1089#1090#1072' '

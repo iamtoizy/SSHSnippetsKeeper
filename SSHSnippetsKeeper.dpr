@@ -82,6 +82,7 @@ uses
   AppEnumerator in 'Automation\AppEnumerator.pas',
   AppPickerFormUI in 'UI\Forms\AppPickerFormUI.pas' {AppPickerForm},
   InputFormUI in 'UI\Forms\InputFormUI.pas' {InputForm},
+  ParamsFormUI in 'UI\Forms\ParamsFormUI.pas' {ParamsForm},
   MacroInputTypes in 'MacroEngine\MacroInputTypes.pas',
   TagEditorFormUI in 'UI\Forms\TagEditorFormUI.pas' {TagEditorForm},
   WorkspaceManagerFormUI in 'UI\Forms\WorkspaceManagerFormUI.pas' {WorkspaceManagerForm},

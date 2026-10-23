@@ -182,9 +182,9 @@ begin
     AddChain('beta', 1);
     AddChain('gamma', 2);
 
-    Assert.AreEqual(2, Length(FRepo.GetAll(1)));
-    Assert.AreEqual(1, Length(FRepo.GetAll(2)));
-    Assert.AreEqual(3, Length(FRepo.GetAll(0)));
+    Assert.AreEqual(2, Integer(Length(FRepo.GetAll(1))));
+    Assert.AreEqual(1, Integer(Length(FRepo.GetAll(2))));
+    Assert.AreEqual(3, Integer(Length(FRepo.GetAll(0))));
 end;
 
 procedure TChainsTests.UpdateName_Renames;
@@ -221,7 +221,7 @@ begin
     AddStepRaw(ChainID, 0, S1, 250);
 
     Steps := FRepo.GetSteps(ChainID);
-    Assert.AreEqual(2, Length(Steps));
+    Assert.AreEqual(2, Integer(Length(Steps)));
     Assert.AreEqual(S1, Steps[0].SnippetID);
     Assert.AreEqual('first step', Steps[0].SnippetTitle);
     Assert.AreEqual(250, Steps[0].PauseMs);
@@ -253,7 +253,7 @@ begin
     FRepo.ReplaceSteps(ChainID, Steps);
 
     Steps := FRepo.GetSteps(ChainID);
-    Assert.AreEqual(2, Length(Steps));
+    Assert.AreEqual(2, Integer(Length(Steps)));
     Assert.AreEqual(S2, Steps[0].SnippetID);
     Assert.AreEqual(1000, Steps[0].PauseMs);
     Assert.AreEqual(0, Steps[0].Position);
@@ -271,7 +271,7 @@ begin
 
     FRepo.Delete(ChainID);
 
-    Assert.AreEqual(0, Length(FRepo.GetSteps(ChainID)));
+    Assert.AreEqual(0, Integer(Length(FRepo.GetSteps(ChainID))));
     Assert.AreEqual(0, Integer(FConn.ExecSQLScalar('SELECT COUNT(*) FROM snippet_chain_steps')));
 end;
 

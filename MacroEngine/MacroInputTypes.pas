@@ -8,9 +8,15 @@ uses
 
 type
     TMacroTokenKind = (tkText, tkSleep, tkEnter, tkInput, tkSendKey, tkUnknown);
-    TMacroInputType = (mitString, mitNumber, mitHex, mitFloat, mitPassword, mitDate, mitConfirm);
+    TMacroInputType = (mitString, mitNumber, mitHex, mitFloat, mitPassword, mitDate, mitConfirm, mitSelect);
+    TMacroParamDescriptor = record
+        Name: string;
+        InputType: TMacroInputType;
+        DefaultValue: string;
+    end;
     TInputCallback = reference to function(const Prompt: string): string;
     TConfirmCallback = reference to function(const Prompt: string): Boolean;
+    TBatchInputCallback = reference to function(const Params: TArray<TMacroParamDescriptor>; out Values: TArray<string>): Boolean;
     TRecordRunCallback = reference to procedure(SnippetID, UserID: Integer);
 
     ITextExecutor = interface;
@@ -20,6 +26,7 @@ type
         Executor: ITextExecutor;
         OnInput: TInputCallback;
         OnConfirm: TConfirmCallback;
+        OnBatchInput: TBatchInputCallback;
         OnRecordRun: TRecordRunCallback;
         OnFocusLost: TProc;
         OnTypingFinished: TProc;

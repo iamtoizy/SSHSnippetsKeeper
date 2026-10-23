@@ -22,22 +22,26 @@ type
         lbPrompt: TLabel;
         sbBottom: TStatusBar;
         ebEdit: TEdit;
+        cbSelect: TComboBox;
         procedure FormCreate(Sender: TObject);
         procedure FormShow(Sender: TObject);
         procedure bOKClick(Sender: TObject);
         procedure ebEditKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
         procedure ebEditChange(Sender: TObject);
         procedure bCancelClick(Sender: TObject);
+        procedure cbSelectKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
         procedure HandleKeyPresses(const Key: Word);
     private
         FInputType: TMacroInputType;
         FDefaultValue: string;
         FResultValue: string;
+        procedure FillSelectItems;
         procedure ValidateInput;
     public
         property ResultValue: string read FResultValue;
     end;
 
+function IsMacroValueValid(const Value: string; InputType: TMacroInputType): Boolean;
 function ShowInputForm(const Prompt, DefaultValue: string; InputType: TMacroInputType; const AppContext: IAppContext; var FormResult: string): Boolean;
 
 var
@@ -55,6 +59,49 @@ const
     SP_POSTFIX = ', ⏎';
 
 {$R *.dfm}
+
+function IsMacroValueValid(const Value: string; InputType: TMacroInputType): Boolean;
+var
+    HexStr: string;
+    IntVal: Integer;
+    FloatVal: Double;
+    DateVal: TDateTime;
+    I: Integer;
+begin
+    case InputType of
+        mitNumber:
+            Result := TryStrToInt(Value, IntVal);
+
+        mitHex:
+            begin
+                HexStr := Value;
+                if (Length(HexStr) >= 2) and (Copy(HexStr, 1, 2) = '0x') then
+                    HexStr := Copy(HexStr, 3, MaxInt);
+
+                Result := (HexStr <> '') and (Length(HexStr) <= 8);
+                if Result then
+                begin
+                    for I := 1 to Length(HexStr) do
+                    begin
+                        if not CharInSet(HexStr[I], ['0'..'9', 'A'..'F', 'a'..'f']) then
+                            Exit(False);
+                    end;
+                end;
+            end;
+
+        mitFloat:
+            Result := TryStrToFloat(Value, FloatVal);
+
+        mitPassword:
+            Result := Length(Value) > 0;
+
+        mitDate:
+            Result := TryStrToDate(Value, DateVal);
+
+    else
+        Result := True;
+    end;
+end;
 
 function ShowInputFormModal(const Prompt, DefaultValue: string; InputType: TMacroInputType; const AppContext: IAppContext; var Value: string): Boolean;
 var
@@ -114,10 +161,14 @@ end;
 procedure TInputForm.FormShow(Sender: TObject);
 begin
     // Настраиваем контрол в зависимости от типа
+    cbSelect.Visible := False;
+    ebEdit.Visible := True;
+
     case FInputType of
         mitString:
             begin
                 sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.String') + SP_POSTFIX;
+                ebEdit.Text := FDefaultValue;
             end;
 
         mitNumber:
@@ -151,9 +202,40 @@ begin
                 sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Date') + SP_POSTFIX;
                 ebEdit.Text := FDefaultValue;
             end;
+
+        mitSelect:
+            begin
+                FillSelectItems;
+                sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Select') + SP_POSTFIX;
+            end;
     end;
 
-    ebEdit.SetFocus;
+    if FInputType = mitSelect then
+    begin
+        ebEdit.Visible := False;
+        cbSelect.Visible := True;
+        cbSelect.SetFocus;
+    end
+    else
+        ebEdit.SetFocus;
+end;
+
+procedure TInputForm.FillSelectItems;
+var
+    Option: string;
+begin
+    cbSelect.Items.BeginUpdate;
+    try
+        cbSelect.Items.Clear;
+        for Option in FDefaultValue.Split(['|']) do
+            if Trim(Option) <> '' then
+                cbSelect.Items.Add(Trim(Option));
+
+        if cbSelect.Items.Count > 0 then
+            cbSelect.ItemIndex := 0;
+    finally
+        cbSelect.Items.EndUpdate;
+    end;
 end;
 
 procedure TInputForm.HandleKeyPresses(const Key: Word);
@@ -181,75 +263,44 @@ begin
     HandleKeyPresses(Key);
 end;
 
+procedure TInputForm.cbSelectKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+    HandleKeyPresses(Key);
+end;
+
 procedure TInputForm.ValidateInput;
 var
     Value: string;
-    IntVal: Integer;
-    FloatVal: Double;
     Valid: Boolean;
 begin
     Value := Trim(ebEdit.Text);
-    Valid := True;
+    Valid := IsMacroValueValid(Value, FInputType);
 
-    case FInputType of
-        mitString:
-            Valid := True;
-
-        mitNumber:
-            begin
-                Valid := TryStrToInt(Value, IntVal);
-                if not Valid then
-                    sbBottom.SimpleText := TUIStateLoader.GetMessage('InputForm.Error.Number')
-                else
-                    sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Number') + SP_POSTFIX;
-            end;
-
-        mitHex:
-            begin
-                var HexStr := Value;
-                if (Length(HexStr) >= 2) and (Copy(HexStr, 1, 2) = '0x') then
-                    HexStr := Copy(HexStr, 3, MaxInt);
-
-                Valid := (HexStr <> '') and (Length(HexStr) <= 8);
-                if Valid then
-                begin
-                    for var I := 1 to Length(HexStr) do
-                    begin
-                        if not CharInSet(HexStr[I], ['0'..'9', 'A'..'F', 'a'..'f']) then
-                        begin
-                            Valid := False;
-                            Break;
-                        end;
-                    end;
-                end;
-
-                if not Valid then
-                    sbBottom.SimpleText := TUIStateLoader.GetMessage('InputForm.Error.Hex')
-                else
-                    sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Hex') + SP_POSTFIX;
-            end;
-
-        mitFloat:
-            begin
-                Valid := TryStrToFloat(Value, FloatVal);
-                if not Valid then
-                    sbBottom.SimpleText := TUIStateLoader.GetMessage('InputForm.Error.Float')
-                else
-                    sbBottom.SimpleText := TUIStateLoader.GetMessage('InputForm.Prompt.Float') + SP_POSTFIX;
-            end;
-
-        mitPassword:
-            Valid := Length(Value) > 0;
-
-        mitDate:
-            begin
-                var DateVal: TDateTime;
-                Valid := TryStrToDate(Value, DateVal);
-                if not Valid then
-                    sbBottom.SimpleText := TUIStateLoader.GetMessage('InputForm.Error.Date')
-                else
-                    sbBottom.SimpleText := TUIStateLoader.GetMessage('InputForm.Prompt.Date') + SP_POSTFIX;
-            end;
+    if Valid then
+    begin
+        case FInputType of
+            mitNumber:
+                sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Number') + SP_POSTFIX;
+            mitHex:
+                sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Hex') + SP_POSTFIX;
+            mitFloat:
+                sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Float') + SP_POSTFIX;
+            mitDate:
+                sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Date') + SP_POSTFIX;
+        end;
+    end
+    else
+    begin
+        case FInputType of
+            mitNumber:
+                sbBottom.SimpleText := TUIStateLoader.GetMessage('InputForm.Error.Number');
+            mitHex:
+                sbBottom.SimpleText := TUIStateLoader.GetMessage('InputForm.Error.Hex');
+            mitFloat:
+                sbBottom.SimpleText := TUIStateLoader.GetMessage('InputForm.Error.Float');
+            mitDate:
+                sbBottom.SimpleText := TUIStateLoader.GetMessage('InputForm.Error.Date');
+        end;
     end;
 
     bOK.Enabled := Valid;
@@ -257,7 +308,16 @@ end;
 
 procedure TInputForm.bOKClick(Sender: TObject);
 begin
-    FResultValue := Trim(ebEdit.Text);
+    if FInputType = mitSelect then
+    begin
+        if (cbSelect.ItemIndex >= 0) and (cbSelect.ItemIndex < cbSelect.Items.Count) then
+            FResultValue := cbSelect.Items[cbSelect.ItemIndex]
+        else
+            FResultValue := '';
+    end
+    else
+        FResultValue := Trim(ebEdit.Text);
+
     ModalResult := mrOk;
 end;
 

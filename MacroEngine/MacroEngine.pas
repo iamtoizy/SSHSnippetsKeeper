@@ -38,6 +38,7 @@ type
 
         function GetTokens(const Text: string): TArray<TMacroToken>;
         function ValidateCommands(const Text: string): TArray<string>;
+        function InputDescriptors(const Text: string): TArray<TMacroParamDescriptor>;
         function Parse(const Text: string; Context: TMacroContext): TArray<IScriptAction>;
         procedure PreCollectInputs(const Actions: TArray<IScriptAction>; Context: TMacroContext);
     end;
@@ -157,6 +158,7 @@ var
         else if TypeStr = 'PASSWORD' then AType := mitPassword
         else if TypeStr = 'DATE' then AType := mitDate
         else if TypeStr = 'CONFIRM' then AType := mitConfirm
+        else if TypeStr = 'SELECT' then AType := mitSelect
         else AType := mitString;
     end;
 
@@ -319,34 +321,100 @@ procedure TMacroEngine.PreCollectInputs(const Actions: TArray<IScriptAction>; Co
 var
     Action: IScriptAction;
     InputAction: TInputAction;
+    Inputs: TList<TInputAction>;
+    Params: TArray<TMacroParamDescriptor>;
+    Values: TArray<string>;
     Value: string;
+    I: Integer;
 begin
     Context.UserCanceled := False;
 
-    for Action in Actions do
-    begin
-        if Context.UserCanceled then
-            Break;
-
-        if Action is TInputAction then
+    Inputs := TList<TInputAction>.Create;
+    try
+        for Action in Actions do
         begin
-            InputAction := Action as TInputAction;
+            if Action is TInputAction then
+            begin
+                InputAction := Action as TInputAction;
 
-            // Confirm НЕ собираем заранее, он выполнится в потоке
-            if InputAction.GetInputType = mitConfirm then
-                Continue;
+                // Confirm НЕ собираем заранее, он выполнится в потоке
+                if InputAction.GetInputType <> mitConfirm then
+                    Inputs.Add(InputAction);
+            end;
+        end;
+
+        if Inputs.Count = 0 then
+            Exit;
+
+        // Единый диалог на все параметры: один запрос вместо цепочки окон
+        if (Inputs.Count > 1) and Assigned(Context.OnBatchInput) then
+        begin
+            SetLength(Params, Inputs.Count);
+            for I := 0 to Inputs.Count - 1 do
+            begin
+                Params[I].Name := Inputs[I].GetPrompt;
+                Params[I].InputType := Inputs[I].GetInputType;
+                Params[I].DefaultValue := Inputs[I].GetDefaultValue;
+            end;
+
+            if Context.OnBatchInput(Params, Values) and (Length(Values) = Inputs.Count) then
+            begin
+                for I := 0 to Inputs.Count - 1 do
+                    Inputs[I].SetPreCollectedValue(Values[I]);
+            end
+            else
+                Context.UserCanceled := True;
+
+            Exit;
+        end;
+
+        for I := 0 to Inputs.Count - 1 do
+        begin
+            if Context.UserCanceled then
+                Break;
 
             if Assigned(Context.OnInput) then
             begin
-                Context.CurrentInputType := InputAction.GetInputType;
-                Context.CurrentDefaultValue := InputAction.GetDefaultValue;
+                Context.CurrentInputType := Inputs[I].GetInputType;
+                Context.CurrentDefaultValue := Inputs[I].GetDefaultValue;
 
-                Value := Context.OnInput(InputAction.GetPrompt);
+                Value := Context.OnInput(Inputs[I].GetPrompt);
 
                 if not Context.UserCanceled then
-                    InputAction.SetPreCollectedValue(Value);
+                    Inputs[I].SetPreCollectedValue(Value);
             end;
         end;
+    finally
+        Inputs.Free;
+    end;
+end;
+
+function TMacroEngine.InputDescriptors(const Text: string): TArray<TMacroParamDescriptor>;
+var
+    Tokens: TArray<TMacroToken>;
+    Token: TMacroToken;
+    List: TList<TMacroParamDescriptor>;
+    Desc: TMacroParamDescriptor;
+begin
+    Tokens := GetTokens(Text);
+    List := TList<TMacroParamDescriptor>.Create;
+    try
+        for Token in Tokens do
+        begin
+            if Token.Kind <> tkInput then
+                Continue;
+
+            if Token.InputType = mitConfirm then
+                Continue;
+
+            Desc.Name := Token.Text;
+            Desc.InputType := Token.InputType;
+            Desc.DefaultValue := Token.DefaultValue;
+            List.Add(Desc);
+        end;
+        Result := List.ToArray;
+    finally
+        List.Free;
     end;
 end;
 

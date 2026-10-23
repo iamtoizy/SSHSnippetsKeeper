@@ -49,6 +49,18 @@ type
         procedure ProgressUnits_SumsActions;
         [Test]
         procedure Cache_ReusesParsedTokens;
+        [Test]
+        procedure Input_SelectType_Parsed;
+        [Test]
+        procedure InputDescriptors_CollectsNonConfirmInputs;
+        [Test]
+        procedure PreCollect_Batch_CollectsAll;
+        [Test]
+        procedure PreCollect_Batch_Cancel;
+        [Test]
+        procedure PreCollect_BatchSingle_FallsBackToSequential;
+        [Test]
+        procedure PreCollect_Sequential_NoBatchCallback;
     end;
 
 implementation
@@ -379,6 +391,174 @@ begin
     finally
         Ctx1.Free;
         Ctx2.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Input_SelectType_Parsed;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    InputAction: TInputAction;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Actions := Engine.Parse('{INPUT[SELECT:prod|stage|dev]Env}', Ctx);
+        Assert.AreEqual(1, Integer(Length(Actions)));
+        Assert.IsTrue(Actions[0] is TInputAction);
+
+        InputAction := Actions[0] as TInputAction;
+        Assert.IsTrue(InputAction.GetInputType = mitSelect);
+        Assert.AreEqual('prod|stage|dev', InputAction.GetDefaultValue);
+        Assert.AreEqual('Env', InputAction.GetPrompt);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.InputDescriptors_CollectsNonConfirmInputs;
+var
+    Engine: TMacroEngine;
+    Descs: TArray<TMacroParamDescriptor>;
+begin
+    Engine := TMacroEngine.Create;
+    try
+        Descs := Engine.InputDescriptors(
+            'a{INPUT[STRING:one]First}{INPUT[CONFIRM]Proceed}b{INPUT[NUMBER:5]Second}');
+        Assert.AreEqual(2, Integer(Length(Descs)));
+        Assert.AreEqual('First', Descs[0].Name);
+        Assert.IsTrue(Descs[0].InputType = mitString);
+        Assert.AreEqual('one', Descs[0].DefaultValue);
+        Assert.AreEqual('Second', Descs[1].Name);
+        Assert.IsTrue(Descs[1].InputType = mitNumber);
+        Assert.AreEqual('5', Descs[1].DefaultValue);
+    finally
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.PreCollect_Batch_CollectsAll;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    ReceivedNames: string;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Ctx.OnBatchInput := function(const Params: TArray<TMacroParamDescriptor>; out Values: TArray<string>): Boolean
+        begin
+            ReceivedNames := Params[0].Name + '|' + Params[1].Name;
+            SetLength(Values, 2);
+            Values[0] := 'v1';
+            Values[1] := 'v2long';
+            Result := True;
+        end;
+
+        Actions := Engine.Parse('{INPUT[STRING:def1]P1}{INPUT[NUMBER:5]P2}', Ctx);
+        Engine.PreCollectInputs(Actions, Ctx);
+
+        Assert.IsFalse(Ctx.UserCanceled);
+        Assert.AreEqual('P1|P2', ReceivedNames);
+        Assert.AreEqual(2, (Actions[0] as TInputAction).ProgressUnits);
+        Assert.AreEqual(6, (Actions[1] as TInputAction).ProgressUnits);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.PreCollect_Batch_Cancel;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Ctx.OnBatchInput := function(const Params: TArray<TMacroParamDescriptor>; out Values: TArray<string>): Boolean
+        begin
+            Result := False;
+        end;
+
+        Actions := Engine.Parse('{INPUT[STRING:]P1}{INPUT[STRING:]P2}', Ctx);
+        Engine.PreCollectInputs(Actions, Ctx);
+
+        Assert.IsTrue(Ctx.UserCanceled);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.PreCollect_BatchSingle_FallsBackToSequential;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    BatchCalls, InputCalls: Integer;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    BatchCalls := 0;
+    InputCalls := 0;
+    try
+        Ctx.OnBatchInput := function(const Params: TArray<TMacroParamDescriptor>; out Values: TArray<string>): Boolean
+        begin
+            Inc(BatchCalls);
+            Result := True;
+        end;
+        Ctx.OnInput := function(const Prompt: string): string
+        begin
+            Inc(InputCalls);
+            Result := 'x';
+        end;
+
+        Actions := Engine.Parse('{INPUT[STRING:]Solo}', Ctx);
+        Engine.PreCollectInputs(Actions, Ctx);
+
+        Assert.IsFalse(Ctx.UserCanceled);
+        Assert.AreEqual(0, BatchCalls);
+        Assert.AreEqual(1, InputCalls);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.PreCollect_Sequential_NoBatchCallback;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    Prompts: string;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Ctx.OnInput := function(const Prompt: string): string
+        begin
+            Prompts := Prompts + Prompt + ';';
+            if Prompt = 'P1' then
+                Result := 'abcdef'
+            else
+                Result := 'xyz';
+        end;
+
+        Actions := Engine.Parse('{INPUT[STRING:]P1}{INPUT[STRING:]P2}', Ctx);
+        Engine.PreCollectInputs(Actions, Ctx);
+
+        Assert.IsFalse(Ctx.UserCanceled);
+        Assert.AreEqual('P1;P2;', Prompts);
+        Assert.AreEqual(6, (Actions[0] as TInputAction).ProgressUnits);
+        Assert.AreEqual(3, (Actions[1] as TInputAction).ProgressUnits);
+    finally
+        Ctx.Free;
         Engine.Free;
     end;
 end;

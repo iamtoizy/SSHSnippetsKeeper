@@ -72,7 +72,7 @@ var
     Diff: TArray<TDiffLine>;
 begin
     Diff := TTextDiff.Compute('a'#10'b'#10'c', 'a'#10'b'#10'c');
-    Assert.AreEqual(3, Length(Diff));
+    Assert.AreEqual(3, Integer(Length(Diff)));
     Assert.AreEqual('=,=,=', Kinds(Diff));
     Assert.AreEqual('b', Diff[1].Text);
     Assert.AreEqual(2, Diff[1].OldNo);
@@ -120,7 +120,7 @@ var
     Diff: TArray<TDiffLine>;
 begin
     Diff := TTextDiff.Compute('a'#13#10'b'#13#10, 'a'#10'b');
-    Assert.AreEqual(2, Length(Diff));
+    Assert.AreEqual(2, Integer(Length(Diff)));
     Assert.AreEqual('=,=', Kinds(Diff));
 end;
 
@@ -129,7 +129,7 @@ var
     Diff: TArray<TDiffLine>;
 begin
     Diff := TTextDiff.Compute('', 'x');
-    Assert.AreEqual(1, Length(Diff));
+    Assert.AreEqual(1, Integer(Length(Diff)));
     Assert.AreEqual('+', Kinds(Diff));
     Assert.AreEqual('x', Diff[0].Text);
     Assert.AreEqual(0, Diff[0].OldNo);
@@ -152,7 +152,7 @@ begin
 
     Unified := TTextDiff.ToUnified(OldText, NewText, 2);
 
-    Assert.AreEqual(6, Length(Unified));
+    Assert.AreEqual(6, Integer(Length(Unified)));
     Assert.AreEqual('L3', Unified[0].Text);
     Assert.AreEqual('L4', Unified[1].Text);
     Assert.AreEqual('L5', Unified[2].Text);
@@ -174,7 +174,7 @@ begin
 
     Diff := TTextDiff.Compute(OldText, NewText);
 
-    Assert.AreEqual(3000, Length(Diff));
+    Assert.AreEqual(3000, Integer(Length(Diff)));
     Assert.AreEqual(1500, CountKind(Diff, dlDelete));
     Assert.AreEqual(1500, CountKind(Diff, dlInsert));
 end;
