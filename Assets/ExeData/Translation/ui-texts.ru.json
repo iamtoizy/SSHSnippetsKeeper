@@ -1679,31 +1679,39 @@
       }
     },
     "InputForm": {
-      "Prompt.String": "Введи текст",
-      "Prompt.Number": "Введи целое число",
-      "Prompt.Hex": "Введи HEX значение (например, FF или 0xFF)",
-      "Prompt.Float": "Введи вещественное число (например, 3.14)",
-      "Prompt.Password": "Введи пароль",
-      "Prompt.Date": "Введи дату (YYYY-MM-DD)",
-      "Prompt.Select": "Выбери значение из списка",
-      "Error.Number": "Ошибка: введи целое число",
-      "Error.Hex": "Ошибка: введи HEX значение (0-9, A-F)",
-      "Error.Float": "Ошибка: введи вещественное (например, 3.14)",
-      "Error.Date": "Ошибка: формат даты YYYY-MM-DD"
+      "Prompt": {
+        "String": "Введи текст",
+        "Number": "Введи целое число",
+        "Hex": "Введи HEX значение (например, FF или 0xFF)",
+        "Float": "Введи вещественное число (например, 3.14)",
+        "Password": "Введи пароль",
+        "Date": "Введи дату (YYYY-MM-DD)",
+        "Select": "Выбери значение из списка"
+      },
+      "Error": {
+        "Number": "Ошибка: введи целое число",
+        "Hex": "Ошибка: введи HEX значение (0-9, A-F)",
+        "Float": "Ошибка: введи вещественное (например, 3.14)",
+        "Date": "Ошибка: формат даты YYYY-MM-DD"
+      }
     },
     "ParamsForm": {
       "Hint": "Заполни параметры - при запуске они соберутся в одном окне",
-      "Error.Invalid": "Ошибка в параметре: %s"
+      "Error": {
+        "Invalid": "Ошибка в параметре: %s"
+      }
     },
     "MacroBuilder": {
-      "StepType.Text": "Текст",
-      "StepType.Sleep": "Пауза",
-      "StepType.Enter": "ENTER",
-      "StepType.Key": "Клавиша",
-      "StepType.Input": "Ввод",
-      "StepType.Value": "Значение",
-      "StepType.ClearLine": "Очистить строку",
-      "StepType.KeyDelay": "Задержка",
+      "StepType": {
+        "Text": "Текст",
+        "Sleep": "Пауза",
+        "Enter": "ENTER",
+        "Key": "Клавиша",
+        "Input": "Ввод",
+        "Value": "Значение",
+        "ClearLine": "Очистить строку",
+        "KeyDelay": "Задержка"
+      },
       "PropText": "Текст шага:",
       "PropMs": "Пауза, мс:",
       "PropKey": "Клавиша (CTRL+C, F5, a):",
@@ -1714,8 +1722,10 @@
       "PropValueType": "Тип значения:",
       "PropArg": "Аргумент (формат/длина/имя):",
       "DefaultParamName": "Параметр",
-      "Error.BadKey": "Неизвестная клавиша: %s",
-      "Error.EnvEmpty": "Для ENV задай имя переменной"
+      "Error": {
+        "BadKey": "Неизвестная клавиша: %s",
+        "EnvEmpty": "Для ENV задай имя переменной"
+      }
     },
     "TagEditorForm": {
       "InputQueryTitle": "New Tag",

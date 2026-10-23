@@ -1679,31 +1679,39 @@
       }
     },
     "InputForm": {
-      "Prompt.String": "Enter text",
-      "Prompt.Number": "Enter an integer",
-      "Prompt.Hex": "Enter HEX value (e.g., FF or 0xFF)",
-      "Prompt.Float": "Enter a float number (e.g., 3.14)",
-      "Prompt.Password": "Enter password",
-      "Prompt.Date": "Enter date (YYYY-MM-DD)",
-      "Prompt.Select": "Pick a value from the list",
-      "Error.Number": "Error: enter an integer",
-      "Error.Hex": "Error: enter a HEX value (0-9, A-F)",
-      "Error.Float": "Error: enter a float (e.g., 3.14)",
-      "Error.Date": "Error: date format must be YYYY-MM-DD"
+      "Prompt": {
+        "String": "Enter text",
+        "Number": "Enter an integer",
+        "Hex": "Enter HEX value (e.g., FF or 0xFF)",
+        "Float": "Enter a float number (e.g., 3.14)",
+        "Password": "Enter password",
+        "Date": "Enter date (YYYY-MM-DD)",
+        "Select": "Pick a value from the list"
+      },
+      "Error": {
+        "Number": "Error: enter an integer",
+        "Hex": "Error: enter a HEX value (0-9, A-F)",
+        "Float": "Error: enter a float (e.g., 3.14)",
+        "Date": "Error: date format must be YYYY-MM-DD"
+      }
     },
     "ParamsForm": {
       "Hint": "Fill in the parameters - on run they will be gathered in a single dialog",
-      "Error.Invalid": "Invalid parameter: %s"
+      "Error": {
+        "Invalid": "Invalid parameter: %s"
+      }
     },
     "MacroBuilder": {
-      "StepType.Text": "Text",
-      "StepType.Sleep": "Pause",
-      "StepType.Enter": "ENTER",
-      "StepType.Key": "Key",
-      "StepType.Input": "Input",
-      "StepType.Value": "Value",
-      "StepType.ClearLine": "Clear line",
-      "StepType.KeyDelay": "Delay",
+      "StepType": {
+        "Text": "Text",
+        "Sleep": "Pause",
+        "Enter": "ENTER",
+        "Key": "Key",
+        "Input": "Input",
+        "Value": "Value",
+        "ClearLine": "Clear line",
+        "KeyDelay": "Delay"
+      },
       "PropText": "Step text:",
       "PropMs": "Pause, ms:",
       "PropKey": "Key (CTRL+C, F5, a):",
@@ -1714,8 +1722,10 @@
       "PropValueType": "Value kind:",
       "PropArg": "Argument (format/length/name):",
       "DefaultParamName": "Parameter",
-      "Error.BadKey": "Unknown key: %s",
-      "Error.EnvEmpty": "Set a variable name for ENV"
+      "Error": {
+        "BadKey": "Unknown key: %s",
+        "EnvEmpty": "Set a variable name for ENV"
+      }
     },
     "TagEditorForm": {
       "InputQueryTitle": "New Tag",
