@@ -215,8 +215,6 @@ begin
     WindowHelper := FAppContext.WindowHelper;
     try
         Context := BuildMacroContext(Snippet.ID, TargetHWND);
-        // Пер-сниппетная скорость печати: 0 = как в настройках
-        Context.KeyDelayMs := Snippet.KeyDelayMs;
         SetForegroundWindow(TargetHWND);
         var TickEnd := GetTickCount + 100;
         while (GetForegroundWindow <> TargetHWND) and (GetTickCount < TickEnd) do

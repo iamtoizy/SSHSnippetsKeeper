@@ -258,9 +258,6 @@
     "lbParamOptions": {
       "Caption": "Опции (|):"
     },
-    "lbKeyDelay": {
-      "Caption": "Скорость печати:"
-    },
     "nAI": {
       "Caption": "ИИ-ассистент"
     },
@@ -1601,9 +1598,7 @@
       "ParamBadChars": "Имя и значение по умолчанию не должны содержать } ] |",
       "ParamOptionsEmpty": "Для SELECT задай опции через |",
       "ParamsOverviewEmpty": "Параметров нет - добавь {INPUT} в содержимое сниппета",
-      "ParamsOverview": "Параметры (%d): %s",
-      "KeyDelayDefault": "Как в настройках",
-      "KeyDelayUnit": "мс"
+      "ParamsOverview": "Параметры (%d): %s"
     },
     "AISettingsForm": {
       "DeleteModelConfirm": "Удалить эту модель?",

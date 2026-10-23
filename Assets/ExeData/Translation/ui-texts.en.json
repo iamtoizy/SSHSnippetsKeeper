@@ -258,9 +258,6 @@
     "lbParamOptions": {
       "Caption": "Options (|):"
     },
-    "lbKeyDelay": {
-      "Caption": "Typing speed:"
-    },
     "nAI": {
       "Caption": "AI Assistant"
     },
@@ -1601,9 +1598,7 @@
       "ParamBadChars": "Name and default value must not contain } ] |",
       "ParamOptionsEmpty": "Set SELECT options separated by |",
       "ParamsOverviewEmpty": "No parameters - add {INPUT} to the snippet body",
-      "ParamsOverview": "Parameters (%d): %s",
-      "KeyDelayDefault": "Same as settings",
-      "KeyDelayUnit": "ms"
+      "ParamsOverview": "Parameters (%d): %s"
     },
     "AISettingsForm": {
       "DeleteModelConfirm": "Delete this model?",

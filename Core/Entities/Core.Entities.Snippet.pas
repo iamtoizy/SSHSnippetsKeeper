@@ -20,7 +20,6 @@ type
         UpdatedAt: Int64;
         Tags: TArray<TTagDTO>;
         IsSecurityCheckIgnored: Boolean;
-        KeyDelayMs: Integer;
     end;
 
     TSnippetVersionDTO = record
