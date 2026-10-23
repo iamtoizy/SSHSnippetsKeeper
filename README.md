@@ -240,6 +240,8 @@ brcc32 -fo000_schema_init.res "Database\Schema\000_schema_init.rc"
 | `{SLEEP 500}` | Пауза 500 мс |
 | `{ENTER}` | Нажатие Enter |
 | `{SENDKEY X}` | Отправка символа X, имени клавиши (ENTER, TAB, F1-F12 и др.) или VK-кода |
+| `{SENDKEY CTRL+K}` | Комбинации: CTRL/ALT/SHIFT + клавиша (например, `CTRL+C`, `ALT+F4`, `CTRL+SHIFT+T`) |
+| `{CLEAR_LINE}` | Очистить текущую строку терминала: Ctrl+C, пауза, Ctrl+U |
 | `{INPUT подсказка}` | Запрос ввода строки перед выполнением |
 | `{INPUT [ТИП:значение] подсказка}` | Запрос ввода заданного типа со значением по умолчанию |
 | `{DATETIME:ФОРМАТ}` | Текущие дата и время (маска FormatDateTime); без аргумента `yyyy-MM-dd HH:mm:ss` |

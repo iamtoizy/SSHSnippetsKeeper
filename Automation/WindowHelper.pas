@@ -47,7 +47,7 @@ type
         // ITextExecutor
         procedure TypeRawText(const Text: string; Context: TMacroContext);
         procedure PressEnter(Context: TMacroContext);
-        procedure PressKey(Key: Word; Context: TMacroContext);
+        procedure PressKey(Key: Word; Modifiers: Word; Context: TMacroContext);
 
         property Window: TWindowHelperInfo read FWindowHelperInfo;
         property MacroEngine: TMacroEngine read FMacroEngine;
@@ -244,23 +244,48 @@ begin
     Sleep(FActiveSettings.WindowHelper.KeyPressInterval);
 end;
 
-procedure TWindowHelper.PressKey(Key: Word; Context: TMacroContext);
+procedure TWindowHelper.PressKey(Key: Word; Modifiers: Word; Context: TMacroContext);
 var
-    Inputs: array [0 .. 1] of TInput;
+    Inputs: array [0 .. 7] of TInput;
+    Count: Integer;
+
+    procedure AddKey(AVk: Word; AUp: Boolean);
+    begin
+        Inputs[Count].Itype := INPUT_KEYBOARD;
+        Inputs[Count].ki.wVk := AVk;
+        if AUp then
+            Inputs[Count].ki.dwFlags := KEYEVENTF_KEYUP;
+        Inc(Count);
+    end;
+
 begin
     if IsMacroCanceled(Context) then
         Exit;
 
     ZeroMemory(@Inputs, SizeOf(Inputs));
+    Count := 0;
 
-    Inputs[0].Itype := INPUT_KEYBOARD;
-    Inputs[0].ki.wVk := Key;
+    // Модификаторы вниз
+    if (MOD_CONTROL and Modifiers) <> 0 then
+        AddKey(VK_CONTROL, False);
+    if (MOD_ALT and Modifiers) <> 0 then
+        AddKey(VK_MENU, False);
+    if (MOD_SHIFT and Modifiers) <> 0 then
+        AddKey(VK_SHIFT, False);
 
-    Inputs[1].Itype := INPUT_KEYBOARD;
-    Inputs[1].ki.wVk := Key;
-    Inputs[1].ki.dwFlags := KEYEVENTF_KEYUP;
+    // Основная клавиша вниз-вверх
+    AddKey(Key, False);
+    AddKey(Key, True);
 
-    SendInput(Length(Inputs), Inputs[0], SizeOf(TInput));
+    // Модификаторы вверх в обратном порядке
+    if (MOD_SHIFT and Modifiers) <> 0 then
+        AddKey(VK_SHIFT, True);
+    if (MOD_ALT and Modifiers) <> 0 then
+        AddKey(VK_MENU, True);
+    if (MOD_CONTROL and Modifiers) <> 0 then
+        AddKey(VK_CONTROL, True);
+
+    SendInput(Count, Inputs[0], SizeOf(TInput));
 
     if Context <> nil then
         TInterlocked.Increment(Context.TypedChars);

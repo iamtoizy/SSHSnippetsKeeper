@@ -46,7 +46,7 @@ type
         ['{65C96380-78F5-4B0B-9D15-65C99E3C4D4A}']
         procedure TypeRawText(const Text: string; Context: TMacroContext);
         procedure PressEnter(Context: TMacroContext);
-        procedure PressKey(Key: Word; Context: TMacroContext);
+        procedure PressKey(Key: Word; Modifiers: Word; Context: TMacroContext);
     end;
 
     IScriptAction = interface
@@ -91,8 +91,18 @@ type
     TSendKeyAction = class(TScriptAction)
     private
         FKey: Word;
+        FModifiers: Word;
     public
-        constructor Create(Context: TMacroContext; AKey: Word);
+        constructor Create(Context: TMacroContext; AKey: Word; AModifiers: Word = 0);
+        procedure Execute; override;
+        function ProgressUnits: Integer; override;
+    end;
+
+    TClearLineAction = class(TScriptAction)
+    private
+        procedure SleepStop(AMS: Integer);
+    public
+        constructor Create(Context: TMacroContext);
         procedure Execute; override;
         function ProgressUnits: Integer; override;
     end;
@@ -200,21 +210,62 @@ end;
 
 { TSendKeyAction }
 
-constructor TSendKeyAction.Create(Context: TMacroContext; AKey: Word);
+constructor TSendKeyAction.Create(Context: TMacroContext; AKey: Word; AModifiers: Word);
 begin
     inherited Create(Context);
     FKey := AKey;
+    FModifiers := AModifiers;
 end;
 
 procedure TSendKeyAction.Execute;
 begin
     if Assigned(FContext.Executor) then
-        FContext.Executor.PressKey(FKey, FContext);
+        FContext.Executor.PressKey(FKey, FModifiers, FContext);
 end;
 
 function TSendKeyAction.ProgressUnits: Integer;
 begin
     Result := 1;
+end;
+
+{ TClearLineAction }
+
+constructor TClearLineAction.Create(Context: TMacroContext);
+begin
+    inherited Create(Context);
+end;
+
+procedure TClearLineAction.SleepStop(AMS: Integer);
+var
+    StartTick: Cardinal;
+begin
+    StartTick := GetTickCount;
+    while GetTickCount - StartTick < Cardinal(AMS) do
+    begin
+        // Пауза короткая, поэтому проверяем только флаг отмены:
+        // CheckTerminated недоступен в чужих (не TThread) потоках
+        if Assigned(FContext) and
+           (TInterlocked.CompareExchange(FContext.Canceled, 0, 0) <> 0) then
+            Break;
+
+        Sleep(5);
+    end;
+end;
+
+// Ctrl+C (прервать команду) - пауза - Ctrl+U (очистить строку)
+procedure TClearLineAction.Execute;
+begin
+    if not Assigned(FContext.Executor) then
+        Exit;
+
+    FContext.Executor.PressKey(Ord('C'), MOD_CONTROL, FContext);
+    SleepStop(150);
+    FContext.Executor.PressKey(Ord('U'), MOD_CONTROL, FContext);
+end;
+
+function TClearLineAction.ProgressUnits: Integer;
+begin
+    Result := 2;
 end;
 
 end.

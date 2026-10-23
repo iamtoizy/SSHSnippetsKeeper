@@ -81,6 +81,24 @@ type
         procedure Value_CLIPBOARD_ParsedAsTextAction;
         [Test]
         procedure Value_UnknownDirective_Reports;
+        [Test]
+        procedure SendKeyEx_Modifiers_Parsed;
+        [Test]
+        procedure SendKeyEx_CtrlAltDel;
+        [Test]
+        procedure SendKeyEx_ShiftT;
+        [Test]
+        procedure SendKeyEx_PlainChar_StillText;
+        [Test]
+        procedure SendKeyEx_ModifiedChar_AlphaNum;
+        [Test]
+        procedure SendKeyEx_ModifiedChar_NonAlphaNum_Fails;
+        [Test]
+        procedure SendKeyEx_BadParts_Fail;
+        [Test]
+        procedure SendKey_Modifiers_BecomesSendKeyAction;
+        [Test]
+        procedure ClearLine_ExecutesCtrlCAndCtrlU;
     end;
 
 implementation
@@ -97,7 +115,7 @@ type
         Recorded: string;
         procedure TypeRawText(const AText: string; Context: TMacroContext);
         procedure PressEnter(Context: TMacroContext);
-        procedure PressKey(Key: Word; Context: TMacroContext);
+        procedure PressKey(Key: Word; Modifiers: Word; Context: TMacroContext);
     end;
 
 procedure TRecorderExecutor.TypeRawText(const AText: string; Context: TMacroContext);
@@ -110,9 +128,9 @@ begin
     Recorded := Recorded + #10;
 end;
 
-procedure TRecorderExecutor.PressKey(Key: Word; Context: TMacroContext);
+procedure TRecorderExecutor.PressKey(Key: Word; Modifiers: Word; Context: TMacroContext);
 begin
-    Recorded := Recorded + '[' + IntToStr(Key) + ']';
+    Recorded := Recorded + '[' + IntToStr(Key) + ':' + IntToStr(Modifiers) + ']';
 end;
 
 { TMacroEngineTests }
@@ -860,6 +878,141 @@ begin
 
         Unknown := Engine.ValidateCommands('x{UUIDX}y');
         Assert.AreEqual(1, Integer(Length(Unknown)));
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.SendKeyEx_Modifiers_Parsed;
+var
+    Key, Modifiers: Integer;
+    Text: string;
+begin
+    Assert.IsTrue(TryParseSendKeyEx('CTRL+C', Key, Modifiers, Text));
+    Assert.AreEqual(67, Key);
+    Assert.AreEqual(Integer(MOD_CONTROL), Modifiers);
+    Assert.AreEqual('', Text);
+
+    Assert.IsTrue(TryParseSendKeyEx('c', Key, Modifiers, Text));
+    Assert.AreEqual('c', Text);
+    Assert.AreEqual(0, Modifiers);
+
+    Assert.IsFalse(TryParseSendKey('CTRL+C', Key, Text));
+end;
+
+procedure TMacroEngineTests.SendKeyEx_CtrlAltDel;
+var
+    Key, Modifiers: Integer;
+    Text: string;
+begin
+    Assert.IsTrue(TryParseSendKeyEx('CTRL+ALT+DEL', Key, Modifiers, Text));
+    Assert.AreEqual(46, Key);
+    Assert.AreEqual(Integer(MOD_CONTROL or MOD_ALT), Modifiers);
+end;
+
+procedure TMacroEngineTests.SendKeyEx_ShiftT;
+var
+    Key, Modifiers: Integer;
+    Text: string;
+begin
+    Assert.IsTrue(TryParseSendKeyEx('SHIFT+T', Key, Modifiers, Text));
+    Assert.AreEqual(84, Key);
+    Assert.AreEqual(Integer(MOD_SHIFT), Modifiers);
+end;
+
+procedure TMacroEngineTests.SendKeyEx_PlainChar_StillText;
+var
+    Key, Modifiers: Integer;
+    Text: string;
+begin
+    Assert.IsTrue(TryParseSendKeyEx('ENTER', Key, Modifiers, Text));
+    Assert.AreEqual(13, Key);
+    Assert.AreEqual(0, Modifiers);
+    Assert.AreEqual('', Text);
+end;
+
+procedure TMacroEngineTests.SendKeyEx_ModifiedChar_AlphaNum;
+var
+    Key, Modifiers: Integer;
+    Text: string;
+begin
+    Assert.IsTrue(TryParseSendKeyEx('CTRL+a', Key, Modifiers, Text));
+    Assert.AreEqual(65, Key);
+    Assert.AreEqual(Integer(MOD_CONTROL), Modifiers);
+    Assert.AreEqual('', Text);
+end;
+
+procedure TMacroEngineTests.SendKeyEx_ModifiedChar_NonAlphaNum_Fails;
+var
+    Key, Modifiers: Integer;
+    Text: string;
+begin
+    Assert.IsFalse(TryParseSendKeyEx('CTRL+!', Key, Modifiers, Text));
+end;
+
+procedure TMacroEngineTests.SendKeyEx_BadParts_Fail;
+var
+    Key, Modifiers: Integer;
+    Text: string;
+begin
+    Assert.IsFalse(TryParseSendKeyEx('FOO+C', Key, Modifiers, Text));
+    Assert.IsFalse(TryParseSendKeyEx('CTRL+', Key, Modifiers, Text));
+    Assert.IsFalse(TryParseSendKeyEx('', Key, Modifiers, Text));
+end;
+
+procedure TMacroEngineTests.SendKey_Modifiers_BecomesSendKeyAction;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    Rec: TRecorderExecutor;
+    Unknown: TArray<string>;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    Rec := TRecorderExecutor.Create;
+    try
+        Ctx.Executor := Rec;
+        Actions := Engine.Parse('{SENDKEY CTRL+C}', Ctx);
+        Assert.AreEqual(1, Integer(Length(Actions)));
+        Assert.IsTrue(Actions[0] is TSendKeyAction);
+
+        Actions[0].Execute;
+        Assert.AreEqual('[67:2]', Rec.Recorded);
+
+        Actions := Engine.Parse('{SENDKEY CTRL+ENTER}', Ctx);
+        Assert.AreEqual(1, Integer(Length(Actions)));
+        Actions[0].Execute;
+        Assert.AreEqual('[67:2][13:2]', Rec.Recorded);
+
+        Unknown := Engine.ValidateCommands('{SENDKEY CTRL+!}');
+        Assert.AreEqual(1, Integer(Length(Unknown)));
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.ClearLine_ExecutesCtrlCAndCtrlU;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    Rec: TRecorderExecutor;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    Rec := TRecorderExecutor.Create;
+    try
+        Ctx.Executor := Rec;
+        Actions := Engine.Parse('pre{CLEAR_LINE}', Ctx);
+        Assert.AreEqual(2, Integer(Length(Actions)));
+        Assert.IsTrue(Actions[1] is TClearLineAction);
+        Assert.AreEqual(2, Actions[1].ProgressUnits);
+
+        Actions[1].Execute;
+        Assert.AreEqual('[67:2][85:2]', Rec.Recorded);
     finally
         Ctx.Free;
         Engine.Free;

@@ -24,9 +24,11 @@ type
         Value: Integer;
         InputType: TMacroInputType;
         DefaultValue: string;
+        KeyModifiers: Integer;
     end;
 
 function TryParseSendKey(const AArgs: string; out AKey: Integer; out AText: string): Boolean;
+function TryParseSendKeyEx(const AArgs: string; out AKey: Integer; out AModifiers: Integer; out AText: string): Boolean;
 
 type
     TMacroEngine = class
@@ -134,6 +136,65 @@ begin
     Result := True;
 end;
 
+function TryParseSendKeyEx(const AArgs: string; out AKey: Integer; out AModifiers: Integer; out AText: string): Boolean;
+var
+    Parts: TArray<string>;
+    I: Integer;
+    ModPart, LastPart: string;
+    Modifiers: Integer;
+begin
+    AKey := 0;
+    AModifiers := 0;
+    AText := '';
+    Modifiers := 0;
+
+    Parts := AArgs.Split(['+']);
+    if Length(Parts) = 0 then
+        Exit(False);
+
+    // Всё кроме последней части - модификаторы
+    if Length(Parts) > 1 then
+    begin
+        for I := 0 to Length(Parts) - 2 do
+        begin
+            ModPart := UpperCase(Trim(Parts[I]));
+            if ModPart = '' then
+                Exit(False);
+            if (ModPart = 'CTRL') or (ModPart = 'CONTROL') then
+                Modifiers := Modifiers or MOD_CONTROL
+            else if ModPart = 'ALT' then
+                Modifiers := Modifiers or MOD_ALT
+            else if ModPart = 'SHIFT' then
+                Modifiers := Modifiers or MOD_SHIFT
+            else
+                Exit(False);
+        end;
+    end;
+
+    LastPart := Trim(Parts[High(Parts)]);
+    if LastPart = '' then
+        Exit(False);
+
+    if not TryParseSendKey(LastPart, AKey, AText) then
+        Exit(False);
+
+    // Символ без модификаторов остается текстом; с модификаторами
+    // доступна только буквенно-цифровая клавиша
+    if (AText <> '') and (Modifiers <> 0) then
+    begin
+        if (Length(AText) = 1) and CharInSet(UpCase(AText[1]), ['A'..'Z', '0'..'9']) then
+        begin
+            AKey := Ord(UpCase(AText[1]));
+            AText := '';
+        end
+        else
+            Exit(False);
+    end;
+
+    AModifiers := Modifiers;
+    Result := True;
+end;
+
 function TMacroEngine.ParseTokens(const Text: string): TArray<TMacroToken>;
 var
     Matches: TMatchCollection;
@@ -198,6 +259,7 @@ begin
                     Token.Value := 0;
                     Token.InputType := mitString;
                     Token.DefaultValue := '';
+                    Token.KeyModifiers := 0;
                     Tokens.Add(Token);
                 end;
             end;
@@ -215,6 +277,7 @@ begin
             Token.Value := 0;
             Token.InputType := mitString;
             Token.DefaultValue := '';
+            Token.KeyModifiers := 0;
 
             // Значения, вычисляемые при каждом запуске: в кэш токенов
             // попадает только имя директивы, не само значение
@@ -281,12 +344,25 @@ begin
             end
             else if Name = 'SENDKEY' then
             begin
-                if TryParseSendKey(Args, Token.Value, KeyChar) then
+                if TryParseSendKeyEx(Args, Token.Value, Token.KeyModifiers, KeyChar) then
                 begin
                     if KeyChar <> '' then
                     begin
-                        Token.Kind := tkText;
-                        Token.Text := KeyChar;
+                        if Token.KeyModifiers = 0 then
+                        begin
+                            Token.Kind := tkText;
+                            Token.Text := KeyChar;
+                        end
+                        else if CharInSet(UpCase(KeyChar[1]), ['A'..'Z', '0'..'9']) then
+                        begin
+                            Token.Kind := tkSendKey;
+                            Token.Value := Ord(UpCase(KeyChar[1]));
+                        end
+                        else
+                        begin
+                            Token.Kind := tkUnknown;
+                            Token.Text := Match.Value;
+                        end;
                     end
                     else
                         Token.Kind := tkSendKey;
@@ -296,6 +372,10 @@ begin
                     Token.Kind := tkUnknown;
                     Token.Text := Match.Value;
                 end;
+            end
+            else if Name = 'CLEAR_LINE' then
+            begin
+                Token.Kind := tkClearLine;
             end
             else
             begin
@@ -314,6 +394,7 @@ begin
             Token.Value := 0;
             Token.InputType := mitString;
             Token.DefaultValue := '';
+            Token.KeyModifiers := 0;
             Tokens.Add(Token);
         end;
 
@@ -547,9 +628,11 @@ begin
                 tkInput:
                     Actions.Add(TInputAction.Create(Context, Token.Text, Token.InputType, Token.DefaultValue));
                 tkSendKey:
-                    Actions.Add(TSendKeyAction.Create(Context, Token.Value));
+                    Actions.Add(TSendKeyAction.Create(Context, Token.Value, Token.KeyModifiers));
                 tkValue:
                     Actions.Add(TTypeTextAction.Create(Context, ResolveValueToken(Token, Context)));
+                tkClearLine:
+                    Actions.Add(TClearLineAction.Create(Context));
                 tkUnknown:
                     ;
             end;
