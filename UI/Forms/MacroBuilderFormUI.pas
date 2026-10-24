@@ -67,6 +67,7 @@ type
         function StepSummary(const Step: TMacroStep): string;
         function ValidateSteps(out ErrorText: string): Boolean;
     public
+        destructor Destroy; override;
         procedure InitializeBuilder(const MacroText: string);
         function GetMacroText: string;
     end;
@@ -134,6 +135,12 @@ begin
     finally
         cbStepType.Items.EndUpdate;
     end;
+end;
+
+destructor TMacroBuilderForm.Destroy;
+begin
+    FreeAndNil(FSteps);
+    inherited;
 end;
 
 procedure TMacroBuilderForm.InitializeBuilder(const MacroText: string);

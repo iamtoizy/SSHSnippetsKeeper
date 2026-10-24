@@ -38,6 +38,7 @@ uses
   {$IFDEF DEBUG}
   FastMM5,
   {$ENDIF }
+  Core.Shutdown in 'Core\Core.Shutdown.pas',
   Vcl.Forms,
   Vcl.Themes,
   Vcl.Styles,
@@ -222,6 +223,7 @@ ReportMemoryLeaksOnShutdown := True;
     // ---------------------------------------------------------
 
     WindowHelper := TWindowHelper.Create(SettingsManager);
+    RegisterShutdownWindowHelper(WindowHelper);
     ErrorHandler := TUIMessagesHandler.Create;
 
     Application.Initialize;

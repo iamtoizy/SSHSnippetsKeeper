@@ -33,6 +33,7 @@ uses
     Common.Helpers,
     System.StrUtils,
     System.SyncObjs,
+    Vcl.Forms,
     Winapi.Windows
     ;
 
@@ -96,7 +97,8 @@ begin
             end;
         end;
     finally
-        if CompletedSuccessfully and Assigned(FContext) and (FContext.SnippetID > 0) then
+        if CompletedSuccessfully and Assigned(FContext) and (FContext.SnippetID > 0) and
+            ((Application = nil) or not Application.Terminated) then
         begin
             var LSnippetID := FContext.SnippetID;
             var LUserID := FContext.UserID;
@@ -129,7 +131,8 @@ begin
 
         // Коллбэк срабатывает до FreeAndNil(FContext): Stop-панель успевает
         // отвязаться от контекста, пока он ещё жив
-        if Assigned(FContext) and Assigned(FContext.OnTypingFinished) then
+        if Assigned(FContext) and Assigned(FContext.OnTypingFinished) and
+            ((Application = nil) or not Application.Terminated) then
         begin
             var LOnFinished := FContext.OnTypingFinished;
             TThread.Synchronize(nil,

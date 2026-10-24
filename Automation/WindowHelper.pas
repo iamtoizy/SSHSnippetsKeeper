@@ -140,6 +140,7 @@ end;
 procedure TWindowHelper.StopActiveThread;
 var
     Thread: TMacroThread;
+    LDeadline: DWORD;
 begin
     // Единственный владелец жизненного цикла потока - этот метод: pointer
     // забираем сразу, Cancel+WaitFor+Free. При FreeOnTerminate=False
@@ -150,7 +151,13 @@ begin
 
     FMacroThread := nil;
     Thread.Cancel;
-    Thread.WaitFor;
+    LDeadline := GetTickCount + 3000;
+    while WaitForSingleObject(Thread.Handle, 100) = WAIT_TIMEOUT do
+    begin
+        CheckSynchronize;
+        if GetTickCount >= LDeadline then
+            Exit;
+    end;
     Thread.Free;
 end;
 
@@ -425,6 +432,7 @@ begin
         OutputDebugString('[WinHelper] Thread started');
         {$ENDIF}
     except
+        FreeAndNil(FMacroThread);
         Context.Free; // Гарантированно освобождаем при сбое парсинга
         raise;
     end;
