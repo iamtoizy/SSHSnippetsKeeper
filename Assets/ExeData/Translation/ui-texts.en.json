@@ -228,6 +228,9 @@
     "lbHint": {
       "Caption": "Macro steps:"
     },
+    "lbPropsEmpty": {
+      "Caption": "Select a step on the left - its properties will appear here"
+    },
     "lbAddType": {
       "Caption": "Step type:"
     },
@@ -246,11 +249,8 @@
     "lbPreview": {
       "Caption": "Preview:"
     },
-    "bInsert": {
-      "Caption": "Insert at cursor"
-    },
-    "bReplaceAll": {
-      "Caption": "Replace all"
+    "bApply": {
+      "Caption": "Apply"
     },
     "bCancel": {
       "Caption": "Cancel"
@@ -284,7 +284,7 @@
       "Caption": "History…"
     },
     "bMacroBuilder": {
-      "Caption": "Visual macro builder"
+      "Caption": "Builder"
     },
     "nAI": {
       "Caption": "AI Assistant"

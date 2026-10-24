@@ -4,7 +4,7 @@ object MacroBuilderForm: TMacroBuilderForm
   BorderStyle = bsDialog
   Caption = #1050#1086#1085#1089#1090#1088#1091#1082#1090#1086#1088' '#1084#1072#1082#1088#1086#1089#1086#1074
   ClientHeight = 500
-  ClientWidth = 630
+  ClientWidth = 680
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -18,7 +18,7 @@ object MacroBuilderForm: TMacroBuilderForm
   object pnlSteps: TPanel
     Left = 0
     Top = 0
-    Width = 372
+    Width = 422
     Height = 298
     Align = alClient
     BevelOuter = bvNone
@@ -35,7 +35,7 @@ object MacroBuilderForm: TMacroBuilderForm
     object lvSteps: TListView
       Left = 8
       Top = 26
-      Width = 356
+      Width = 406
       Height = 264
       Align = alClient
       Columns = <
@@ -52,7 +52,7 @@ object MacroBuilderForm: TMacroBuilderForm
         item
           Caption = #1064#1072#1075
           Tag = 2
-          Width = 210
+          Width = 310
         end>
       GridLines = True
       HideSelection = False
@@ -60,17 +60,27 @@ object MacroBuilderForm: TMacroBuilderForm
       RowSelect = True
       TabOrder = 0
       ViewStyle = vsReport
+      OnDblClick = lvStepsDblClick
       OnSelectItem = lvStepsSelectItem
     end
   end
   object pnlProps: TPanel
-    Left = 372
+    Left = 422
     Top = 0
     Width = 258
     Height = 298
     Align = alRight
     BevelOuter = bvNone
     TabOrder = 1
+    object lbPropsEmpty: TLabel
+      Left = 8
+      Top = 130
+      Width = 242
+      Height = 60
+      AutoSize = False
+      WordWrap = True
+      Visible = False
+    end
     object lbPropType: TLabel
       Left = 8
       Top = 10
@@ -134,7 +144,7 @@ object MacroBuilderForm: TMacroBuilderForm
   object pnlAdd: TPanel
     Left = 0
     Top = 298
-    Width = 630
+    Width = 680
     Height = 38
     Align = alBottom
     BevelOuter = bvNone
@@ -195,7 +205,7 @@ object MacroBuilderForm: TMacroBuilderForm
   object pnlPreview: TPanel
     Left = 0
     Top = 336
-    Width = 630
+    Width = 680
     Height = 126
     Align = alBottom
     BevelOuter = bvNone
@@ -207,33 +217,45 @@ object MacroBuilderForm: TMacroBuilderForm
       Height = 13
       Caption = #1055#1088#1077#1074#1100#1102':'
     end
-    object mPreview: TMemo
+    object sePreview: TSynEdit
       Left = 8
       Top = 22
-      Width = 614
+      Width = 664
       Height = 96
       Anchors = [akLeft, akTop, akRight, akBottom]
+      Cursor = crDefault
+      DoubleBuffered = True
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
-      Font.Height = -11
+      Font.Height = -12
       Font.Name = 'Consolas'
       Font.Style = []
+      Font.Quality = fqClearTypeNatural
+      ParentDoubleBuffered = False
       ParentFont = False
       ReadOnly = True
-      ScrollBars = ssVertical
       TabOrder = 0
+      UseCodeFolding = False
+      Gutter.Font.Charset = DEFAULT_CHARSET
+      Gutter.Font.Color = clWindowText
+      Gutter.Font.Height = -11
+      Gutter.Font.Name = 'Consolas'
+      Gutter.Font.Style = []
+      Gutter.Font.Quality = fqClearTypeNatural
+      Gutter.Visible = False
+      WordWrap = True
     end
   end
   object pnlButtons: TPanel
     Left = 0
     Top = 462
-    Width = 630
+    Width = 680
     Height = 38
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 4
     object bCancel: TButton
-      Left = 130
+      Left = 430
       Top = 7
       Width = 80
       Height = 25
@@ -242,25 +264,14 @@ object MacroBuilderForm: TMacroBuilderForm
       ModalResult = 2
       TabOrder = 0
     end
-    object bReplaceAll: TButton
-      Left = 220
+    object bApply: TButton
+      Left = 520
       Top = 7
       Width = 130
       Height = 25
       Anchors = [akRight, akBottom]
-      Caption = #1047#1072#1084#1077#1085#1080#1090#1100' '#1074#1089#1105
       TabOrder = 1
-      OnClick = bReplaceAllClick
-    end
-    object bInsert: TButton
-      Left = 360
-      Top = 7
-      Width = 150
-      Height = 25
-      Anchors = [akRight, akBottom]
-      Caption = #1042#1089#1090#1072#1074#1080#1090#1100' '#1074' '#1082#1091#1088#1089#1086#1088
-      TabOrder = 2
-      OnClick = bInsertClick
+      OnClick = bApplyClick
     end
   end
 end

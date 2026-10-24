@@ -10,6 +10,7 @@ uses
     Tests.PasswordService in 'Tests.PasswordService.pas',
     Tests.MacroEngine in 'Tests.MacroEngine.pas',
     Tests.MacroBuilder in 'Tests.MacroBuilder.pas',
+    Tests.MacroSyn in 'Tests.MacroSyn.pas',
     Tests.HotkeyService in 'Tests.HotkeyService.pas',
     Tests.TextDiff in 'Tests.TextDiff.pas',
     Tests.QueryLanguage in 'Tests.QueryLanguage.pas',
@@ -28,6 +29,7 @@ begin
         TDUnitX.RegisterTestFixture(TPasswordServiceTests);
         TDUnitX.RegisterTestFixture(TMacroEngineTests);
         TDUnitX.RegisterTestFixture(TMacroBuilderTests);
+        TDUnitX.RegisterTestFixture(TMacroSynTests);
         TDUnitX.RegisterTestFixture(THotkeyServiceTests);
         TDUnitX.RegisterTestFixture(TTextDiffTests);
         TDUnitX.RegisterTestFixture(TQueryLanguageTests);

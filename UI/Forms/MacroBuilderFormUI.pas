@@ -7,6 +7,7 @@ uses
     Core.Interfaces.App,
     MacroBuilder,
     MacroInputTypes,
+    SynEdit,
     System.Classes,
     System.Generics.Collections,
     Vcl.ComCtrls,
@@ -30,6 +31,7 @@ type
         ebProp2: TEdit;
         lbProp3: TLabel;
         ebProp3: TEdit;
+        lbPropsEmpty: TLabel;
         pnlAdd: TPanel;
         lbAddType: TLabel;
         cbStepType: TComboBox;
@@ -39,20 +41,19 @@ type
         bStepDelete: TButton;
         pnlPreview: TPanel;
         lbPreview: TLabel;
-        mPreview: TMemo;
+        sePreview: TSynEdit;
         pnlButtons: TPanel;
-        bInsert: TButton;
-        bReplaceAll: TButton;
         bCancel: TButton;
+        bApply: TButton;
         procedure FormCreate(Sender: TObject);
         procedure lvStepsSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
+        procedure lvStepsDblClick(Sender: TObject);
         procedure bAddStepClick(Sender: TObject);
         procedure bStepUpClick(Sender: TObject);
         procedure bStepDownClick(Sender: TObject);
         procedure bStepDeleteClick(Sender: TObject);
         procedure PropChanged(Sender: TObject);
-        procedure bInsertClick(Sender: TObject);
-        procedure bReplaceAllClick(Sender: TObject);
+        procedure bApplyClick(Sender: TObject);
     private
         FSteps: TList<TMacroStep>;
         FLoadingProps: Boolean;
@@ -78,6 +79,8 @@ implementation
 uses
     Common.Localization,
     MacroEngine,
+    MacroSyn,
+    SynThemeAdapter,
     System.SysUtils,
     Winapi.Windows
     ;
@@ -93,7 +96,21 @@ const
     VALUE_KINDS: array [0 .. 5] of string =
         ('DATETIME', 'UUID', 'RANDOM', 'COUNTER', 'ENV', 'CLIPBOARD');
 
+    NEWLINE_MARK = #$00B6;
+
 {$R *.dfm}
+
+function TextToDisplay(const S: string): string;
+begin
+    Result := StringReplace(S, #13#10, NEWLINE_MARK, [rfReplaceAll]);
+    Result := StringReplace(Result, #13, NEWLINE_MARK, [rfReplaceAll]);
+    Result := StringReplace(Result, #10, NEWLINE_MARK, [rfReplaceAll]);
+end;
+
+function DisplayToText(const S: string): string;
+begin
+    Result := StringReplace(S, NEWLINE_MARK, #10, [rfReplaceAll]);
+end;
 
 procedure TMacroBuilderForm.FormCreate(Sender: TObject);
 var
@@ -104,7 +121,10 @@ begin
 
     lvSteps.Columns[0].Width := 34;
     lvSteps.Columns[1].Width := 110;
-    lvSteps.Columns[2].Width := 200;
+    lvSteps.Columns[2].Width := 310;
+
+    sePreview.Highlighter := TMacroSyn.Create(Self);
+    TSynThemeAdapter.ApplyTheme(sePreview);
 
     cbStepType.Items.BeginUpdate;
     try
@@ -128,6 +148,14 @@ begin
 
     RefreshList;
     RefreshPreview;
+
+    if lvSteps.Items.Count > 0 then
+    begin
+        lvSteps.Items[0].Selected := True;
+        lvSteps.Items[0].Focused := True;
+    end
+    else
+        LoadStepToProps(-1);
 end;
 
 function TMacroBuilderForm.GetMacroText: string;
@@ -147,37 +175,11 @@ end;
 
 function TMacroBuilderForm.StepSummary(const Step: TMacroStep): string;
 begin
-    case Step.Kind of
-        mskText:
-            Result := Step.Text;
-
-        mskSleep:
-            Result := Format('%d ms', [Step.Num]);
-
-        mskKey:
-            Result := Step.Text;
-
-        mskInput:
-        begin
-            Result := InputTypeTokenName(Step.InputType);
-            if Step.Default <> '' then
-                Result := Result + ' = ' + Step.Default;
-            if Step.Text <> '' then
-                Result := Result + ' - ' + Step.Text;
-        end;
-
-        mskValue:
-        begin
-            Result := Step.ValueKind;
-            if Step.Text <> '' then
-                Result := Result + ': ' + Step.Text;
-        end;
-
-        mskKeyDelay:
-            Result := Format('%d ms', [Step.Num]);
-    else
-        Result := '';
-    end;
+    // Показываем шаг ровно тем кодом, который он даст в сниппете -
+    // так строка в списке читается так же, как в исходнике
+    Result := TextToDisplay(StepToMacro(Step));
+    if Length(Result) > 70 then
+        Result := Copy(Result, 1, 69) + #$2026;
 end;
 
 procedure TMacroBuilderForm.RefreshList;
@@ -202,12 +204,15 @@ begin
     end;
 
     if (Sel >= 0) and (Sel < lvSteps.Items.Count) then
+    begin
         lvSteps.Items[Sel].Selected := True;
+        lvSteps.Items[Sel].Focused := True;
+    end;
 end;
 
 procedure TMacroBuilderForm.RefreshPreview;
 begin
-    mPreview.Text := GetMacroText;
+    sePreview.Text := GetMacroText;
 end;
 
 function TMacroBuilderForm.SelectedIndex: Integer;
@@ -224,19 +229,21 @@ begin
         LoadStepToProps(Item.Index);
 end;
 
+procedure TMacroBuilderForm.lvStepsDblClick(Sender: TObject);
+begin
+    if (SelectedIndex >= 0) and ebProp1.Visible and ebProp1.CanFocus then
+        ebProp1.SetFocus;
+end;
+
 procedure TMacroBuilderForm.LoadStepToProps(Index: Integer);
 var
     Step: TMacroStep;
     I: Integer;
 begin
-    if (Index < 0) or (Index >= FSteps.Count) then
-        Exit;
-
-    Step := FSteps[Index];
     FLoadingProps := True;
     try
-        ebProp1.Text := Step.Text;
-        ebProp2.Text := Step.Default;
+        ebProp1.Text := '';
+        ebProp2.Text := '';
         ebProp3.Text := '';
 
         lbProp1.Visible := False;
@@ -248,12 +255,22 @@ begin
         lbPropType.Visible := False;
         cbPropType.Visible := False;
 
+        if (Index < 0) or (Index >= FSteps.Count) then
+        begin
+            lbPropsEmpty.Visible := True;
+            Exit;
+        end;
+        lbPropsEmpty.Visible := False;
+
+        Step := FSteps[Index];
+
         case Step.Kind of
             mskText:
             begin
                 lbProp1.Caption := TUIStateLoader.GetMessage('MacroBuilder.PropText');
                 lbProp1.Visible := True;
                 ebProp1.Visible := True;
+                ebProp1.Text := TextToDisplay(Step.Text);
             end;
 
             mskSleep, mskKeyDelay:
@@ -269,6 +286,7 @@ begin
                 lbProp1.Caption := TUIStateLoader.GetMessage('MacroBuilder.PropKey');
                 lbProp1.Visible := True;
                 ebProp1.Visible := True;
+                ebProp1.Text := Step.Text;
             end;
 
             mskInput:
@@ -349,7 +367,10 @@ begin
     Step := FSteps[Index];
 
     case Step.Kind of
-        mskText, mskKey:
+        mskText:
+            Step.Text := DisplayToText(ebProp1.Text);
+
+        mskKey:
             Step.Text := ebProp1.Text;
 
         mskValue:
@@ -440,7 +461,10 @@ begin
     RefreshList;
     RefreshPreview;
     if (Index - 1 < lvSteps.Items.Count) then
+    begin
         lvSteps.Items[Index - 1].Selected := True;
+        lvSteps.Items[Index - 1].Focused := True;
+    end;
 end;
 
 procedure TMacroBuilderForm.bStepDownClick(Sender: TObject);
@@ -459,7 +483,10 @@ begin
     RefreshList;
     RefreshPreview;
     if (Index + 1 < lvSteps.Items.Count) then
+    begin
         lvSteps.Items[Index + 1].Selected := True;
+        lvSteps.Items[Index + 1].Focused := True;
+    end;
 end;
 
 procedure TMacroBuilderForm.bStepDeleteClick(Sender: TObject);
@@ -508,7 +535,7 @@ begin
     end;
 end;
 
-procedure TMacroBuilderForm.bInsertClick(Sender: TObject);
+procedure TMacroBuilderForm.bApplyClick(Sender: TObject);
 var
     ErrorText: string;
 begin
@@ -520,20 +547,6 @@ begin
     end;
 
     ModalResult := mrOk;
-end;
-
-procedure TMacroBuilderForm.bReplaceAllClick(Sender: TObject);
-var
-    ErrorText: string;
-begin
-    if not ValidateSteps(ErrorText) then
-    begin
-        MessagesHandler.ShowInfo(ErrorText);
-        ModalResult := mrNone;
-        Exit;
-    end;
-
-    ModalResult := mrYes;
 end;
 
 end.

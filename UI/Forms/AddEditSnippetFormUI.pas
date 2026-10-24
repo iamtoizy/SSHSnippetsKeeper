@@ -881,8 +881,6 @@ begin
 
         Res := Builder.ShowModal;
         if Res = mrOk then
-            mContent.SelText := Builder.GetMacroText
-        else if Res = mrYes then
             mContent.Text := Builder.GetMacroText;
     finally
         Builder.Free;

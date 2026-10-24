@@ -245,6 +245,26 @@ object AddEditSnippetForm: TAddEditSnippetForm
       TabOrder = 1
       object tsSnippet: TTabSheet
         Caption = #1057#1086#1076#1077#1088#1078#1080#1084#1086#1077' '#1089#1085#1080#1087#1087#1077#1090#1072
+        object pEditorTools: TPanel
+          Left = 0
+          Top = 0
+          Width = 521
+          Height = 26
+          Align = alTop
+          BevelOuter = bvNone
+          ParentBackground = False
+          TabOrder = 3
+          object bMacroBuilder: TButton
+            Left = 417
+            Top = 1
+            Width = 100
+            Height = 24
+            Anchors = [akTop, akRight]
+            Caption = #1050#1086#1085#1089#1090#1088#1091#1082#1090#1086#1088
+            TabOrder = 0
+            OnClick = bMacroBuilderClick
+          end
+        end
         object sMiddle: TSplitter
           Left = 0
           Top = 169
@@ -472,25 +492,6 @@ object AddEditSnippetForm: TAddEditSnippetForm
       object tsMacros: TTabSheet
         Caption = #1052#1072#1082#1088#1086#1089#1099
         ImageIndex = 1
-        object pMacroTools: TPanel
-          Left = 0
-          Top = 0
-          Width = 521
-          Height = 34
-          Align = alTop
-          BevelOuter = bvNone
-          ParentBackground = False
-          TabOrder = 1
-          object bMacroBuilder: TButton
-            Left = 8
-            Top = 5
-            Width = 230
-            Height = 24
-            Caption = #1042#1080#1079#1091#1072#1083#1100#1085#1099#1081' '#1082#1086#1085#1089#1090#1088#1091#1082#1090#1086#1088' '#1084#1072#1082#1088#1086#1089#1086#1074
-            TabOrder = 0
-            OnClick = bMacroBuilderClick
-          end
-        end
         object mInfo: TMemo
           Left = 0
           Top = 0

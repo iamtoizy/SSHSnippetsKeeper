@@ -90,6 +90,7 @@ uses
   WorkspaceManagerFormUI in 'UI\Forms\WorkspaceManagerFormUI.pas' {WorkspaceManagerForm},
   SynThemeAdapter in 'UI\Controls\SynThemeAdapter.pas',
   CustomBashSyn in 'UI\Controls\CustomBashSyn.pas',
+  MacroSyn in 'UI\Controls\MacroSyn.pas',
   Core.BashCompletionEngine in 'Core\Core.BashCompletionEngine.pas',
   Common.Consts in 'Common\Common.Consts.pas',
   Common.Helpers in 'Common\Common.Helpers.pas',

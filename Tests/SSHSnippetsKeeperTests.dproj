@@ -45,7 +45,7 @@
     <PropertyGroup Condition="'$(Base)'!=''">
         <SanitizedProjectName>SSHSnippetsKeeperTests</SanitizedProjectName>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Winapi;Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
-        <DCC_UnitSearchPath>..;..\Core;..\Core\Services;..\Core\Entities;..\Data;..\Data\Repositories;..\Common;..\UI\Helpers;..\MacroEngine;..\Automation;..\ThirdParty;..\UI\ViewModels;..\UI\Controllers;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>..;..\Core;..\Core\Services;..\Core\Entities;..\Data;..\Data\Repositories;..\Common;..\UI\Helpers;..\MacroEngine;..\Automation;..\ThirdParty;..\UI\ViewModels;..\UI\Controllers;..\UI\Controls;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <DCC_DcuOutput>.\dcu\$(Platform)\$(Config)</DCC_DcuOutput>
         <DCC_ExeOutput>.\bin\$(Platform)\$(Config)</DCC_ExeOutput>
     </PropertyGroup>

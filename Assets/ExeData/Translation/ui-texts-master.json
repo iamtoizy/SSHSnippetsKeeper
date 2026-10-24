@@ -228,6 +228,9 @@
     "lbHint": {
       "Caption": "Шаги макроса:"
     },
+    "lbPropsEmpty": {
+      "Caption": "Выбери шаг слева - здесь появятся его свойства"
+    },
     "lbAddType": {
       "Caption": "Тип шага:"
     },
@@ -246,11 +249,8 @@
     "lbPreview": {
       "Caption": "Превью:"
     },
-    "bInsert": {
-      "Caption": "Вставить в курсор"
-    },
-    "bReplaceAll": {
-      "Caption": "Заменить всё"
+    "bApply": {
+      "Caption": "Применить"
     },
     "bCancel": {
       "Caption": "Отмена"
@@ -284,7 +284,7 @@
       "Caption": "История…"
     },
     "bMacroBuilder": {
-      "Caption": "Визуальный конструктор макросов"
+      "Caption": "Конструктор"
     },
     "nAI": {
       "Caption": "ИИ-ассистент"
