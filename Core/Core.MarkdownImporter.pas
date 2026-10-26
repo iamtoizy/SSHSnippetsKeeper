@@ -304,6 +304,7 @@ var
     User: TUserDTO;
     FileList: TList<string>;
 
+    {$WARN SYMBOL_PLATFORM OFF}
     procedure CollectFiles(const ADir: string);
     var
         SubDirs, Found: TArray<string>;
@@ -337,6 +338,7 @@ var
         for F in Found do
             FileList.Add(F);
     end;
+    {$WARN SYMBOL_PLATFORM ON}
 
 begin
     if not TDirectory.Exists(BaseDir) then Exit;

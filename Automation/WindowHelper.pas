@@ -51,9 +51,6 @@ type
         procedure PressKey(Key: Word; Modifiers: Word; Context: TMacroContext);
     private
         function KeyIntervalMs(Context: TMacroContext): Integer;
-
-        property Window: TWindowHelperInfo read FWindowHelperInfo;
-        property MacroEngine: TMacroEngine read FMacroEngine;
     end;
 
 implementation

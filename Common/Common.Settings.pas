@@ -47,6 +47,7 @@ implementation
 uses
     Common.Helpers,
     JSONSerializer,
+    System.Generics.Collections,
     System.Hash,
     System.NetEncoding,
     System.IOUtils,

@@ -72,9 +72,6 @@ uses
     FireDAC.Phys.SQLiteWrapper
     ;
 
-var
-    GDriverLink: TFDPhysSQLiteDriverLink;
-
 function TMultiSelectTests.SchemaPath(const Filename: string): string;
 var
     Dir: string;
