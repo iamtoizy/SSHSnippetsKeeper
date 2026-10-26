@@ -483,6 +483,11 @@ begin
             LoadUsersToComboBox;  // Сначала загружаем выпадающий список
             cbUserChange(cbUser); // Вызываем OnChange, что инициирует ReloadUI с правильным ID
 
+            // Возвращаем фокус дереву, чтобы на восстановленном выделении
+            // был виден пунктирный прямоугольник
+            if tvCategories.CanFocus then
+                tvCategories.SetFocus;
+
             ShowSimpleToast(TUIStateLoader.GetMessage('DB.OpenedSuccess'));
 
             // Авто-синхронизация при старте
