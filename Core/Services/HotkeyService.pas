@@ -124,6 +124,17 @@ begin
     RegisterAction('TMainForm.actFavSlot8', 'Actions.MainForm.Favorites.Slot8', 'Actions.MainForm.Favorites.Caption', 'Alt+8');
     RegisterAction('TMainForm.actFavSlot9', 'Actions.MainForm.Favorites.Slot9', 'Actions.MainForm.Favorites.Caption', 'Alt+9');
     RegisterAction('TMainForm.actFavSlot0', 'Actions.MainForm.Favorites.Slot0', 'Actions.MainForm.Favorites.Caption', 'Alt+0');
+
+    // --- БЛОК МЕНЮ СНИППЕТА (Контекстное меню списка сниппетов) ---
+    RegisterAction('TMainForm.actRunSnippet',            'Actions.MainForm.SnippetMenu.RunSnippet',            'Actions.MainForm.SnippetMenu.Caption', 'Ctrl+R');
+    RegisterAction('TMainForm.actDryRunSnippet',         'Actions.MainForm.SnippetMenu.DryRunSnippet',         'Actions.MainForm.SnippetMenu.Caption', 'Ctrl+P');
+    RegisterAction('TMainForm.actRunSequence',           'Actions.MainForm.SnippetMenu.RunSequence',           'Actions.MainForm.SnippetMenu.Caption', 'Ctrl+Shift+R');
+    RegisterAction('TMainForm.actChainCreateFromSnippet','Actions.MainForm.SnippetMenu.ChainCreateFromSnippet','Actions.MainForm.SnippetMenu.Caption', 'Ctrl+Alt+C');
+    RegisterAction('TMainForm.actSnippetHistory',        'Actions.MainForm.SnippetMenu.SnippetHistory',        'Actions.MainForm.SnippetMenu.Caption', 'Ctrl+H');
+    RegisterAction('TMainForm.actAddTagToSnippets',      'Actions.MainForm.SnippetMenu.AddTagToSnippets',      'Actions.MainForm.SnippetMenu.Caption', 'Ctrl+Alt+T');
+    RegisterAction('TMainForm.actRemoveTagFromSnippets', 'Actions.MainForm.SnippetMenu.RemoveTagFromSnippets', 'Actions.MainForm.SnippetMenu.Caption', 'Ctrl+Alt+R');
+    RegisterAction('TMainForm.actMoveToCategory',        'Actions.MainForm.SnippetMenu.MoveToCategory',        'Actions.MainForm.SnippetMenu.Caption', 'Ctrl+Alt+M');
+    RegisterAction('TMainForm.actExportSnippets',        'Actions.MainForm.SnippetMenu.ExportSnippets',        'Actions.MainForm.SnippetMenu.Caption', 'Ctrl+E');
     //
     // TAddEditSnippetForm
     //

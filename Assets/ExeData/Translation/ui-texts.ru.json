@@ -1276,6 +1276,18 @@
           "Slot8": "Слот 8",
           "Slot9": "Слот 9",
           "Slot0": "Слот 0"
+        },
+        "SnippetMenu": {
+          "Caption": "Меню сниппета",
+          "RunSnippet": "Запустить",
+          "DryRunSnippet": "Предпросмотр",
+          "RunSequence": "Выполнение по порядку",
+          "ChainCreateFromSnippet": "Создать цепочку из сниппета",
+          "SnippetHistory": "История версий…",
+          "AddTagToSnippets": "Добавить тег к выделенным сниппетам",
+          "RemoveTagFromSnippets": "Удалить тег у выделенных сниппетов",
+          "MoveToCategory": "Переместить в категорию",
+          "ExportSnippets": "Экспорт сниппетов"
         }
       },
       "AddEditSnippetForm": {

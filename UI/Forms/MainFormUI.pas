@@ -691,7 +691,7 @@ end;
 procedure TMainForm.UpdateMenuState;
 var
     Node: TTreeNode;
-    IsVirtual, IsWorkspace: Boolean;
+    IsVirtual, IsWorkspace, SingleSelection: Boolean;
 begin
     // Если база данных закрыта, элементы меню контролирует UpdateUI(bfsDBDisconnected)
     if (not Assigned(AppContext.DatabaseManager)) or (not AppContext.DatabaseManager.IsConnected) then
@@ -711,12 +711,13 @@ begin
     // --- СНИППЕТЫ ---
     // Сниппеты можно добавлять только в конкретные категории
     actAddSnippet.Enabled := (Node <> nil) and not IsVirtual and not IsWorkspace;
-    actDeleteSnippet.Enabled := (lvSnippets.Selected <> nil);
-    actEditSnippet.Enabled := (lvSnippets.Selected <> nil);
-    actRunSnippet.Enabled := (lvSnippets.Selected <> nil);
-    actDryRunSnippet.Enabled := (lvSnippets.Selected <> nil);
-    actSnippetHistory.Enabled := (lvSnippets.Selected <> nil);
-    actChainCreateFromSnippet.Enabled := (lvSnippets.Selected <> nil);
+    SingleSelection := (lvSnippets.Selected <> nil) and (lvSnippets.SelCount = 1);
+    actDeleteSnippet.Enabled := SingleSelection;
+    actEditSnippet.Enabled := SingleSelection;
+    actRunSnippet.Enabled := SingleSelection;
+    actDryRunSnippet.Enabled := SingleSelection;
+    actSnippetHistory.Enabled := SingleSelection;
+    actChainCreateFromSnippet.Enabled := SingleSelection;
     actRunSequence.Enabled := (lvSnippets.SelCount >= 2);
     actExportSnippets.Enabled := (lvSnippets.Selected <> nil);
     actAddTagToSnippets.Enabled := (lvSnippets.Selected <> nil);
@@ -751,14 +752,14 @@ begin
 
     // В обычных списках - только добавить/убрать; в избранном - только убрать
     actToggleFavorite.Visible := (not InFavoritesView) or IsFav;
-    actToggleFavorite.Enabled := HasSelection;
+    actToggleFavorite.Enabled := HasSelection and (lvSnippets.SelCount = 1);
 
     // Перестановка и перетаскивание имеют смысл только внутри избранного
     puFavMove.Visible := InFavoritesView;
-    actFavMoveTop.Enabled := IsFav;
-    actFavMoveUp.Enabled := IsFav;
-    actFavMoveDown.Enabled := IsFav;
-    actFavMoveEnd.Enabled := IsFav;
+    actFavMoveTop.Enabled := IsFav and (lvSnippets.SelCount = 1);
+    actFavMoveUp.Enabled := IsFav and (lvSnippets.SelCount = 1);
+    actFavMoveDown.Enabled := IsFav and (lvSnippets.SelCount = 1);
+    actFavMoveEnd.Enabled := IsFav and (lvSnippets.SelCount = 1);
 
     if IsFav then
         actToggleFavorite.Caption := TUIStateLoader.GetMessage('Actions.MainForm.Favorites.ToggleRemove')

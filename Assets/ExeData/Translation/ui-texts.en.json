@@ -1276,6 +1276,18 @@
           "Slot8": "Slot 8",
           "Slot9": "Slot 9",
           "Slot0": "Slot 0"
+        },
+        "SnippetMenu": {
+          "Caption": "Snippet menu",
+          "RunSnippet": "Run",
+          "DryRunSnippet": "Dry run",
+          "RunSequence": "Running in order",
+          "ChainCreateFromSnippet": "Create chain from snippet",
+          "SnippetHistory": "Version history…",
+          "AddTagToSnippets": "Add tag to selected snippets",
+          "RemoveTagFromSnippets": "Remove tag from selected snippets",
+          "MoveToCategory": "Move to category",
+          "ExportSnippets": "Export snippets"
         }
       },
       "AddEditSnippetForm": {

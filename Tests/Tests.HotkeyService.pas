@@ -19,6 +19,8 @@ type
         [Test]
         procedure KnownAction_HasDefaultShortCut;
         [Test]
+        procedure SnippetMenuActions_RegisteredWithDefaults;
+        [Test]
         procedure UnknownAction_ReturnsZeroShortCut;
         [Test]
         procedure Conflict_DetectedWithinSameForm;
@@ -62,6 +64,35 @@ begin
     Svc := NewService;
     try
         Assert.IsTrue(Svc.GetActionShortCut('TMainForm.actAddSnippet') <> 0);
+    finally
+        Svc.Free;
+    end;
+end;
+
+procedure THotkeyServiceTests.SnippetMenuActions_RegisteredWithDefaults;
+var
+    Svc: THotkeyService;
+begin
+    Svc := NewService;
+    try
+        Assert.AreEqual(Integer(TextToShortCut('Ctrl+R')),
+            Integer(Svc.GetActionShortCut('TMainForm.actRunSnippet')));
+        Assert.AreEqual(Integer(TextToShortCut('Ctrl+P')),
+            Integer(Svc.GetActionShortCut('TMainForm.actDryRunSnippet')));
+        Assert.AreEqual(Integer(TextToShortCut('Ctrl+Shift+R')),
+            Integer(Svc.GetActionShortCut('TMainForm.actRunSequence')));
+        Assert.AreEqual(Integer(TextToShortCut('Ctrl+Alt+C')),
+            Integer(Svc.GetActionShortCut('TMainForm.actChainCreateFromSnippet')));
+        Assert.AreEqual(Integer(TextToShortCut('Ctrl+H')),
+            Integer(Svc.GetActionShortCut('TMainForm.actSnippetHistory')));
+        Assert.AreEqual(Integer(TextToShortCut('Ctrl+Alt+T')),
+            Integer(Svc.GetActionShortCut('TMainForm.actAddTagToSnippets')));
+        Assert.AreEqual(Integer(TextToShortCut('Ctrl+Alt+R')),
+            Integer(Svc.GetActionShortCut('TMainForm.actRemoveTagFromSnippets')));
+        Assert.AreEqual(Integer(TextToShortCut('Ctrl+Alt+M')),
+            Integer(Svc.GetActionShortCut('TMainForm.actMoveToCategory')));
+        Assert.AreEqual(Integer(TextToShortCut('Ctrl+E')),
+            Integer(Svc.GetActionShortCut('TMainForm.actExportSnippets')));
     finally
         Svc.Free;
     end;
