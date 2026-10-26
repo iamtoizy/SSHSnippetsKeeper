@@ -214,12 +214,13 @@ begin
 
     TargetUserID := GetWorkspaceUserID(Node);
     NewCatName := TUIStateLoader.GetMessage('Category.NewDefaultName');
-    FContext.MessagesHandler.AskInput(
+    if not FContext.MessagesHandler.AskInput(
         TUIStateLoader.GetMessage('Category.NewDefaultName'),
         TUIStateLoader.GetMessage('Category.NewNamePrompt'),
-        NewCatName);
-    NewCatName := Trim(NewCatName);
+        NewCatName
+    ) then Exit;
 
+    NewCatName := Trim(NewCatName);
     if NewCatName = '' then
         Exit;
 
