@@ -131,6 +131,7 @@ procedure TBashCompletionEngine.LoadFromJsonFile(const FilePath: string);
 var
     JsonText: string;
     JsonRoot: TJSONObject;
+    CompletionObj, TreeVal: TJSONValue;
 begin
     if not TFile.Exists(FilePath) then
         Exit;
@@ -144,8 +145,15 @@ begin
 
     if Assigned(JsonRoot) then
     try
+        TreeVal := nil;
+        CompletionObj := JsonRoot.FindValue('completion');
+        if CompletionObj is TJSONObject then
+            TreeVal := TJSONObject(CompletionObj).FindValue('tree');
+        if not (TreeVal is TJSONObject) then
+            TreeVal := JsonRoot;
+
         FRoot.SubCommands.Clear; // Очищаем старое дерево
-        ParseJsonNode(FRoot, JsonRoot);
+        ParseJsonNode(FRoot, TJSONObject(TreeVal));
     finally
         JsonRoot.Free;
     end;

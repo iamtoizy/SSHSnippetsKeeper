@@ -217,7 +217,7 @@ brcc32 -fo000_schema_init.res "Database\Schema\000_schema_init.rc"
 |---|---|
 | `settings.json` | Пользовательские настройки (создаётся из `settings.template.json`; в git не попадает) |
 | `Translation\ui-texts.ru.json`, `ui-texts.en.json` | Локализация |
-| `bash-autocomplete.txt`, `extra-commands.json` | База автодополнения bash |
+| `bash.autocomplete.json` | База автодополнения bash: команды и дерево подкоманд |
 | `Python\` | Встраиваемый Python (см. выше) |
 | `Styles\` | VCL-стили интерфейса (.vsf); без них доступен только стандартный стиль Windows |
 

@@ -232,7 +232,7 @@ end;
 
 function TSettingsManager.GetBashPath: string;
 begin
-    Result := ResolvePath('bash-autocomplete.txt');
+    Result := ResolvePath('bash.autocomplete.json');
 end;
 
 function TSettingsManager.GetCurrentLanguage: string;
@@ -385,13 +385,42 @@ end;
 
 procedure TSettingsManager.Load;
 var
-    JsonString: string;
+    JsonString, Cmd: string;
     Path: string;
+    JsonRoot: TJSONObject;
+    CompletionObj, CommandsArr: TJSONValue;
+    I: Integer;
 begin
     Path := GetBashPath;
     if TFile.Exists(Path) then
     try
-        FBashAutocomplete.LoadFromFile(Path, TEncoding.UTF8);
+        JsonString := TFile.ReadAllText(Path, TEncoding.UTF8);
+        JsonRoot := TJSONObject.ParseJSONValue(JsonString) as TJSONObject;
+        if Assigned(JsonRoot) then
+        try
+            CompletionObj := JsonRoot.FindValue('completion');
+            if CompletionObj is TJSONObject then
+            begin
+                CommandsArr := TJSONObject(CompletionObj).FindValue('commands');
+                if CommandsArr is TJSONArray then
+                begin
+                    FBashAutocomplete.BeginUpdate;
+                    try
+                        FBashAutocomplete.Clear;
+                        for I := 0 to TJSONArray(CommandsArr).Count - 1 do
+                        begin
+                            Cmd := Trim(TJSONArray(CommandsArr).Items[I].Value);
+                            if Cmd <> '' then
+                                FBashAutocomplete.Add(Cmd);
+                        end;
+                    finally
+                        FBashAutocomplete.EndUpdate;
+                    end;
+                end;
+            end;
+        finally
+            JsonRoot.Free;
+        end;
     except
         on E: Exception do
             LogException('TSettingsManager.Load(BashAutocomplete)', E);

@@ -330,7 +330,7 @@ begin
 
     // Создаем движок автокомплита
     FCompletionEngine := TBashCompletionEngine.Create(FBasicCommands);
-    FCompletionEngine.LoadFromJsonFile(ResolvePath('extra-commands.json'));
+    FCompletionEngine.LoadFromJsonFile(ResolvePath('bash.autocomplete.json'));
 
     // Сразу применяем подсветку синтаксиса до показа формы (не ждем таймер)
     SetSyntax;
