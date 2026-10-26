@@ -45,6 +45,7 @@ type
         function ValidateRows(out BadIndex: Integer): Boolean;
     protected
         procedure DoAfterMonitorDpiChanged(OldDPI, NewDPI: Integer); override;
+        procedure DoShownOnScreen; override;
     public
         procedure InitializeParams(const Params: TArray<TMacroParamDescriptor>);
         function CollectedValues: TArray<string>;
@@ -302,6 +303,16 @@ begin
     inherited;
     if Length(FInputs) > 0 then
         AdjustLayout;
+end;
+
+procedure TParamsForm.DoShownOnScreen;
+begin
+    inherited;
+
+    ForceForeground;
+
+    if (Length(FInputs) > 0) and FInputs[0].CanFocus then
+        FInputs[0].SetFocus;
 end;
 
 procedure TParamsForm.EditKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);

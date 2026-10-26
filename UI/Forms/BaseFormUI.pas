@@ -82,6 +82,7 @@ type
         procedure WarmUpPaint;
         procedure PrepareGuardedShow;
         procedure FinishGuardedShow;
+        procedure ForceForeground;
         procedure ApplyLanguage; virtual;
         // Открыть справку с произвольным HTML-телом (переиспользует FCustomHelpForm)
         procedure ShowCustomHelpHtml(const ATitle, ABodyHtml: string);
@@ -419,6 +420,39 @@ begin
 
     if FShowGuardPending then
         FinishGuardedShow;
+end;
+
+procedure TBaseForm.ForceForeground;
+var
+    ForeWnd: HWND;
+    ForeThread, ThisThread: DWORD;
+    Attached: Boolean;
+begin
+    if not HandleAllocated then
+        Exit;
+
+    ForeWnd := GetForegroundWindow;
+    if ForeWnd = Handle then
+        Exit;
+
+    Attached := False;
+    ThisThread := GetCurrentThreadId;
+    ForeThread := 0;
+    if ForeWnd <> 0 then
+        ForeThread := GetWindowThreadProcessId(ForeWnd, nil);
+
+    if (ForeThread <> 0) and (ForeThread <> ThisThread) then
+        Attached := AttachThreadInput(ThisThread, ForeThread, True);
+    try
+        SetWindowPos(Handle, HWND_TOPMOST, 0, 0, 0, 0,
+            SWP_NOMOVE or SWP_NOSIZE or SWP_NOACTIVATE);
+        SetWindowPos(Handle, HWND_NOTOPMOST, 0, 0, 0, 0,
+            SWP_NOMOVE or SWP_NOSIZE or SWP_NOACTIVATE);
+        SetForegroundWindow(Handle);
+    finally
+        if Attached then
+            AttachThreadInput(ThisThread, ForeThread, False);
+    end;
 end;
 
 function TBaseForm.GetAppContext: IAppContext;

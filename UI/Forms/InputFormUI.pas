@@ -38,16 +38,18 @@ type
         FResultValue: string;
         FPrompt: string;
         FStatusText: string;
-        procedure SetPrompt(const AValue: string);
-        procedure SetStatusText(const AText: string);
-        procedure ApplyStatusText;
-        procedure AdjustLayout;
-        function DpiScale(AValue: Integer): Integer;
-        function TargetWorkArea: TRect;
-        procedure FillSelectItems;
-        procedure ValidateInput;
+    procedure SetPrompt(const AValue: string);
+    procedure SetStatusText(const AText: string);
+    procedure ApplyStatusText;
+    procedure AdjustLayout;
+    procedure FocusInput;
+    function DpiScale(AValue: Integer): Integer;
+    function TargetWorkArea: TRect;
+    procedure FillSelectItems;
+    procedure ValidateInput;
     protected
         procedure DoAfterMonitorDpiChanged(OldDPI, NewDPI: Integer); override;
+        procedure DoShownOnScreen; override;
     public
         property ResultValue: string read FResultValue;
     end;
@@ -204,10 +206,28 @@ begin
     begin
         ebEdit.Visible := False;
         cbSelect.Visible := True;
-        cbSelect.SetFocus;
+    end;
+
+    FocusInput;
+end;
+
+procedure TInputForm.FocusInput;
+begin
+    if FInputType = mitSelect then
+    begin
+        if cbSelect.CanFocus then
+            cbSelect.SetFocus;
     end
-    else
+    else if ebEdit.CanFocus then
         ebEdit.SetFocus;
+end;
+
+procedure TInputForm.DoShownOnScreen;
+begin
+    inherited;
+
+    ForceForeground;
+    FocusInput;
 end;
 
 procedure TInputForm.FillSelectItems;
