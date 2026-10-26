@@ -1,4 +1,7 @@
 PRAGMA foreign_keys = OFF;
+DELETE FROM snippet_chain_steps;
+DELETE FROM snippet_chains;
+DELETE FROM snippet_favorites;
 DELETE FROM snippet_runs;
 DELETE FROM snippet_stats;
 DELETE FROM snippet_tags;
@@ -67,7 +70,12 @@ INSERT INTO snippet_categories(id, user_id, name, parent_id) VALUES
 (38, 5, 'SQLite',       NULL),
 (39, 5, 'Redis',        NULL),
 (40, 5, 'Storage',      NULL),
-(41, 5, 'Backup',       NULL);
+(41, 5, 'Backup',       NULL),
+
+-- Макросы (демо движка макросов)
+(42, 1, 'Macros',       NULL),
+(43, 3, 'Macros',       NULL),
+(44, 4, 'Macros',       NULL);
 
 -- TAGS (глобальные)
 INSERT INTO tags(id, name) VALUES
@@ -80,21 +88,22 @@ INSERT INTO tags(id, name) VALUES
 (25, 'performance'),(26, 'storage'),   (27, 'users'),      (28, 'dns'),
 (29, 'ssl'),        (30, 'prometheus'),(31, 'grafana'),    (32, 'alerting'),
 (33, 'deploy'),     (34, 'rollback'),  (35, 'scaling'),    (36, 'debug'),
-(37, 'cleanup'),    (38, 'automation'),(39, 'config'),     (40, 'troubleshoot');
+(37, 'cleanup'),    (38, 'automation'),(39, 'config'),     (40, 'troubleshoot'),
+(41, 'macros');
 
--- SNIPPETS (84 записи с явным указанием is_security_ignored)
+-- SNIPPETS (96 записей с явным указанием is_security_ignored)
 INSERT INTO snippets(id, user_id, category_id, title, content, comment, is_security_ignored) VALUES
 -- Local User (1) - категории 1-9
-(1,  1, 4,  'Очистка логов',           'find /var/log -type f -name "*.log" -delete',              'Использовать осторожно! Сначала проверить через find ... -print', 0),
+(1,  1, 4,  'Очистка логов',           'find /var/log -type f -name "*.log" -delete',              'Использовать осторожно! Сначала проверить через find ... -print', 1),
 (2,  1, 4,  'Архивация директории',    'tar -czf backup.tar.gz /home',                             'Для инкрементального бэкапа использовать --listed-incremental', 0),
-(3,  1, 4,  'Поиск больших файлов',    'find / -xdev -type f -size +100M -exec ls -lh {} \;',       '', 0),
+(3,  1, 4,  'Поиск больших файлов',    'find / -xdev -type f -size +100M | xargs -r ls -lh',        '', 0),
 (4,  1, 4,  'Подсчёт строк в файлах',  'wc -l /var/log/*.log | sort -n',                            '', 0),
 (5,  1, 4,  'Замена текста в файлах',  'sed -i "s/old/new/g" config.yml',                           'Обязательно сделать бэкап перед запуском', 0),
 (6,  1, 5,  'Проверка открытых портов','ss -tulpn',                                                 '', 0),
 (7,  1, 5,  'Трассировка маршрута',    'traceroute google.com',                                     '', 0),
 (8,  1, 5,  'DNS lookup',              'dig +short example.com A',                                  'Для обратного DNS: dig -x IP', 0),
 (9,  1, 2,  'Список контейнеров',      'docker ps -a',                                              '', 0),
-(10, 1, 2,  'Очистка Docker',          'docker system prune -a',                                    'ВНИМАНИЕ: удаляет ВСЕ неиспользуемые образы, контейнеры и сети!', 0),
+(10, 1, 2,  'Очистка Docker',          'docker system prune -a',                                    'ВНИМАНИЕ: удаляет ВСЕ неиспользуемые образы, контейнеры и сети!', 1),
 (11, 1, 3,  'Перезапуск deployment',   'kubectl rollout restart deployment nginx',                    '', 0),
 (12, 1, 3,  'Получение логов pod',     'kubectl logs my-pod --tail=200',                            'Для предыдущего контейнера: --previous', 0),
 (13, 1, 6,  'Перезапуск сервиса',      'systemctl restart nginx',                                   '', 0),
@@ -125,14 +134,14 @@ INSERT INTO snippets(id, user_id, category_id, title, content, comment, is_secur
 (36, 2, 14, 'Инфо Redis',              'redis-cli INFO memory',                                     '', 0),
 (37, 2, 14, 'Все ключи по паттерну',   'redis-cli KEYS "session:*"',                                'НЕ использовать на проде! Использовать SCAN вместо KEYS', 0),
 (38, 2, 14, 'Удаление по паттерну',    'redis-cli EVAL "for i,k in ipairs(redis.call(KEYS,ARGV[1])) do redis.call(DEL,k) end return 1" 0 "cache:*"', 'Только для staging/dev', 0),
-(39, 2, 14, 'Flush DB',                'redis-cli FLUSHDB',                                         'ТОЛЬКО на staging! На проде = катастрофа', 0),
+(39, 2, 14, 'Flush DB',                'redis-cli FLUSHDB',                                         'ТОЛЬКО на staging! На проде = катастрофа', 1),
 (40, 2, 16, 'Nginx конфиг',            'nginx -t',                                                  'Проверка синтаксиса конфигурации', 0),
 (41, 2, 17, 'История коммитов',        'git log --oneline --graph -20',                             '', 0),
 (42, 2, 17, 'Поиск по истории',        'git log -S "password" --all --oneline',                     'Поиск утечек секретов в истории репозитория', 0),
 (43, 2, 17, 'Отмена последнего коммита','git reset --soft HEAD~1',                                   '--soft сохраняет изменения в staging, --hard удаляет', 0),
 
 -- DevOps (3) - категории 18-25
-(44, 3, 19, 'Список EC2 инстансов',    'aws ec2 describe-instances --query "Reservations[].Instances[].{ID:InstanceId,State:State.Name}" --output table', '', 0),
+(44, 3, 19, 'Список EC2 инстансов',    'aws ec2 describe-instances --query "Reservations[].Instances[].[InstanceId,State.Name]" --output table', '', 0),
 (45, 3, 19, 'S3 размер бакета',        'aws s3 ls s3://my-bucket --recursive --summarize --human-readable', 'Для больших бакетов может занять минуты', 0),
 (46, 3, 20, 'Terraform plan',          'terraform plan -out=tfplan',                                'ВСЕГДА делать plan перед apply', 0),
 (47, 3, 20, 'Terraform apply',         'terraform apply tfplan',                                    '', 0),
@@ -144,7 +153,7 @@ INSERT INTO snippets(id, user_id, category_id, title, content, comment, is_secur
 (53, 3, 23, 'Запуск playbook',         'ansible-playbook deploy.yml --limit prod',                  '--limit ограничивает выполнение группой хостов', 0),
 (54, 3, 23, 'Проверка синтаксиса',     'ansible-playbook deploy.yml --syntax-check',                'Быстрая проверка без подключения к хостам', 0),
 (55, 3, 24, 'Список контейнеров',      'docker ps -a',                                              '', 0),
-(56, 3, 24, 'Очистка Docker',          'docker system prune -a',                                    'ВНИМАНИЕ: удаляет ВСЕ неиспользуемые образы!', 0),
+(56, 3, 24, 'Очистка Docker',          'docker system prune -a',                                    'ВНИМАНИЕ: удаляет ВСЕ неиспользуемые образы!', 1),
 (57, 3, 24, 'Логи контейнера',         'docker logs --tail 100 -f my-container',                    'Без -f покажет только последние строки и выйдет', 0),
 (58, 3, 25, 'Перезапуск deployment',   'kubectl rollout restart deployment nginx',                  '', 0),
 (59, 3, 25, 'Получение логов pod',     'kubectl logs my-pod --tail=200',                            'Для предыдущего контейнера: --previous', 0),
@@ -159,9 +168,9 @@ INSERT INTO snippets(id, user_id, category_id, title, content, comment, is_secur
 (66, 4, 31, 'Генерация SSH ключа',     'ssh-keygen -t ed25519 -C "admin@server"',                   'ed25519 предпочтительнее RSA', 0),
 (67, 4, 31, 'Копирование ключа',       'ssh-copy-id user@remote-host',                              '', 0),
 (68, 4, 31, 'Туннель SSH',             'ssh -L 3306:db-host:3306 bastion',                          'Проброс порта БД через bastion-хост', 0),
-(69, 4, 32, 'Блокировка IP',           'iptables -A INPUT -s 192.168.1.100 -j DROP',                'Для постоянной блокировки сохранить через iptables-save', 0),
+(69, 4, 32, 'Блокировка IP',           'iptables -A INPUT -s 192.168.1.100 -j DROP',                'Для постоянной блокировки сохранить через iptables-save', 1),
 (70, 4, 32, 'Правила iptables',        'iptables -L -n -v --line-numbers',                          '-v показывает счётчики пакетов', 0),
-(71, 4, 34, 'Список EC2 инстансов',    'aws ec2 describe-instances --query "Reservations[].Instances[].{ID:InstanceId,State:State.Name}" --output table', '', 0),
+(71, 4, 34, 'Список EC2 инстансов',    'aws ec2 describe-instances --query "Reservations[].Instances[].[InstanceId,State.Name]" --output table', '', 0),
 (72, 4, 34, 'S3 размер бакета',        'aws s3 ls s3://my-bucket --recursive --summarize --human-readable', 'Для больших бакетов может занять минуты', 0),
 (73, 4, 35, 'Terraform plan',          'terraform plan -out=tfplan',                                'ВСЕГДА делать plan перед apply', 0),
 (74, 4, 35, 'Terraform apply',         'terraform apply tfplan',                                    '', 0),
@@ -176,7 +185,61 @@ INSERT INTO snippets(id, user_id, category_id, title, content, comment, is_secur
 (81, 5, 37, 'Активные соединения',     'SELECT pid, usename, application_name, state FROM pg_stat_activity;', 'state = idle in transaction — потенциальная проблема', 0),
 (82, 5, 37, 'Размер таблиц',           'SELECT schemaname, relname, pg_size_pretty(pg_total_relation_size(relid)) FROM pg_catalog.pg_statio_user_tables ORDER BY pg_total_relation_size(relid) DESC;', '', 0),
 (83, 5, 38, 'Оптимизация SQLite',      'PRAGMA optimize;',                                          'Выполнять периодически, не перед каждым запросом', 0),
-(84, 5, 38, 'Проверка целостности',    'PRAGMA integrity_check;',                                   'Возвращает "ok" если БД не повреждена', 0);
+(84, 5, 38, 'Проверка целостности',    'PRAGMA integrity_check;',                                   'Возвращает "ok" если БД не повреждена', 0),
+
+-- Макросы: самодокументация движка (Local User, категория 42)
+(85, 1, 42, 'SSH-вход с вводом пароля',
+'ssh admin@{INPUT [STRING:host.example.com]Хост}
+{SLEEP 1500}
+{INPUT [PASSWORD]Пароль}
+{ENTER}',
+'INPUT [STRING] спрашивает хост, [PASSWORD] скрывает ввод, SLEEP ждёт указанные мс, ENTER жмёт Enter. Пауза нужна, чтобы сервер успел показать приглашение', 0),
+(86, 1, 42, 'Очистка Docker с подтверждением',
+'{INPUT [CONFIRM]Выполнить очистку Docker?}
+docker system prune -af --volumes',
+'CONFIRM задаёт вопрос да/нет: при отказе остаток сниппета не выполняется. Так стоит оформлять любые необратимые команды', 1),
+(87, 1, 42, 'Выбор окружения',
+'kubectl config use-context {INPUT [SELECT:dev|staging|prod]Кластер}
+kubectl get nodes',
+'SELECT показывает выпадающий список вариантов (разделитель |), по умолчанию выбран первый', 0),
+(88, 1, 42, 'Бэкап с меткой времени',
+'tar -czf /tmp/backup-{DATETIME:yyyyMMdd-HHmmss}.tar.gz --exclude="*.cache" /home',
+'DATETIME вычисляется при каждом запуске, поэтому старые архивы не перезаписываются. Формат строки — как в Delphi FormatDateTime', 0),
+(89, 1, 42, 'Паузы, клавиши и очистка ввода',
+'{SENDKEY CTRL+L}
+{KEYDELAY 30}
+sudo systemctl restart {INPUT [STRING:nginx]Сервис}
+{SLEEP 800}
+systemctl status',
+'SENDKEY жмёт сочетания клавиш, KEYDELAY ставит паузу между нажатиями (мс), SLEEP выдерживает паузу перед следующими шагами. Все INPUT спрашиваются в одном диалоге перед запуском', 0),
+(90, 1, 42, 'Счётчик сборок',
+'docker build -t myapp:{COUNTER:start=100;step=5} .',
+'COUNTER увеличивается при каждом запуске: параметры start=, step=, pad= (нули слева), флаги volatile (сброс) и current (текущее без инкремента)', 0),
+(91, 1, 42, 'Токен из окружения и буфера',
+'curl -s -H "Authorization: Bearer {ENV:GH_TOKEN}" https://api.github.com/user
+echo "Из буфера обмена: {CLIPBOARD}"',
+'ENV подставляет переменную окружения, CLIPBOARD — текущий буфер обмена. Полезно для токенов, которые не хочется хранить в сниппете', 0),
+
+-- Макросы в работе (DevOps, категория 43)
+(92, 3, 43, 'Деплой с выбором версии',
+'ansible-playbook deploy.yml --extra-vars "version={INPUT [STRING:latest]Версия} env={INPUT [SELECT:dev|staging|prod]Окружение}"',
+'Несколько INPUT в одном сниппете собираются в единый диалог параметров перед выполнением', 0),
+(93, 3, 43, 'Terraform apply с подтверждением',
+'{INPUT [CONFIRM]Применить план к prod?}
+terraform apply tfplan',
+'CONFIRM защищает от случайного apply; план создаётся заранее через terraform plan -out=tfplan', 0),
+(94, 3, 43, 'Логи юнита за сегодня',
+'journalctl -u {INPUT [STRING:nginx]Юнит} --since "{DATETIME:yyyy-MM-dd} 00:00:00" --no-pager',
+'INPUT и DATETIME в одной строке: юнит спрашивается, дата подставляется автоматически', 0),
+
+-- Макросы в работе (SRE, категория 44)
+(95, 4, 44, 'SSH-туннель с вводом порта',
+'ssh -L {INPUT [NUMBER:3306]Локальный порт}:db-host:3306 bastion',
+'NUMBER проверяет, что введено целое число; нечисловой ввод будет отклонён', 0),
+(96, 4, 44, 'Ротация SSH-ключа',
+'ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_{DATETIME:yyyyMMdd} -C "{INPUT [STRING:ops@company]Метка}"
+ssh-copy-id -i ~/.ssh/id_ed25519_{DATETIME:yyyyMMdd}.pub {INPUT [STRING:root@server]Хост}',
+'Оба INPUT спрашиваются в одном диалоге до начала выполнения; дата в имени ключа делает ротацию повторяемой', 0);
 
 -- SNIPPET_TAGS
 INSERT INTO snippet_tags(snippet_id, tag_id) VALUES
@@ -195,7 +258,36 @@ INSERT INTO snippet_tags(snippet_id, tag_id) VALUES
 (65,23),(65,9),(66,17),(66,10),(67,17),(67,10),(68,17),(68,10),(68,8),(69,16),(69,10),
 (70,16),(70,10),(71,20),(71,36),(72,20),(72,26),(73,21),(73,33),(74,21),(74,33),(75,21),(75,36),
 (76,5),(76,7),(77,5),(77,40),(78,5),(78,25),(79,5),(79,25),(79,40),(80,13),(80,7),
-(81,13),(81,40),(82,13),(82,25),(83,6),(83,25),(84,6),(84,40);
+(81,13),(81,40),(82,13),(82,25),(83,6),(83,25),(84,6),(84,40),
+(85,17),(85,41),(85,38),(86,3),(86,37),(86,10),(87,4),(87,41),
+(88,7),(88,41),(89,11),(89,38),(89,41),(90,3),(90,38),(90,41),(91,38),(91,41),
+(92,12),(92,33),(92,41),(93,21),(93,33),(93,41),(94,23),(94,41),
+(95,17),(95,8),(95,41),(96,17),(96,10),(96,41);
+
+-- FAVORITES (избранное: порядок для горячих слотов 1..0)
+INSERT INTO snippet_favorites(user_id, snippet_id, sort_order) VALUES
+(1,13,0),(1,9,1),(1,12,2),(1,6,3),(1,85,4),(1,87,5),
+(2,21,0),(2,30,1),(2,40,2),
+(3,46,0),(3,47,1),(3,53,2),(3,92,3),
+(4,61,0),(4,68,1),(4,66,2),(4,95,3),
+(5,81,0),(5,79,1),(5,83,2);
+
+-- CHAINS (цепочки сниппетов: имя уникально в рамках workspace)
+INSERT INTO snippet_chains(id, user_id, name) VALUES
+(1, 1, 'Утренняя проверка сервера'),
+(2, 1, 'Диагностика сети'),
+(3, 2, 'Проверка здоровья MySQL'),
+(4, 3, 'Деплой с проверкой'),
+(5, 4, 'Разбор инцидента'),
+(6, 5, 'Обслуживание БД');
+
+INSERT INTO snippet_chain_steps(chain_id, position, snippet_id, pause_ms) VALUES
+(1,1,19,500),(1,2,6,0),(1,3,16,0),(1,4,18,0),(1,5,9,500),
+(2,1,6,0),(2,2,7,0),(2,3,8,500),
+(3,1,22,0),(3,2,24,500),(3,3,23,500),
+(4,1,54,0),(4,2,53,1000),(4,3,58,500),(4,4,12,500),
+(5,1,64,0),(5,2,61,500),(5,3,62,500),(5,4,65,500),
+(6,1,76,0),(6,2,83,500),(6,3,84,500);
 
 -- RUN HISTORY
 INSERT INTO snippet_runs(snippet_id, run_at, executed_by_user_id) VALUES
@@ -242,4 +334,8 @@ INSERT INTO snippet_runs(snippet_id, run_at, executed_by_user_id) VALUES
 (76, strftime('%s','now')-86400*6,  3),(77, strftime('%s','now')-86400*18, 2),(77, strftime('%s','now')-1000,     2),
 (77, strftime('%s','now')-500,       2),(77, strftime('%s','now')-100,       2),(78, strftime('%s','now')-86400*7,  1),
 (79, strftime('%s','now')-86400*10, 1),(80, strftime('%s','now')-86400*5,  3),(81, strftime('%s','now')-86400*3,  4),
-(82, strftime('%s','now')-86400*2,  4),(83, strftime('%s','now')-86400*1,  4),(84, strftime('%s','now')-86400*4,  4);
+(82, strftime('%s','now')-86400*2,  4),(83, strftime('%s','now')-86400*1,  4),(84, strftime('%s','now')-86400*4,  4),
+(85, strftime('%s','now')-86400*2,  1),(86, strftime('%s','now')-86400*6,  1),(87, strftime('%s','now')-86400*1,  1),
+(88, strftime('%s','now')-86400*3,  2),(89, strftime('%s','now')-86400*4,  1),(90, strftime('%s','now')-86400*2,  3),
+(91, strftime('%s','now')-86400*5,  4),(92, strftime('%s','now')-86400*1,  3),(93, strftime('%s','now')-86400*2,  3),
+(94, strftime('%s','now')-86400*3,  3),(95, strftime('%s','now')-86400*4,  4),(96, strftime('%s','now')-86400*9,  4);
