@@ -249,6 +249,10 @@ type
         procedure tvCategoriesClick(Sender: TObject);
         procedure tvCategoriesEndDrag(Sender, Target: TObject; X, Y: Integer);
         procedure tvCategoriesDblClick(Sender: TObject);
+        procedure tvCategoriesExpanded(Sender: TObject; Node: TTreeNode);
+        procedure tvCategoriesCollapsed(Sender: TObject; Node: TTreeNode);
+        procedure puCatCollapseAllClick(Sender: TObject);
+        procedure puCatExpandAllClick(Sender: TObject);
     private
         FHotItemIndex: Integer;
         FUserID: Integer;
@@ -938,6 +942,26 @@ begin
         actChainEditExecute(Sender);
 end;
 
+procedure TMainForm.tvCategoriesExpanded(Sender: TObject; Node: TTreeNode);
+begin
+    FCategoryTree.HandleNodeExpanded(Node);
+end;
+
+procedure TMainForm.tvCategoriesCollapsed(Sender: TObject; Node: TTreeNode);
+begin
+    FCategoryTree.HandleNodeCollapsed(Node);
+end;
+
+procedure TMainForm.puCatCollapseAllClick(Sender: TObject);
+begin
+    FCategoryTree.CollapseAll;
+end;
+
+procedure TMainForm.puCatExpandAllClick(Sender: TObject);
+begin
+    FCategoryTree.ExpandAll;
+end;
+
 procedure TMainForm.actClearTagFilterExecute(Sender: TObject);
 begin
     FTags.ClearFilter;
@@ -954,9 +978,14 @@ begin
         Cats := AppContext.CategoryService.GetAllCategories(FFilterUserID);
 
         // Используем UIHelper
-        TUIHelpers.BuildCategoryTree(tvCategories, Cats, FUsersCache,
-            AppContext.ChainService.GetAllChains(FFilterUserID), FFilterUserID,
-            PreserveCategoryID);
+        FCategoryTree.BeforeRebuild;
+        try
+            TUIHelpers.BuildCategoryTree(tvCategories, Cats, FUsersCache,
+                AppContext.ChainService.GetAllChains(FFilterUserID), FFilterUserID,
+                PreserveCategoryID);
+        finally
+            FCategoryTree.AfterRebuild;
+        end;
         RefreshCurrentSnippetList;
     finally
         FIgnoreCategoryChange := False;

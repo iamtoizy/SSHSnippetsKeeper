@@ -60,6 +60,7 @@ object MainForm: TMainForm
       TabOrder = 0
       OnChange = tvCategoriesChange
       OnClick = tvCategoriesClick
+      OnCollapsed = tvCategoriesCollapsed
       OnContextPopup = tvCategoriesContextPopup
       OnDblClick = tvCategoriesDblClick
       OnDragDrop = tvCategoriesDragDrop
@@ -67,6 +68,7 @@ object MainForm: TMainForm
       OnEdited = tvCategoriesEdited
       OnEditing = tvCategoriesEditing
       OnEndDrag = tvCategoriesEndDrag
+      OnExpanded = tvCategoriesExpanded
       OnKeyDown = tvCategoriesKeyDown
       OnMouseDown = tvCategoriesMouseDown
     end
@@ -5187,6 +5189,17 @@ object MainForm: TMainForm
     object puCatWorkspaces: TMenuItem
       Caption = 'Workspaces'
       OnClick = bManageWorkspacesClick
+    end
+    object N2c: TMenuItem
+      Caption = '-'
+    end
+    object puCatCollapseAll: TMenuItem
+      Caption = 'Collapse all'
+      OnClick = puCatCollapseAllClick
+    end
+    object puCatExpandAll: TMenuItem
+      Caption = 'Expand all'
+      OnClick = puCatExpandAllClick
     end
   end
   object pmSnippets: TPopupMenu

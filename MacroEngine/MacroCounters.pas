@@ -3,7 +3,8 @@ unit MacroCounters;
 interface
 
 uses
-    System.Generics.Collections, System.Generics.Defaults, System.SysUtils
+    Common.AppState, System.Generics.Collections, System.Generics.Defaults,
+    System.SysUtils
     ;
 
 const
@@ -32,10 +33,13 @@ type
 
     TMacroCounterStore = class
     private
+        FAppState: TAppStateStore;
+        FOwnsAppState: Boolean;
         FFilePath: string;
         FLock: TObject;
         FValues: TDictionary<Integer, Int64>;
         FLoaded: Boolean;
+        constructor Create(const AAppState: TAppStateStore; AOwnsAppState: Boolean); overload;
         procedure EnsureLoaded;
         procedure LoadLocked;
         procedure SaveLocked;
@@ -63,7 +67,7 @@ function EvaluateCounterPeek(ASnippetID: Integer; const AArg: string; var ARunSt
 implementation
 
 uses
-    Common.Helpers, System.IOUtils, System.JSON, System.Math
+    System.JSON, System.Math
     ;
 
 var
@@ -234,13 +238,20 @@ end;
 
 constructor TMacroCounterStore.Create;
 begin
-    Create(ResolvePath('counters.json'));
+    Create(AppState, False);
 end;
 
 constructor TMacroCounterStore.Create(const AFilePath: string);
 begin
+    Create(TAppStateStore.Create(AFilePath), True);
+end;
+
+constructor TMacroCounterStore.Create(const AAppState: TAppStateStore; AOwnsAppState: Boolean);
+begin
     inherited Create;
-    FFilePath := AFilePath;
+    FAppState := AAppState;
+    FOwnsAppState := AOwnsAppState;
+    FFilePath := FAppState.FilePath;
     FValues := TDictionary<Integer, Int64>.Create;
     FLock := TObject.Create;
     FLoaded := False;
@@ -248,6 +259,8 @@ end;
 
 destructor TMacroCounterStore.Destroy;
 begin
+    if FOwnsAppState then
+        FAppState.Free;
     FValues.Free;
     FLock.Free;
     inherited;
@@ -263,35 +276,20 @@ end;
 
 procedure TMacroCounterStore.LoadLocked;
 var
-    Json: TJSONValue;
-    Root: TJSONObject;
-    Arr: TJSONArray;
-    Item: TJSONValue;
+    Section, Item: TJSONValue;
     CounterObj: TJSONObject;
     Id: Integer;
     Value: Int64;
 begin
     FLoaded := True;
-    if not TFile.Exists(FFilePath) then
+    Section := FAppState.ReadSection('counters');
+    if Section = nil then
         Exit;
 
     try
-        Json := TJSONObject.ParseJSONValue(TFile.ReadAllText(FFilePath, TEncoding.UTF8));
-    except
-        Json := nil;
-    end;
-    if Json = nil then
-        Exit;
-
-    try
-        if not (Json is TJSONObject) then
+        if not (Section is TJSONArray) then
             Exit;
-        Root := TJSONObject(Json);
-        Item := Root.FindValue('counters');
-        if not (Item is TJSONArray) then
-            Exit;
-        Arr := TJSONArray(Item);
-        for Item in Arr do
+        for Item in TJSONArray(Section) do
         begin
             if not (Item is TJSONObject) then
                 Continue;
@@ -303,37 +301,25 @@ begin
             FValues.AddOrSetValue(Id, Value);
         end;
     finally
-        Json.Free;
+        Section.Free;
     end;
 end;
 
 procedure TMacroCounterStore.SaveLocked;
 var
-    Root: TJSONObject;
     Arr: TJSONArray;
     CounterObj: TJSONObject;
     Pair: TPair<Integer, Int64>;
 begin
-    Root := TJSONObject.Create;
-    try
-        Root.AddPair('version', TJSONNumber.Create(1));
-        Arr := TJSONArray.Create;
-        for Pair in FValues do
-        begin
-            CounterObj := TJSONObject.Create;
-            CounterObj.AddPair('snippetId', TJSONNumber.Create(Pair.Key));
-            CounterObj.AddPair('current', TJSONNumber.Create(Pair.Value));
-            Arr.AddElement(CounterObj);
-        end;
-        Root.AddPair('counters', Arr);
-        try
-            TFile.WriteAllText(FFilePath, Root.ToJSON, TEncoding.UTF8);
-        except
-            ;
-        end;
-    finally
-        Root.Free;
+    Arr := TJSONArray.Create;
+    for Pair in FValues do
+    begin
+        CounterObj := TJSONObject.Create;
+        CounterObj.AddPair('snippetId', TJSONNumber.Create(Pair.Key));
+        CounterObj.AddPair('current', TJSONNumber.Create(Pair.Value));
+        Arr.AddElement(CounterObj);
     end;
+    FAppState.WriteSection('counters', Arr);
 end;
 
 function TMacroCounterStore.Take(ASnippetID: Integer; const AParams: TCounterParams): Int64;

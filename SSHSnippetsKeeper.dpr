@@ -97,6 +97,7 @@ uses
   CustomBashSyn in 'UI\Controls\CustomBashSyn.pas',
   MacroSyn in 'UI\Controls\MacroSyn.pas',
   Core.BashCompletionEngine in 'Core\Core.BashCompletionEngine.pas',
+  Common.AppState in 'Common\Common.AppState.pas',
   Common.Consts in 'Common\Common.Consts.pas',
   Common.Helpers in 'Common\Common.Helpers.pas',
   Common.QueryLanguage in 'Common\Common.QueryLanguage.pas',

@@ -3,12 +3,15 @@
 interface
 
 uses
+    Common.AppState,
     Core.Entities.Category,
     Core.Entities.User,
     Core.Interfaces.App,
     Core.Interfaces.Services,
     Core.Interfaces.Settings,
     Core.Interfaces.UI,
+    System.Classes,
+    System.JSON,
     System.SysUtils,
     System.Types,
     UI.AppStatusBar,
@@ -21,6 +24,9 @@ uses
 const
     // Спец-значение для ReloadUI: не сохранять/не восстанавливать выбранную категорию
     PRESERVE_CATEGORY_EMPTY_ID = -999;
+    // Секция appstate.json с раскрытыми узлами дерева, скоуп по файлу БД:
+    // {"version":1,"databases":{"<путь БД>":{"expanded":[ключи узлов]}}}
+    TREE_STATE_SECTION = 'tree';
 
 type
     // Логика дерева категорий: предикаты узлов, разрешение workspace,
@@ -33,11 +39,21 @@ type
         FContext: IAppContext;
         FOnReloadUI: TProc<Integer>;
         FOnDataChanged: TProc;
+        FAppState: TAppStateStore;
+        FSuppressEvents: Boolean;
         FFilterUserID: Integer;
         FDefaultUserID: Integer;
+        function GetDbScopeKey: string;
+        function FindDbState(Databases: TJSONObject; const AScope: string): TJSONObject;
+        function GetNodeStateKey(Node: TTreeNode): string;
+        function LoadExpandedKeys: TStringList;
+        procedure SaveExpandedKeys(AKeys: TStrings);
+        procedure CaptureExpandedKeys;
+        procedure ApplyExpandedKeys;
     public
         constructor Create(ATree: TTreeView; AStatusBar: TAppStatusBar; AContext: IAppContext;
-            const AOnReloadUI: TProc<Integer>; const AOnDataChanged: TProc);
+            const AOnReloadUI: TProc<Integer>; const AOnDataChanged: TProc;
+            AAppState: TAppStateStore = nil);
 
         function IsVirtualCategory(Node: TTreeNode): Boolean;
         function IsWorkspaceNode(Node: TTreeNode): Boolean;
@@ -54,6 +70,12 @@ type
         procedure HandleDragOver(Source: TObject; X, Y: Integer; var Accept: Boolean);
         procedure HandleMouseDown(Button: TMouseButton; X, Y: Integer);
         procedure HandleEndDrag;
+        procedure HandleNodeExpanded(Node: TTreeNode);
+        procedure HandleNodeCollapsed(Node: TTreeNode);
+        procedure BeforeRebuild;
+        procedure AfterRebuild;
+        procedure CollapseAll;
+        procedure ExpandAll;
 
         // Жесткий фильтр по пользователю (>0) перекрывает определение workspace
         property FilterUserID: Integer read FFilterUserID write FFilterUserID;
@@ -66,13 +88,15 @@ implementation
 uses
     ChainRunnerController,
     Common.Localization,
+    System.Generics.Collections,
     System.Math
     ;
 
 { TCategoryTreeController }
 
 constructor TCategoryTreeController.Create(ATree: TTreeView; AStatusBar: TAppStatusBar;
-    AContext: IAppContext; const AOnReloadUI: TProc<Integer>; const AOnDataChanged: TProc);
+    AContext: IAppContext; const AOnReloadUI: TProc<Integer>; const AOnDataChanged: TProc;
+    AAppState: TAppStateStore);
 begin
     inherited Create;
     FTree := ATree;
@@ -80,6 +104,11 @@ begin
     FContext := AContext;
     FOnReloadUI := AOnReloadUI;
     FOnDataChanged := AOnDataChanged;
+    if AAppState <> nil then
+        FAppState := AAppState
+    else
+        FAppState := AppState;
+    FSuppressEvents := True;
     FFilterUserID := 0;
     FDefaultUserID := 0;
 end;
@@ -439,6 +468,284 @@ end;
 procedure TCategoryTreeController.HandleEndDrag;
 begin
     FTree.Cursor := crDefault;
+end;
+
+function TCategoryTreeController.GetNodeStateKey(Node: TTreeNode): string;
+var
+    User: TUserDTO;
+begin
+    if Node = nil then
+        Exit('');
+
+    if Node.Data = nil then
+    begin
+        for User in FContext.UserService.GetAllUsers do
+            if SameText(User.Name, Node.Text) then
+                Exit('u' + IntToStr(User.ID));
+        Exit('');
+    end;
+
+    Result := IntToStr(Integer(IntPtr(Node.Data)));
+end;
+
+function TCategoryTreeController.GetDbScopeKey: string;
+var
+    ConnParts: TStringList;
+begin
+    Result := '';
+    if (FContext.DatabaseManager = nil) or (not FContext.DatabaseManager.IsConnected) then
+        Exit;
+    ConnParts := TStringList.Create;
+    try
+        ConnParts.Text := FContext.DatabaseManager.GetConnectionString;
+        Result := LowerCase(Trim(ConnParts.Values['Database']));
+    finally
+        ConnParts.Free;
+    end;
+end;
+
+function TCategoryTreeController.FindDbState(Databases: TJSONObject; const AScope: string): TJSONObject;
+var
+    I: Integer;
+begin
+    Result := nil;
+    if Databases = nil then
+        Exit;
+    for I := 0 to Databases.Count - 1 do
+        if CompareText(Databases.Pairs[I].JsonString.Value, AScope) = 0 then
+        begin
+            if Databases.Pairs[I].JsonValue is TJSONObject then
+                Result := TJSONObject(Databases.Pairs[I].JsonValue);
+            Exit;
+        end;
+end;
+
+function TCategoryTreeController.LoadExpandedKeys: TStringList;
+var
+    Arr: TJSONArray;
+    DbState: TJSONObject;
+    Databases: TJSONObject;
+    I: Integer;
+    Scope: string;
+    Section: TJSONValue;
+begin
+    Result := nil;
+    Scope := GetDbScopeKey;
+    if Scope = '' then
+        Exit;
+
+    Section := FAppState.ReadSection(TREE_STATE_SECTION);
+    if Section = nil then
+        Exit;
+
+    try
+        if not (Section is TJSONObject) then
+            Exit;
+        if not TJSONObject(Section).TryGetValue<TJSONObject>('databases', Databases) then
+            Exit;
+        DbState := FindDbState(Databases, Scope);
+        if DbState = nil then
+            Exit;
+        if not DbState.TryGetValue<TJSONArray>('expanded', Arr) then
+            Exit;
+
+        Result := TStringList.Create;
+        try
+            Result.Sorted := True;
+            Result.Duplicates := dupIgnore;
+            for I := 0 to Arr.Count - 1 do
+                if Arr.Items[I] is TJSONString then
+                    Result.Add(TJSONString(Arr.Items[I]).Value);
+        except
+            FreeAndNil(Result);
+            raise;
+        end;
+    finally
+        Section.Free;
+    end;
+end;
+
+procedure TCategoryTreeController.SaveExpandedKeys(AKeys: TStrings);
+var
+    Arr: TJSONArray;
+    Databases: TJSONObject;
+    Entry: TJSONObject;
+    I: Integer;
+    OldPair: TJSONPair;
+    Scope: string;
+    Section: TJSONObject;
+    SectionValue: TJSONValue;
+begin
+    Scope := GetDbScopeKey;
+    if Scope = '' then
+        Exit;
+
+    SectionValue := FAppState.ReadSection(TREE_STATE_SECTION);
+    if SectionValue is TJSONObject then
+        Section := TJSONObject(SectionValue)
+    else
+    begin
+        SectionValue.Free;
+        Section := TJSONObject.Create;
+    end;
+
+    if not Section.TryGetValue<TJSONObject>('databases', Databases) then
+    begin
+        Databases := TJSONObject.Create;
+        Section.RemovePair('databases').Free;
+        Section.AddPair('databases', Databases);
+    end;
+
+    Arr := TJSONArray.Create;
+    for I := 0 to AKeys.Count - 1 do
+        Arr.AddElement(TJSONString.Create(AKeys[I]));
+    Entry := TJSONObject.Create;
+    Entry.AddPair('expanded', Arr);
+
+    OldPair := Databases.RemovePair(Scope);
+    OldPair.Free;
+    Databases.AddPair(Scope, Entry);
+
+    Section.RemovePair('expanded').Free;
+    Section.RemovePair('version').Free;
+    Section.AddPair('version', TJSONNumber.Create(1));
+
+    FAppState.WriteSection(TREE_STATE_SECTION, Section);
+end;
+
+procedure TCategoryTreeController.CaptureExpandedKeys;
+var
+    Key: string;
+    Keys: TStringList;
+    Node: TTreeNode;
+begin
+    if FTree = nil then
+        Exit;
+
+    Keys := TStringList.Create;
+    try
+        Keys.Sorted := True;
+        Keys.Duplicates := dupIgnore;
+        Node := FTree.Items.GetFirstNode;
+        while Node <> nil do
+        begin
+            if Node.Expanded then
+            begin
+                Key := GetNodeStateKey(Node);
+                if Key <> '' then
+                    Keys.Add(Key);
+            end;
+            Node := Node.GetNext;
+        end;
+        SaveExpandedKeys(Keys);
+    finally
+        Keys.Free;
+    end;
+end;
+
+procedure TCategoryTreeController.ApplyExpandedKeys;
+var
+    FoundKeys: TStringList;
+    Key: string;
+    Keys: TStringList;
+    Node: TTreeNode;
+begin
+    if FTree = nil then
+        Exit;
+
+    Keys := LoadExpandedKeys;
+    if Keys = nil then
+        Exit;
+
+    FoundKeys := TStringList.Create;
+    try
+        FoundKeys.Sorted := True;
+        FoundKeys.Duplicates := dupIgnore;
+        FTree.Items.BeginUpdate;
+        try
+            Node := FTree.Items.GetFirstNode;
+            while Node <> nil do
+            begin
+                Key := GetNodeStateKey(Node);
+                if (Key <> '') and (Keys.IndexOf(Key) >= 0) then
+                begin
+                    Node.Expand(False);
+                    FoundKeys.Add(Key);
+                end;
+                Node := Node.GetNext;
+            end;
+        finally
+            FTree.Items.EndUpdate;
+        end;
+        if (FoundKeys.Count > 0) and (FoundKeys.Count < Keys.Count) then
+            SaveExpandedKeys(FoundKeys);
+    finally
+        FoundKeys.Free;
+        Keys.Free;
+    end;
+end;
+
+procedure TCategoryTreeController.HandleNodeExpanded(Node: TTreeNode);
+begin
+    if FSuppressEvents then
+        Exit;
+    CaptureExpandedKeys;
+end;
+
+procedure TCategoryTreeController.HandleNodeCollapsed(Node: TTreeNode);
+begin
+    if FSuppressEvents then
+        Exit;
+    CaptureExpandedKeys;
+end;
+
+procedure TCategoryTreeController.BeforeRebuild;
+begin
+    FSuppressEvents := True;
+end;
+
+procedure TCategoryTreeController.AfterRebuild;
+begin
+    try
+        ApplyExpandedKeys;
+    finally
+        FSuppressEvents := False;
+    end;
+end;
+
+procedure TCategoryTreeController.CollapseAll;
+var
+    Keys: TStringList;
+begin
+    if FTree = nil then
+        Exit;
+
+    FSuppressEvents := True;
+    try
+        FTree.FullCollapse;
+        Keys := TStringList.Create;
+        try
+            SaveExpandedKeys(Keys);
+        finally
+            Keys.Free;
+        end;
+    finally
+        FSuppressEvents := False;
+    end;
+end;
+
+procedure TCategoryTreeController.ExpandAll;
+begin
+    if FTree = nil then
+        Exit;
+
+    FSuppressEvents := True;
+    try
+        FTree.FullExpand;
+        CaptureExpandedKeys;
+    finally
+        FSuppressEvents := False;
+    end;
 end;
 
 end.
