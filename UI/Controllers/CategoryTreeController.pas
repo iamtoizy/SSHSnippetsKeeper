@@ -484,6 +484,8 @@ begin
 
     if Node.Data = nil then
     begin
+        if (FContext.DatabaseManager = nil) or (not FContext.DatabaseManager.IsConnected) then
+            Exit('');
         for User in FContext.UserService.GetAllUsers do
             if SameText(User.Name, Node.Text) then
                 Exit('u' + IntToStr(User.ID));
