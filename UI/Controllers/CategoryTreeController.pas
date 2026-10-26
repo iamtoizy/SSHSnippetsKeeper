@@ -24,8 +24,8 @@ uses
 const
     // Спец-значение для ReloadUI: не сохранять/не восстанавливать выбранную категорию
     PRESERVE_CATEGORY_EMPTY_ID = -999;
-    // Секция appstate.json с раскрытыми узлами дерева, скоуп по файлу БД:
-    // {"version":1,"databases":{"<путь БД>":{"expanded":[ключи узлов]}}}
+    // Секция appstate.json с состоянием дерева, скоуп по файлу БД:
+    // {"version":1,"databases":{"<путь БД>":{"expanded":[ключи узлов],"selected":"ключ выделенного узла"}}}
     TREE_STATE_SECTION = 'tree';
 
 type
@@ -47,7 +47,10 @@ type
         function FindDbState(Databases: TJSONObject; const AScope: string): TJSONObject;
         function GetNodeStateKey(Node: TTreeNode): string;
         function LoadExpandedKeys: TStringList;
-        procedure SaveExpandedKeys(AKeys: TStrings);
+        procedure SaveExpandedKeys(AKeys: TStrings; const ASelectedKey: string);
+        function LoadSelectedKey: string;
+        function FindNodeByKey(const AKey: string): TTreeNode;
+        procedure RestoreSelection;
         procedure CaptureExpandedKeys;
         procedure ApplyExpandedKeys;
     public
@@ -74,6 +77,7 @@ type
         procedure HandleNodeCollapsed(Node: TTreeNode);
         procedure BeforeRebuild;
         procedure AfterRebuild;
+        procedure SaveSelection;
         procedure CollapseAll;
         procedure ExpandAll;
 
@@ -566,7 +570,7 @@ begin
     end;
 end;
 
-procedure TCategoryTreeController.SaveExpandedKeys(AKeys: TStrings);
+procedure TCategoryTreeController.SaveExpandedKeys(AKeys: TStrings; const ASelectedKey: string);
 var
     Arr: TJSONArray;
     Databases: TJSONObject;
@@ -602,6 +606,8 @@ begin
         Arr.AddElement(TJSONString.Create(AKeys[I]));
     Entry := TJSONObject.Create;
     Entry.AddPair('expanded', Arr);
+    if ASelectedKey <> '' then
+        Entry.AddPair('selected', ASelectedKey);
 
     OldPair := Databases.RemovePair(Scope);
     OldPair.Free;
@@ -638,7 +644,7 @@ begin
             end;
             Node := Node.GetNext;
         end;
-        SaveExpandedKeys(Keys);
+        SaveExpandedKeys(Keys, GetNodeStateKey(FTree.Selected));
     finally
         Keys.Free;
     end;
@@ -679,11 +685,75 @@ begin
             FTree.Items.EndUpdate;
         end;
         if (FoundKeys.Count > 0) and (FoundKeys.Count < Keys.Count) then
-            SaveExpandedKeys(FoundKeys);
+            SaveExpandedKeys(FoundKeys, GetNodeStateKey(FTree.Selected));
     finally
         FoundKeys.Free;
         Keys.Free;
     end;
+end;
+
+function TCategoryTreeController.LoadSelectedKey: string;
+var
+    DbState, Databases: TJSONObject;
+    Scope: string;
+    Section: TJSONValue;
+begin
+    Result := '';
+    Scope := GetDbScopeKey;
+    if Scope = '' then
+        Exit;
+
+    Section := FAppState.ReadSection(TREE_STATE_SECTION);
+    if Section = nil then
+        Exit;
+
+    try
+        if not (Section is TJSONObject) then
+            Exit;
+        if not TJSONObject(Section).TryGetValue<TJSONObject>('databases', Databases) then
+            Exit;
+        DbState := FindDbState(Databases, Scope);
+        if DbState = nil then
+            Exit;
+        DbState.TryGetValue<string>('selected', Result);
+    finally
+        Section.Free;
+    end;
+end;
+
+function TCategoryTreeController.FindNodeByKey(const AKey: string): TTreeNode;
+var
+    Node: TTreeNode;
+begin
+    Result := nil;
+    if (FTree = nil) or (AKey = '') then
+        Exit;
+    Node := FTree.Items.GetFirstNode;
+    while Node <> nil do
+    begin
+        if GetNodeStateKey(Node) = AKey then
+            Exit(Node);
+        Node := Node.GetNext;
+    end;
+end;
+
+procedure TCategoryTreeController.RestoreSelection;
+var
+    Key: string;
+    Node: TTreeNode;
+begin
+    if FTree = nil then
+        Exit;
+    if FTree.Selected <> nil then
+        Exit;
+    Key := LoadSelectedKey;
+    if Key = '' then
+        Exit;
+    Node := FindNodeByKey(Key);
+    if Node = nil then
+        Exit;
+    Node.Selected := True;
+    Node.MakeVisible;
 end;
 
 procedure TCategoryTreeController.HandleNodeExpanded(Node: TTreeNode);
@@ -709,8 +779,26 @@ procedure TCategoryTreeController.AfterRebuild;
 begin
     try
         ApplyExpandedKeys;
+        RestoreSelection;
+        SaveSelection;
     finally
         FSuppressEvents := False;
+    end;
+end;
+
+procedure TCategoryTreeController.SaveSelection;
+var
+    Keys: TStringList;
+begin
+    if (FTree = nil) or (FTree.Items.Count = 0) then
+        Exit;
+    Keys := LoadExpandedKeys;
+    try
+        if Keys = nil then
+            Keys := TStringList.Create;
+        SaveExpandedKeys(Keys, GetNodeStateKey(FTree.Selected));
+    finally
+        Keys.Free;
     end;
 end;
 
@@ -726,7 +814,7 @@ begin
         FTree.FullCollapse;
         Keys := TStringList.Create;
         try
-            SaveExpandedKeys(Keys);
+            SaveExpandedKeys(Keys, GetNodeStateKey(FTree.Selected));
         finally
             Keys.Free;
         end;

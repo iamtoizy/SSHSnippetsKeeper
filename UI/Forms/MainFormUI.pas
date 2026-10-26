@@ -1085,6 +1085,7 @@ begin
     if Node = nil then
         Exit;
 
+    FCategoryTree.SaveSelection;
     FTags.ResetFilterState;
     RefreshCurrentSnippetList;
     UpdateMenuState;
