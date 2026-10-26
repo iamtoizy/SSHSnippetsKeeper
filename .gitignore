@@ -88,3 +88,6 @@ Assets/ExeData/Python/
 # VCL-стили (.vsf) - пользователь скачивает сам
 Assets/Styles/
 Styles/
+
+# Артефакты сборки тестов
+Tests/bin/
