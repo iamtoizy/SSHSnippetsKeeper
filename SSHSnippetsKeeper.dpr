@@ -70,6 +70,7 @@ uses
   BaseFormUI in 'UI\Forms\BaseFormUI.pas',
   UI.Services.AppStateManager in 'UI\Services\UI.Services.AppStateManager.pas',
   UI.AppStatusBar in 'UI\Helpers\UI.AppStatusBar.pas',
+  UI.BusyIndicator in 'UI\Helpers\UI.BusyIndicator.pas',
   UI.Helpers in 'UI\Helpers\UI.Helpers.pas',
   UI.TreeViewSearchHelper in 'UI\Helpers\UI.TreeViewSearchHelper.pas',
    SnippetViewData in 'UI\ViewModels\SnippetViewData.pas',

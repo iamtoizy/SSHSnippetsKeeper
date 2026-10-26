@@ -10,6 +10,7 @@ uses
     CustomHelpFormUI,
     System.Classes,
     System.Generics.Collections,
+    System.SysUtils,
     UI.HoverHelpManager,
     Vcl.Controls,
     Vcl.Forms,
@@ -82,6 +83,8 @@ type
         procedure WarmUpPaint;
         procedure PrepareGuardedShow;
         procedure FinishGuardedShow;
+        // Показывает кольцо занятости по центру формы на время выполнения AWork
+        procedure ShowBusyWhile(const ACaption: string; AWork: TProc);
         procedure ForceForeground;
         procedure ApplyLanguage; virtual;
         // Открыть справку с произвольным HTML-телом (переиспользует FCustomHelpForm)
@@ -96,9 +99,9 @@ type
 implementation
 
 uses
-    System.SysUtils,
     Common.Localization,
     SynThemeAdapter,
+    UI.BusyIndicator,
     Vcl.Dialogs,
     Vcl.Graphics,
     Winapi.Windows
@@ -412,6 +415,11 @@ begin
         RDW_INVALIDATE or RDW_ERASE or RDW_FRAME or RDW_ALLCHILDREN or RDW_UPDATENOW);
 
     SetLayeredWindowAttributes(Handle, 0, 255, LWA_ALPHA);
+end;
+
+procedure TBaseForm.ShowBusyWhile(const ACaption: string; AWork: TProc);
+begin
+    TUIBusyIndicator.Run(Self, ACaption, AWork);
 end;
 
 procedure TBaseForm.DoShownOnScreen;

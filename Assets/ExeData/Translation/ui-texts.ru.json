@@ -1343,6 +1343,7 @@
       "Paste": "Вставить",
       "Help": "Справка",
       "MoreInfo": "Подробнее",
+      "PreparingForm": "Подготовка формы...",
       "WinEventHookError": "Не удалось установить WinEventHook. Ошибка: %s",
       "CopiedToClipboard": "Скопировано в буфер обмена.",
       "NoDataToCopy": "❌ Нет данных для копирования в буфер обмена.",

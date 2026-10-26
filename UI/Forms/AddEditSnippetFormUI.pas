@@ -536,12 +536,18 @@ begin
     // Используем локальную переменную Frm, а не глобальную форму!
     Frm := TAddEditSnippetForm.Create(Owner);
     try
-        Frm.Initialize(AppContext);
-        Frm.CategoryID := CategoryID;
-        Frm.UserID := UserID;
+        // Тяжёлая подготовка (Initialize + Prepare) под индикатором занятости
+        (Owner as TBaseForm).ShowBusyWhile(
+            TUIStateLoader.GetMessage('Common.PreparingForm'),
+            procedure
+            begin
+                Frm.Initialize(AppContext);
+                Frm.CategoryID := CategoryID;
+                Frm.UserID := UserID;
 
-        NewSnippet := Default(TSnippetDTO);
-        Frm.Prepare(False, NewSnippet, CategoryID, UserID);
+                NewSnippet := Default(TSnippetDTO);
+                Frm.Prepare(False, NewSnippet, CategoryID, UserID);
+            end);
 
         Frm.WarmUpPaint;
         Frm.PrepareGuardedShow;
@@ -671,16 +677,26 @@ end;
 class function TAddEditSnippetForm.ExecuteEdit(Owner: TComponent; AppContext: IAppContext; var SnippetToEdit: TSnippetDTO): Boolean;
 var
     Frm: TAddEditSnippetForm;
+    Snippet: TSnippetDTO;
 begin
     Frm := TAddEditSnippetForm.Create(Owner);
     try
-        Frm.LockDrawing;  // Попытка уменьшить мерцание формы со стилями VCL
-        try
-            Frm.Initialize(AppContext);
-            Frm.Prepare(True, SnippetToEdit, SnippetToEdit.CategoryID, SnippetToEdit.UserID);
-        finally
-            Frm.UnlockDrawing;  // Попытка уменьшить мерцание формы со стилями VCL
-        end;
+        // var-параметр нельзя захватить в анонимном методе - используем копию
+        Snippet := SnippetToEdit;
+        // Тяжёлая подготовка (Initialize + Prepare) под индикатором занятости
+        (Owner as TBaseForm).ShowBusyWhile(
+            TUIStateLoader.GetMessage('Common.PreparingForm'),
+            procedure
+            begin
+                Frm.LockDrawing;  // Попытка уменьшить мерцание формы со стилями VCL
+                try
+                    Frm.Initialize(AppContext);
+                    Frm.Prepare(True, Snippet, Snippet.CategoryID, Snippet.UserID);
+                finally
+                    Frm.UnlockDrawing;  // Попытка уменьшить мерцание формы со стилями VCL
+                end;
+            end);
+
         Frm.WarmUpPaint;
         Frm.PrepareGuardedShow;
 
