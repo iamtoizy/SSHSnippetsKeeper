@@ -76,7 +76,7 @@
         <VerInfo_AutoGenVersion>true</VerInfo_AutoGenVersion>
         <DCC_ExeOutput>Binary\$(Platform)\$(Config)</DCC_ExeOutput>
         <BRCC_OutputDir>Resources</BRCC_OutputDir>
-        <DCC_UnitSearchPath>C:\DC\SynEdit\Source;C:\DC\SynEdit\Source\Highlighters;C:\DC\SynEdit\Source\Highlighters\Omni Highlighters;C:\DC\HtmlViewer\source;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>vendor\SynEdit\Source;vendor\SynEdit\Source\Highlighters;vendor\SynEdit\Source\Highlighters\Omni Highlighters;vendor\HtmlViewer\source;vendor\python4delphi\Source;vendor\python4delphi\Source\vcl;vendor\python4delphi\Source\fmx;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
@@ -123,7 +123,7 @@
         <DCC_RangeChecking>true</DCC_RangeChecking>
         <DCC_IntegerOverflowCheck>true</DCC_IntegerOverflowCheck>
         <DCC_MapFile>3</DCC_MapFile>
-        <DCC_UnitSearchPath>C:\DC\FastMM5;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>vendor\FastMM5;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
         <VerInfo_Locale>1033</VerInfo_Locale>
@@ -138,7 +138,7 @@
         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <UWP_DelphiLogo44>Assets\Images\main-icon\main-icon.png</UWP_DelphiLogo44>
         <UWP_DelphiLogo150>Assets\Images\main-icon\main-icon.png</UWP_DelphiLogo150>
-        <Debugger_DebugSourcePath>C:\DC\python4delphi\Source\;$(Debugger_DebugSourcePath)</Debugger_DebugSourcePath>
+        <Debugger_DebugSourcePath>vendor\python4delphi\Source\;$(Debugger_DebugSourcePath)</Debugger_DebugSourcePath>
     </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">

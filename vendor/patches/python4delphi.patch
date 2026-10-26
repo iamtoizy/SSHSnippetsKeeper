@@ -1,0 +1,682 @@
+diff --git a/Packages/Delphi/Delphi 10.4+/Python.dproj b/Packages/Delphi/Delphi 10.4+/Python.dproj
+index 21ea06b..66f8b51 100644
+--- a/Packages/Delphi/Delphi 10.4+/Python.dproj	
++++ b/Packages/Delphi/Delphi 10.4+/Python.dproj	
+@@ -5,35 +5,15 @@
+         <Config Condition="'$(Config)'==''">Release</Config>
+         <FrameworkType>VCL</FrameworkType>
+         <MainSource>Python.dpk</MainSource>
+-        <Platform Condition="'$(Platform)'==''">Win32</Platform>
++        <Platform Condition="'$(Platform)'==''">Win64</Platform>
+         <ProjectGuid>{018AAA56-F5BD-4A04-BCCA-A0043EAAA5CE}</ProjectGuid>
+-        <ProjectVersion>20.3</ProjectVersion>
+-        <TargetedPlatforms>1741971</TargetedPlatforms>
++        <ProjectVersion>20.4</ProjectVersion>
++        <TargetedPlatforms>1048579</TargetedPlatforms>
+         <ProjectName Condition="'$(ProjectName)'==''">Python</ProjectName>
+     </PropertyGroup>
+     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+         <Base>true</Base>
+     </PropertyGroup>
+-    <PropertyGroup Condition="('$(Platform)'=='Android' and '$(Base)'=='true') or '$(Base_Android)'!=''">
+-        <Base_Android>true</Base_Android>
+-        <CfgParent>Base</CfgParent>
+-        <Base>true</Base>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="('$(Platform)'=='Android64' and '$(Base)'=='true') or '$(Base_Android64)'!=''">
+-        <Base_Android64>true</Base_Android64>
+-        <CfgParent>Base</CfgParent>
+-        <Base>true</Base>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="('$(Platform)'=='OSX64' and '$(Base)'=='true') or '$(Base_OSX64)'!=''">
+-        <Base_OSX64>true</Base_OSX64>
+-        <CfgParent>Base</CfgParent>
+-        <Base>true</Base>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="('$(Platform)'=='OSXARM64' and '$(Base)'=='true') or '$(Base_OSXARM64)'!=''">
+-        <Base_OSXARM64>true</Base_OSXARM64>
+-        <CfgParent>Base</CfgParent>
+-        <Base>true</Base>
+-    </PropertyGroup>
+     <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Base)'=='true') or '$(Base_Win32)'!=''">
+         <Base_Win32>true</Base_Win32>
+         <CfgParent>Base</CfgParent>
+@@ -54,18 +34,6 @@
+         <CfgParent>Base</CfgParent>
+         <Base>true</Base>
+     </PropertyGroup>
+-    <PropertyGroup Condition="('$(Platform)'=='Android64' and '$(Cfg_1)'=='true') or '$(Cfg_1_Android64)'!=''">
+-        <Cfg_1_Android64>true</Cfg_1_Android64>
+-        <CfgParent>Cfg_1</CfgParent>
+-        <Cfg_1>true</Cfg_1>
+-        <Base>true</Base>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="('$(Platform)'=='iOSDevice64' and '$(Cfg_1)'=='true') or '$(Cfg_1_iOSDevice64)'!=''">
+-        <Cfg_1_iOSDevice64>true</Cfg_1_iOSDevice64>
+-        <CfgParent>Cfg_1</CfgParent>
+-        <Cfg_1>true</Cfg_1>
+-        <Base>true</Base>
+-    </PropertyGroup>
+     <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_1)'=='true') or '$(Cfg_1_Win64)'!=''">
+         <Cfg_1_Win64>true</Cfg_1_Win64>
+         <CfgParent>Cfg_1</CfgParent>
+@@ -77,24 +45,6 @@
+         <CfgParent>Base</CfgParent>
+         <Base>true</Base>
+     </PropertyGroup>
+-    <PropertyGroup Condition="('$(Platform)'=='Android64' and '$(Cfg_2)'=='true') or '$(Cfg_2_Android64)'!=''">
+-        <Cfg_2_Android64>true</Cfg_2_Android64>
+-        <CfgParent>Cfg_2</CfgParent>
+-        <Cfg_2>true</Cfg_2>
+-        <Base>true</Base>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="('$(Platform)'=='OSX64' and '$(Cfg_2)'=='true') or '$(Cfg_2_OSX64)'!=''">
+-        <Cfg_2_OSX64>true</Cfg_2_OSX64>
+-        <CfgParent>Cfg_2</CfgParent>
+-        <Cfg_2>true</Cfg_2>
+-        <Base>true</Base>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="('$(Platform)'=='OSXARM64' and '$(Cfg_2)'=='true') or '$(Cfg_2_OSXARM64)'!=''">
+-        <Cfg_2_OSXARM64>true</Cfg_2_OSXARM64>
+-        <CfgParent>Cfg_2</CfgParent>
+-        <Cfg_2>true</Cfg_2>
+-        <Base>true</Base>
+-    </PropertyGroup>
+     <PropertyGroup Condition="'$(Base)'!=''">
+         <SanitizedProjectName>Python</SanitizedProjectName>
+         <DCC_DcuOutput>..\..\..\lib\$(Platform)\$(Config)</DCC_DcuOutput>
+@@ -108,25 +58,6 @@
+         <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=;CFBundleName=</VerInfo_Keys>
+         <VerInfo_Locale>1033</VerInfo_Locale>
+     </PropertyGroup>
+-    <PropertyGroup Condition="'$(Base_Android)'!=''">
+-        <BT_BuildType>Debug</BT_BuildType>
+-        <EnabledSysJars>annotation-1.2.0.dex.jar;asynclayoutinflater-1.0.0.dex.jar;billing-4.0.0.dex.jar;browser-1.0.0.dex.jar;cloud-messaging.dex.jar;collection-1.0.0.dex.jar;coordinatorlayout-1.0.0.dex.jar;core-1.5.0-rc02.dex.jar;core-common-2.0.1.dex.jar;core-runtime-2.0.1.dex.jar;cursoradapter-1.0.0.dex.jar;customview-1.0.0.dex.jar;documentfile-1.0.0.dex.jar;drawerlayout-1.0.0.dex.jar;firebase-annotations-16.0.0.dex.jar;firebase-common-20.0.0.dex.jar;firebase-components-17.0.0.dex.jar;firebase-datatransport-18.0.0.dex.jar;firebase-encoders-17.0.0.dex.jar;firebase-encoders-json-18.0.0.dex.jar;firebase-iid-interop-17.1.0.dex.jar;firebase-installations-17.0.0.dex.jar;firebase-installations-interop-17.0.0.dex.jar;firebase-measurement-connector-19.0.0.dex.jar;firebase-messaging-22.0.0.dex.jar;fmx.dex.jar;fragment-1.0.0.dex.jar;google-play-licensing.dex.jar;interpolator-1.0.0.dex.jar;javax.inject-1.dex.jar;legacy-support-core-ui-1.0.0.dex.jar;legacy-support-core-utils-1.0.0.dex.jar;lifecycle-common-2.0.0.dex.jar;lifecycle-livedata-2.0.0.dex.jar;lifecycle-livedata-core-2.0.0.dex.jar;lifecycle-runtime-2.0.0.dex.jar;lifecycle-service-2.0.0.dex.jar;lifecycle-viewmodel-2.0.0.dex.jar;listenablefuture-1.0.dex.jar;loader-1.0.0.dex.jar;localbroadcastmanager-1.0.0.dex.jar;play-services-ads-20.1.0.dex.jar;play-services-ads-base-20.1.0.dex.jar;play-services-ads-identifier-17.0.0.dex.jar;play-services-ads-lite-20.1.0.dex.jar;play-services-base-17.5.0.dex.jar;play-services-basement-17.6.0.dex.jar;play-services-cloud-messaging-16.0.0.dex.jar;play-services-drive-17.0.0.dex.jar;play-services-games-21.0.0.dex.jar;play-services-location-18.0.0.dex.jar;play-services-maps-17.0.1.dex.jar;play-services-measurement-base-18.0.0.dex.jar;play-services-measurement-sdk-api-18.0.0.dex.jar;play-services-places-placereport-17.0.0.dex.jar;play-services-stats-17.0.0.dex.jar;play-services-tasks-17.2.0.dex.jar;print-1.0.0.dex.jar;room-common-2.1.0.dex.jar;room-runtime-2.1.0.dex.jar;slidingpanelayout-1.0.0.dex.jar;sqlite-2.0.1.dex.jar;sqlite-framework-2.0.1.dex.jar;swiperefreshlayout-1.0.0.dex.jar;transport-api-3.0.0.dex.jar;transport-backend-cct-3.0.0.dex.jar;transport-runtime-3.0.0.dex.jar;user-messaging-platform-1.0.0.dex.jar;versionedparcelable-1.1.1.dex.jar;viewpager-1.0.0.dex.jar;work-runtime-2.1.0.dex.jar</EnabledSysJars>
+-        <VerInfo_Keys>package=com.embarcadero.$(MSBuildProjectName);label=$(MSBuildProjectName);versionCode=1;versionName=1.0.0;persistent=False;restoreAnyVersion=False;installLocation=auto;largeHeap=False;theme=TitleBar;hardwareAccelerated=true;apiKey=;minSdkVersion=23;targetSdkVersion=35</VerInfo_Keys>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="'$(Base_Android64)'!=''">
+-        <BT_BuildType>Debug</BT_BuildType>
+-        <EnabledSysJars>annotation-1.2.0.dex.jar;asynclayoutinflater-1.0.0.dex.jar;billing-4.0.0.dex.jar;browser-1.0.0.dex.jar;cloud-messaging.dex.jar;collection-1.0.0.dex.jar;coordinatorlayout-1.0.0.dex.jar;core-1.5.0-rc02.dex.jar;core-common-2.0.1.dex.jar;core-runtime-2.0.1.dex.jar;cursoradapter-1.0.0.dex.jar;customview-1.0.0.dex.jar;documentfile-1.0.0.dex.jar;drawerlayout-1.0.0.dex.jar;firebase-annotations-16.0.0.dex.jar;firebase-common-20.0.0.dex.jar;firebase-components-17.0.0.dex.jar;firebase-datatransport-18.0.0.dex.jar;firebase-encoders-17.0.0.dex.jar;firebase-encoders-json-18.0.0.dex.jar;firebase-iid-interop-17.1.0.dex.jar;firebase-installations-17.0.0.dex.jar;firebase-installations-interop-17.0.0.dex.jar;firebase-measurement-connector-19.0.0.dex.jar;firebase-messaging-22.0.0.dex.jar;fmx.dex.jar;fragment-1.0.0.dex.jar;google-play-licensing.dex.jar;interpolator-1.0.0.dex.jar;javax.inject-1.dex.jar;legacy-support-core-ui-1.0.0.dex.jar;legacy-support-core-utils-1.0.0.dex.jar;lifecycle-common-2.0.0.dex.jar;lifecycle-livedata-2.0.0.dex.jar;lifecycle-livedata-core-2.0.0.dex.jar;lifecycle-runtime-2.0.0.dex.jar;lifecycle-service-2.0.0.dex.jar;lifecycle-viewmodel-2.0.0.dex.jar;listenablefuture-1.0.dex.jar;loader-1.0.0.dex.jar;localbroadcastmanager-1.0.0.dex.jar;play-services-ads-20.1.0.dex.jar;play-services-ads-base-20.1.0.dex.jar;play-services-ads-identifier-17.0.0.dex.jar;play-services-ads-lite-20.1.0.dex.jar;play-services-base-17.5.0.dex.jar;play-services-basement-17.6.0.dex.jar;play-services-cloud-messaging-16.0.0.dex.jar;play-services-drive-17.0.0.dex.jar;play-services-games-21.0.0.dex.jar;play-services-location-18.0.0.dex.jar;play-services-maps-17.0.1.dex.jar;play-services-measurement-base-18.0.0.dex.jar;play-services-measurement-sdk-api-18.0.0.dex.jar;play-services-places-placereport-17.0.0.dex.jar;play-services-stats-17.0.0.dex.jar;play-services-tasks-17.2.0.dex.jar;print-1.0.0.dex.jar;room-common-2.1.0.dex.jar;room-runtime-2.1.0.dex.jar;slidingpanelayout-1.0.0.dex.jar;sqlite-2.0.1.dex.jar;sqlite-framework-2.0.1.dex.jar;swiperefreshlayout-1.0.0.dex.jar;transport-api-3.0.0.dex.jar;transport-backend-cct-3.0.0.dex.jar;transport-runtime-3.0.0.dex.jar;user-messaging-platform-1.0.0.dex.jar;versionedparcelable-1.1.1.dex.jar;viewpager-1.0.0.dex.jar;work-runtime-2.1.0.dex.jar</EnabledSysJars>
+-        <VerInfo_Build>1</VerInfo_Build>
+-        <VerInfo_Keys>package=com.embarcadero.$(MSBuildProjectName);label=$(MSBuildProjectName);versionCode=1;versionName=1.0.0;persistent=False;restoreAnyVersion=False;installLocation=auto;largeHeap=False;theme=TitleBar;hardwareAccelerated=true;apiKey=;minSdkVersion=23;targetSdkVersion=35</VerInfo_Keys>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="'$(Base_OSX64)'!=''">
+-        <BT_BuildType>Debug</BT_BuildType>
+-        <VerInfo_Keys>CFBundleName=$(MSBuildProjectName);CFBundleDisplayName=$(MSBuildProjectName);CFBundleIdentifier=$(MSBuildProjectName);CFBundleVersion=1.0.0;CFBundleShortVersionString=1.0.0;CFBundlePackageType=APPL;CFBundleSignature=????;CFBundleAllowMixedLocalizations=YES;CFBundleExecutable=$(MSBuildProjectName);NSHighResolutionCapable=true;LSApplicationCategoryType=public.app-category.utilities;NSLocationUsageDescription=The reason for accessing the location information of the user;NSContactsUsageDescription=The reason for accessing the contacts;NSCalendarsUsageDescription=The reason for accessing the calendar data;NSRemindersUsageDescription=The reason for accessing the reminders;NSCameraUsageDescription=The reason for accessing the camera;NSMicrophoneUsageDescription=The reason for accessing the microphone;NSMotionUsageDescription=The reason for accessing the accelerometer;NSDesktopFolderUsageDescription=The reason for accessing the Desktop folder;NSDocumentsFolderUsageDescription=The reason for accessing the Documents folder;NSDownloadsFolderUsageDescription=The reason for accessing the Downloads folder;NSNetworkVolumesUsageDescription=The reason for accessing files on a network volume;NSRemovableVolumesUsageDescription=The reason for accessing files on a removable volume;NSSpeechRecognitionUsageDescription=The reason for requesting to send user data to Apple&apos;s speech recognition servers;ITSAppUsesNonExemptEncryption=false;NSBluetoothAlwaysUsageDescription=The reason for accessing the Bluetooth interface</VerInfo_Keys>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="'$(Base_OSXARM64)'!=''">
+-        <BT_BuildType>Debug</BT_BuildType>
+-        <VerInfo_Keys>CFBundleName=$(MSBuildProjectName);CFBundleDisplayName=$(MSBuildProjectName);CFBundleIdentifier=$(MSBuildProjectName);CFBundleVersion=1.0.0;CFBundleShortVersionString=1.0.0;CFBundlePackageType=APPL;CFBundleSignature=????;CFBundleAllowMixedLocalizations=YES;CFBundleExecutable=$(MSBuildProjectName);NSHighResolutionCapable=true;LSApplicationCategoryType=public.app-category.utilities;NSLocationUsageDescription=The reason for accessing the location information of the user;NSContactsUsageDescription=The reason for accessing the contacts;NSCalendarsUsageDescription=The reason for accessing the calendar data;NSRemindersUsageDescription=The reason for accessing the reminders;NSCameraUsageDescription=The reason for accessing the camera;NSMicrophoneUsageDescription=The reason for accessing the microphone;NSMotionUsageDescription=The reason for accessing the accelerometer;NSDesktopFolderUsageDescription=The reason for accessing the Desktop folder;NSDocumentsFolderUsageDescription=The reason for accessing the Documents folder;NSDownloadsFolderUsageDescription=The reason for accessing the Downloads folder;NSNetworkVolumesUsageDescription=The reason for accessing files on a network volume;NSRemovableVolumesUsageDescription=The reason for accessing files on a removable volume;NSSpeechRecognitionUsageDescription=The reason for requesting to send user data to Apple&apos;s speech recognition servers;ITSAppUsesNonExemptEncryption=false;NSBluetoothAlwaysUsageDescription=The reason for accessing the Bluetooth interface</VerInfo_Keys>
+-    </PropertyGroup>
+     <PropertyGroup Condition="'$(Base_Win32)'!=''">
+         <BT_BuildType>Debug</BT_BuildType>
+         <DCC_Namespace>Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
+@@ -149,14 +80,6 @@
+         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
+         <DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+     </PropertyGroup>
+-    <PropertyGroup Condition="'$(Cfg_1_Android64)'!=''">
+-        <DCC_BplOutput>..\..\..\lib\$(Platform)\$(Config)</DCC_BplOutput>
+-        <VerInfo_Build>1</VerInfo_Build>
+-        <VerInfo_Keys>package=com.embarcadero.$(MSBuildProjectName);label=$(MSBuildProjectName);versionCode=1;versionName=1.0.0;persistent=False;restoreAnyVersion=False;installLocation=auto;largeHeap=False;theme=TitleBar;hardwareAccelerated=true;apiKey=;minSdkVersion=23;targetSdkVersion=35</VerInfo_Keys>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="'$(Cfg_1_iOSDevice64)'!=''">
+-        <BT_BuildType>Debug</BT_BuildType>
+-    </PropertyGroup>
+     <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
+         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+@@ -166,16 +89,6 @@
+         <DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
+         <DCC_Optimize>false</DCC_Optimize>
+     </PropertyGroup>
+-    <PropertyGroup Condition="'$(Cfg_2_Android64)'!=''">
+-        <VerInfo_Build>1</VerInfo_Build>
+-        <VerInfo_Keys>package=com.embarcadero.$(MSBuildProjectName);label=$(MSBuildProjectName);versionCode=1;versionName=1.0.0;persistent=False;restoreAnyVersion=False;installLocation=auto;largeHeap=False;theme=TitleBar;hardwareAccelerated=true;apiKey=;minSdkVersion=23;targetSdkVersion=35</VerInfo_Keys>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="'$(Cfg_2_OSX64)'!=''">
+-        <DCC_RemoteDebug>true</DCC_RemoteDebug>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="'$(Cfg_2_OSXARM64)'!=''">
+-        <DCC_RemoteDebug>true</DCC_RemoteDebug>
+-    </PropertyGroup>
+     <ItemGroup>
+         <DelphiCompile Include="$(MainSource)">
+             <MainSource>MainSource</MainSource>
+@@ -223,13 +136,6 @@
+                 <Excluded_Packages/>
+             </Delphi.Personality>
+             <Platforms>
+-                <Platform value="Android">True</Platform>
+-                <Platform value="Android64">True</Platform>
+-                <Platform value="iOSDevice64">True</Platform>
+-                <Platform value="iOSSimARM64">True</Platform>
+-                <Platform value="Linux64">True</Platform>
+-                <Platform value="OSX64">True</Platform>
+-                <Platform value="OSXARM64">True</Platform>
+                 <Platform value="Win32">True</Platform>
+                 <Platform value="Win64">True</Platform>
+                 <Platform value="Win64x">True</Platform>
+diff --git a/Packages/Delphi/Delphi 10.4+/PythonFmx.dproj b/Packages/Delphi/Delphi 10.4+/PythonFmx.dproj
+index 5a0a96b..529235b 100644
+--- a/Packages/Delphi/Delphi 10.4+/PythonFmx.dproj	
++++ b/Packages/Delphi/Delphi 10.4+/PythonFmx.dproj	
+@@ -5,35 +5,15 @@
+         <Config Condition="'$(Config)'==''">Release</Config>
+         <FrameworkType>FMX</FrameworkType>
+         <MainSource>PythonFmx.dpk</MainSource>
+-        <Platform Condition="'$(Platform)'==''">Win32</Platform>
++        <Platform Condition="'$(Platform)'==''">Win64</Platform>
+         <ProjectGuid>{513BF750-373D-4C95-A672-78CA8DDF3F63}</ProjectGuid>
+-        <ProjectVersion>20.3</ProjectVersion>
+-        <TargetedPlatforms>1741971</TargetedPlatforms>
++        <ProjectVersion>20.4</ProjectVersion>
++        <TargetedPlatforms>1048579</TargetedPlatforms>
+         <ProjectName Condition="'$(ProjectName)'==''">PythonFmx</ProjectName>
+     </PropertyGroup>
+     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+         <Base>true</Base>
+     </PropertyGroup>
+-    <PropertyGroup Condition="('$(Platform)'=='Android' and '$(Base)'=='true') or '$(Base_Android)'!=''">
+-        <Base_Android>true</Base_Android>
+-        <CfgParent>Base</CfgParent>
+-        <Base>true</Base>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="('$(Platform)'=='Android64' and '$(Base)'=='true') or '$(Base_Android64)'!=''">
+-        <Base_Android64>true</Base_Android64>
+-        <CfgParent>Base</CfgParent>
+-        <Base>true</Base>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="('$(Platform)'=='OSX64' and '$(Base)'=='true') or '$(Base_OSX64)'!=''">
+-        <Base_OSX64>true</Base_OSX64>
+-        <CfgParent>Base</CfgParent>
+-        <Base>true</Base>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="('$(Platform)'=='OSXARM64' and '$(Base)'=='true') or '$(Base_OSXARM64)'!=''">
+-        <Base_OSXARM64>true</Base_OSXARM64>
+-        <CfgParent>Base</CfgParent>
+-        <Base>true</Base>
+-    </PropertyGroup>
+     <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Base)'=='true') or '$(Base_Win32)'!=''">
+         <Base_Win32>true</Base_Win32>
+         <CfgParent>Base</CfgParent>
+@@ -65,12 +45,6 @@
+         <CfgParent>Base</CfgParent>
+         <Base>true</Base>
+     </PropertyGroup>
+-    <PropertyGroup Condition="('$(Platform)'=='iOSDevice64' and '$(Cfg_2)'=='true') or '$(Cfg_2_iOSDevice64)'!=''">
+-        <Cfg_2_iOSDevice64>true</Cfg_2_iOSDevice64>
+-        <CfgParent>Cfg_2</CfgParent>
+-        <Cfg_2>true</Cfg_2>
+-        <Base>true</Base>
+-    </PropertyGroup>
+     <PropertyGroup Condition="'$(Base)'!=''">
+         <SanitizedProjectName>PythonFmx</SanitizedProjectName>
+         <DCC_DcuOutput>..\..\..\lib\$(Platform)\$(Config)</DCC_DcuOutput>
+@@ -84,26 +58,6 @@
+         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+         <VerInfo_Locale>1046</VerInfo_Locale>
+     </PropertyGroup>
+-    <PropertyGroup Condition="'$(Base_Android)'!=''">
+-        <BT_BuildType>Debug</BT_BuildType>
+-        <DCC_CBuilderOutput>None</DCC_CBuilderOutput>
+-        <EnabledSysJars>annotation-1.2.0.dex.jar;asynclayoutinflater-1.0.0.dex.jar;billing-4.0.0.dex.jar;browser-1.0.0.dex.jar;cloud-messaging.dex.jar;collection-1.0.0.dex.jar;coordinatorlayout-1.0.0.dex.jar;core-1.5.0-rc02.dex.jar;core-common-2.0.1.dex.jar;core-runtime-2.0.1.dex.jar;cursoradapter-1.0.0.dex.jar;customview-1.0.0.dex.jar;documentfile-1.0.0.dex.jar;drawerlayout-1.0.0.dex.jar;firebase-annotations-16.0.0.dex.jar;firebase-common-20.0.0.dex.jar;firebase-components-17.0.0.dex.jar;firebase-datatransport-18.0.0.dex.jar;firebase-encoders-17.0.0.dex.jar;firebase-encoders-json-18.0.0.dex.jar;firebase-iid-interop-17.1.0.dex.jar;firebase-installations-17.0.0.dex.jar;firebase-installations-interop-17.0.0.dex.jar;firebase-measurement-connector-19.0.0.dex.jar;firebase-messaging-22.0.0.dex.jar;fmx.dex.jar;fragment-1.0.0.dex.jar;google-play-licensing.dex.jar;interpolator-1.0.0.dex.jar;javax.inject-1.dex.jar;legacy-support-core-ui-1.0.0.dex.jar;legacy-support-core-utils-1.0.0.dex.jar;lifecycle-common-2.0.0.dex.jar;lifecycle-livedata-2.0.0.dex.jar;lifecycle-livedata-core-2.0.0.dex.jar;lifecycle-runtime-2.0.0.dex.jar;lifecycle-service-2.0.0.dex.jar;lifecycle-viewmodel-2.0.0.dex.jar;listenablefuture-1.0.dex.jar;loader-1.0.0.dex.jar;localbroadcastmanager-1.0.0.dex.jar;play-services-ads-20.1.0.dex.jar;play-services-ads-base-20.1.0.dex.jar;play-services-ads-identifier-17.0.0.dex.jar;play-services-ads-lite-20.1.0.dex.jar;play-services-base-17.5.0.dex.jar;play-services-basement-17.6.0.dex.jar;play-services-cloud-messaging-16.0.0.dex.jar;play-services-drive-17.0.0.dex.jar;play-services-games-21.0.0.dex.jar;play-services-location-18.0.0.dex.jar;play-services-maps-17.0.1.dex.jar;play-services-measurement-base-18.0.0.dex.jar;play-services-measurement-sdk-api-18.0.0.dex.jar;play-services-places-placereport-17.0.0.dex.jar;play-services-stats-17.0.0.dex.jar;play-services-tasks-17.2.0.dex.jar;print-1.0.0.dex.jar;room-common-2.1.0.dex.jar;room-runtime-2.1.0.dex.jar;slidingpanelayout-1.0.0.dex.jar;sqlite-2.0.1.dex.jar;sqlite-framework-2.0.1.dex.jar;swiperefreshlayout-1.0.0.dex.jar;transport-api-3.0.0.dex.jar;transport-backend-cct-3.0.0.dex.jar;transport-runtime-3.0.0.dex.jar;user-messaging-platform-1.0.0.dex.jar;versionedparcelable-1.1.1.dex.jar;viewpager-1.0.0.dex.jar;work-runtime-2.1.0.dex.jar</EnabledSysJars>
+-        <VerInfo_Keys>package=com.embarcadero.$(MSBuildProjectName);label=$(MSBuildProjectName);versionCode=1;versionName=1.0.0;persistent=False;restoreAnyVersion=False;installLocation=auto;largeHeap=False;theme=TitleBar;hardwareAccelerated=true;apiKey=;minSdkVersion=23;targetSdkVersion=35</VerInfo_Keys>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="'$(Base_Android64)'!=''">
+-        <BT_BuildType>Debug</BT_BuildType>
+-        <DCC_CBuilderOutput>None</DCC_CBuilderOutput>
+-        <EnabledSysJars>annotation-1.2.0.dex.jar;asynclayoutinflater-1.0.0.dex.jar;billing-4.0.0.dex.jar;browser-1.0.0.dex.jar;cloud-messaging.dex.jar;collection-1.0.0.dex.jar;coordinatorlayout-1.0.0.dex.jar;core-1.5.0-rc02.dex.jar;core-common-2.0.1.dex.jar;core-runtime-2.0.1.dex.jar;cursoradapter-1.0.0.dex.jar;customview-1.0.0.dex.jar;documentfile-1.0.0.dex.jar;drawerlayout-1.0.0.dex.jar;firebase-annotations-16.0.0.dex.jar;firebase-common-20.0.0.dex.jar;firebase-components-17.0.0.dex.jar;firebase-datatransport-18.0.0.dex.jar;firebase-encoders-17.0.0.dex.jar;firebase-encoders-json-18.0.0.dex.jar;firebase-iid-interop-17.1.0.dex.jar;firebase-installations-17.0.0.dex.jar;firebase-installations-interop-17.0.0.dex.jar;firebase-measurement-connector-19.0.0.dex.jar;firebase-messaging-22.0.0.dex.jar;fmx.dex.jar;fragment-1.0.0.dex.jar;google-play-licensing.dex.jar;interpolator-1.0.0.dex.jar;javax.inject-1.dex.jar;legacy-support-core-ui-1.0.0.dex.jar;legacy-support-core-utils-1.0.0.dex.jar;lifecycle-common-2.0.0.dex.jar;lifecycle-livedata-2.0.0.dex.jar;lifecycle-livedata-core-2.0.0.dex.jar;lifecycle-runtime-2.0.0.dex.jar;lifecycle-service-2.0.0.dex.jar;lifecycle-viewmodel-2.0.0.dex.jar;listenablefuture-1.0.dex.jar;loader-1.0.0.dex.jar;localbroadcastmanager-1.0.0.dex.jar;play-services-ads-20.1.0.dex.jar;play-services-ads-base-20.1.0.dex.jar;play-services-ads-identifier-17.0.0.dex.jar;play-services-ads-lite-20.1.0.dex.jar;play-services-base-17.5.0.dex.jar;play-services-basement-17.6.0.dex.jar;play-services-cloud-messaging-16.0.0.dex.jar;play-services-drive-17.0.0.dex.jar;play-services-games-21.0.0.dex.jar;play-services-location-18.0.0.dex.jar;play-services-maps-17.0.1.dex.jar;play-services-measurement-base-18.0.0.dex.jar;play-services-measurement-sdk-api-18.0.0.dex.jar;play-services-places-placereport-17.0.0.dex.jar;play-services-stats-17.0.0.dex.jar;play-services-tasks-17.2.0.dex.jar;print-1.0.0.dex.jar;room-common-2.1.0.dex.jar;room-runtime-2.1.0.dex.jar;slidingpanelayout-1.0.0.dex.jar;sqlite-2.0.1.dex.jar;sqlite-framework-2.0.1.dex.jar;swiperefreshlayout-1.0.0.dex.jar;transport-api-3.0.0.dex.jar;transport-backend-cct-3.0.0.dex.jar;transport-runtime-3.0.0.dex.jar;user-messaging-platform-1.0.0.dex.jar;versionedparcelable-1.1.1.dex.jar;viewpager-1.0.0.dex.jar;work-runtime-2.1.0.dex.jar</EnabledSysJars>
+-        <VerInfo_Keys>package=com.embarcadero.$(MSBuildProjectName);label=$(MSBuildProjectName);versionCode=1;versionName=1.0.0;persistent=False;restoreAnyVersion=False;installLocation=auto;largeHeap=False;theme=TitleBar;hardwareAccelerated=true;apiKey=;minSdkVersion=23;targetSdkVersion=35</VerInfo_Keys>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="'$(Base_OSX64)'!=''">
+-        <BT_BuildType>Debug</BT_BuildType>
+-        <VerInfo_Keys>CFBundleName=$(MSBuildProjectName);CFBundleDisplayName=$(MSBuildProjectName);CFBundleIdentifier=$(MSBuildProjectName);CFBundleVersion=1.0.0;CFBundleShortVersionString=1.0.0;CFBundlePackageType=APPL;CFBundleSignature=????;CFBundleAllowMixedLocalizations=YES;CFBundleExecutable=$(MSBuildProjectName);NSHighResolutionCapable=true;LSApplicationCategoryType=public.app-category.utilities;NSLocationUsageDescription=The reason for accessing the location information of the user;NSContactsUsageDescription=The reason for accessing the contacts;NSCalendarsUsageDescription=The reason for accessing the calendar data;NSRemindersUsageDescription=The reason for accessing the reminders;NSCameraUsageDescription=The reason for accessing the camera;NSMicrophoneUsageDescription=The reason for accessing the microphone;NSMotionUsageDescription=The reason for accessing the accelerometer;NSDesktopFolderUsageDescription=The reason for accessing the Desktop folder;NSDocumentsFolderUsageDescription=The reason for accessing the Documents folder;NSDownloadsFolderUsageDescription=The reason for accessing the Downloads folder;NSNetworkVolumesUsageDescription=The reason for accessing files on a network volume;NSRemovableVolumesUsageDescription=The reason for accessing files on a removable volume;NSSpeechRecognitionUsageDescription=The reason for requesting to send user data to Apple&apos;s speech recognition servers;ITSAppUsesNonExemptEncryption=false;NSBluetoothAlwaysUsageDescription=The reason for accessing the Bluetooth interface</VerInfo_Keys>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="'$(Base_OSXARM64)'!=''">
+-        <BT_BuildType>Debug</BT_BuildType>
+-        <VerInfo_Keys>CFBundleName=$(MSBuildProjectName);CFBundleDisplayName=$(MSBuildProjectName);CFBundleIdentifier=$(MSBuildProjectName);CFBundleVersion=1.0.0;CFBundleShortVersionString=1.0.0;CFBundlePackageType=APPL;CFBundleSignature=????;CFBundleAllowMixedLocalizations=YES;CFBundleExecutable=$(MSBuildProjectName);NSHighResolutionCapable=true;LSApplicationCategoryType=public.app-category.utilities;NSLocationUsageDescription=The reason for accessing the location information of the user;NSContactsUsageDescription=The reason for accessing the contacts;NSCalendarsUsageDescription=The reason for accessing the calendar data;NSRemindersUsageDescription=The reason for accessing the reminders;NSCameraUsageDescription=The reason for accessing the camera;NSMicrophoneUsageDescription=The reason for accessing the microphone;NSMotionUsageDescription=The reason for accessing the accelerometer;NSDesktopFolderUsageDescription=The reason for accessing the Desktop folder;NSDocumentsFolderUsageDescription=The reason for accessing the Documents folder;NSDownloadsFolderUsageDescription=The reason for accessing the Downloads folder;NSNetworkVolumesUsageDescription=The reason for accessing files on a network volume;NSRemovableVolumesUsageDescription=The reason for accessing files on a removable volume;NSSpeechRecognitionUsageDescription=The reason for requesting to send user data to Apple&apos;s speech recognition servers;ITSAppUsesNonExemptEncryption=false;NSBluetoothAlwaysUsageDescription=The reason for accessing the Bluetooth interface</VerInfo_Keys>
+-    </PropertyGroup>
+     <PropertyGroup Condition="'$(Base_Win32)'!=''">
+         <BT_BuildType>Debug</BT_BuildType>
+         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
+@@ -144,9 +98,6 @@
+         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
+         <DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+     </PropertyGroup>
+-    <PropertyGroup Condition="'$(Cfg_2_iOSDevice64)'!=''">
+-        <BT_BuildType>Debug</BT_BuildType>
+-    </PropertyGroup>
+     <ItemGroup>
+         <DelphiCompile Include="$(MainSource)">
+             <MainSource>MainSource</MainSource>
+@@ -203,13 +154,6 @@
+                 <Excluded_Packages/>
+             </Delphi.Personality>
+             <Platforms>
+-                <Platform value="Android">True</Platform>
+-                <Platform value="Android64">True</Platform>
+-                <Platform value="iOSDevice64">True</Platform>
+-                <Platform value="iOSSimARM64">True</Platform>
+-                <Platform value="Linux64">True</Platform>
+-                <Platform value="OSX64">True</Platform>
+-                <Platform value="OSXARM64">True</Platform>
+                 <Platform value="Win32">True</Platform>
+                 <Platform value="Win64">True</Platform>
+                 <Platform value="Win64x">True</Platform>
+diff --git a/Packages/Delphi/Delphi 10.4+/PythonVcl.dproj b/Packages/Delphi/Delphi 10.4+/PythonVcl.dproj
+index 7873d2c..83d9b4a 100644
+--- a/Packages/Delphi/Delphi 10.4+/PythonVcl.dproj	
++++ b/Packages/Delphi/Delphi 10.4+/PythonVcl.dproj	
+@@ -5,25 +5,15 @@
+         <Config Condition="'$(Config)'==''">Release</Config>
+         <FrameworkType>VCL</FrameworkType>
+         <MainSource>PythonVcl.dpk</MainSource>
+-        <Platform Condition="'$(Platform)'==''">Win32</Platform>
++        <Platform Condition="'$(Platform)'==''">Win64</Platform>
+         <ProjectGuid>{D8908301-393C-4CFA-8842-4948A9935E21}</ProjectGuid>
+         <ProjectName Condition="'$(ProjectName)'==''">PythonVcl</ProjectName>
+-        <ProjectVersion>20.3</ProjectVersion>
++        <ProjectVersion>20.4</ProjectVersion>
+         <TargetedPlatforms>1048579</TargetedPlatforms>
+     </PropertyGroup>
+     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+         <Base>true</Base>
+     </PropertyGroup>
+-    <PropertyGroup Condition="('$(Platform)'=='Android' and '$(Base)'=='true') or '$(Base_Android)'!=''">
+-        <Base_Android>true</Base_Android>
+-        <CfgParent>Base</CfgParent>
+-        <Base>true</Base>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="('$(Platform)'=='Android64' and '$(Base)'=='true') or '$(Base_Android64)'!=''">
+-        <Base_Android64>true</Base_Android64>
+-        <CfgParent>Base</CfgParent>
+-        <Base>true</Base>
+-    </PropertyGroup>
+     <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Base)'=='true') or '$(Base_Win32)'!=''">
+         <Base_Win32>true</Base_Win32>
+         <CfgParent>Base</CfgParent>
+@@ -74,12 +64,6 @@
+         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+         <VerInfo_Locale>1033</VerInfo_Locale>
+     </PropertyGroup>
+-    <PropertyGroup Condition="'$(Base_Android)'!=''">
+-        <EnabledSysJars>activity-1.7.2.dex.jar;annotation-experimental-1.4.1.dex.jar;annotation-jvm-1.8.1.dex.jar;annotations-13.0.dex.jar;appcompat-1.2.0.dex.jar;appcompat-resources-1.2.0.dex.jar;billing-7.1.1.dex.jar;biometric-1.1.0.dex.jar;browser-1.4.0.dex.jar;cloud-messaging.dex.jar;collection-jvm-1.4.2.dex.jar;concurrent-futures-1.1.0.dex.jar;core-1.15.0.dex.jar;core-common-2.2.0.dex.jar;core-ktx-1.15.0.dex.jar;core-runtime-2.2.0.dex.jar;cursoradapter-1.0.0.dex.jar;customview-1.0.0.dex.jar;documentfile-1.0.0.dex.jar;drawerlayout-1.0.0.dex.jar;error_prone_annotations-2.9.0.dex.jar;exifinterface-1.3.6.dex.jar;firebase-annotations-16.2.0.dex.jar;firebase-common-20.3.1.dex.jar;firebase-components-17.1.0.dex.jar;firebase-datatransport-18.1.7.dex.jar;firebase-encoders-17.0.0.dex.jar;firebase-encoders-json-18.0.0.dex.jar;firebase-encoders-proto-16.0.0.dex.jar;firebase-iid-interop-17.1.0.dex.jar;firebase-installations-17.1.3.dex.jar;firebase-installations-interop-17.1.0.dex.jar;firebase-measurement-connector-19.0.0.dex.jar;firebase-messaging-23.1.2.dex.jar;fmx.dex.jar;fragment-1.2.5.dex.jar;google-play-licensing.dex.jar;interpolator-1.0.0.dex.jar;javax.inject-1.dex.jar;kotlin-stdlib-1.8.22.dex.jar;kotlin-stdlib-common-1.8.22.dex.jar;kotlin-stdlib-jdk7-1.8.22.dex.jar;kotlin-stdlib-jdk8-1.8.22.dex.jar;kotlinx-coroutines-android-1.6.4.dex.jar;kotlinx-coroutines-core-jvm-1.6.4.dex.jar;legacy-support-core-utils-1.0.0.dex.jar;lifecycle-common-2.6.2.dex.jar;lifecycle-livedata-2.6.2.dex.jar;lifecycle-livedata-core-2.6.2.dex.jar;lifecycle-runtime-2.6.2.dex.jar;lifecycle-service-2.6.2.dex.jar;lifecycle-viewmodel-2.6.2.dex.jar;lifecycle-viewmodel-savedstate-2.6.2.dex.jar;listenablefuture-1.0.dex.jar;loader-1.0.0.dex.jar;localbroadcastmanager-1.0.0.dex.jar;okio-jvm-3.4.0.dex.jar;play-services-ads-22.2.0.dex.jar;play-services-ads-base-22.2.0.dex.jar;play-services-ads-identifier-18.0.0.dex.jar;play-services-ads-lite-22.2.0.dex.jar;play-services-appset-16.0.1.dex.jar;play-services-base-18.5.0.dex.jar;play-services-basement-18.4.0.dex.jar;play-services-cloud-messaging-17.0.1.dex.jar;play-services-location-21.0.1.dex.jar;play-services-maps-18.1.0.dex.jar;play-services-measurement-base-20.1.2.dex.jar;play-services-measurement-sdk-api-20.1.2.dex.jar;play-services-stats-17.0.2.dex.jar;play-services-tasks-18.2.0.dex.jar;print-1.0.0.dex.jar;profileinstaller-1.3.0.dex.jar;room-common-2.2.5.dex.jar;room-runtime-2.2.5.dex.jar;savedstate-1.2.1.dex.jar;sqlite-2.1.0.dex.jar;sqlite-framework-2.1.0.dex.jar;startup-runtime-1.1.1.dex.jar;tracing-1.2.0.dex.jar;transport-api-3.0.0.dex.jar;transport-backend-cct-3.1.8.dex.jar;transport-runtime-3.1.8.dex.jar;user-messaging-platform-2.0.0.dex.jar;vectordrawable-1.1.0.dex.jar;vectordrawable-animated-1.1.0.dex.jar;versionedparcelable-1.1.1.dex.jar;viewpager-1.0.0.dex.jar;work-runtime-2.7.0.dex.jar</EnabledSysJars>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="'$(Base_Android64)'!=''">
+-        <EnabledSysJars>activity-1.7.2.dex.jar;annotation-experimental-1.4.1.dex.jar;annotation-jvm-1.8.1.dex.jar;annotations-13.0.dex.jar;appcompat-1.2.0.dex.jar;appcompat-resources-1.2.0.dex.jar;billing-7.1.1.dex.jar;biometric-1.1.0.dex.jar;browser-1.4.0.dex.jar;cloud-messaging.dex.jar;collection-jvm-1.4.2.dex.jar;concurrent-futures-1.1.0.dex.jar;core-1.15.0.dex.jar;core-common-2.2.0.dex.jar;core-ktx-1.15.0.dex.jar;core-runtime-2.2.0.dex.jar;cursoradapter-1.0.0.dex.jar;customview-1.0.0.dex.jar;documentfile-1.0.0.dex.jar;drawerlayout-1.0.0.dex.jar;error_prone_annotations-2.9.0.dex.jar;exifinterface-1.3.6.dex.jar;firebase-annotations-16.2.0.dex.jar;firebase-common-20.3.1.dex.jar;firebase-components-17.1.0.dex.jar;firebase-datatransport-18.1.7.dex.jar;firebase-encoders-17.0.0.dex.jar;firebase-encoders-json-18.0.0.dex.jar;firebase-encoders-proto-16.0.0.dex.jar;firebase-iid-interop-17.1.0.dex.jar;firebase-installations-17.1.3.dex.jar;firebase-installations-interop-17.1.0.dex.jar;firebase-measurement-connector-19.0.0.dex.jar;firebase-messaging-23.1.2.dex.jar;fmx.dex.jar;fragment-1.2.5.dex.jar;google-play-licensing.dex.jar;interpolator-1.0.0.dex.jar;javax.inject-1.dex.jar;kotlin-stdlib-1.8.22.dex.jar;kotlin-stdlib-common-1.8.22.dex.jar;kotlin-stdlib-jdk7-1.8.22.dex.jar;kotlin-stdlib-jdk8-1.8.22.dex.jar;kotlinx-coroutines-android-1.6.4.dex.jar;kotlinx-coroutines-core-jvm-1.6.4.dex.jar;legacy-support-core-utils-1.0.0.dex.jar;lifecycle-common-2.6.2.dex.jar;lifecycle-livedata-2.6.2.dex.jar;lifecycle-livedata-core-2.6.2.dex.jar;lifecycle-runtime-2.6.2.dex.jar;lifecycle-service-2.6.2.dex.jar;lifecycle-viewmodel-2.6.2.dex.jar;lifecycle-viewmodel-savedstate-2.6.2.dex.jar;listenablefuture-1.0.dex.jar;loader-1.0.0.dex.jar;localbroadcastmanager-1.0.0.dex.jar;okio-jvm-3.4.0.dex.jar;play-services-ads-22.2.0.dex.jar;play-services-ads-base-22.2.0.dex.jar;play-services-ads-identifier-18.0.0.dex.jar;play-services-ads-lite-22.2.0.dex.jar;play-services-appset-16.0.1.dex.jar;play-services-base-18.5.0.dex.jar;play-services-basement-18.4.0.dex.jar;play-services-cloud-messaging-17.0.1.dex.jar;play-services-location-21.0.1.dex.jar;play-services-maps-18.1.0.dex.jar;play-services-measurement-base-20.1.2.dex.jar;play-services-measurement-sdk-api-20.1.2.dex.jar;play-services-stats-17.0.2.dex.jar;play-services-tasks-18.2.0.dex.jar;print-1.0.0.dex.jar;profileinstaller-1.3.0.dex.jar;room-common-2.2.5.dex.jar;room-runtime-2.2.5.dex.jar;savedstate-1.2.1.dex.jar;sqlite-2.1.0.dex.jar;sqlite-framework-2.1.0.dex.jar;startup-runtime-1.1.1.dex.jar;tracing-1.2.0.dex.jar;transport-api-3.0.0.dex.jar;transport-backend-cct-3.1.8.dex.jar;transport-runtime-3.1.8.dex.jar;user-messaging-platform-2.0.0.dex.jar;vectordrawable-1.1.0.dex.jar;vectordrawable-animated-1.1.0.dex.jar;versionedparcelable-1.1.1.dex.jar;viewpager-1.0.0.dex.jar;work-runtime-2.7.0.dex.jar</EnabledSysJars>
+-    </PropertyGroup>
+     <PropertyGroup Condition="'$(Base_Win32)'!=''">
+         <BT_BuildType>Debug</BT_BuildType>
+         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
+@@ -169,13 +153,6 @@
+                 <Excluded_Packages/>
+             </Delphi.Personality>
+             <Platforms>
+-                <Platform value="Android">False</Platform>
+-                <Platform value="Android64">False</Platform>
+-                <Platform value="iOSDevice64">False</Platform>
+-                <Platform value="iOSSimARM64">False</Platform>
+-                <Platform value="Linux64">False</Platform>
+-                <Platform value="OSX64">False</Platform>
+-                <Platform value="OSXARM64">False</Platform>
+                 <Platform value="Win32">True</Platform>
+                 <Platform value="Win64">True</Platform>
+                 <Platform value="Win64x">True</Platform>
+diff --git a/Packages/Delphi/Delphi 10.4+/dclPython.dproj b/Packages/Delphi/Delphi 10.4+/dclPython.dproj
+index c78616d..3189504 100644
+--- a/Packages/Delphi/Delphi 10.4+/dclPython.dproj	
++++ b/Packages/Delphi/Delphi 10.4+/dclPython.dproj	
+@@ -5,25 +5,15 @@
+         <Config Condition="'$(Config)'==''">Release</Config>
+         <FrameworkType>None</FrameworkType>
+         <MainSource>dclPython.dpk</MainSource>
+-        <Platform Condition="'$(Platform)'==''">Win32</Platform>
++        <Platform Condition="'$(Platform)'==''">Win64</Platform>
+         <ProjectGuid>{D9AB994C-54A3-4E76-81C8-6D0BB035A091}</ProjectGuid>
+         <ProjectName Condition="'$(ProjectName)'==''">dclPython</ProjectName>
+-        <ProjectVersion>20.3</ProjectVersion>
+-        <TargetedPlatforms>1</TargetedPlatforms>
++        <ProjectVersion>20.4</ProjectVersion>
++        <TargetedPlatforms>3</TargetedPlatforms>
+     </PropertyGroup>
+     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+         <Base>true</Base>
+     </PropertyGroup>
+-    <PropertyGroup Condition="('$(Platform)'=='Android' and '$(Base)'=='true') or '$(Base_Android)'!=''">
+-        <Base_Android>true</Base_Android>
+-        <CfgParent>Base</CfgParent>
+-        <Base>true</Base>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="('$(Platform)'=='Android64' and '$(Base)'=='true') or '$(Base_Android64)'!=''">
+-        <Base_Android64>true</Base_Android64>
+-        <CfgParent>Base</CfgParent>
+-        <Base>true</Base>
+-    </PropertyGroup>
+     <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Base)'=='true') or '$(Base_Win32)'!=''">
+         <Base_Win32>true</Base_Win32>
+         <CfgParent>Base</CfgParent>
+@@ -65,12 +55,6 @@
+         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+         <VerInfo_Locale>1033</VerInfo_Locale>
+     </PropertyGroup>
+-    <PropertyGroup Condition="'$(Base_Android)'!=''">
+-        <EnabledSysJars>activity-1.7.2.dex.jar;annotation-experimental-1.4.1.dex.jar;annotation-jvm-1.8.1.dex.jar;annotations-13.0.dex.jar;appcompat-1.2.0.dex.jar;appcompat-resources-1.2.0.dex.jar;billing-7.1.1.dex.jar;biometric-1.1.0.dex.jar;browser-1.4.0.dex.jar;cloud-messaging.dex.jar;collection-jvm-1.4.2.dex.jar;concurrent-futures-1.1.0.dex.jar;core-1.15.0.dex.jar;core-common-2.2.0.dex.jar;core-ktx-1.15.0.dex.jar;core-runtime-2.2.0.dex.jar;cursoradapter-1.0.0.dex.jar;customview-1.0.0.dex.jar;documentfile-1.0.0.dex.jar;drawerlayout-1.0.0.dex.jar;error_prone_annotations-2.9.0.dex.jar;exifinterface-1.3.6.dex.jar;firebase-annotations-16.2.0.dex.jar;firebase-common-20.3.1.dex.jar;firebase-components-17.1.0.dex.jar;firebase-datatransport-18.1.7.dex.jar;firebase-encoders-17.0.0.dex.jar;firebase-encoders-json-18.0.0.dex.jar;firebase-encoders-proto-16.0.0.dex.jar;firebase-iid-interop-17.1.0.dex.jar;firebase-installations-17.1.3.dex.jar;firebase-installations-interop-17.1.0.dex.jar;firebase-measurement-connector-19.0.0.dex.jar;firebase-messaging-23.1.2.dex.jar;fmx.dex.jar;fragment-1.2.5.dex.jar;google-play-licensing.dex.jar;interpolator-1.0.0.dex.jar;javax.inject-1.dex.jar;kotlin-stdlib-1.8.22.dex.jar;kotlin-stdlib-common-1.8.22.dex.jar;kotlin-stdlib-jdk7-1.8.22.dex.jar;kotlin-stdlib-jdk8-1.8.22.dex.jar;kotlinx-coroutines-android-1.6.4.dex.jar;kotlinx-coroutines-core-jvm-1.6.4.dex.jar;legacy-support-core-utils-1.0.0.dex.jar;lifecycle-common-2.6.2.dex.jar;lifecycle-livedata-2.6.2.dex.jar;lifecycle-livedata-core-2.6.2.dex.jar;lifecycle-runtime-2.6.2.dex.jar;lifecycle-service-2.6.2.dex.jar;lifecycle-viewmodel-2.6.2.dex.jar;lifecycle-viewmodel-savedstate-2.6.2.dex.jar;listenablefuture-1.0.dex.jar;loader-1.0.0.dex.jar;localbroadcastmanager-1.0.0.dex.jar;okio-jvm-3.4.0.dex.jar;play-services-ads-22.2.0.dex.jar;play-services-ads-base-22.2.0.dex.jar;play-services-ads-identifier-18.0.0.dex.jar;play-services-ads-lite-22.2.0.dex.jar;play-services-appset-16.0.1.dex.jar;play-services-base-18.5.0.dex.jar;play-services-basement-18.4.0.dex.jar;play-services-cloud-messaging-17.0.1.dex.jar;play-services-location-21.0.1.dex.jar;play-services-maps-18.1.0.dex.jar;play-services-measurement-base-20.1.2.dex.jar;play-services-measurement-sdk-api-20.1.2.dex.jar;play-services-stats-17.0.2.dex.jar;play-services-tasks-18.2.0.dex.jar;print-1.0.0.dex.jar;profileinstaller-1.3.0.dex.jar;room-common-2.2.5.dex.jar;room-runtime-2.2.5.dex.jar;savedstate-1.2.1.dex.jar;sqlite-2.1.0.dex.jar;sqlite-framework-2.1.0.dex.jar;startup-runtime-1.1.1.dex.jar;tracing-1.2.0.dex.jar;transport-api-3.0.0.dex.jar;transport-backend-cct-3.1.8.dex.jar;transport-runtime-3.1.8.dex.jar;user-messaging-platform-2.0.0.dex.jar;vectordrawable-1.1.0.dex.jar;vectordrawable-animated-1.1.0.dex.jar;versionedparcelable-1.1.1.dex.jar;viewpager-1.0.0.dex.jar;work-runtime-2.7.0.dex.jar</EnabledSysJars>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="'$(Base_Android64)'!=''">
+-        <EnabledSysJars>activity-1.7.2.dex.jar;annotation-experimental-1.4.1.dex.jar;annotation-jvm-1.8.1.dex.jar;annotations-13.0.dex.jar;appcompat-1.2.0.dex.jar;appcompat-resources-1.2.0.dex.jar;billing-7.1.1.dex.jar;biometric-1.1.0.dex.jar;browser-1.4.0.dex.jar;cloud-messaging.dex.jar;collection-jvm-1.4.2.dex.jar;concurrent-futures-1.1.0.dex.jar;core-1.15.0.dex.jar;core-common-2.2.0.dex.jar;core-ktx-1.15.0.dex.jar;core-runtime-2.2.0.dex.jar;cursoradapter-1.0.0.dex.jar;customview-1.0.0.dex.jar;documentfile-1.0.0.dex.jar;drawerlayout-1.0.0.dex.jar;error_prone_annotations-2.9.0.dex.jar;exifinterface-1.3.6.dex.jar;firebase-annotations-16.2.0.dex.jar;firebase-common-20.3.1.dex.jar;firebase-components-17.1.0.dex.jar;firebase-datatransport-18.1.7.dex.jar;firebase-encoders-17.0.0.dex.jar;firebase-encoders-json-18.0.0.dex.jar;firebase-encoders-proto-16.0.0.dex.jar;firebase-iid-interop-17.1.0.dex.jar;firebase-installations-17.1.3.dex.jar;firebase-installations-interop-17.1.0.dex.jar;firebase-measurement-connector-19.0.0.dex.jar;firebase-messaging-23.1.2.dex.jar;fmx.dex.jar;fragment-1.2.5.dex.jar;google-play-licensing.dex.jar;interpolator-1.0.0.dex.jar;javax.inject-1.dex.jar;kotlin-stdlib-1.8.22.dex.jar;kotlin-stdlib-common-1.8.22.dex.jar;kotlin-stdlib-jdk7-1.8.22.dex.jar;kotlin-stdlib-jdk8-1.8.22.dex.jar;kotlinx-coroutines-android-1.6.4.dex.jar;kotlinx-coroutines-core-jvm-1.6.4.dex.jar;legacy-support-core-utils-1.0.0.dex.jar;lifecycle-common-2.6.2.dex.jar;lifecycle-livedata-2.6.2.dex.jar;lifecycle-livedata-core-2.6.2.dex.jar;lifecycle-runtime-2.6.2.dex.jar;lifecycle-service-2.6.2.dex.jar;lifecycle-viewmodel-2.6.2.dex.jar;lifecycle-viewmodel-savedstate-2.6.2.dex.jar;listenablefuture-1.0.dex.jar;loader-1.0.0.dex.jar;localbroadcastmanager-1.0.0.dex.jar;okio-jvm-3.4.0.dex.jar;play-services-ads-22.2.0.dex.jar;play-services-ads-base-22.2.0.dex.jar;play-services-ads-identifier-18.0.0.dex.jar;play-services-ads-lite-22.2.0.dex.jar;play-services-appset-16.0.1.dex.jar;play-services-base-18.5.0.dex.jar;play-services-basement-18.4.0.dex.jar;play-services-cloud-messaging-17.0.1.dex.jar;play-services-location-21.0.1.dex.jar;play-services-maps-18.1.0.dex.jar;play-services-measurement-base-20.1.2.dex.jar;play-services-measurement-sdk-api-20.1.2.dex.jar;play-services-stats-17.0.2.dex.jar;play-services-tasks-18.2.0.dex.jar;print-1.0.0.dex.jar;profileinstaller-1.3.0.dex.jar;room-common-2.2.5.dex.jar;room-runtime-2.2.5.dex.jar;savedstate-1.2.1.dex.jar;sqlite-2.1.0.dex.jar;sqlite-framework-2.1.0.dex.jar;startup-runtime-1.1.1.dex.jar;tracing-1.2.0.dex.jar;transport-api-3.0.0.dex.jar;transport-backend-cct-3.1.8.dex.jar;transport-runtime-3.1.8.dex.jar;user-messaging-platform-2.0.0.dex.jar;vectordrawable-1.1.0.dex.jar;vectordrawable-animated-1.1.0.dex.jar;versionedparcelable-1.1.1.dex.jar;viewpager-1.0.0.dex.jar;work-runtime-2.7.0.dex.jar</EnabledSysJars>
+-    </PropertyGroup>
+     <PropertyGroup Condition="'$(Base_Win32)'!=''">
+         <BT_BuildType>Debug</BT_BuildType>
+         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
+@@ -159,15 +143,8 @@
+                 <Excluded_Packages/>
+             </Delphi.Personality>
+             <Platforms>
+-                <Platform value="Android">False</Platform>
+-                <Platform value="Android64">False</Platform>
+-                <Platform value="iOSDevice64">False</Platform>
+-                <Platform value="iOSSimARM64">False</Platform>
+-                <Platform value="Linux64">False</Platform>
+-                <Platform value="OSX64">False</Platform>
+-                <Platform value="OSXARM64">False</Platform>
+                 <Platform value="Win32">True</Platform>
+-                <Platform value="Win64">False</Platform>
++                <Platform value="Win64">True</Platform>
+                 <Platform value="Win64x">False</Platform>
+             </Platforms>
+         </BorlandProject>
+diff --git a/Packages/Delphi/Delphi 10.4+/dclPythonFmx.dproj b/Packages/Delphi/Delphi 10.4+/dclPythonFmx.dproj
+index b6867a4..d3cc6cb 100644
+--- a/Packages/Delphi/Delphi 10.4+/dclPythonFmx.dproj	
++++ b/Packages/Delphi/Delphi 10.4+/dclPythonFmx.dproj	
+@@ -5,25 +5,15 @@
+         <Config Condition="'$(Config)'==''">Release</Config>
+         <FrameworkType>None</FrameworkType>
+         <MainSource>dclPythonFmx.dpk</MainSource>
+-        <Platform Condition="'$(Platform)'==''">Win32</Platform>
++        <Platform Condition="'$(Platform)'==''">Win64</Platform>
+         <ProjectGuid>{E057921E-25DB-426E-8090-FE3F428894FF}</ProjectGuid>
+         <ProjectName Condition="'$(ProjectName)'==''">dclPythonFmx</ProjectName>
+-        <ProjectVersion>20.3</ProjectVersion>
+-        <TargetedPlatforms>1</TargetedPlatforms>
++        <ProjectVersion>20.4</ProjectVersion>
++        <TargetedPlatforms>3</TargetedPlatforms>
+     </PropertyGroup>
+     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+         <Base>true</Base>
+     </PropertyGroup>
+-    <PropertyGroup Condition="('$(Platform)'=='Android' and '$(Base)'=='true') or '$(Base_Android)'!=''">
+-        <Base_Android>true</Base_Android>
+-        <CfgParent>Base</CfgParent>
+-        <Base>true</Base>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="('$(Platform)'=='Android64' and '$(Base)'=='true') or '$(Base_Android64)'!=''">
+-        <Base_Android64>true</Base_Android64>
+-        <CfgParent>Base</CfgParent>
+-        <Base>true</Base>
+-    </PropertyGroup>
+     <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Base)'=='true') or '$(Base_Win32)'!=''">
+         <Base_Win32>true</Base_Win32>
+         <CfgParent>Base</CfgParent>
+@@ -66,12 +56,6 @@
+         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+         <VerInfo_Locale>1033</VerInfo_Locale>
+     </PropertyGroup>
+-    <PropertyGroup Condition="'$(Base_Android)'!=''">
+-        <EnabledSysJars>activity-1.7.2.dex.jar;annotation-experimental-1.4.1.dex.jar;annotation-jvm-1.8.1.dex.jar;annotations-13.0.dex.jar;appcompat-1.2.0.dex.jar;appcompat-resources-1.2.0.dex.jar;billing-7.1.1.dex.jar;biometric-1.1.0.dex.jar;browser-1.4.0.dex.jar;cloud-messaging.dex.jar;collection-jvm-1.4.2.dex.jar;concurrent-futures-1.1.0.dex.jar;core-1.15.0.dex.jar;core-common-2.2.0.dex.jar;core-ktx-1.15.0.dex.jar;core-runtime-2.2.0.dex.jar;cursoradapter-1.0.0.dex.jar;customview-1.0.0.dex.jar;documentfile-1.0.0.dex.jar;drawerlayout-1.0.0.dex.jar;error_prone_annotations-2.9.0.dex.jar;exifinterface-1.3.6.dex.jar;firebase-annotations-16.2.0.dex.jar;firebase-common-20.3.1.dex.jar;firebase-components-17.1.0.dex.jar;firebase-datatransport-18.1.7.dex.jar;firebase-encoders-17.0.0.dex.jar;firebase-encoders-json-18.0.0.dex.jar;firebase-encoders-proto-16.0.0.dex.jar;firebase-iid-interop-17.1.0.dex.jar;firebase-installations-17.1.3.dex.jar;firebase-installations-interop-17.1.0.dex.jar;firebase-measurement-connector-19.0.0.dex.jar;firebase-messaging-23.1.2.dex.jar;fmx.dex.jar;fragment-1.2.5.dex.jar;google-play-licensing.dex.jar;interpolator-1.0.0.dex.jar;javax.inject-1.dex.jar;kotlin-stdlib-1.8.22.dex.jar;kotlin-stdlib-common-1.8.22.dex.jar;kotlin-stdlib-jdk7-1.8.22.dex.jar;kotlin-stdlib-jdk8-1.8.22.dex.jar;kotlinx-coroutines-android-1.6.4.dex.jar;kotlinx-coroutines-core-jvm-1.6.4.dex.jar;legacy-support-core-utils-1.0.0.dex.jar;lifecycle-common-2.6.2.dex.jar;lifecycle-livedata-2.6.2.dex.jar;lifecycle-livedata-core-2.6.2.dex.jar;lifecycle-runtime-2.6.2.dex.jar;lifecycle-service-2.6.2.dex.jar;lifecycle-viewmodel-2.6.2.dex.jar;lifecycle-viewmodel-savedstate-2.6.2.dex.jar;listenablefuture-1.0.dex.jar;loader-1.0.0.dex.jar;localbroadcastmanager-1.0.0.dex.jar;okio-jvm-3.4.0.dex.jar;play-services-ads-22.2.0.dex.jar;play-services-ads-base-22.2.0.dex.jar;play-services-ads-identifier-18.0.0.dex.jar;play-services-ads-lite-22.2.0.dex.jar;play-services-appset-16.0.1.dex.jar;play-services-base-18.5.0.dex.jar;play-services-basement-18.4.0.dex.jar;play-services-cloud-messaging-17.0.1.dex.jar;play-services-location-21.0.1.dex.jar;play-services-maps-18.1.0.dex.jar;play-services-measurement-base-20.1.2.dex.jar;play-services-measurement-sdk-api-20.1.2.dex.jar;play-services-stats-17.0.2.dex.jar;play-services-tasks-18.2.0.dex.jar;print-1.0.0.dex.jar;profileinstaller-1.3.0.dex.jar;room-common-2.2.5.dex.jar;room-runtime-2.2.5.dex.jar;savedstate-1.2.1.dex.jar;sqlite-2.1.0.dex.jar;sqlite-framework-2.1.0.dex.jar;startup-runtime-1.1.1.dex.jar;tracing-1.2.0.dex.jar;transport-api-3.0.0.dex.jar;transport-backend-cct-3.1.8.dex.jar;transport-runtime-3.1.8.dex.jar;user-messaging-platform-2.0.0.dex.jar;vectordrawable-1.1.0.dex.jar;vectordrawable-animated-1.1.0.dex.jar;versionedparcelable-1.1.1.dex.jar;viewpager-1.0.0.dex.jar;work-runtime-2.7.0.dex.jar</EnabledSysJars>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="'$(Base_Android64)'!=''">
+-        <EnabledSysJars>activity-1.7.2.dex.jar;annotation-experimental-1.4.1.dex.jar;annotation-jvm-1.8.1.dex.jar;annotations-13.0.dex.jar;appcompat-1.2.0.dex.jar;appcompat-resources-1.2.0.dex.jar;billing-7.1.1.dex.jar;biometric-1.1.0.dex.jar;browser-1.4.0.dex.jar;cloud-messaging.dex.jar;collection-jvm-1.4.2.dex.jar;concurrent-futures-1.1.0.dex.jar;core-1.15.0.dex.jar;core-common-2.2.0.dex.jar;core-ktx-1.15.0.dex.jar;core-runtime-2.2.0.dex.jar;cursoradapter-1.0.0.dex.jar;customview-1.0.0.dex.jar;documentfile-1.0.0.dex.jar;drawerlayout-1.0.0.dex.jar;error_prone_annotations-2.9.0.dex.jar;exifinterface-1.3.6.dex.jar;firebase-annotations-16.2.0.dex.jar;firebase-common-20.3.1.dex.jar;firebase-components-17.1.0.dex.jar;firebase-datatransport-18.1.7.dex.jar;firebase-encoders-17.0.0.dex.jar;firebase-encoders-json-18.0.0.dex.jar;firebase-encoders-proto-16.0.0.dex.jar;firebase-iid-interop-17.1.0.dex.jar;firebase-installations-17.1.3.dex.jar;firebase-installations-interop-17.1.0.dex.jar;firebase-measurement-connector-19.0.0.dex.jar;firebase-messaging-23.1.2.dex.jar;fmx.dex.jar;fragment-1.2.5.dex.jar;google-play-licensing.dex.jar;interpolator-1.0.0.dex.jar;javax.inject-1.dex.jar;kotlin-stdlib-1.8.22.dex.jar;kotlin-stdlib-common-1.8.22.dex.jar;kotlin-stdlib-jdk7-1.8.22.dex.jar;kotlin-stdlib-jdk8-1.8.22.dex.jar;kotlinx-coroutines-android-1.6.4.dex.jar;kotlinx-coroutines-core-jvm-1.6.4.dex.jar;legacy-support-core-utils-1.0.0.dex.jar;lifecycle-common-2.6.2.dex.jar;lifecycle-livedata-2.6.2.dex.jar;lifecycle-livedata-core-2.6.2.dex.jar;lifecycle-runtime-2.6.2.dex.jar;lifecycle-service-2.6.2.dex.jar;lifecycle-viewmodel-2.6.2.dex.jar;lifecycle-viewmodel-savedstate-2.6.2.dex.jar;listenablefuture-1.0.dex.jar;loader-1.0.0.dex.jar;localbroadcastmanager-1.0.0.dex.jar;okio-jvm-3.4.0.dex.jar;play-services-ads-22.2.0.dex.jar;play-services-ads-base-22.2.0.dex.jar;play-services-ads-identifier-18.0.0.dex.jar;play-services-ads-lite-22.2.0.dex.jar;play-services-appset-16.0.1.dex.jar;play-services-base-18.5.0.dex.jar;play-services-basement-18.4.0.dex.jar;play-services-cloud-messaging-17.0.1.dex.jar;play-services-location-21.0.1.dex.jar;play-services-maps-18.1.0.dex.jar;play-services-measurement-base-20.1.2.dex.jar;play-services-measurement-sdk-api-20.1.2.dex.jar;play-services-stats-17.0.2.dex.jar;play-services-tasks-18.2.0.dex.jar;print-1.0.0.dex.jar;profileinstaller-1.3.0.dex.jar;room-common-2.2.5.dex.jar;room-runtime-2.2.5.dex.jar;savedstate-1.2.1.dex.jar;sqlite-2.1.0.dex.jar;sqlite-framework-2.1.0.dex.jar;startup-runtime-1.1.1.dex.jar;tracing-1.2.0.dex.jar;transport-api-3.0.0.dex.jar;transport-backend-cct-3.1.8.dex.jar;transport-runtime-3.1.8.dex.jar;user-messaging-platform-2.0.0.dex.jar;vectordrawable-1.1.0.dex.jar;vectordrawable-animated-1.1.0.dex.jar;versionedparcelable-1.1.1.dex.jar;viewpager-1.0.0.dex.jar;work-runtime-2.7.0.dex.jar</EnabledSysJars>
+-    </PropertyGroup>
+     <PropertyGroup Condition="'$(Base_Win32)'!=''">
+         <BT_BuildType>Debug</BT_BuildType>
+         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
+@@ -135,15 +119,8 @@
+                 <Excluded_Packages/>
+             </Delphi.Personality>
+             <Platforms>
+-                <Platform value="Android">False</Platform>
+-                <Platform value="Android64">False</Platform>
+-                <Platform value="iOSDevice64">False</Platform>
+-                <Platform value="iOSSimARM64">False</Platform>
+-                <Platform value="Linux64">False</Platform>
+-                <Platform value="OSX64">False</Platform>
+-                <Platform value="OSXARM64">False</Platform>
+                 <Platform value="Win32">True</Platform>
+-                <Platform value="Win64">False</Platform>
++                <Platform value="Win64">True</Platform>
+                 <Platform value="Win64x">False</Platform>
+             </Platforms>
+         </BorlandProject>
+diff --git a/Packages/Delphi/Delphi 10.4+/dclPythonVcl.dproj b/Packages/Delphi/Delphi 10.4+/dclPythonVcl.dproj
+index d73d63e..390dd97 100644
+--- a/Packages/Delphi/Delphi 10.4+/dclPythonVcl.dproj	
++++ b/Packages/Delphi/Delphi 10.4+/dclPythonVcl.dproj	
+@@ -5,25 +5,15 @@
+         <Config Condition="'$(Config)'==''">Release</Config>
+         <FrameworkType>None</FrameworkType>
+         <MainSource>dclPythonVcl.dpk</MainSource>
+-        <Platform Condition="'$(Platform)'==''">Win32</Platform>
++        <Platform Condition="'$(Platform)'==''">Win64</Platform>
+         <ProjectGuid>{48DDC28A-E154-4CA0-864A-30EB8C4CCBB3}</ProjectGuid>
+         <ProjectName Condition="'$(ProjectName)'==''">dclPythonVcl</ProjectName>
+-        <ProjectVersion>20.3</ProjectVersion>
+-        <TargetedPlatforms>1</TargetedPlatforms>
++        <ProjectVersion>20.4</ProjectVersion>
++        <TargetedPlatforms>3</TargetedPlatforms>
+     </PropertyGroup>
+     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+         <Base>true</Base>
+     </PropertyGroup>
+-    <PropertyGroup Condition="('$(Platform)'=='Android' and '$(Base)'=='true') or '$(Base_Android)'!=''">
+-        <Base_Android>true</Base_Android>
+-        <CfgParent>Base</CfgParent>
+-        <Base>true</Base>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="('$(Platform)'=='Android64' and '$(Base)'=='true') or '$(Base_Android64)'!=''">
+-        <Base_Android64>true</Base_Android64>
+-        <CfgParent>Base</CfgParent>
+-        <Base>true</Base>
+-    </PropertyGroup>
+     <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Base)'=='true') or '$(Base_Win32)'!=''">
+         <Base_Win32>true</Base_Win32>
+         <CfgParent>Base</CfgParent>
+@@ -65,12 +55,6 @@
+         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+         <VerInfo_Locale>1033</VerInfo_Locale>
+     </PropertyGroup>
+-    <PropertyGroup Condition="'$(Base_Android)'!=''">
+-        <EnabledSysJars>activity-1.7.2.dex.jar;annotation-experimental-1.4.1.dex.jar;annotation-jvm-1.8.1.dex.jar;annotations-13.0.dex.jar;appcompat-1.2.0.dex.jar;appcompat-resources-1.2.0.dex.jar;billing-7.1.1.dex.jar;biometric-1.1.0.dex.jar;browser-1.4.0.dex.jar;cloud-messaging.dex.jar;collection-jvm-1.4.2.dex.jar;concurrent-futures-1.1.0.dex.jar;core-1.15.0.dex.jar;core-common-2.2.0.dex.jar;core-ktx-1.15.0.dex.jar;core-runtime-2.2.0.dex.jar;cursoradapter-1.0.0.dex.jar;customview-1.0.0.dex.jar;documentfile-1.0.0.dex.jar;drawerlayout-1.0.0.dex.jar;error_prone_annotations-2.9.0.dex.jar;exifinterface-1.3.6.dex.jar;firebase-annotations-16.2.0.dex.jar;firebase-common-20.3.1.dex.jar;firebase-components-17.1.0.dex.jar;firebase-datatransport-18.1.7.dex.jar;firebase-encoders-17.0.0.dex.jar;firebase-encoders-json-18.0.0.dex.jar;firebase-encoders-proto-16.0.0.dex.jar;firebase-iid-interop-17.1.0.dex.jar;firebase-installations-17.1.3.dex.jar;firebase-installations-interop-17.1.0.dex.jar;firebase-measurement-connector-19.0.0.dex.jar;firebase-messaging-23.1.2.dex.jar;fmx.dex.jar;fragment-1.2.5.dex.jar;google-play-licensing.dex.jar;interpolator-1.0.0.dex.jar;javax.inject-1.dex.jar;kotlin-stdlib-1.8.22.dex.jar;kotlin-stdlib-common-1.8.22.dex.jar;kotlin-stdlib-jdk7-1.8.22.dex.jar;kotlin-stdlib-jdk8-1.8.22.dex.jar;kotlinx-coroutines-android-1.6.4.dex.jar;kotlinx-coroutines-core-jvm-1.6.4.dex.jar;legacy-support-core-utils-1.0.0.dex.jar;lifecycle-common-2.6.2.dex.jar;lifecycle-livedata-2.6.2.dex.jar;lifecycle-livedata-core-2.6.2.dex.jar;lifecycle-runtime-2.6.2.dex.jar;lifecycle-service-2.6.2.dex.jar;lifecycle-viewmodel-2.6.2.dex.jar;lifecycle-viewmodel-savedstate-2.6.2.dex.jar;listenablefuture-1.0.dex.jar;loader-1.0.0.dex.jar;localbroadcastmanager-1.0.0.dex.jar;okio-jvm-3.4.0.dex.jar;play-services-ads-22.2.0.dex.jar;play-services-ads-base-22.2.0.dex.jar;play-services-ads-identifier-18.0.0.dex.jar;play-services-ads-lite-22.2.0.dex.jar;play-services-appset-16.0.1.dex.jar;play-services-base-18.5.0.dex.jar;play-services-basement-18.4.0.dex.jar;play-services-cloud-messaging-17.0.1.dex.jar;play-services-location-21.0.1.dex.jar;play-services-maps-18.1.0.dex.jar;play-services-measurement-base-20.1.2.dex.jar;play-services-measurement-sdk-api-20.1.2.dex.jar;play-services-stats-17.0.2.dex.jar;play-services-tasks-18.2.0.dex.jar;print-1.0.0.dex.jar;profileinstaller-1.3.0.dex.jar;room-common-2.2.5.dex.jar;room-runtime-2.2.5.dex.jar;savedstate-1.2.1.dex.jar;sqlite-2.1.0.dex.jar;sqlite-framework-2.1.0.dex.jar;startup-runtime-1.1.1.dex.jar;tracing-1.2.0.dex.jar;transport-api-3.0.0.dex.jar;transport-backend-cct-3.1.8.dex.jar;transport-runtime-3.1.8.dex.jar;user-messaging-platform-2.0.0.dex.jar;vectordrawable-1.1.0.dex.jar;vectordrawable-animated-1.1.0.dex.jar;versionedparcelable-1.1.1.dex.jar;viewpager-1.0.0.dex.jar;work-runtime-2.7.0.dex.jar</EnabledSysJars>
+-    </PropertyGroup>
+-    <PropertyGroup Condition="'$(Base_Android64)'!=''">
+-        <EnabledSysJars>activity-1.7.2.dex.jar;annotation-experimental-1.4.1.dex.jar;annotation-jvm-1.8.1.dex.jar;annotations-13.0.dex.jar;appcompat-1.2.0.dex.jar;appcompat-resources-1.2.0.dex.jar;billing-7.1.1.dex.jar;biometric-1.1.0.dex.jar;browser-1.4.0.dex.jar;cloud-messaging.dex.jar;collection-jvm-1.4.2.dex.jar;concurrent-futures-1.1.0.dex.jar;core-1.15.0.dex.jar;core-common-2.2.0.dex.jar;core-ktx-1.15.0.dex.jar;core-runtime-2.2.0.dex.jar;cursoradapter-1.0.0.dex.jar;customview-1.0.0.dex.jar;documentfile-1.0.0.dex.jar;drawerlayout-1.0.0.dex.jar;error_prone_annotations-2.9.0.dex.jar;exifinterface-1.3.6.dex.jar;firebase-annotations-16.2.0.dex.jar;firebase-common-20.3.1.dex.jar;firebase-components-17.1.0.dex.jar;firebase-datatransport-18.1.7.dex.jar;firebase-encoders-17.0.0.dex.jar;firebase-encoders-json-18.0.0.dex.jar;firebase-encoders-proto-16.0.0.dex.jar;firebase-iid-interop-17.1.0.dex.jar;firebase-installations-17.1.3.dex.jar;firebase-installations-interop-17.1.0.dex.jar;firebase-measurement-connector-19.0.0.dex.jar;firebase-messaging-23.1.2.dex.jar;fmx.dex.jar;fragment-1.2.5.dex.jar;google-play-licensing.dex.jar;interpolator-1.0.0.dex.jar;javax.inject-1.dex.jar;kotlin-stdlib-1.8.22.dex.jar;kotlin-stdlib-common-1.8.22.dex.jar;kotlin-stdlib-jdk7-1.8.22.dex.jar;kotlin-stdlib-jdk8-1.8.22.dex.jar;kotlinx-coroutines-android-1.6.4.dex.jar;kotlinx-coroutines-core-jvm-1.6.4.dex.jar;legacy-support-core-utils-1.0.0.dex.jar;lifecycle-common-2.6.2.dex.jar;lifecycle-livedata-2.6.2.dex.jar;lifecycle-livedata-core-2.6.2.dex.jar;lifecycle-runtime-2.6.2.dex.jar;lifecycle-service-2.6.2.dex.jar;lifecycle-viewmodel-2.6.2.dex.jar;lifecycle-viewmodel-savedstate-2.6.2.dex.jar;listenablefuture-1.0.dex.jar;loader-1.0.0.dex.jar;localbroadcastmanager-1.0.0.dex.jar;okio-jvm-3.4.0.dex.jar;play-services-ads-22.2.0.dex.jar;play-services-ads-base-22.2.0.dex.jar;play-services-ads-identifier-18.0.0.dex.jar;play-services-ads-lite-22.2.0.dex.jar;play-services-appset-16.0.1.dex.jar;play-services-base-18.5.0.dex.jar;play-services-basement-18.4.0.dex.jar;play-services-cloud-messaging-17.0.1.dex.jar;play-services-location-21.0.1.dex.jar;play-services-maps-18.1.0.dex.jar;play-services-measurement-base-20.1.2.dex.jar;play-services-measurement-sdk-api-20.1.2.dex.jar;play-services-stats-17.0.2.dex.jar;play-services-tasks-18.2.0.dex.jar;print-1.0.0.dex.jar;profileinstaller-1.3.0.dex.jar;room-common-2.2.5.dex.jar;room-runtime-2.2.5.dex.jar;savedstate-1.2.1.dex.jar;sqlite-2.1.0.dex.jar;sqlite-framework-2.1.0.dex.jar;startup-runtime-1.1.1.dex.jar;tracing-1.2.0.dex.jar;transport-api-3.0.0.dex.jar;transport-backend-cct-3.1.8.dex.jar;transport-runtime-3.1.8.dex.jar;user-messaging-platform-2.0.0.dex.jar;vectordrawable-1.1.0.dex.jar;vectordrawable-animated-1.1.0.dex.jar;versionedparcelable-1.1.1.dex.jar;viewpager-1.0.0.dex.jar;work-runtime-2.7.0.dex.jar</EnabledSysJars>
+-    </PropertyGroup>
+     <PropertyGroup Condition="'$(Base_Win32)'!=''">
+         <BT_BuildType>Debug</BT_BuildType>
+         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
+@@ -135,15 +119,8 @@
+                 <Excluded_Packages/>
+             </Delphi.Personality>
+             <Platforms>
+-                <Platform value="Android">False</Platform>
+-                <Platform value="Android64">False</Platform>
+-                <Platform value="iOSDevice64">False</Platform>
+-                <Platform value="iOSSimARM64">False</Platform>
+-                <Platform value="Linux64">False</Platform>
+-                <Platform value="OSX64">False</Platform>
+-                <Platform value="OSXARM64">False</Platform>
+                 <Platform value="Win32">True</Platform>
+-                <Platform value="Win64">False</Platform>
++                <Platform value="Win64">True</Platform>
+                 <Platform value="Win64x">False</Platform>
+             </Platforms>
+         </BorlandProject>
+diff --git a/Source/MethodCallBack.pas b/Source/MethodCallBack.pas
+index 47c782b..0ef87bf 100644
+--- a/Source/MethodCallBack.pas
++++ b/Source/MethodCallBack.pas
+@@ -80,7 +80,7 @@ implementation
+ 
+ uses
+   {$IFDEF MSWINDOWS}
+-  Windows,
++  Winapi.Windows,
+   {$ELSE WINDOWS}
+   {$IFDEF FPC}
+   {$ELSE}
+diff --git a/Source/PythonEngine.pas b/Source/PythonEngine.pas
+index 9960609..f57bfb9 100644
+--- a/Source/PythonEngine.pas
++++ b/Source/PythonEngine.pas
+@@ -33,7 +33,7 @@ interface
+ uses
+   Types,
+ {$IFDEF MSWINDOWS}
+-  Windows,
++  Winapi.Windows,
+ {$ELSE}
+ {$IFDEF FPC}
+   Dl,
+@@ -3164,11 +3164,11 @@ uses
+   AnsiStrings,
+ {$ENDIF}
+ {$IFDEF MSWINDOWS}
+-  Registry,
++  System.Win.Registry,
+ {$IFDEF FPC}
+   JwaPsApi,
+ {$ELSE}
+-  PsAPI,
++  Winapi.PsAPI,
+ {$ENDIF}
+ {$ENDIF}
+   Math;
+diff --git a/Source/PythonVersions.pas b/Source/PythonVersions.pas
+index c530f63..ee36af8 100644
+--- a/Source/PythonVersions.pas
++++ b/Source/PythonVersions.pas
+@@ -90,8 +90,8 @@ implementation
+ 
+ Uses
+   {$IFDEF MSWINDOWS}
+-  Windows,
+-  Registry,
++  Winapi.Windows,
++  System.Win.Registry,
+   {$ENDIF}
+   SysUtils,
+   Math,
+@@ -481,7 +481,7 @@ function PythonVersionFromPath(const Path: string; out PythonVersion: TPythonVer
+     // skip if python3.dll was found
+     if Length(DLLFileName) <= 11 then FindNextFile(Handle, FindFileData);
+     if Handle = INVALID_HANDLE_VALUE then Exit;
+-    Windows.FindClose(Handle);
++    Winapi.Windows.FindClose(Handle);
+     DLLFileName:= FindFileData.cFileName;
+     if Length(DLLFileName) > 11 then
+       Result := DLLFileName;
+diff --git a/Source/WrapDelphiWindows.pas b/Source/WrapDelphiWindows.pas
+index 2e1ebc1..3128d5f 100644
+--- a/Source/WrapDelphiWindows.pas
++++ b/Source/WrapDelphiWindows.pas
+@@ -19,7 +19,7 @@ interface
+ 
+ {$IFDEF MSWINDOWS}
+ uses
+-  Windows, Classes, SysUtils, TypInfo, PythonEngine, WrapDelphi, WrapDelphiClasses;
++  Winapi.Windows, Classes, SysUtils, TypInfo, PythonEngine, WrapDelphi, WrapDelphiClasses;
+ 
+ function OwnerDrawStateToPython(const AOwnerDrawState: TOwnerDrawState): PPyObject;
+ {$ENDIF MSWINDOWS}
+diff --git a/Source/vcl/Vcl.PythonGUIInputOutput.pas b/Source/vcl/Vcl.PythonGUIInputOutput.pas
+index 5f80034..ad37137 100644
+--- a/Source/vcl/Vcl.PythonGUIInputOutput.pas
++++ b/Source/vcl/Vcl.PythonGUIInputOutput.pas
+@@ -18,7 +18,7 @@ interface
+ 
+ uses
+ {$IFDEF MSWINDOWS}
+-  Windows, Messages,
++  Winapi.Windows, Winapi.Messages,
+ {$ENDIF}
+   SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+   StdCtrls, PythonEngine;
+diff --git a/Source/vcl/WrapVclDialogs.pas b/Source/vcl/WrapVclDialogs.pas
+index 8d7c88a..6ab1583 100644
+--- a/Source/vcl/WrapVclDialogs.pas
++++ b/Source/vcl/WrapVclDialogs.pas
+@@ -19,7 +19,7 @@ interface
+ 
+ uses
+   Classes, SysUtils, PythonEngine, WrapDelphi, WrapDelphiClasses,
+-  WrapVclControls, Windows, Dialogs, TypInfo, Winapi.ActiveX;
++  WrapVclControls, Winapi.Windows, Dialogs, TypInfo, Winapi.ActiveX;
+ 
+ type
+   TPyDelphiOpenDialog = class(TPyDelphiComponent)
+diff --git a/Source/vcl/WrapVclExtCtrls.pas b/Source/vcl/WrapVclExtCtrls.pas
+index 85c5b4d..4593145 100644
+--- a/Source/vcl/WrapVclExtCtrls.pas
++++ b/Source/vcl/WrapVclExtCtrls.pas
+@@ -19,7 +19,7 @@ interface
+ 
+ uses
+   Classes, SysUtils, PythonEngine, WrapDelphi, WrapDelphiClasses, WrapVclControls,
+-  Windows, ExtCtrls, TypInfo, Rtti;
++  Winapi.Windows, ExtCtrls, TypInfo, Rtti;
+ 
+ type
+   TPyDelphiShape = class (TPyDelphiGraphicControl)
+diff --git a/Source/vcl/WrapVclForms.pas b/Source/vcl/WrapVclForms.pas
+index b3d77be..aad812d 100644
+--- a/Source/vcl/WrapVclForms.pas
++++ b/Source/vcl/WrapVclForms.pas
+@@ -19,7 +19,7 @@ interface
+ 
+ uses
+   Classes, SysUtils, PythonEngine, WrapDelphi, WrapDelphiClasses, WrapVclControls,
+-  Windows, Forms, Graphics, TypInfo;
++  Winapi.Windows, Forms, Graphics, TypInfo;
+ 
+ type
+   TCloseQueryEventHandler = class(TEventHandler)
+diff --git a/Source/vcl/WrapVclGraphics.pas b/Source/vcl/WrapVclGraphics.pas
+index 21a5401..17e6876 100644
+--- a/Source/vcl/WrapVclGraphics.pas
++++ b/Source/vcl/WrapVclGraphics.pas
+@@ -18,7 +18,7 @@ unit WrapVclGraphics;
+ interface
+ 
+ uses
+-  Classes, Windows, SysUtils, PythonEngine, WrapDelphi, WrapDelphiClasses, Graphics;
++  Classes, Winapi.Windows, SysUtils, PythonEngine, WrapDelphi, WrapDelphiClasses, Graphics;
+ 
+ type
+   TPyDelphiGraphic = class(TPyDelphiPersistent)
+diff --git a/Source/vcl/WrapVclGrids.pas b/Source/vcl/WrapVclGrids.pas
+index 145a273..624e6a1 100644
+--- a/Source/vcl/WrapVclGrids.pas
++++ b/Source/vcl/WrapVclGrids.pas
+@@ -19,7 +19,7 @@ interface
+ 
+ uses
+   Classes, SysUtils, PythonEngine, WrapDelphi, WrapDelphiClasses,
+-  WrapVclControls, Windows, Grids, TypInfo;
++  WrapVclControls, Winapi.Windows, Grids, TypInfo;
+ 
+ type
+   TDrawCellEventHandler = class(TEventHandler)
+diff --git a/Source/vcl/WrapVclStdCtrls.pas b/Source/vcl/WrapVclStdCtrls.pas
+index c0e9e23..6c03ad5 100644
+--- a/Source/vcl/WrapVclStdCtrls.pas
++++ b/Source/vcl/WrapVclStdCtrls.pas
+@@ -19,7 +19,7 @@ interface
+ 
+ uses
+   Classes, SysUtils, PythonEngine, WrapDelphi, WrapDelphiClasses,
+-  WrapVclControls, Windows, StdCtrls;
++  WrapVclControls, Winapi.Windows, StdCtrls;
+ 
+ type
+   TPyDelphiButton = class (TPyDelphiWinControl)

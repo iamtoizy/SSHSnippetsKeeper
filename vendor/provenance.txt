@@ -1,0 +1,4 @@
+﻿SynEdit|master|https://github.com/TurboPack/SynEdit.git|d2074357e613b05c9b63e8675b5d1115c0735fe4|2026-06-30 01:04:35 +0200|Roman Kassebaum|Checked if Form.CurrentEditor is Assigned.
+HtmlViewer|HtmlViewer-11.10|https://github.com/BerndGabriel/HtmlViewer.git|bd2ffb86d0f127e1da5bb2988180d8900ce836c7|2023-12-30 13:07:44 +0100|Bernd Gabriel|Added: Project Files for Delphi 12
+FastMM5|master|https://github.com/pleriche/FastMM5.git|13976edfc84f83c3c55e5731d30fd8686ad51f15|2026-07-01 11:56:48 +0200|Pierre le Riche|#81 Export FastMM_ProcessAllPendingFrees in BorlndMM.dll
+python4delphi|master|https://github.com/Embarcadero/python4delphi.git|2757d6b24860bd53bf3e9cd5a9316401cd3ce098|2026-02-27 02:10:34 -0800|Jim McKeeth|Revert "update"

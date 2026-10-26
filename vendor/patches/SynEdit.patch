@@ -1,0 +1,60 @@
+diff --git a/Packages/11AndAbove/Delphi/SynEditDD.dproj b/Packages/11AndAbove/Delphi/SynEditDD.dproj
+index 662ba8c..dc3726a 100644
+--- a/Packages/11AndAbove/Delphi/SynEditDD.dproj
++++ b/Packages/11AndAbove/Delphi/SynEditDD.dproj
+@@ -188,7 +188,6 @@
+             <Platforms>
+                 <Platform value="Win32">True</Platform>
+                 <Platform value="Win64">True</Platform>
+-                <Platform value="Win64x">False</Platform>
+             </Platforms>
+         </BorlandProject>
+         <ProjectFileVersion>12</ProjectFileVersion>
+diff --git a/Source/SynEdit.pas b/Source/SynEdit.pas
+index 9db54b2..59515d0 100644
+--- a/Source/SynEdit.pas
++++ b/Source/SynEdit.pas
+@@ -1,4 +1,4 @@
+-{-------------------------------------------------------------------------------
++﻿{-------------------------------------------------------------------------------
+ The contents of this file are subject to the Mozilla Public License
+ Version 1.1 (the "License"); you may not use this file except in compliance
+ with the License. You may obtain a copy of the License at
+@@ -303,6 +303,7 @@ type
+     fUndoRedo: ISynEditUndo;
+     FBookmarks: array[0..9] of TSynEditMark; // these are just references, fMarkList is the owner
+     FMouseDown: TPoint;
++    FSuppressMouseSelection: Boolean;
+     FBookmarkOptions: TSynBookmarkOpt;
+     fBorderStyle: TSynBorderStyle;
+     fHideSelection: Boolean;
+@@ -917,6 +918,8 @@ type
+     property TextMargin: Integer read FTextMargin;
+     property UndoRedo: ISynEditUndo read fUndoRedo;
+     property TextFormat: TSynTextFormat read FTextFormat;
++    property SuppressMouseSelection: Boolean
++      read FSuppressMouseSelection write FSuppressMouseSelection;
+     property FontQuality: TFontQuality read fFontQuality write SetFontQuality;
+     // CodeFolding properties
+     property CodeFolding: TSynCodeFolding read fCodeFolding write fCodeFolding;
+@@ -2081,6 +2084,11 @@ var
+ begin
+   // If Button = mbLeft MouseCapture is set by TControl.WMLButtonDown
+   inherited MouseDown(Button, Shift, X, Y);
++  if FSuppressMouseSelection then
++  begin
++    fClickCount := 0;
++    Exit;
++  end;
+ 
+   //remember selection state, as it will be cleared later
+   bWasSel := SelAvail;
+@@ -2187,6 +2195,8 @@ var
+   BC: TBufferCoord;
+ begin
+   inherited MouseMove(Shift, x, y);
++  if FSuppressMouseSelection then
++    Exit;
+   if (ssLeft in Shift) and MouseCapture and not IsScrolling then
+   begin
+     // should we begin scrolling?
