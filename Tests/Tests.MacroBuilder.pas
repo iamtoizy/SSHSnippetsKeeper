@@ -101,6 +101,14 @@ begin
     Step.Default := '100';
     Assert.AreEqual('{INPUT[NUMBER:100] Host}', StepToMacro(Step));
 
+    Step.InputType := mitDate;
+    Step.Default := '2026-01-31';
+    Assert.AreEqual('{INPUT[DATE:2026-01-31] Host}', StepToMacro(Step));
+
+    Step.InputType := mitTime;
+    Step.Default := '12:00';
+    Assert.AreEqual('{INPUT[TIME:12:00] Host}', StepToMacro(Step));
+
     Step.InputType := mitSelect;
     Step.Default := 'prod|stage';
     Assert.AreEqual('{INPUT[SELECT:prod|stage] Host}', StepToMacro(Step));

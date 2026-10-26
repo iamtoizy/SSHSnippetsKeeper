@@ -83,6 +83,8 @@ type
         procedure PrepareGuardedShow;
         procedure FinishGuardedShow;
         procedure ApplyLanguage; virtual;
+        // Открыть справку с произвольным HTML-телом (переиспользует FCustomHelpForm)
+        procedure ShowCustomHelpHtml(const ATitle, ABodyHtml: string);
         // Для плавающих окон (Калькуляторы, Конвертеры)
         class procedure ExecuteGlobal(Owner: TComponent; AppContext: IAppContext);
 
@@ -181,6 +183,16 @@ begin
     // Обертка на случай, вам понадобится снять хелп с конкретного контрола.
     if Assigned(FHelpManager) then
         FHelpManager.UnregisterControl(Control);
+end;
+
+procedure TBaseForm.ShowCustomHelpHtml(const ATitle, ABodyHtml: string);
+begin
+    if csDestroying in ComponentState then Exit;
+
+    if FCustomHelpForm = nil then
+        FCustomHelpForm := TCustomHelpForm.Create(Self);
+    FCustomHelpForm.SetContentHtml(ATitle, ABodyHtml);
+    FCustomHelpForm.ShowModal;
 end;
 
 procedure TBaseForm.DoClose(var Action: TCloseAction);
@@ -423,7 +435,7 @@ procedure TBaseForm.Initialize(AppContext: IAppContext);
 begin
     // Гарантируем, что контекст не пустой
     if not Assigned(AppContext) then
-        raise EArgumentNilException.Create('AppContext can not be nil!');
+        raise EArgumentNilException.Create('AppContext can not be nil!');  // TODO: Локализовать!
 
     FAppContext := AppContext;
 

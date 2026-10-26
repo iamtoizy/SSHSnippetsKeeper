@@ -82,7 +82,6 @@ type
         // Второй конструктор: Для безопасных фоновых задач (TTask)
         constructor CreateBackground(DBConnection: TFDConnection; BaseContext: IAppContext);
 
-        destructor Destroy; override;
         property DatabaseManager: IDatabaseManager read GetDatabaseManager;
         property SnippetService: ISnippetService read GetSnippetService;
         property CategoryService: ICategoryService read GetCategoryService;
@@ -262,22 +261,6 @@ begin
     Result := TSnippetService.Create(BgSnippetRepo, BgCategoryRepo, BgTagRepo, BgUserRepo);
 
     BackgroundConnection := BgConnection;
-end;
-
-destructor TAppContext.Destroy;
-var
-    ObjToFree: TObject;
-begin
-    // Защита: если контекст фоновый, FWindowHelper = nil,
-    // и объект главного потока не будет уничтожен
-    if Assigned(FWindowHelper) then
-    begin
-        ObjToFree := FWindowHelper as TObject;
-        FWindowHelper := nil;
-        ObjToFree.Free;
-    end;
-
-    inherited Destroy;
 end;
 
 function TAppContext.GetCategoryService: ICategoryService;

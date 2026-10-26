@@ -77,6 +77,7 @@ uses
   MacroActions in 'MacroEngine\MacroActions.pas',
   MacroThread in 'MacroEngine\MacroThread.pas',
   MacroEngine in 'MacroEngine\MacroEngine.pas',
+  MacroCounters in 'MacroEngine\MacroCounters.pas',
   MacroBuilder in 'MacroEngine\MacroBuilder.pas',
   WindowMonitor in 'Automation\WindowMonitor.pas',
   ProcessProfile in 'Automation\ProcessProfile.pas',
@@ -85,7 +86,10 @@ uses
   AppPickerFormUI in 'UI\Forms\AppPickerFormUI.pas' {AppPickerForm},
   InputFormUI in 'UI\Forms\InputFormUI.pas' {InputForm},
   ParamsFormUI in 'UI\Forms\ParamsFormUI.pas' {ParamsForm},
-  MacroBuilderFormUI in 'UI\Forms\MacroBuilderFormUI.pas' {MacroBuilderForm},
+  DryRunFormUI in 'UI\Forms\DryRunFormUI.pas' {DryRunForm},
+  MacroCardEditorFormUI in 'UI\Forms\MacroCardEditorFormUI.pas' {MacroCardEditorForm},
+  MacroCardController in 'UI\Controllers\MacroCardController.pas',
+  MacroCardPlugin in 'UI\Controls\MacroCardPlugin.pas',
   MacroInputTypes in 'MacroEngine\MacroInputTypes.pas',
   TagEditorFormUI in 'UI\Forms\TagEditorFormUI.pas' {TagEditorForm},
   WorkspaceManagerFormUI in 'UI\Forms\WorkspaceManagerFormUI.pas' {WorkspaceManagerForm},
@@ -254,6 +258,11 @@ ReportMemoryLeaksOnShutdown := True;
     MainForm.Show;
 
     Application.Run;
+
+    // Останавливаем макропоток, пока VCL и очередь Synchronize ещё живы:
+    // освобождение в финализации Core.Shutdown происходит слишком поздно -
+    // после разрушения инфраструктуры, на которой висит рабочий поток
+    WindowHelper.Shutdown;
 
     TVCLStyleService.Shutdown;
 

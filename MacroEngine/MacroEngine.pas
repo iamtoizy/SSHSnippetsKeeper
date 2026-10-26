@@ -3,6 +3,7 @@
 interface
 
 uses
+    MacroCounters,
     MacroInputTypes,
     System.Generics.Collections,
     System.RegularExpressions,
@@ -25,6 +26,12 @@ type
         InputType: TMacroInputType;
         DefaultValue: string;
         KeyModifiers: Integer;
+        // Макрос распознан, но в аргументе опечатка (плохой SLEEP/KEYDELAY,
+        // мусор в значении по умолчанию INPUT, неверная длина RANDOM).
+        // Исполняется с прежним смягчением, карточка рисуется красной
+        Invalid: Boolean;
+        StartOffset: Integer;
+        Length: Integer;
     end;
 
 function TryParseSendKey(const AArgs: string; out AKey: Integer; out AText: string): Boolean;
@@ -37,12 +44,9 @@ type
         FCache: TDictionary<string, TArray<TMacroToken>>;
         FCacheLock: TObject;
         FCacheOrder: TQueue<string>; // Очередь для контроля порядка кэша
-        FCounters: TDictionary<Integer, Integer>;
-        FCountersLock: TObject;
         function ParseTokens(const Text: string): TArray<TMacroToken>;
-        function NextCounter(SnippetID: Integer): Integer;
         function GetClipboardTextSync: string;
-        function ResolveValueToken(const Token: TMacroToken; Context: TMacroContext): string;
+        function ResolveValueToken(const Token: TMacroToken; Context: TMacroContext; var ARunState: TCounterRunState): string;
     public
         constructor Create;
         destructor Destroy; override;
@@ -52,6 +56,8 @@ type
         function InputDescriptors(const Text: string): TArray<TMacroParamDescriptor>;
         function Parse(const Text: string; Context: TMacroContext): TArray<IScriptAction>;
         procedure PreCollectInputs(const Actions: TArray<IScriptAction>; Context: TMacroContext);
+        // Транскрипт сухого прогона: шаги без исполнения, COUNTER не потребляется
+        function DryRunTranscript(const Text: string; Context: TMacroContext): TArray<TTranscriptLine>;
     end;
 
 implementation
@@ -70,8 +76,6 @@ begin
     FCache := TDictionary<string, TArray<TMacroToken>>.Create;
     FCacheOrder := TQueue<string>.Create;
     FCacheLock := TObject.Create;
-    FCounters := TDictionary<Integer, Integer>.Create;
-    FCountersLock := TObject.Create;
     FRegex := TRegEx.Create('\{([^}]*)\}');
 end;
 
@@ -80,8 +84,6 @@ begin
     FCache.Free;
     FCacheOrder.Free;
     FCacheLock.Free;
-    FCounters.Free;
-    FCountersLock.Free;
     inherited;
 end;
 
@@ -205,6 +207,7 @@ var
     Cmd, Name, Args, ParamStr, KeyChar: string;
     ValueDir, ValueArg: string;
     P, BracketEnd, ValueColon: Integer;
+    SleepMs, RandomLen: Integer;
     Chunk: string;
 
     procedure ParseInputParams(const AParamStr: string; var AType: TMacroInputType; var ADefault: string);
@@ -234,9 +237,33 @@ var
         else if TypeStr = 'FLOAT' then AType := mitFloat
         else if TypeStr = 'PASSWORD' then AType := mitPassword
         else if TypeStr = 'DATE' then AType := mitDate
+        else if TypeStr = 'TIME' then AType := mitTime
+        else if TypeStr = 'DATETIME' then AType := mitDateTime
         else if TypeStr = 'CONFIRM' then AType := mitConfirm
         else if TypeStr = 'SELECT' then AType := mitSelect
         else AType := mitString;
+    end;
+
+    function InputDefaultInvalid(const AType: TMacroInputType;
+        const ADefault: string): Boolean;
+    var
+        Option: string;
+    begin
+        // SELECT требует хотя бы одну непустую опцию; у STRING/CONFIRM и
+        // пустого значения по умолчанию ошибки нет, остальное валидирует
+        // IsMacroValueValid
+        if AType = mitSelect then
+        begin
+            Result := True;
+            for Option in ADefault.Split(['|']) do
+                if Trim(Option) <> '' then
+                    Exit(False);
+        end
+        else if (AType = mitString) or (AType = mitConfirm) or
+                (Trim(ADefault) = '') then
+            Result := False
+        else
+            Result := not IsMacroValueValid(Trim(ADefault), AType);
     end;
 
 begin
@@ -260,6 +287,9 @@ begin
                     Token.InputType := mitString;
                     Token.DefaultValue := '';
                     Token.KeyModifiers := 0;
+                    Token.Invalid := False;
+                    Token.StartOffset := LastPos;
+                    Token.Length := MatchStart - LastPos;
                     Tokens.Add(Token);
                 end;
             end;
@@ -278,6 +308,9 @@ begin
             Token.InputType := mitString;
             Token.DefaultValue := '';
             Token.KeyModifiers := 0;
+            Token.Invalid := False;
+            Token.StartOffset := MatchStart;
+            Token.Length := Match.Length;
 
             // Значения, вычисляемые при каждом запуске: в кэш токенов
             // попадает только имя директивы, не само значение
@@ -303,6 +336,14 @@ begin
                     Token.Kind := tkValue;
                     Token.Text := ValueDir;
                     Token.DefaultValue := ValueArg;
+                    if (ValueDir = 'RANDOM') and (ValueArg <> '') then
+                    begin
+                        if (not TryStrToInt(ValueArg, RandomLen)) or
+                           (RandomLen < 1) or (RandomLen > MAX_RANDOM_LENGTH) then
+                            Token.Invalid := True;
+                    end
+                    else if (ValueDir = 'COUNTER') and (ValueArg <> '') then
+                        Token.Invalid := not IsCounterParamsValid(ValueArg);
                 end;
 
                 Tokens.Add(Token);
@@ -313,7 +354,14 @@ begin
             if Name = 'SLEEP' then
             begin
                 Token.Kind := tkSleep;
-                Token.Value := EnsureRange(StrToIntDef(Args, 0), 0, MAX_SLEEP_MS);
+                // Опечатка в миллисекундах не ломает запуск (смягчение как
+                // раньше), но карточка помечается для красной подсветки
+                SleepMs := 0;
+                if TryStrToInt(Args, SleepMs) then
+                    Token.Invalid := (SleepMs < 0) or (SleepMs > MAX_SLEEP_MS)
+                else
+                    Token.Invalid := True;
+                Token.Value := EnsureRange(SleepMs, 0, MAX_SLEEP_MS);
             end
             else if Name = 'ENTER' then
             begin
@@ -331,6 +379,7 @@ begin
                         ParamStr := Copy(Args, 2, BracketEnd - 2);  // Hex:FF
                         Token.Text := Trim(Copy(Args, BracketEnd + 1, MaxInt));
                         ParseInputParams(ParamStr, Token.InputType, Token.DefaultValue);
+                        Token.Invalid := InputDefaultInvalid(Token.InputType, Token.DefaultValue);
                     end
                     else
                     begin
@@ -406,6 +455,9 @@ begin
             Token.InputType := mitString;
             Token.DefaultValue := '';
             Token.KeyModifiers := 0;
+            Token.Invalid := False;
+            Token.StartOffset := LastPos;
+            Token.Length := Length(Text) - LastPos + 1;
             Tokens.Add(Token);
         end;
 
@@ -528,19 +580,6 @@ begin
     end;
 end;
 
-function TMacroEngine.NextCounter(SnippetID: Integer): Integer;
-begin
-    TMonitor.Enter(FCountersLock);
-    try
-        if not FCounters.TryGetValue(SnippetID, Result) then
-            Result := 0;
-        Inc(Result);
-        FCounters.AddOrSetValue(SnippetID, Result);
-    finally
-        TMonitor.Exit(FCountersLock);
-    end;
-end;
-
 function TMacroEngine.GetClipboardTextSync: string;
 begin
     try
@@ -550,7 +589,7 @@ begin
     end;
 end;
 
-function TMacroEngine.ResolveValueToken(const Token: TMacroToken; Context: TMacroContext): string;
+function TMacroEngine.ResolveValueToken(const Token: TMacroToken; Context: TMacroContext; var ARunState: TCounterRunState): string;
 var
     FormatMask: string;
     Len, I: Integer;
@@ -581,7 +620,13 @@ begin
             Result[I] := RANDOM_CHARSET[Random(Length(RANDOM_CHARSET)) + 1];
     end
     else if Token.Text = 'COUNTER' then
-        Result := IntToStr(NextCounter(Context.SnippetID))
+    begin
+        // В сухом прогоне счётчик показывается, но не увеличивается
+        if Context.DryRun then
+            Result := EvaluateCounterPeek(Context.SnippetID, Token.DefaultValue, ARunState)
+        else
+            Result := EvaluateCounter(Context.SnippetID, Token.DefaultValue, ARunState);
+    end
     else if Token.Text = 'ENV' then
         Result := GetEnvironmentVariable(Token.DefaultValue)
     else if Token.Text = 'CLIPBOARD' then
@@ -622,8 +667,10 @@ var
     Tokens: TArray<TMacroToken>;
     Token: TMacroToken;
     Actions: TList<IScriptAction>;
+    RunState: TCounterRunState;
 begin
     Tokens := GetTokens(Text);
+    RunState := Default(TCounterRunState);
 
     Actions := TList<IScriptAction>.Create;
     try
@@ -641,7 +688,7 @@ begin
                 tkSendKey:
                     Actions.Add(TSendKeyAction.Create(Context, Token.Value, Token.KeyModifiers));
                 tkValue:
-                    Actions.Add(TTypeTextAction.Create(Context, ResolveValueToken(Token, Context)));
+                    Actions.Add(TTypeTextAction.Create(Context, ResolveValueToken(Token, Context, RunState)));
                 tkClearLine:
                     Actions.Add(TClearLineAction.Create(Context));
                 tkKeyDelay:
@@ -653,6 +700,130 @@ begin
         Result := Actions.ToArray;
     finally
         Actions.Free;
+    end;
+end;
+
+// Читаемое имя клавиши для превью: модификаторы + имя из набора SENDKEY
+function SendKeyPreviewText(AKey, AModifiers: Integer): string;
+var
+    KeyName: string;
+begin
+    Result := '';
+    if (AModifiers and MOD_CONTROL) <> 0 then
+        Result := 'Ctrl+';
+    if (AModifiers and MOD_ALT) <> 0 then
+        Result := Result + 'Alt+';
+    if (AModifiers and MOD_SHIFT) <> 0 then
+        Result := Result + 'Shift+';
+
+    case AKey of
+        VK_RETURN: KeyName := 'Enter';
+        VK_TAB: KeyName := 'Tab';
+        VK_ESCAPE: KeyName := 'Esc';
+        VK_SPACE: KeyName := 'Space';
+        VK_BACK: KeyName := 'Backspace';
+        VK_DELETE: KeyName := 'Delete';
+        VK_INSERT: KeyName := 'Insert';
+        VK_HOME: KeyName := 'Home';
+        VK_END: KeyName := 'End';
+        VK_PRIOR: KeyName := 'PageUp';
+        VK_NEXT: KeyName := 'PageDown';
+        VK_LEFT: KeyName := 'Left';
+        VK_UP: KeyName := 'Up';
+        VK_RIGHT: KeyName := 'Right';
+        VK_DOWN: KeyName := 'Down';
+        VK_F1..VK_F12: KeyName := 'F' + IntToStr(AKey - VK_F1 + 1);
+    else
+        if (AKey >= Ord('A')) and (AKey <= Ord('Z')) then
+            KeyName := Chr(AKey)
+        else if (AKey >= Ord('0')) and (AKey <= Ord('9')) then
+            KeyName := Chr(AKey)
+        else
+            KeyName := '#' + IntToStr(AKey);
+    end;
+
+    Result := Result + KeyName;
+end;
+
+function TMacroEngine.DryRunTranscript(const Text: string; Context: TMacroContext): TArray<TTranscriptLine>;
+var
+    Tokens: TArray<TMacroToken>;
+    Token: TMacroToken;
+    Lines: TList<TTranscriptLine>;
+    Line: TTranscriptLine;
+    RunState: TCounterRunState;
+begin
+    Context.DryRun := True;
+    Tokens := GetTokens(Text);
+    RunState := Default(TCounterRunState);
+
+    Lines := TList<TTranscriptLine>.Create;
+    try
+        for Token in Tokens do
+        begin
+            Line := Default(TTranscriptLine);
+            Line.Macro := Copy(Text, Token.StartOffset, Token.Length);
+
+            case Token.Kind of
+                tkText:
+                    begin
+                        Line.Kind := tlText;
+                        Line.Detail := Token.Text;
+                    end;
+                tkEnter:
+                    Line.Kind := tlEnter;
+                tkSleep:
+                    begin
+                        Line.Kind := tlSleep;
+                        Line.Detail := IntToStr(Token.Value);
+                        if Token.Invalid then
+                            Line.Warning := DRY_RUN_WARN_INVALID;
+                    end;
+                tkInput:
+                    begin
+                        // Confirm спрашивается при запуске, в превью это просто шаг
+                        if Token.InputType = mitConfirm then
+                            Line.Kind := tlConfirm
+                        else
+                            Line.Kind := tlInput;
+                        Line.Name := Token.Text;
+                        Line.InputType := Token.InputType;
+                        Line.Detail := Token.DefaultValue;
+                        if Token.Invalid then
+                            Line.Warning := DRY_RUN_WARN_INVALID;
+                    end;
+                tkSendKey:
+                    begin
+                        Line.Kind := tlSendKey;
+                        Line.Detail := SendKeyPreviewText(Token.Value, Token.KeyModifiers);
+                    end;
+                tkValue:
+                    begin
+                        Line.Kind := tlValue;
+                        Line.Name := Token.Text;
+                        Line.Detail := ResolveValueToken(Token, Context, RunState);
+                        if Token.Invalid then
+                            Line.Warning := DRY_RUN_WARN_INVALID;
+                    end;
+                tkClearLine:
+                    Line.Kind := tlClearLine;
+                tkKeyDelay:
+                    begin
+                        Line.Kind := tlKeyDelay;
+                        Line.Detail := IntToStr(Token.Value);
+                    end;
+                tkUnknown:
+                    begin
+                        Line.Kind := tlWarning;
+                        Line.Warning := DRY_RUN_WARN_UNKNOWN;
+                    end;
+            end;
+
+            Lines.Add(Line);
+        end;
+        Result := Lines.ToArray;
+    finally
+        Lines.Free;
     end;
 end;
 

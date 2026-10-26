@@ -64,10 +64,17 @@ var
     GDriverLink: TFDPhysSQLiteDriverLink;
 
 function TSearchTagsTests.SchemaPath(const Filename: string): string;
+var
+    Dir: string;
 begin
-    Result := TPath.GetFullPath(TPath.Combine(TPath.GetDirectoryName(ParamStr(0)) + PathDelim + '..', TPath.Combine('Database', 'Schema', Filename)));
-    if not TFile.Exists(Result) then
-        raise Exception.Create('Schema file not found: ' + Result);
+    Dir := TPath.GetDirectoryName(ParamStr(0));
+    repeat
+        Result := TPath.Combine(Dir, TPath.Combine('Database', 'Schema', Filename));
+        if TFile.Exists(Result) then
+            Exit;
+        Dir := TPath.GetDirectoryName(Dir);
+    until Dir = '';
+    raise Exception.Create('Schema file not found: ' + Result);
 end;
 
 procedure TSearchTagsTests.ExecScript(const Filenames: array of string);

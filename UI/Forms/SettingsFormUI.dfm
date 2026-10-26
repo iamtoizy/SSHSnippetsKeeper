@@ -355,6 +355,59 @@ object SettingsForm: TSettingsForm
         OnChange = cbVCLStyleChange
       end
     end
+    object tsCounters: TTabSheet
+      Caption = 'Counters'
+      object lvCounters: TListView
+        Left = 0
+        Top = 0
+        Width = 616
+        Height = 326
+        Align = alClient
+        Columns = <
+          item
+            Caption = 'ID'
+            Width = 120
+          end
+          item
+            Caption = 'Value'
+            Width = 140
+          end>
+        HideSelection = False
+        ReadOnly = True
+        RowSelect = True
+        TabOrder = 0
+        ViewStyle = vsReport
+        OnSelectItem = lvCountersSelectItem
+      end
+      object pCountersButtons: TPanel
+        Left = 0
+        Top = 326
+        Width = 616
+        Height = 33
+        Align = alBottom
+        BevelOuter = bvNone
+        TabOrder = 1
+        object bCounterReset: TButton
+          Left = 3
+          Top = 5
+          Width = 130
+          Height = 25
+          Caption = 'Reset selected'
+          Enabled = False
+          TabOrder = 0
+          OnClick = bCounterResetClick
+        end
+        object bCounterResetAll: TButton
+          Left = 139
+          Top = 5
+          Width = 130
+          Height = 25
+          Caption = 'Reset all'
+          TabOrder = 1
+          OnClick = bCounterResetAllClick
+        end
+      end
+    end
   end
   object pBottom: TPanel
     Left = 0

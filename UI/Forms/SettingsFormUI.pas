@@ -71,6 +71,11 @@ type
         bAppRename: TButton;
         bAppDelete: TButton;
         bAppPick: TButton;
+        tsCounters: TTabSheet;
+        lvCounters: TListView;
+        pCountersButtons: TPanel;
+        bCounterReset: TButton;
+        bCounterResetAll: TButton;
 
         procedure bSaveClick(Sender: TObject);
         procedure bCancelClick(Sender: TObject);
@@ -89,6 +94,9 @@ type
         procedure bAppDeleteClick(Sender: TObject);
         procedure bAppPickClick(Sender: TObject);
         procedure cbVCLStyleChange(Sender: TObject);
+        procedure lvCountersSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
+        procedure bCounterResetClick(Sender: TObject);
+        procedure bCounterResetAllClick(Sender: TObject);
     private
         FLocalActions: TDictionary<string, TActionHotkeyInfo>;
         FHotkeyData: TObjectList<THotkeyViewData>;
@@ -99,6 +107,7 @@ type
         procedure LoadSettingsToUI;
         procedure PopulateHotkeysList(const FilterText: string = '');
         procedure PopulateApplicationsList;
+        procedure PopulateCountersList;
         function TryNormalizeAppName(var AName: string; const AIgnoreExisting: string): Boolean;
         function BuildUISnapshot: string;
         procedure CaptureSnapshot;
@@ -120,6 +129,7 @@ uses
     AppPickerFormUI,
     Common.Helpers,
     HotkeyService,
+    MacroCounters,
     System.IOUtils,
     Common.Localization,
     SynThemeAdapter,
@@ -148,6 +158,7 @@ begin
     hkEditor.HotKey := 0;
     pEditor.Enabled := False;
     LoadSettingsToUI;
+    PopulateCountersList;
 end;
 
 procedure TSettingsForm.LoadSettingsToUI;
@@ -349,6 +360,62 @@ begin
 
     if lvHotkeys.Selected <> nil then
         lvHotkeysSelectItem(Self, lvHotkeys.Selected, True);
+end;
+
+procedure TSettingsForm.PopulateCountersList;
+var
+    Entries: TArray<TCounterEntry>;
+    Entry: TCounterEntry;
+    Item: TListItem;
+begin
+    lvCounters.Items.BeginUpdate;
+    try
+        lvCounters.Items.Clear;
+        Entries := Counters.Snapshot;
+        for Entry in Entries do
+        begin
+            Item := lvCounters.Items.Add;
+            Item.Caption := IntToStr(Entry.SnippetID);
+            Item.SubItems.Add(IntToStr(Entry.Current));
+        end;
+    finally
+        lvCounters.Items.EndUpdate;
+    end;
+    bCounterReset.Enabled := lvCounters.Selected <> nil;
+    bCounterResetAll.Enabled := lvCounters.Items.Count > 0;
+end;
+
+procedure TSettingsForm.lvCountersSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
+begin
+    bCounterReset.Enabled := Selected;
+end;
+
+procedure TSettingsForm.bCounterResetClick(Sender: TObject);
+var
+    ID: Integer;
+begin
+    if lvCounters.Selected = nil then
+        Exit;
+    ID := StrToIntDef(lvCounters.Selected.Caption, 0);
+
+    if not MessagesHandler.AskConfirmation(
+        TUIStateLoader.GetMessage('Settings.CountersResetConfirm', [lvCounters.Selected.Caption]),
+        TUIStateLoader.GetMessage('Common.Confirmation')
+    ) then Exit;
+
+    Counters.Reset(ID);
+    PopulateCountersList;
+end;
+
+procedure TSettingsForm.bCounterResetAllClick(Sender: TObject);
+begin
+    if not MessagesHandler.AskConfirmation(
+        TUIStateLoader.GetMessage('Settings.CountersResetAllConfirm'),
+        TUIStateLoader.GetMessage('Common.Confirmation')
+    ) then Exit;
+
+    Counters.ResetAll;
+    PopulateCountersList;
 end;
 
 procedure TSettingsForm.PopulateApplicationsList;

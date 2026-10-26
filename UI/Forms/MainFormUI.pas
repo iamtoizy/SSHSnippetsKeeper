@@ -139,6 +139,7 @@ type
         nSyncDatabase: TMenuItem;
         actSyncDatabase: TAction;
         actRunSnippet: TAction;
+        actDryRunSnippet: TAction;
         actRunSequence: TAction;
         actExportSnippets: TAction;
         actAddTagToSnippets: TAction;
@@ -194,6 +195,7 @@ type
         procedure actOpenDatabaseExecute(Sender: TObject);
         procedure actPasswordGeneratorExecute(Sender: TObject);
         procedure actRunSnippetExecute(Sender: TObject);
+        procedure actDryRunSnippetExecute(Sender: TObject);
         procedure actRunSequenceExecute(Sender: TObject);
         procedure actExportSnippetsExecute(Sender: TObject);
         procedure actAddTagToSnippetsExecute(Sender: TObject);
@@ -626,6 +628,7 @@ begin
                 actEditSnippet.Enabled := False;
                 actDeleteSnippet.Enabled := False;
                 actRunSnippet.Enabled := False;
+                actDryRunSnippet.Enabled := False;
 
                 actAddTag.Enabled := False;
                 actEditTag.Enabled := False;
@@ -711,6 +714,7 @@ begin
     actDeleteSnippet.Enabled := (lvSnippets.Selected <> nil);
     actEditSnippet.Enabled := (lvSnippets.Selected <> nil);
     actRunSnippet.Enabled := (lvSnippets.Selected <> nil);
+    actDryRunSnippet.Enabled := (lvSnippets.Selected <> nil);
     actSnippetHistory.Enabled := (lvSnippets.Selected <> nil);
     actChainCreateFromSnippet.Enabled := (lvSnippets.Selected <> nil);
     actRunSequence.Enabled := (lvSnippets.SelCount >= 2);
@@ -1622,6 +1626,26 @@ begin
     Runner := TSnippetRunner.Create(FUserID, AppContext);
     try
         Runner.ExecuteSnippet(ExtractSnippetByListItem(Item));
+    finally
+        Runner.Free;
+    end;
+end;
+
+procedure TMainForm.actDryRunSnippetExecute(Sender: TObject);
+var
+    Item: TListItem;
+    Runner: TSnippetRunner;
+begin
+    if TChainRunner.IsChainRunning then
+        Exit;
+
+    Item := lvSnippets.Selected;
+    if Item = nil then
+        Exit;
+
+    Runner := TSnippetRunner.Create(FUserID, AppContext);
+    try
+        Runner.DryRunSnippet(ExtractSnippetByListItem(Item));
     finally
         Runner.Free;
     end;

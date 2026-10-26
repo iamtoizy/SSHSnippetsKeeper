@@ -36,6 +36,7 @@ object InputForm: TInputForm
       Top = 53
       Width = 72
       Height = 25
+      Anchors = [akTop, akRight]
       Caption = 'OK'
       TabOrder = 0
       OnClick = bOKClick
@@ -45,6 +46,7 @@ object InputForm: TInputForm
       Top = 53
       Width = 67
       Height = 25
+      Anchors = [akTop, akRight]
       Caption = #1054#1090#1084#1077#1085#1072
       ModalResult = 2
       TabOrder = 1
@@ -64,6 +66,7 @@ object InputForm: TInputForm
       Top = 27
       Width = 339
       Height = 21
+      Anchors = [akLeft, akTop, akRight]
       TabOrder = 3
       OnChange = ebEditChange
       OnKeyDown = ebEditKeyDown
@@ -74,6 +77,7 @@ object InputForm: TInputForm
       Width = 339
       Height = 21
       Style = csDropDownList
+      Anchors = [akLeft, akTop, akRight]
       ItemHeight = 13
       TabOrder = 4
       Visible = False

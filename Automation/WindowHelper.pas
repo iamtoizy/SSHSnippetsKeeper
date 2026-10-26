@@ -41,6 +41,7 @@ type
         function GetWindowInfo: TWindowHelperInfo;
         function IsTypingBusy: Boolean;
         procedure CancelTyping;
+        procedure Shutdown;
         function EstimateTypingMs(const Text: string): Integer;
         function FindUnknownCommands(const Text: string): TArray<string>;
 
@@ -156,9 +157,24 @@ begin
     begin
         CheckSynchronize;
         if GetTickCount >= LDeadline then
+        begin
+            {$IFDEF DEBUG}
+            OutputDebugString('[WinHelper] StopActiveThread: worker did not finish in 3s, thread abandoned (leak, no Free on running thread)');
+            {$ENDIF}
             Exit;
+        end;
     end;
     Thread.Free;
+end;
+
+procedure TWindowHelper.Shutdown;
+begin
+    // Остановка макропотока до завершения Application.Run: VCL и очередь
+    // Synchronize ещё живы, поэтому CheckSynchronize в StopActiveThread
+    // корректно обрабатывает коллбэки потока (OnTypingFinished и др.).
+    // Финализация Core.Shutdown остаётся страховкой: к этому моменту
+    // FMacroThread уже nil и деструктор не трогает поток.
+    StopActiveThread;
 end;
 
 procedure TWindowHelper.AbortMacro(Context: TMacroContext);

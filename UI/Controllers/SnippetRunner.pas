@@ -22,14 +22,16 @@ type
         function BuildMacroContext(SnippetID: Integer; TargetHWND: HWND): TMacroContext;
         function ValidateBeforeType(const Snippet: TSnippetDTO): Boolean;
         procedure TypeIntoWindow(const Snippet: TSnippetDTO; TargetHWND: HWND);
-        procedure DoExecuteInWindow(const Snippet: TSnippetDTO; TargetHWND: HWND; RequireConfirmation: Boolean);
+        procedure DoExecuteInWindow(const Snippet: TSnippetDTO; TargetHWND: HWND);
         function IsTypingBlocked: Boolean;
     public
         class var IsExecuting: Boolean;
         constructor Create(UserID: Integer; AppContext: IAppContext);
         function PickTargetWindow(out TargetHWND: HWND): Boolean;
-        procedure ExecuteSnippet(const Snippet: TSnippetDTO; RequireConfirmation: Boolean = True);
-        procedure ExecuteSnippetInWindow(const Snippet: TSnippetDTO; TargetHWND: HWND; RequireConfirmation: Boolean = False);
+        procedure         ExecuteSnippet(const Snippet: TSnippetDTO);
+        procedure         ExecuteSnippetInWindow(const Snippet: TSnippetDTO; TargetHWND: HWND);
+        // Предпросмотр без выбора окна и без печати
+        procedure DryRunSnippet(const Snippet: TSnippetDTO);
     end;
 
 implementation
@@ -38,9 +40,11 @@ uses
     ChainRunnerController,
     ChooseTerminalWindowUI,
     Common.Localization,
+    DryRunFormUI,
     InputFormUI,
     MacroStopPanelUI,
     ParamsFormUI,
+    System.Classes,
     System.SysUtils,
     Vcl.Controls
     ;
@@ -146,14 +150,21 @@ begin
                 Context.UserCanceled := True;
         end;
 
-    // Фокус ушёл из целевого окна - печать прервана, чтобы не утекли данные
+    // Фокус ушёл из целевого окна - печать прервана, чтобы не утекли данные.
+    // MessageBox показывается в главном потоке: из рабочего он качает чужую
+    // очередь сообщений, а при закрытии приложения блокирует StopActiveThread -
+    // в главном потоке его обслужит CheckSynchronize из цикла ожидания
     Context.OnFocusLost :=
         procedure
         begin
-            MessageBox(0,
-                PChar(TUIStateLoader.GetMessage('Macro.FocusLost')),
-                PChar(TUIStateLoader.GetMessage('Common.Warning')),
-                MB_OK or MB_ICONWARNING or MB_TOPMOST or MB_SETFOREGROUND);
+            TThread.Synchronize(nil,
+                procedure
+                begin
+                    MessageBox(0,
+                        PChar(TUIStateLoader.GetMessage('Macro.FocusLost')),
+                        PChar(TUIStateLoader.GetMessage('Common.Warning')),
+                        MB_OK or MB_ICONWARNING or MB_TOPMOST or MB_SETFOREGROUND);
+                end);
         end;
 
     // Возвращаем готовый контекст из метода BuildMacroContext
@@ -287,7 +298,7 @@ begin
         );
 end;
 
-procedure TSnippetRunner.ExecuteSnippet(const Snippet: TSnippetDTO; RequireConfirmation: Boolean = True);
+procedure TSnippetRunner.        ExecuteSnippet(const Snippet: TSnippetDTO);
 var
     TargetWindow: TWindowMonitorInfo;
 begin
@@ -313,13 +324,13 @@ begin
         if not SelectTargetWindow(TargetWindow) then
             Exit;
 
-        DoExecuteInWindow(Snippet, TargetWindow.HWND, RequireConfirmation);
+        DoExecuteInWindow(Snippet, TargetWindow.HWND);
     finally
         IsExecuting := False;
     end;
 end;
 
-procedure TSnippetRunner.ExecuteSnippetInWindow(const Snippet: TSnippetDTO; TargetHWND: HWND; RequireConfirmation: Boolean = False);
+procedure TSnippetRunner.        ExecuteSnippetInWindow(const Snippet: TSnippetDTO; TargetHWND: HWND);
 begin
     // Защита от повторного входа: см. ExecuteSnippet
     if IsExecuting then
@@ -335,16 +346,13 @@ begin
         if IsTypingBlocked then
             Exit;
 
-        DoExecuteInWindow(Snippet, TargetHWND, RequireConfirmation);
+        DoExecuteInWindow(Snippet, TargetHWND);
     finally
         IsExecuting := False;
     end;
 end;
 
-procedure TSnippetRunner.DoExecuteInWindow(const Snippet: TSnippetDTO; TargetHWND: HWND; RequireConfirmation: Boolean);
-var
-    Title: string;
-    Len: Integer;
+procedure TSnippetRunner.DoExecuteInWindow(const Snippet: TSnippetDTO; TargetHWND: HWND);
 begin
     if not ValidateBeforeType(Snippet) then
         Exit;
@@ -357,20 +365,45 @@ begin
         Exit;
     end;
 
-    if RequireConfirmation then
-    begin
-        SetLength(Title, 512);
-        Len := GetWindowText(TargetHWND, PChar(Title), 512);
-        SetLength(Title, Len);
+    TypeIntoWindow(Snippet, TargetHWND);
+end;
 
-        if not FAppContext.MessagesHandler.AskConfirmation(
-            TUIStateLoader.GetMessage('Terminal.ConfirmTarget', [Title]),
-            TUIStateLoader.GetMessage('Common.Confirmation'),
-            MB_YESNO or MB_ICONQUESTION
-        ) then Exit;
+procedure TSnippetRunner.DryRunSnippet(const Snippet: TSnippetDTO);
+var
+    TargetWindow: TWindowMonitorInfo;
+begin
+    // Защита от повторного входа: см. ExecuteSnippet
+    if IsExecuting then
+    begin
+        {$IFDEF DEBUG}
+        OutputDebugString('[SnippetRunner] DryRunSnippet re-entry blocked');
+        {$ENDIF}
+        Exit;
     end;
 
-    TypeIntoWindow(Snippet, TargetHWND);
+    IsExecuting := True;
+    try
+        if IsTypingBlocked then
+            Exit;
+
+        if not ValidateBeforeType(Snippet) then
+            Exit;
+
+        // mrOk - «Запустить» в предпросмотре: сниппет выполняется по-настоящему
+        if ShowDryRunForm(Snippet, FAppContext) <> mrOk then
+            Exit;
+
+        // Пока открыт предпросмотр, могла начаться печать из цепочки
+        if IsTypingBlocked then
+            Exit;
+
+        if not SelectTargetWindow(TargetWindow) then
+            Exit;
+
+        TypeIntoWindow(Snippet, TargetWindow.HWND);
+    finally
+        IsExecuting := False;
+    end;
 end;
 
 end.

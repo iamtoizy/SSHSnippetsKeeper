@@ -596,7 +596,7 @@ begin
 
     Runner := TSnippetRunner.Create(FUserID, AppContext);
     try
-        Runner.ExecuteSnippet(Snippet, False);
+        Runner.ExecuteSnippet(Snippet);
     finally
         Runner.Free;
     end;

@@ -295,7 +295,7 @@ begin
 
     Runner := TSnippetRunner.Create(0, FAppContext);
     try
-        Runner.ExecuteSnippetInWindow(Snippet, CurrentHWND, False);
+        Runner.ExecuteSnippetInWindow(Snippet, CurrentHWND);
     finally
         Runner.Free;
     end;
@@ -317,7 +317,7 @@ begin
     // Записываем запуск в workspace самого сниппета
     Runner := TSnippetRunner.Create(Favorites[SlotIndex].UserID, FAppContext);
     try
-        Runner.ExecuteSnippetInWindow(Favorites[SlotIndex], CurrentHWND, False);
+        Runner.ExecuteSnippetInWindow(Favorites[SlotIndex], CurrentHWND);
     finally
         Runner.Free;
     end;

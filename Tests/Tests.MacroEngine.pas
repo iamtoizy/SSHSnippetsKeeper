@@ -4,6 +4,7 @@ interface
 
 uses
     DUnitX.TestFramework,
+    MacroCounters,
     MacroEngine,
     MacroInputTypes,
     MacroActions
@@ -52,6 +53,18 @@ type
         [Test]
         procedure Input_SelectType_Parsed;
         [Test]
+        procedure Input_DateTimeType_Parsed;
+        [Test]
+        procedure Input_DateType_Parsed;
+        [Test]
+        procedure Input_TimeType_Parsed;
+        [Test]
+        procedure Sleep_InvalidArg_TokenMarkedInvalid;
+        [Test]
+        procedure Input_BadDefault_TokenMarkedInvalid;
+        [Test]
+        procedure Value_BadRandomArg_TokenMarkedInvalid;
+        [Test]
         procedure InputDescriptors_CollectsNonConfirmInputs;
         [Test]
         procedure PreCollect_Batch_CollectsAll;
@@ -73,6 +86,14 @@ type
         procedure Value_RANDOM_DefaultLength;
         [Test]
         procedure Value_COUNTER_PerSnippet;
+        [Test]
+        procedure Value_COUNTER_StartStep;
+        [Test]
+        procedure Value_COUNTER_Pad;
+        [Test]
+        procedure Value_COUNTER_Current_UsesRunValue;
+        [Test]
+        procedure Value_COUNTER_BadParams_TokenMarkedInvalid;
         [Test]
         procedure Value_ENV_Resolves;
         [Test]
@@ -105,6 +126,28 @@ type
         procedure KeyDelay_MidMacro_AppliesToRest;
         [Test]
         procedure KeyDelay_Invalid_Reports;
+        [Test]
+        procedure Positions_TextOnly_SingleToken;
+        [Test]
+        procedure Positions_MixedTextAndMacros;
+        [Test]
+        procedure Positions_MacroAtStartAndEnd;
+        [Test]
+        procedure Positions_SendKeyPlainChar_KeepsMacroRange;
+        [Test]
+        procedure DryRun_Text_PlainLines;
+        [Test]
+        procedure DryRun_MacroRawSlice;
+        [Test]
+        procedure DryRun_InputAndConfirm;
+        [Test]
+        procedure DryRun_Unknown_Warning;
+        [Test]
+        procedure DryRun_Invalid_Warning;
+        [Test]
+        procedure DryRun_Counter_NotConsumed;
+        [Test]
+        procedure DryRun_SendKey_Detail;
     end;
 
 implementation
@@ -488,6 +531,169 @@ begin
     end;
 end;
 
+procedure TMacroEngineTests.Input_DateTimeType_Parsed;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    InputAction: TInputAction;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Actions := Engine.Parse('{INPUT[DATETIME:2026-10-25 14:30]When}', Ctx);
+        Assert.AreEqual(1, Integer(Length(Actions)));
+        Assert.IsTrue(Actions[0] is TInputAction);
+
+        InputAction := Actions[0] as TInputAction;
+        Assert.IsTrue(InputAction.GetInputType = mitDateTime);
+        Assert.AreEqual('2026-10-25 14:30', InputAction.GetDefaultValue);
+        Assert.AreEqual('When', InputAction.GetPrompt);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Input_DateType_Parsed;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    InputAction: TInputAction;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Actions := Engine.Parse('{INPUT[DATE:2026-01-31]When}', Ctx);
+        Assert.AreEqual(1, Integer(Length(Actions)));
+        Assert.IsTrue(Actions[0] is TInputAction);
+
+        InputAction := Actions[0] as TInputAction;
+        Assert.IsTrue(InputAction.GetInputType = mitDate);
+        Assert.AreEqual('2026-01-31', InputAction.GetDefaultValue);
+        Assert.AreEqual('When', InputAction.GetPrompt);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Input_TimeType_Parsed;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    InputAction: TInputAction;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Actions := Engine.Parse('{INPUT[TIME:12:00]At}', Ctx);
+        Assert.AreEqual(1, Integer(Length(Actions)));
+        Assert.IsTrue(Actions[0] is TInputAction);
+
+        InputAction := Actions[0] as TInputAction;
+        Assert.IsTrue(InputAction.GetInputType = mitTime);
+        Assert.AreEqual('12:00', InputAction.GetDefaultValue);
+        Assert.AreEqual('At', InputAction.GetPrompt);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Sleep_InvalidArg_TokenMarkedInvalid;
+var
+    Engine: TMacroEngine;
+    Tokens: TArray<TMacroToken>;
+begin
+    Engine := TMacroEngine.Create;
+    try
+        Tokens := Engine.GetTokens('{SLEEP 500}');
+        Assert.AreEqual(1, Integer(Length(Tokens)));
+        Assert.IsFalse(Tokens[0].Invalid);
+
+        Tokens := Engine.GetTokens('{SLEEP abc}');
+        Assert.IsTrue(Tokens[0].Kind = tkSleep);
+        Assert.IsTrue(Tokens[0].Invalid);
+
+        Tokens := Engine.GetTokens('{SLEEP -5}');
+        Assert.IsTrue(Tokens[0].Invalid);
+
+        Tokens := Engine.GetTokens('{SLEEP}');
+        Assert.IsTrue(Tokens[0].Invalid);
+
+        Tokens := Engine.GetTokens('{SLEEP 99999999}');
+        Assert.IsTrue(Tokens[0].Invalid);
+    finally
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Input_BadDefault_TokenMarkedInvalid;
+var
+    Engine: TMacroEngine;
+    Tokens: TArray<TMacroToken>;
+begin
+    Engine := TMacroEngine.Create;
+    try
+        Tokens := Engine.GetTokens('{INPUT[NUMBER:100] N}');
+        Assert.IsFalse(Tokens[0].Invalid);
+
+        Tokens := Engine.GetTokens('{INPUT[NUMBER:abc] N}');
+        Assert.IsTrue(Tokens[0].Kind = tkInput);
+        Assert.IsTrue(Tokens[0].Invalid);
+
+        Tokens := Engine.GetTokens('{INPUT[DATE:2026-13-01] D}');
+        Assert.IsTrue(Tokens[0].Invalid);
+
+        Tokens := Engine.GetTokens('{INPUT[DATETIME:2026-10-25_14:30] D}');
+        Assert.IsFalse(Tokens[0].Invalid);
+
+        Tokens := Engine.GetTokens('{INPUT[TIME:25:00] T}');
+        Assert.IsTrue(Tokens[0].Invalid);
+
+        Tokens := Engine.GetTokens('{INPUT[SELECT:] Env}');
+        Assert.IsTrue(Tokens[0].Invalid);
+
+        Tokens := Engine.GetTokens('{INPUT[SELECT:prod|stage] Env}');
+        Assert.IsFalse(Tokens[0].Invalid);
+
+        Tokens := Engine.GetTokens('{INPUT Name}');
+        Assert.IsFalse(Tokens[0].Invalid);
+    finally
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Value_BadRandomArg_TokenMarkedInvalid;
+var
+    Engine: TMacroEngine;
+    Tokens: TArray<TMacroToken>;
+begin
+    Engine := TMacroEngine.Create;
+    try
+        Tokens := Engine.GetTokens('{RANDOM}');
+        Assert.IsFalse(Tokens[0].Invalid);
+
+        Tokens := Engine.GetTokens('{RANDOM:12}');
+        Assert.IsFalse(Tokens[0].Invalid);
+
+        Tokens := Engine.GetTokens('{RANDOM:abc}');
+        Assert.IsTrue(Tokens[0].Kind = tkValue);
+        Assert.IsTrue(Tokens[0].Invalid);
+
+        Tokens := Engine.GetTokens('{RANDOM:0}');
+        Assert.IsTrue(Tokens[0].Invalid);
+
+        Tokens := Engine.GetTokens('{RANDOM:99999}');
+        Assert.IsTrue(Tokens[0].Invalid);
+    finally
+        Engine.Free;
+    end;
+end;
+
 procedure TMacroEngineTests.InputDescriptors_CollectsNonConfirmInputs;
 var
     Engine: TMacroEngine;
@@ -768,6 +974,7 @@ var
     Actions: TArray<IScriptAction>;
     Rec, Rec2: TRecorderExecutor;
 begin
+    Counters.ResetAll;
     Engine := TMacroEngine.Create;
     Ctx := MakeContext;
     Rec := TRecorderExecutor.Create;
@@ -794,6 +1001,126 @@ begin
         end;
     finally
         Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Value_COUNTER_StartStep;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    Rec: TRecorderExecutor;
+begin
+    Counters.ResetAll;
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    Rec := TRecorderExecutor.Create;
+    try
+        Ctx.SnippetID := 8;
+        Ctx.Executor := Rec;
+        Actions := Engine.Parse('{COUNTER:start=100;step=2}', Ctx);
+        Actions[0].Execute;
+        Actions := Engine.Parse('{COUNTER:start=100;step=2}', Ctx);
+        Actions[0].Execute;
+        Assert.AreEqual('100102', Rec.Recorded);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Value_COUNTER_Pad;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    Rec: TRecorderExecutor;
+begin
+    Counters.ResetAll;
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    Rec := TRecorderExecutor.Create;
+    try
+        Ctx.SnippetID := 8;
+        Ctx.Executor := Rec;
+        Actions := Engine.Parse('{COUNTER:pad=3}', Ctx);
+        Actions[0].Execute;
+        Actions := Engine.Parse('{COUNTER:pad=3}', Ctx);
+        Actions[0].Execute;
+        Assert.AreEqual('001002', Rec.Recorded);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Value_COUNTER_Current_UsesRunValue;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Actions: TArray<IScriptAction>;
+    Rec: TRecorderExecutor;
+begin
+    Counters.ResetAll;
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    Rec := TRecorderExecutor.Create;
+    try
+        Ctx.SnippetID := 9;
+        Ctx.Executor := Rec;
+        Actions := Engine.Parse('{COUNTER:step=5}{COUNTER:current}', Ctx);
+        Actions[0].Execute;
+        Actions[1].Execute;
+        Assert.AreEqual('11', Rec.Recorded);
+
+        Rec.Recorded := '';
+        Actions := Engine.Parse('{COUNTER:current}', Ctx);
+        Actions[0].Execute;
+        Assert.AreEqual('1', Rec.Recorded);
+
+        Rec.Recorded := '';
+        Actions := Engine.Parse('{COUNTER}', Ctx);
+        Actions[0].Execute;
+        Assert.AreEqual('2', Rec.Recorded);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Value_COUNTER_BadParams_TokenMarkedInvalid;
+var
+    Engine: TMacroEngine;
+    Tokens: TArray<TMacroToken>;
+begin
+    Engine := TMacroEngine.Create;
+    try
+        Tokens := Engine.GetTokens('{COUNTER}');
+        Assert.IsFalse(Tokens[0].Invalid);
+
+        Tokens := Engine.GetTokens('{COUNTER:start=5;step=2;pad=3}');
+        Assert.IsFalse(Tokens[0].Invalid);
+
+        Tokens := Engine.GetTokens('{COUNTER:current;volatile}');
+        Assert.IsFalse(Tokens[0].Invalid);
+
+        Tokens := Engine.GetTokens('{COUNTER:step=0}');
+        Assert.IsTrue(Tokens[0].Kind = tkValue);
+        Assert.IsTrue(Tokens[0].Invalid);
+
+        Tokens := Engine.GetTokens('{COUNTER:pad=0}');
+        Assert.IsTrue(Tokens[0].Invalid);
+
+        Tokens := Engine.GetTokens('{COUNTER:pad=99}');
+        Assert.IsTrue(Tokens[0].Invalid);
+
+        Tokens := Engine.GetTokens('{COUNTER:foo=1}');
+        Assert.IsTrue(Tokens[0].Invalid);
+
+        Tokens := Engine.GetTokens('{COUNTER:start}');
+        Assert.IsTrue(Tokens[0].Invalid);
+    finally
         Engine.Free;
     end;
 end;
@@ -1089,6 +1416,282 @@ begin
 
         Unknown := Engine.ValidateCommands('x{KEYDELAY abc}y');
         Assert.AreEqual(1, Integer(Length(Unknown)));
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Positions_TextOnly_SingleToken;
+var
+    Engine: TMacroEngine;
+    Tokens: TArray<TMacroToken>;
+begin
+    Engine := TMacroEngine.Create;
+    try
+        Tokens := Engine.GetTokens('just text');
+        Assert.AreEqual(1, Integer(Length(Tokens)));
+        Assert.AreEqual(tkText, Tokens[0].Kind);
+        Assert.AreEqual(1, Tokens[0].StartOffset);
+        Assert.AreEqual(9, Tokens[0].Length);
+
+        Assert.AreEqual(0, Integer(Length(Engine.GetTokens(''))));
+    finally
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Positions_MixedTextAndMacros;
+var
+    Engine: TMacroEngine;
+    Tokens: TArray<TMacroToken>;
+    Text: string;
+begin
+    Text := 'ab{ENTER}c{SLEEP 100}d';
+    Engine := TMacroEngine.Create;
+    try
+        Tokens := Engine.GetTokens(Text);
+        Assert.AreEqual(5, Integer(Length(Tokens)));
+
+        Assert.AreEqual(tkText, Tokens[0].Kind);
+        Assert.AreEqual('ab', Copy(Text, Tokens[0].StartOffset, Tokens[0].Length));
+
+        Assert.AreEqual(tkEnter, Tokens[1].Kind);
+        Assert.AreEqual(3, Tokens[1].StartOffset);
+        Assert.AreEqual(7, Tokens[1].Length);
+
+        Assert.AreEqual(tkText, Tokens[2].Kind);
+        Assert.AreEqual(10, Tokens[2].StartOffset);
+        Assert.AreEqual(1, Tokens[2].Length);
+
+        Assert.AreEqual(tkSleep, Tokens[3].Kind);
+        Assert.AreEqual(11, Tokens[3].StartOffset);
+        Assert.AreEqual(11, Tokens[3].Length);
+
+        Assert.AreEqual(tkText, Tokens[4].Kind);
+        Assert.AreEqual(22, Tokens[4].StartOffset);
+        Assert.AreEqual(1, Tokens[4].Length);
+    finally
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Positions_MacroAtStartAndEnd;
+var
+    Engine: TMacroEngine;
+    Tokens: TArray<TMacroToken>;
+begin
+    Engine := TMacroEngine.Create;
+    try
+        Tokens := Engine.GetTokens('{ENTER}{SLEEP 5}');
+        Assert.AreEqual(2, Integer(Length(Tokens)));
+
+        Assert.AreEqual(tkEnter, Tokens[0].Kind);
+        Assert.AreEqual(1, Tokens[0].StartOffset);
+        Assert.AreEqual(7, Tokens[0].Length);
+
+        Assert.AreEqual(tkSleep, Tokens[1].Kind);
+        Assert.AreEqual(8, Tokens[1].StartOffset);
+        Assert.AreEqual(9, Tokens[1].Length);
+    finally
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.Positions_SendKeyPlainChar_KeepsMacroRange;
+var
+    Engine: TMacroEngine;
+    Tokens: TArray<TMacroToken>;
+begin
+    Engine := TMacroEngine.Create;
+    try
+        Tokens := Engine.GetTokens('x{SENDKEY y}');
+        Assert.AreEqual(2, Integer(Length(Tokens)));
+
+        Assert.AreEqual(tkText, Tokens[0].Kind);
+        Assert.AreEqual(1, Tokens[0].StartOffset);
+        Assert.AreEqual(1, Tokens[0].Length);
+
+        Assert.AreEqual(tkText, Tokens[1].Kind);
+        Assert.AreEqual(2, Tokens[1].StartOffset);
+        Assert.AreEqual(11, Tokens[1].Length);
+    finally
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.DryRun_Text_PlainLines;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Lines: TArray<TTranscriptLine>;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Lines := Engine.DryRunTranscript('hello world', Ctx);
+        Assert.AreEqual(1, Integer(Length(Lines)));
+        Assert.IsTrue(Lines[0].Kind = tlText);
+        Assert.AreEqual('hello world', Lines[0].Detail);
+        Assert.AreEqual('', Lines[0].Warning);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.DryRun_MacroRawSlice;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Lines: TArray<TTranscriptLine>;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Lines := Engine.DryRunTranscript('ab{SLEEP 100}c{KEYDELAY 5}', Ctx);
+        Assert.AreEqual(4, Integer(Length(Lines)));
+
+        Assert.IsTrue(Lines[0].Kind = tlText);
+        Assert.AreEqual('ab', Lines[0].Macro);
+
+        Assert.IsTrue(Lines[1].Kind = tlSleep);
+        Assert.AreEqual('{SLEEP 100}', Lines[1].Macro);
+        Assert.AreEqual('100', Lines[1].Detail);
+        Assert.AreEqual('', Lines[1].Warning);
+
+        Assert.IsTrue(Lines[3].Kind = tlKeyDelay);
+        Assert.AreEqual('{KEYDELAY 5}', Lines[3].Macro);
+        Assert.AreEqual('5', Lines[3].Detail);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.DryRun_InputAndConfirm;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Lines: TArray<TTranscriptLine>;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Lines := Engine.DryRunTranscript('{INPUT[NUMBER:5]Size}{INPUT[Confirm]Proceed}', Ctx);
+        Assert.AreEqual(2, Integer(Length(Lines)));
+
+        Assert.IsTrue(Lines[0].Kind = tlInput);
+        Assert.AreEqual('Size', Lines[0].Name);
+        Assert.IsTrue(Lines[0].InputType = mitNumber);
+        Assert.AreEqual('5', Lines[0].Detail);
+
+        Assert.IsTrue(Lines[1].Kind = tlConfirm);
+        Assert.AreEqual('Proceed', Lines[1].Name);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.DryRun_Unknown_Warning;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Lines: TArray<TTranscriptLine>;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Lines := Engine.DryRunTranscript('a{UNKNOWN_CMD}b', Ctx);
+        Assert.AreEqual(3, Integer(Length(Lines)));
+        Assert.IsTrue(Lines[1].Kind = tlWarning);
+        Assert.AreEqual(DRY_RUN_WARN_UNKNOWN, Lines[1].Warning);
+        Assert.AreEqual('{UNKNOWN_CMD}', Lines[1].Macro);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.DryRun_Invalid_Warning;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Lines: TArray<TTranscriptLine>;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Lines := Engine.DryRunTranscript('{SLEEP abc}', Ctx);
+        Assert.AreEqual(1, Integer(Length(Lines)));
+        Assert.IsTrue(Lines[0].Kind = tlSleep);
+        Assert.AreEqual(DRY_RUN_WARN_INVALID, Lines[0].Warning);
+
+        Lines := Engine.DryRunTranscript('{RANDOM:abc}', Ctx);
+        Assert.AreEqual(DRY_RUN_WARN_INVALID, Lines[0].Warning);
+
+        Lines := Engine.DryRunTranscript('{COUNTER:step=0}', Ctx);
+        Assert.AreEqual(DRY_RUN_WARN_INVALID, Lines[0].Warning);
+
+        Lines := Engine.DryRunTranscript('{INPUT[NUMBER:oops] N}', Ctx);
+        Assert.AreEqual(DRY_RUN_WARN_INVALID, Lines[0].Warning);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.DryRun_Counter_NotConsumed;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Lines: TArray<TTranscriptLine>;
+    Rec: TRecorderExecutor;
+    Actions: TArray<IScriptAction>;
+begin
+    Counters.ResetAll;
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    Rec := TRecorderExecutor.Create;
+    try
+        Ctx.SnippetID := 21;
+        Ctx.Executor := Rec;
+
+        // Превью дважды: оба раза next-значение, счётчик не двигается
+        Lines := Engine.DryRunTranscript('{COUNTER:start=100;step=2}', Ctx);
+        Assert.AreEqual(1, Integer(Length(Lines)));
+        Assert.IsTrue(Lines[0].Kind = tlValue);
+        Assert.AreEqual('COUNTER', Lines[0].Name);
+        Assert.AreEqual('100', Lines[0].Detail);
+
+        Lines := Engine.DryRunTranscript('{COUNTER:start=100;step=2}', Ctx);
+        Assert.AreEqual('100', Lines[0].Detail);
+
+        // Реальный запуск потребляет счётчик
+        Actions := Engine.Parse('{COUNTER:start=100;step=2}', Ctx);
+        Actions[0].Execute;
+        Assert.AreEqual('100', Rec.Recorded);
+    finally
+        Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.DryRun_SendKey_Detail;
+var
+    Engine: TMacroEngine;
+    Ctx: TMacroContext;
+    Lines: TArray<TTranscriptLine>;
+begin
+    Engine := TMacroEngine.Create;
+    Ctx := MakeContext;
+    try
+        Lines := Engine.DryRunTranscript('{SENDKEY CTRL+ENTER}', Ctx);
+        Assert.AreEqual(1, Integer(Length(Lines)));
+        Assert.IsTrue(Lines[0].Kind = tlSendKey);
+        Assert.AreEqual('Ctrl+Enter', Lines[0].Detail);
+        Assert.AreEqual('{SENDKEY CTRL+ENTER}', Lines[0].Macro);
     finally
         Ctx.Free;
         Engine.Free;

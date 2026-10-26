@@ -35,10 +35,10 @@ function IndexOfInputType(AType: TMacroInputType): Integer;
 
 const
     // Порядок совпадает с TMacroInputType
-    INPUT_TYPE_NAMES: array [0 .. 7] of string =
-        ('STRING', 'NUMBER', 'HEX', 'FLOAT', 'PASSWORD', 'DATE', 'CONFIRM', 'SELECT');
-    INPUT_TYPE_VALUES: array [0 .. 7] of TMacroInputType =
-        (mitString, mitNumber, mitHex, mitFloat, mitPassword, mitDate, mitConfirm, mitSelect);
+    INPUT_TYPE_NAMES: array [0 .. 9] of string =
+        ('STRING', 'NUMBER', 'HEX', 'FLOAT', 'PASSWORD', 'DATE', 'TIME', 'DATETIME', 'CONFIRM', 'SELECT');
+    INPUT_TYPE_VALUES: array [0 .. 9] of TMacroInputType =
+        (mitString, mitNumber, mitHex, mitFloat, mitPassword, mitDate, mitTime, mitDateTime, mitConfirm, mitSelect);
 
 implementation
 
@@ -56,6 +56,8 @@ begin
         mitFloat: Result := 'FLOAT';
         mitPassword: Result := 'PASSWORD';
         mitDate: Result := 'DATE';
+        mitTime: Result := 'TIME';
+        mitDateTime: Result := 'DATETIME';
         mitConfirm: Result := 'CONFIRM';
         mitSelect: Result := 'SELECT';
     else

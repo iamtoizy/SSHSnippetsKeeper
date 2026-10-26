@@ -89,6 +89,9 @@
     "puRunSnippet": {
       "Caption": "Запустить"
     },
+    "puDryRunSnippet": {
+      "Caption": "Предпросмотр"
+    },
     "puAddSnippet": {
       "Caption": "Добавить"
     },
@@ -164,6 +167,15 @@
   },
   "TagEditorForm": {
     "Caption": "Редактор тегов",
+    "actAddTag": {
+      "Caption": "Добавить тег"
+    },
+    "actDeleteTag": {
+      "Caption": "Удалить тег"
+    },
+    "actEditTag": {
+      "Caption": "Изменить тег"
+    },
     "nActions": {
       "Caption": "Действия"
     },
@@ -223,48 +235,35 @@
       "Caption": "Параметры:"
     }
   },
-  "MacroBuilderForm": {
-    "Caption": "Конструктор макросов",
-    "lbHint": {
-      "Caption": "Шаги макроса:"
+  "DryRunForm": {
+    "Caption": "Предпросмотр",
+    "bRun": {
+      "Caption": "Запустить"
     },
-    "lbPropsEmpty": {
-      "Caption": "Выбери шаг слева - здесь появятся его свойства"
+    "bClose": {
+      "Caption": "Закрыть"
+    }
+  },
+  "MacroCardEditorForm": {
+    "Caption": "Редактор макроса",
+    "lbStepType": {
+      "Caption": "Тип макроса:"
     },
-    "lbAddType": {
-      "Caption": "Тип шага:"
-    },
-    "bAddStep": {
-      "Caption": "Добавить"
-    },
-    "bStepUp": {
-      "Caption": "↑"
-    },
-    "bStepDown": {
-      "Caption": "↓"
-    },
-    "bStepDelete": {
-      "Caption": "Удалить"
-    },
-    "lbPreview": {
-      "Caption": "Превью:"
-    },
-    "bApply": {
-      "Caption": "Применить"
+    "bOK": {
+      "Caption": "ОК"
     },
     "bCancel": {
       "Caption": "Отмена"
-    },
-    "lvSteps": {
-      "Columns": {
-        "0": "#",
-        "1": "Тип",
-        "2": "Шаг"
-      }
     }
   },
   "AddEditSnippetForm": {
     "Caption": "SSH Snippets Keeper - Добавить/редактировать сниппет",
+    "actShowAIForm": {
+      "Caption": "Вызвать окно ИИ-ассистента"
+    },
+    "actConfigureAI": {
+      "Caption": "Настроить ИИ-ассистента"
+    },
     "ebTitle": {
       "Text": ""
     },
@@ -283,8 +282,13 @@
     "bHistory": {
       "Caption": "История…"
     },
-    "bMacroBuilder": {
-      "Caption": "Конструктор"
+    "bMacroInsert": {
+      "Caption": "Вставить...",
+      "Hint": "Вставить макрос в позицию курсора"
+    },
+    "bMacroHelp": {
+      "Caption": "?",
+      "Hint": "Документация по макросам: как это работает"
     },
     "nAI": {
       "Caption": "ИИ-ассистент"
@@ -314,11 +318,32 @@
       "Caption": "Макросы"
     },
     "mInfo": {
-      "Text": "Тестовые макросы на текущий момент:\n{SLEEP N} - Задержка выполнения на N миллисекунд.\n{ENTER} - Отправка нажатия клавиши ENTER.\n{SENDKEY X} - Отправка символа X, имени клавиши (ENTER, TAB, F1-F12) или VK-кода в целевое окно.\n{INPUT[ТИП:ЗНАЧЕНИЕ-ПО-УМОЛЧАНИЮ] ИМЯ} - Отобразить окно ввода текста с подстановкой в место расположения макроса. Примеры:\n  {INPUT Имя}\n  {INPUT[STRING:test string] Имя}\n  {INPUT[NUMBER:100] Размер}\n  {INPUT[FLOAT:3.14] Размер}\n  {INPUT[Hex:FF] Цвет}\n  {INPUT[Password] Пароль}\n  {INPUT[DATE:2026-01-31] Дата}\n  {INPUT[SELECT:prod|stage|dev] Окружение} - Выбор значения из списка (варианты через |).\n  {INPUT[Confirm] Текст для пользователя} - Приостановить выполнение и ждать подтверждения от пользователя.\n{DATETIME:ФОРМАТ} - Текущие дата и время (маска FormatDateTime), по умолчанию yyyy-MM-dd HH:mm:ss.\n{UUID} - Новый UUID (нижний регистр).\n{RANDOM:N} - Случайная строка из N букв и цифр (по умолчанию 16).\n{COUNTER} - Порядковый номер запуска сниппета (1, 2, 3...).\n{ENV:ИМЯ} - Значение переменной окружения.\n{CLIPBOARD} - Текст из буфера обмена на момент запуска.\n{SENDKEY CTRL+K} - Комбинации: CTRL, ALT, SHIFT + клавиша (например, CTRL+C, ALT+F4, CTRL+SHIFT+T).\n{CLEAR_LINE} - Очистить текущую строку терминала: Ctrl+C, пауза, Ctrl+U.\n{KEYDELAY N} - Пауза между символами (мс) для последующего текста.\n\n..."
+      "Text": "Тестовые макросы на текущий момент:\n{SLEEP N} - Задержка выполнения на N миллисекунд.\n{ENTER} - Отправка нажатия клавиши ENTER.\n{SENDKEY X} - Отправка символа X, имени клавиши (ENTER, TAB, F1-F12) или VK-кода в целевое окно.\n{INPUT[ТИП:ЗНАЧЕНИЕ-ПО-УМОЛЧАНИЮ] ИМЯ} - Отобразить окно ввода текста с подстановкой в место расположения макроса. Примеры:\n  {INPUT Имя}\n  {INPUT[STRING:test string] Имя}\n  {INPUT[NUMBER:100] Размер}\n  {INPUT[FLOAT:3.14] Размер}\n  {INPUT[Hex:FF] Цвет}\n  {INPUT[Password] Пароль}\n  {INPUT[DATE:2026-01-31] Дата}\n  {INPUT[TIME:12:00] Время}\n  {INPUT[DATETIME:2026-01-31 12:00] Дата и время}\n  {INPUT[SELECT:prod|stage|dev] Окружение} - Выбор значения из списка (варианты через |).\n  {INPUT[Confirm] Текст для пользователя} - Приостановить выполнение и ждать подтверждения от пользователя.\n{DATETIME:ФОРМАТ} - Текущие дата и время (маска FormatDateTime), по умолчанию yyyy-MM-dd HH:mm:ss.\n{UUID} - Новый UUID (нижний регистр).\n{RANDOM:N} - Случайная строка из N букв и цифр (по умолчанию 16).\n{COUNTER} - Порядковый номер запуска сниппета (1, 2, 3...). Параметры через «;»: start=ЧИСЛО (начальное значение), step=ЧИСЛО (шаг), pad=N (нулевое дополнение до N знаков), current (вернуть номер из этого запуска, не увеличивая), volatile (не сохранять между запусками). Пример: {COUNTER:start=100;step=2;pad=3} даст 100, 102, 104...\n{ENV:ИМЯ} - Значение переменной окружения.\n{CLIPBOARD} - Текст из буфера обмена на момент запуска.\n{SENDKEY CTRL+K} - Комбинации: CTRL, ALT, SHIFT + клавиша (например, CTRL+C, ALT+F4, CTRL+SHIFT+T).\n{CLEAR_LINE} - Очистить текущую строку терминала: Ctrl+C, пауза, Ctrl+U.\n{KEYDELAY N} - Пауза между символами (мс) для последующего текста.\n\n..."
     }
   },
   "AISettingsForm": {
     "Caption": "Настройки ИИ",
+    "actSave": {
+      "Caption": "Сохранить настройки"
+    },
+    "actCreateProvider": {
+      "Caption": "Создать провайдера"
+    },
+    "actDeleteProvider": {
+      "Caption": "Удалить провайдера"
+    },
+    "actEditProvider": {
+      "Caption": "Редактировать провайдера"
+    },
+    "actCreateModel": {
+      "Caption": "Создать модель"
+    },
+    "actDeleteModel": {
+      "Caption": "Удалить модель"
+    },
+    "actEditModel": {
+      "Caption": "Редактировать модель"
+    },
     "nFile": {
       "Caption": "Файл"
     },
@@ -388,6 +413,15 @@
   },
   "WorkspaceManagerForm": {
     "Caption": "Управление пространствами",
+    "actAddWorkspace": {
+      "Caption": "Добавить пространство"
+    },
+    "actDeleteWorkspace": {
+      "Caption": "Удалить пространство"
+    },
+    "actEditWorkspace": {
+      "Caption": "Изменить пространство"
+    },
     "nWorkspaces": {
       "Caption": "Пространства"
     },
@@ -883,6 +917,21 @@
     "bAppPick": {
       "Caption": "Из списка..."
     },
+    "tsCounters": {
+      "Caption": "Счётчики"
+    },
+    "lvCounters": {
+      "Columns": {
+        "0": "ID сниппета",
+        "1": "Текущее значение"
+      }
+    },
+    "bCounterReset": {
+      "Caption": "Сбросить выбранный"
+    },
+    "bCounterResetAll": {
+      "Caption": "Сбросить все"
+    },
     "tsLocalSync": {
       "Caption": "Markdown-синхронизация"
     },
@@ -988,7 +1037,11 @@
     }
   },
   "CustomHelpForm": {
-    "Caption": "Справочная информация"
+    "Caption": "Справочная информация",
+    "bCopyText": {
+      "Caption": "Копировать текст",
+      "Hint": "Скопировать текст справки в буфер обмена"
+    }
   },
   "Messages": {
     "Help": {
@@ -1231,7 +1284,7 @@
         "actConfigureAI": "Настроить ИИ-ассистента"
       },
       "AISettingsForm": {
-        "Caption": "ИИ-ассистент",
+        "Caption": "Настройки ИИ",
         "actSave": "Сохранить настройки",
         "actCreateProvider": "Создать провайдера",
         "actDeleteProvider": "Удалить провайдера",
@@ -1247,12 +1300,12 @@
         "actEditTag": "Изменить тег"
       },
       "WorkspaceManagerForm": {
-        "Caption": "Пространства",
+        "Caption": "Управление пространствами",
         "actAddWorkspace": "Добавить пространство",
         "actDeleteWorkspace": "Удалить пространство",
         "actEditWorkspace": "Изменить пространство"
       },
-      "GlobalQuickSearch": "Панель быстрого поиска",
+          "GlobalQuickSearch": "Панель быстрого поиска",
       "GlobalPasswordGen": "Генератор паролей",
       "GlobalRepeatLast": "Повтор последнего сниппета",
       "FavoriteSlot": "Слот избранного"
@@ -1267,6 +1320,9 @@
       "Information": "Информация",
       "OK": "ОК",
       "Cancel": "Отмена",
+      "Copy": "Копировать",
+      "Cut": "Вырезать",
+      "Paste": "Вставить",
       "Help": "Справка",
       "MoreInfo": "Подробнее",
       "WinEventHookError": "Не удалось установить WinEventHook. Ошибка: %s",
@@ -1300,6 +1356,8 @@
     },
     "Settings": {
       "ResetAllHotkeysConfirm": "Сбросить все горячие клавиши к значениям по умолчанию?",
+      "CountersResetConfirm": "Сбросить счётчик сниппета №%s?",
+      "CountersResetAllConfirm": "Сбросить все счётчики?",
       "SelectVaultPath": "Выбери папку хранилища",
       "ApplicationsAddPrompt": "Имя исполняемого файла (например, ssh.exe):",
       "ApplicationsRenamePrompt": "Новое имя исполняемого файла:",
@@ -1440,15 +1498,6 @@
         "NotFound": "Цепочка не найдена.",
         "SnippetNotFound": "Шаг %d: сниппет не найден."
       }
-    },
-    "Macro": {
-      "StopPanelTitle": "Идёт вставка сниппета...",
-      "StopButton": "Прервать",
-      "FocusLost": "Фокус целевого окна потерян - вставка прервана.",
-      "UnknownCommand": "Неизвестная команда %s - вставка прервана.",
-      "TypingInProgress": "Идёт вставка сниппета - дождитесь завершения и повторите запуск.",
-      "ProgressChars": "%d/%d символов (%d%%)",
-      "PauseRemaining": "Пауза: осталось ~%d с"
     },
     "MultiSelect": {
       "Menu": {
@@ -1609,7 +1658,8 @@
       "Dow-3": "Среда",
       "Dow-4": "Четверг",
       "Dow-5": "Пятница",
-      "Dow-6": "Суббота"
+      "Dow-6": "Суббота",
+      "Dow-7": "Воскресенье"
     },
     "AddEditSnippet": {
       "CloseConfirmText": "Обнаружены изменения, которые потеряются в случае закрытия этого окна.\n\nЗакрыть окно без сохранения изменений?",
@@ -1621,7 +1671,9 @@
       "SecurityToastTitle": "⚠ Угроза безопасности",
       "AutocompleteUpdated": "Файл автозаполнения обновлён. Содержимое будет перезагружено.",
       "AIChooseModelError": "Выбери провайдера и модель ИИ!",
-      "EnterSnippetTextHere": "Здесь введи имя сниппета..."
+      "EnterSnippetTextHere": "Здесь введи имя сниппета...",
+      "MacroCounter": "Макросов: %d",
+      "MacroCounterSel": "Макрос: %d из %d"
     },
     "AISettingsForm": {
       "DeleteModelConfirm": "Удалить эту модель?",
@@ -1685,14 +1737,18 @@
         "Hex": "Введи HEX значение (например, FF или 0xFF)",
         "Float": "Введи вещественное число (например, 3.14)",
         "Password": "Введи пароль",
-        "Date": "Введи дату (YYYY-MM-DD)",
+        "Date": "Введи дату (YYYY-MM-DD или локальный формат)",
+        "Time": "Введи время (ЧЧ:ММ)",
+        "DateTime": "Введи дату и время (YYYY-MM-DD HH:MM, YYYY-MM-DD или локальный формат; вместо пробела можно _)",
         "Select": "Выбери значение из списка"
       },
       "Error": {
         "Number": "Ошибка: введи целое число",
         "Hex": "Ошибка: введи HEX значение (0-9, A-F)",
         "Float": "Ошибка: введи вещественное (например, 3.14)",
-        "Date": "Ошибка: формат даты YYYY-MM-DD"
+        "Date": "Ошибка: введи дату (например, 2026-01-31)",
+        "Time": "Ошибка: введи время (например, 14:30)",
+        "DateTime": "Ошибка: формат даты/времени YYYY-MM-DD HH:MM (или YYYY-MM-DD; вместо пробела можно _)"
       }
     },
     "ParamsForm": {
@@ -1701,9 +1757,44 @@
         "Invalid": "Ошибка в параметре: %s"
       }
     },
+    "DryRun": {
+      "PreviewTitle": "Предпросмотр: %s",
+      "Summary": "Шагов: %d, предупреждений: %d",
+      "Line": {
+        "Enter": "Нажать Enter",
+        "Sleep": "Пауза %s мс",
+        "Input": "Ввод «%s» (%s)",
+        "Default": "по умолчанию: %s",
+        "Confirm": "Ждать подтверждения: «%s»",
+        "SendKey": "Нажать клавиши %s",
+        "Value": "%s → %s",
+        "ClearLine": "Очистить строку (Ctrl+C → Ctrl+U)",
+        "KeyDelay": "Задержка между символами: %s мс",
+        "CounterNote": "(превью: счётчик не увеличивается)"
+      },
+      "Warn": {
+        "Unknown": "Нераспознанный макрос - при запуске будет пропущен: %s",
+        "Invalid": "Опечатка в параметрах макроса - проверить перед запуском"
+      },
+      "TypeName": {
+        "String": "строка",
+        "Number": "число",
+        "Hex": "hex",
+        "Float": "дробное",
+        "Password": "пароль",
+        "Date": "дата",
+        "Time": "время",
+        "DateTime": "дата и время",
+        "Confirm": "подтверждение",
+        "Select": "выбор"
+      }
+    },
+    "MacroDoc": {
+      "Title": "Макросы: как это работает",
+      "Body": "<h3>Общий принцип</h3><p>Сниппет печатается в целевое окно посимвольно, как при вводе с клавиатуры. Каждая новая строка текста отправляет ENTER. Макросы в фигурных скобках заменяются на значения в момент запуска. Ошибка в параметрах макроса подсвечивает карточку красным, но не прерывает выполнение — значение подставляется с безопасным поведением по умолчанию.</p><h3>Ввод данных: INPUT</h3><ul><li><code>{INPUT Имя}</code> — запрос текста с подстановкой в позицию макроса.</li><li><code>{INPUT[NUMBER:100] Размер}</code> — типы: STRING, NUMBER, HEX, FLOAT, PASSWORD, DATE, TIME, DATETIME; после «:» — значение по умолчанию.</li><li><code>{INPUT[SELECT:prod|stage|dev] Окружение}</code> — выбор из списка (варианты через |).</li><li><code>{INPUT[Confirm] Продолжить?}</code> — пауза и ожидание подтверждения.</li><li>В значениях дат можно использовать _ вместо пробела.</li></ul><h3>Подставляемые значения</h3><ul><li><code>{DATETIME:yyyy-MM-dd}</code> — текущие дата и время, маска FormatDateTime; по умолчанию yyyy-MM-dd HH:mm:ss.</li><li><code>{UUID}</code> — новый UUID в нижнем регистре.</li><li><code>{RANDOM:16}</code> — случайная строка заданной длины (по умолчанию 16, максимум 1024).</li><li><code>{ENV:HOME}</code> — значение переменной окружения.</li><li><code>{CLIPBOARD}</code> — текст буфера обмена на момент запуска.</li></ul><h3>Счётчик COUNTER</h3><p><code>{COUNTER}</code> — порядковый номер запуска сниппета: 1, 2, 3… У каждого сниппета своё состояние; оно сохраняется в файл counters.json (рядом с settings.json) и переживает перезапуск приложения.</p><p>Параметры перечисляются через «;»:</p><ul><li><code>start=N</code> — стартовое значение, действует пока у счётчика нет сохранённого состояния;</li><li><code>step=N</code> — шаг после каждого взятия (0 запрещён, допускается отрицательный);</li><li><code>pad=N</code> — дополнение нулями слева до N знаков (от 1 до 18), влияет только на отображение;</li><li><code>current</code> — вернуть номер из этого же запуска, не увеличивая счётчик;</li><li><code>volatile</code> — не сохранять изменение между запусками.</li></ul><p>Примеры: <code>{COUNTER:start=100;step=2;pad=3}</code> даст 100, 102, 104… Один и тот же номер в двух местах текста: <code>{COUNTER}</code> … <code>{COUNTER:current}</code>. Одноразовый счётчик без записи в файл: <code>{COUNTER:volatile}</code>. Сбросить значения — Настройки, вкладка «Счётчики».</p><h3>Управление терминалом</h3><ul><li><code>{SLEEP 500}</code> — пауза в миллисекундах (максимум 600000).</li><li><code>{ENTER}</code> — нажатие ENTER.</li><li><code>{SENDKEY CTRL+C}</code> — клавиша по имени (ENTER, TAB, F1–F12), символу или VK-коду; поддерживаются комбинации с CTRL, ALT, SHIFT.</li><li><code>{CLEAR_LINE}</code> — очистить текущую строку: Ctrl+C, пауза, Ctrl+U.</li><li><code>{KEYDELAY 20}</code> — пауза между символами для последующего текста (мс).</li></ul><h3>Редактор карточек</h3><p>Двойной клик по карточке — редактирование шага, перетаскивание — изменение порядка. Красная карточка означает ошибку в параметрах шага.</p>"
+    },
     "MacroBuilder": {
       "StepType": {
-        "Text": "Текст",
         "Sleep": "Пауза",
         "Enter": "ENTER",
         "Key": "Клавиша",
@@ -1712,7 +1803,6 @@
         "ClearLine": "Очистить строку",
         "KeyDelay": "Задержка"
       },
-      "PropText": "Текст шага:",
       "PropMs": "Пауза, мс:",
       "PropKey": "Клавиша (CTRL+C, F5, a):",
       "PropName": "Имя (подсказка):",
@@ -1724,8 +1814,34 @@
       "DefaultParamName": "Параметр",
       "Error": {
         "BadKey": "Неизвестная клавиша: %s",
-        "EnvEmpty": "Для ENV задай имя переменной"
+        "EnvEmpty": "Для ENV задай имя переменной",
+        "BadMs": "Пауза должна быть целым числом не меньше 0 (мс)",
+        "BadRandom": "Длина RANDOM должна быть целым числом не меньше 1",
+        "BadCounter": "Неверные параметры COUNTER. Разрешены: start=N, step=N (не ноль), pad=N (1..18), current, volatile",
+        "BadDefault": "Значение по умолчанию не подходит для типа %s",
+        "BadOptions": "Для SELECT укажи хотя бы один вариант (через |)"
       }
+    },
+    "Macro": {
+      "StopPanelTitle": "Идёт вставка сниппета...",
+      "StopButton": "Прервать",
+      "FocusLost": "Фокус целевого окна потерян - вставка прервана.",
+      "UnknownCommand": "Неизвестная команда %s - вставка прервана.",
+      "TypingInProgress": "Идёт вставка сниппета - дождитесь завершения и повторите запуск.",
+      "ProgressChars": "%d/%d символов (%d%%)",
+      "PauseRemaining": "Пауза: осталось ~%d с",
+      "CardEdit": "Редактировать макрос",
+      "CardDuplicate": "Дублировать",
+      "CardDelete": "Удалить",
+      "CardCopy": "Копировать",
+      "CardPaste": "Вставить",
+      "InsertSleep": "Пауза (SLEEP)",
+      "InsertEnter": "ENTER",
+      "InsertKey": "Клавиша (SENDKEY)",
+      "InsertInput": "Ввод (INPUT)",
+      "InsertValue": "Значение (DATETIME/UUID/...)",
+      "InsertClearLine": "Очистить строку (CLEAR_LINE)",
+      "InsertKeyDelay": "Задержка клавиш (KEYDELAY)"
     },
     "TagEditorForm": {
       "InputQueryTitle": "New Tag",

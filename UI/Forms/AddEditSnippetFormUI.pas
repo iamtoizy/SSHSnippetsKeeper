@@ -12,6 +12,8 @@ uses
     Core.Interfaces.Settings,
     Core.Interfaces.UI,
     CustomBashSyn,
+    MacroCardController,
+    MacroCardPlugin,
     SynCompletionProposal,
     SynEdit,
     SynEditHighlighter,
@@ -21,6 +23,7 @@ uses
     SynHighlighterMarkdown,
     SynHighlighterUNIXShellScript,
     System.Classes,
+    System.Types,
     Vcl.ComCtrls,
     Vcl.Controls,
     Vcl.ExtCtrls,
@@ -79,8 +82,9 @@ type
         mComment: TSynEdit;
         tsMacros: TTabSheet;
         mInfo: TMemo;
-        pMacroTools: TPanel;
-        bMacroBuilder: TButton;
+        bMacroInsert: TButton;
+        pmMacroCard: TPopupMenu;
+        pmMacroInsert: TPopupMenu;
         spTopLeft: TSplitter;
         mContent: TSynEdit;
         ActionList: TActionList;
@@ -92,6 +96,7 @@ type
         procedure bHistoryClick(Sender: TObject);
         procedure FormDestroy(Sender: TObject);
         procedure FormCreate(Sender: TObject);
+        procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
         function GetSnippet: TSnippetDTO;
         procedure FormShow(Sender: TObject);
         procedure ebCategorySearchChange(Sender: TObject);
@@ -110,7 +115,21 @@ type
         procedure mContentChange(Sender: TObject);
         procedure mContentKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
         procedure mContentProcessCommand(Sender: TObject; var Command: TSynEditorCommand; var Char: WideChar; Data: Pointer);
-        procedure bMacroBuilderClick(Sender: TObject);
+        procedure mContentStatusChange(Sender: TObject; Changes: TSynStatusChanges);
+        procedure mContentMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+        procedure mContentMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+        procedure mContentMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+        procedure mContentDblClick(Sender: TObject);
+        procedure bMacroInsertClick(Sender: TObject);
+        procedure bMacroHelpClick(Sender: TObject);
+        procedure miCardEditClick(Sender: TObject);
+        procedure miCardDuplicateClick(Sender: TObject);
+        procedure miCardDeleteClick(Sender: TObject);
+        procedure miCardCopyClick(Sender: TObject);
+        procedure miEditCopyClick(Sender: TObject);
+        procedure miEditCutClick(Sender: TObject);
+        procedure miEditPasteClick(Sender: TObject);
+        procedure miInsTemplateClick(Sender: TObject);
         procedure SynCompletionProposalExecute(Kind: SynCompletionType; Sender: TObject; var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
         procedure tmrReloadCommandsTimer(Sender: TObject);
         procedure tmrSecurityScanTimer(Sender: TObject);
@@ -134,6 +153,13 @@ type
         FAIInProgress: Boolean;
         FWasSecuritySafe: Boolean;
         FRestoredInDB: Boolean;
+        FMacroCards: TMacroCardController;
+        FCardPlugin: TMacroCardPlugin;
+        FInsertTemplates: TStringList;
+        FSecurityStatusText: string;
+        FDragCard: Integer;
+        FDragActive: Boolean;
+        FDragDropOffset: Integer;
 
         procedure ShowAIOverlay;
         procedure ExecuteAICommand;
@@ -144,6 +170,16 @@ type
         procedure PopulateModels(HubIndex: Integer);
         procedure UpdateSecurityStatusUI(IsSafe: Boolean; const Reason: string);
         procedure AIThreadTerminated(Sender: TObject);
+        procedure SetupMacroCards;
+        procedure UpdateMacroCardMenuVisibility(AOnCard: Boolean);
+        procedure UpdateSelectedCard;
+        procedure UpdateStatusBar;
+        procedure GotoMacroCard(CardPos: Integer);
+        function CardPosAtCaret: Integer;
+        function CardInsideAtCaret: Integer;
+        procedure EditMacroCard(CardPos: Integer);
+        procedure FinishCardDrag;
+        procedure InsertMacroTemplate(const Template: string);
     public
         procedure Prepare(IsEditMode: Boolean; const Snippet: TSnippetDTO; CatID, UserID: Integer);
 
@@ -170,8 +206,9 @@ uses
     Common.Helpers,
     Core.Entities.Tag,
     HistoryFormUI,
-    MacroBuilderFormUI,
     MainFormUI,
+    MacroCardEditorFormUI,
+    MacroEngine,
     SecurityScanner,
     SynEditKeyCmds,
     SynThemeAdapter,
@@ -255,6 +292,10 @@ begin
     if mComment.HandleAllocated then RevokeDragDrop(mComment.Handle);
     if mAIPrompt.HandleAllocated then RevokeDragDrop(mAIPrompt.Handle);
 
+    FreeAndNil(FCardPlugin);
+    FreeAndNil(FMacroCards);
+    FreeAndNil(FInsertTemplates);
+
     if Assigned(FCurrentHighlighter) then
         FCurrentHighlighter.Free;
 
@@ -293,6 +334,9 @@ begin
 
     // Сразу применяем подсветку синтаксиса до показа формы (не ждем таймер)
     SetSyntax;
+
+    // Карточки макросов в mContent
+    SetupMacroCards;
 
     // Регистрация подсказок
     RegisterHelp(mContent, hipTopRight, 'Help.AddEditSnippet.mContent', hkCustomForm);
@@ -665,6 +709,8 @@ procedure TAddEditSnippetForm.FormCreate(Sender: TObject);
 begin
     FFirstShow := True;
     FWasSecuritySafe := True;
+    KeyPreview := True;
+    OnKeyDown := FormKeyDown;
 
     ebTitle.EnableHintText := True;
     ebTitle.HintText := TUIStateLoader.GetMessage('AddEditSnippet.EnterSnippetTextHere');
@@ -836,6 +882,485 @@ begin
     // Сканер сработает только когда пользователь остановится на 400 мс.
     tmrSecurityScan.Enabled := False;
     tmrSecurityScan.Enabled := True;
+
+    if Assigned(FMacroCards) then
+    begin
+        FMacroCards.Rescan;
+        if Assigned(FCardPlugin) then
+            FCardPlugin.SelectedCard := FMacroCards.TokenAtBufferPos(mContent.CaretXY);
+    end;
+
+    UpdateStatusBar;
+end;
+
+procedure TAddEditSnippetForm.mContentStatusChange(Sender: TObject; Changes: TSynStatusChanges);
+begin
+    if Changes * [scAll, scCaretX, scCaretY] <> [] then
+        UpdateSelectedCard;
+end;
+
+procedure TAddEditSnippetForm.mContentMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+    DC: TDisplayCoord;
+    BP: TBufferCoord;
+    OnCard: Boolean;
+    ScreenPt: TPoint;
+begin
+    if Button = mbLeft then
+    begin
+        if FDragActive then
+        begin
+            FinishCardDrag;
+            mContent.Invalidate;
+        end;
+        mContent.SuppressMouseSelection := False;
+        FDragActive := False;
+        FDragCard := -1;
+        FDragDropOffset := -1;
+        Exit;
+    end;
+
+    if Button <> mbRight then
+        Exit;
+    if not Assigned(FMacroCards) then
+        Exit;
+
+    DC := mContent.PixelsToNearestRowColumn(X, Y);
+    BP := mContent.DisplayToBufferPos(DC);
+    OnCard := FMacroCards.TokenAtBufferPos(BP) >= 0;
+
+    if OnCard then
+        mContent.CaretXY := BP;
+
+    UpdateMacroCardMenuVisibility(OnCard);
+
+    ScreenPt := mContent.ClientToScreen(Point(X, Y));
+    pmMacroCard.Popup(ScreenPt.X, ScreenPt.Y);
+end;
+
+procedure TAddEditSnippetForm.mContentMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+    BP: TBufferCoord;
+begin
+    FDragActive := False;
+    FDragCard := -1;
+    FDragDropOffset := -1;
+    mContent.SuppressMouseSelection := False;
+    if Assigned(FCardPlugin) then
+        FCardPlugin.DragActive := False;
+    if (Button <> mbLeft) or (not Assigned(FMacroCards)) then
+        Exit;
+
+    BP := mContent.DisplayToBufferPos(mContent.PixelsToNearestRowColumn(X, Y));
+    FDragCard := FMacroCards.TokenAtBufferPos(BP);
+    if (FDragCard >= 0) and (ssCtrl in Shift) then
+    begin
+        FDragActive := True;
+        if Assigned(FCardPlugin) then
+            FCardPlugin.DragActive := True;
+        mContent.SuppressMouseSelection := True;
+        if mContent.CanFocus then
+            mContent.SetFocus;
+    end;
+end;
+
+procedure TAddEditSnippetForm.mContentMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+var
+    BP: TBufferCoord;
+    DropOffset: Integer;
+begin
+    if (not Assigned(FMacroCards)) or (not Assigned(FCardPlugin)) then
+        Exit;
+
+    if not FDragActive then
+        Exit;
+
+    // Кнопку или Ctrl отпустили вне окна - отменяем перенос
+    if [ssLeft, ssCtrl] * Shift <> [ssLeft, ssCtrl] then
+    begin
+        FDragActive := False;
+        FDragCard := -1;
+        FDragDropOffset := -1;
+        FCardPlugin.DropOffset := -1;
+        FCardPlugin.DragActive := False;
+        mContent.Invalidate;
+        Exit;
+    end;
+
+    BP := mContent.DisplayToBufferPos(mContent.PixelsToNearestRowColumn(X, Y));
+    DropOffset := FMacroCards.SnapOffsetFromBufferPos(BP);
+    FDragDropOffset := DropOffset;
+    if FCardPlugin.DropOffset <> DropOffset then
+    begin
+        FCardPlugin.DropOffset := DropOffset;
+        FCardPlugin.DropValid := FMacroCards.CardMoveDropValid(FDragCard, DropOffset);
+        mContent.Invalidate;
+    end;
+end;
+
+procedure TAddEditSnippetForm.FinishCardDrag;
+var
+    Move: TMacroCardMove;
+    SrcStart, SrcEnd: TBufferCoord;
+    NewCardPos: Integer;
+begin
+    if Assigned(FCardPlugin) then
+    begin
+        FCardPlugin.DropOffset := -1;
+        FCardPlugin.DragActive := False;
+    end;
+
+    if (not Assigned(FMacroCards)) or (FDragCard < 0) or (FDragDropOffset < 0) then
+        Exit;
+
+    Move := FMacroCards.PrepareCardMove(FDragCard, FDragDropOffset);
+    if not Move.Valid then
+        Exit;
+
+    // Координаты удаления - в исходном тексте
+    SrcStart := FMacroCards.BufferPosFromOffset(Move.SrcOffset);
+    SrcEnd := FMacroCards.BufferPosFromOffset(Move.SrcOffset + Move.TokenLen);
+
+    mContent.BeginUndoBlock;
+    try
+        mContent.BlockBegin := SrcStart;
+        mContent.BlockEnd := SrcEnd;
+        mContent.SelText := '';
+        // Позиция вставки - уже в тексте после удаления
+        mContent.CaretXY := mContent.CharIndexToRowCol(Move.InsertOffset, #10);
+        mContent.SelText := Move.TokenText;
+    finally
+        mContent.EndUndoBlock;
+    end;
+
+    FMacroCards.Rescan;
+    NewCardPos := FMacroCards.TokenAtOffset(Move.InsertOffset);
+    if NewCardPos >= 0 then
+        GotoMacroCard(NewCardPos);
+end;
+
+procedure TAddEditSnippetForm.mContentDblClick(Sender: TObject);
+begin
+    if not Assigned(FMacroCards) then
+        Exit;
+
+    if FMacroCards.TokenAtBufferPos(mContent.CaretXY) >= 0 then
+        EditMacroCard(FMacroCards.TokenAtBufferPos(mContent.CaretXY));
+end;
+
+procedure TAddEditSnippetForm.SetupMacroCards;
+
+    procedure AddCardItem(const MsgKey: string; AHandler: TNotifyEvent; AShortCut: TShortCut; AOnCardOnly: Boolean);
+    var
+        Item: TMenuItem;
+    begin
+        Item := TMenuItem.Create(pmMacroCard);
+        Item.Caption := TUIStateLoader.GetMessage(MsgKey);
+        Item.ShortCut := AShortCut;
+        Item.OnClick := AHandler;
+        Item.Tag := Ord(AOnCardOnly);
+        pmMacroCard.Items.Add(Item);
+    end;
+
+    procedure AddInsertItem(const MsgKey, Template: string);
+    var
+        Item: TMenuItem;
+    begin
+        Item := TMenuItem.Create(pmMacroInsert);
+        Item.Caption := TUIStateLoader.GetMessage(MsgKey);
+        Item.OnClick := miInsTemplateClick;
+        Item.Tag := FInsertTemplates.Add(Template);
+        pmMacroInsert.Items.Add(Item);
+    end;
+
+begin
+    FMacroCards := TMacroCardController.Create(mContent.Lines);
+    FCardPlugin := TMacroCardPlugin.Create(mContent, FMacroCards);
+    FInsertTemplates := TStringList.Create;
+
+    pmMacroCard.Items.Clear;
+    AddCardItem('Macro.CardEdit', miCardEditClick, ShortCut(VK_F2, []), True);
+    AddCardItem('Macro.CardDuplicate', miCardDuplicateClick, ShortCut(Ord('D'), [ssCtrl, ssShift]), True);
+    AddCardItem('Macro.CardDelete', miCardDeleteClick, ShortCut(VK_DELETE, [ssCtrl]), True);
+    AddCardItem('Macro.CardCopy', miCardCopyClick, ShortCut(Ord('C'), [ssCtrl, ssShift]), True);
+    AddCardItem('Macro.CardPaste', miEditPasteClick, ShortCut(Ord('V'), [ssCtrl, ssShift]), True);
+    AddCardItem('Common.Copy', miEditCopyClick, ShortCut(Ord('C'), [ssCtrl]), False);
+    AddCardItem('Common.Cut', miEditCutClick, ShortCut(Ord('X'), [ssCtrl]), False);
+    AddCardItem('Common.Paste', miEditPasteClick, ShortCut(Ord('V'), [ssCtrl]), False);
+
+    pmMacroInsert.Items.Clear;
+    AddInsertItem('Macro.InsertSleep', '{SLEEP 500}');
+    AddInsertItem('Macro.InsertEnter', '{ENTER}');
+    AddInsertItem('Macro.InsertKey', '{SENDKEY CTRL+C}');
+    AddInsertItem('Macro.InsertInput', Format('{INPUT %s}', [TUIStateLoader.GetMessage('MacroBuilder.DefaultParamName')]));
+    AddInsertItem('Macro.InsertValue', '{DATETIME}');
+    AddInsertItem('Macro.InsertClearLine', '{CLEAR_LINE}');
+    AddInsertItem('Macro.InsertKeyDelay', '{KEYDELAY 100}');
+
+    mContent.OnStatusChange := mContentStatusChange;
+    mContent.OnMouseDown := mContentMouseDown;
+    mContent.OnMouseMove := mContentMouseMove;
+    mContent.OnMouseUp := mContentMouseUp;
+    mContent.OnDblClick := mContentDblClick;
+
+    FDragCard := -1;
+    FDragActive := False;
+    FDragDropOffset := -1;
+
+    FMacroCards.Rescan;
+    FCardPlugin.SelectedCard := -1;
+end;
+
+procedure TAddEditSnippetForm.UpdateSelectedCard;
+var
+    NewSel: Integer;
+begin
+    if not Assigned(FMacroCards) then
+        Exit;
+
+    FMacroCards.Rescan;
+    NewSel := FMacroCards.TokenAtBufferPos(mContent.CaretXY);
+    if Assigned(FCardPlugin) and (FCardPlugin.SelectedCard <> NewSel) then
+    begin
+        FCardPlugin.SelectedCard := NewSel;
+        mContent.Invalidate;
+    end;
+    UpdateStatusBar;
+end;
+
+procedure TAddEditSnippetForm.UpdateStatusBar;
+var
+    Count, CardPos: Integer;
+    Counter: string;
+begin
+    if not Assigned(FMacroCards) then
+    begin
+        sbBottom.SimpleText := FSecurityStatusText;
+        Exit;
+    end;
+
+    Count := FMacroCards.CardCount;
+    CardPos := FMacroCards.TokenAtBufferPos(mContent.CaretXY);
+
+    if (Count > 0) and (CardPos >= 0) then
+        Counter := TUIStateLoader.GetMessage('AddEditSnippet.MacroCounterSel', [CardPos + 1, Count])
+    else
+        Counter := TUIStateLoader.GetMessage('AddEditSnippet.MacroCounter', [Count]);
+
+    if FSecurityStatusText = '' then
+        sbBottom.SimpleText := Counter
+    else
+        sbBottom.SimpleText := FSecurityStatusText + '   |   ' + Counter;
+end;
+
+procedure TAddEditSnippetForm.GotoMacroCard(CardPos: Integer);
+var
+    Token: TMacroToken;
+    StartPos: TBufferCoord;
+begin
+    if CardPos < 0 then
+        Exit;
+
+    Token := FMacroCards.CardToken(CardPos);
+    StartPos := FMacroCards.BufferPosFromOffset(Token.StartOffset - 1);
+    mContent.CaretXY := StartPos;
+    mContent.BlockBegin := StartPos;
+    mContent.BlockEnd := FMacroCards.BufferPosFromOffset(Token.StartOffset - 1 + Token.Length);
+    mContent.EnsureCursorPosVisible;
+end;
+
+procedure TAddEditSnippetForm.InsertMacroTemplate(const Template: string);
+var
+    Caret, TokenPos: TBufferCoord;
+    CardPos: Integer;
+begin
+    mContent.BeginUndoBlock;
+    try
+        mContent.SelText := Template;
+    finally
+        mContent.EndUndoBlock;
+    end;
+
+    Caret := mContent.CaretXY;
+    TokenPos := Caret;
+    if TokenPos.Char > 1 then
+        Dec(TokenPos.Char);
+
+    CardPos := FMacroCards.TokenAtBufferPos(TokenPos);
+    if CardPos >= 0 then
+        EditMacroCard(CardPos);
+end;
+
+procedure TAddEditSnippetForm.bMacroInsertClick(Sender: TObject);
+var
+    Pt: TPoint;
+begin
+    Pt := bMacroInsert.ClientToScreen(Point(0, bMacroInsert.Height));
+    pmMacroInsert.Popup(Pt.X, Pt.Y);
+end;
+
+procedure TAddEditSnippetForm.bMacroHelpClick(Sender: TObject);
+begin
+    ShowCustomHelpHtml(
+        TUIStateLoader.GetMessage('MacroDoc.Title'),
+        TUIStateLoader.GetMessage('MacroDoc.Body'));
+end;
+
+procedure TAddEditSnippetForm.miCardEditClick(Sender: TObject);
+var
+    Caret: TBufferCoord;
+    CardPos: Integer;
+begin
+    if not Assigned(FMacroCards) then
+        Exit;
+
+    Caret := mContent.CaretXY;
+    CardPos := FMacroCards.TokenAtBufferPos(Caret);
+    if CardPos < 0 then
+    begin
+        if Caret.Char > 1 then
+            Dec(Caret.Char);
+        CardPos := FMacroCards.TokenAtBufferPos(Caret);
+    end;
+
+    if CardPos < 0 then
+        Exit;
+
+    EditMacroCard(CardPos);
+end;
+
+procedure TAddEditSnippetForm.EditMacroCard(CardPos: Integer);
+var
+    Token: TMacroToken;
+    CardText, NewText: string;
+    Editor: TMacroCardEditorForm;
+begin
+    Token := FMacroCards.CardToken(CardPos);
+    CardText := Copy(mContent.Lines.Text, Token.StartOffset, Token.Length);
+
+    Editor := TMacroCardEditorForm.Create(nil);
+    try
+        Editor.Initialize(AppContext);
+        Editor.InitializeCard(CardText);
+
+        if Editor.ShowModal = mrOk then
+        begin
+            NewText := Editor.GetCardText;
+            if NewText <> CardText then
+            begin
+                mContent.BeginUndoBlock;
+                try
+                    mContent.BlockBegin := FMacroCards.BufferPosFromOffset(Token.StartOffset - 1);
+                    mContent.BlockEnd := FMacroCards.BufferPosFromOffset(Token.StartOffset - 1 + Token.Length);
+                    mContent.SelText := NewText;
+                finally
+                    mContent.EndUndoBlock;
+                end;
+            end;
+        end;
+    finally
+        Editor.Free;
+    end;
+
+    UpdateSelectedCard;
+    if mContent.CanFocus then
+        mContent.SetFocus;
+end;
+
+procedure TAddEditSnippetForm.miCardDuplicateClick(Sender: TObject);
+var
+    CardPos: Integer;
+    NewCardPos: Integer;
+    Token: TMacroToken;
+begin
+    CardPos := FMacroCards.TokenAtBufferPos(mContent.CaretXY);
+    if CardPos < 0 then
+        Exit;
+
+    Token := FMacroCards.CardToken(CardPos);
+
+    mContent.BeginUndoBlock;
+    try
+        mContent.CaretXY := FMacroCards.BufferPosFromOffset(Token.StartOffset - 1 + Token.Length);
+        mContent.SelText := Copy(mContent.Lines.Text, Token.StartOffset, Token.Length);
+    finally
+        mContent.EndUndoBlock;
+    end;
+
+    FMacroCards.Rescan;
+    NewCardPos := FMacroCards.TokenAtOffset(Token.StartOffset - 1 + Token.Length);
+    if NewCardPos >= 0 then
+        GotoMacroCard(NewCardPos);
+end;
+
+procedure TAddEditSnippetForm.miCardDeleteClick(Sender: TObject);
+var
+    CardPos: Integer;
+    Token: TMacroToken;
+begin
+    CardPos := FMacroCards.TokenAtBufferPos(mContent.CaretXY);
+    if CardPos < 0 then
+        Exit;
+
+    Token := FMacroCards.CardToken(CardPos);
+
+    mContent.BeginUndoBlock;
+    try
+        mContent.BlockBegin := FMacroCards.BufferPosFromOffset(Token.StartOffset - 1);
+        mContent.BlockEnd := FMacroCards.BufferPosFromOffset(Token.StartOffset - 1 + Token.Length);
+        mContent.SelText := '';
+    finally
+        mContent.EndUndoBlock;
+    end;
+end;
+
+procedure TAddEditSnippetForm.miCardCopyClick(Sender: TObject);
+var
+    CardPos: Integer;
+    Token: TMacroToken;
+    Caret: TBufferCoord;
+begin
+    CardPos := FMacroCards.TokenAtBufferPos(mContent.CaretXY);
+    if CardPos < 0 then
+        Exit;
+
+    Token := FMacroCards.CardToken(CardPos);
+    Caret := mContent.CaretXY;
+
+    mContent.BlockBegin := FMacroCards.BufferPosFromOffset(Token.StartOffset - 1);
+    mContent.BlockEnd := FMacroCards.BufferPosFromOffset(Token.StartOffset - 1 + Token.Length);
+    mContent.CopyToClipboard;
+
+    mContent.CaretXY := Caret;
+end;
+
+procedure TAddEditSnippetForm.miEditCopyClick(Sender: TObject);
+begin
+    mContent.CopyToClipboard;
+end;
+
+procedure TAddEditSnippetForm.miEditCutClick(Sender: TObject);
+begin
+    mContent.CutToClipboard;
+end;
+
+procedure TAddEditSnippetForm.miEditPasteClick(Sender: TObject);
+begin
+    mContent.PasteFromClipboard;
+end;
+
+procedure TAddEditSnippetForm.miInsTemplateClick(Sender: TObject);
+var
+    Idx: Integer;
+begin
+    if not (Sender is TMenuItem) then
+        Exit;
+
+    Idx := (Sender as TMenuItem).Tag;
+    if (Idx < 0) or (Idx >= FInsertTemplates.Count) then
+        Exit;
+
+    InsertMacroTemplate(FInsertTemplates[Idx]);
 end;
 
 procedure TAddEditSnippetForm.mContentKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -847,7 +1372,91 @@ begin
     end;
 end;
 
+procedure TAddEditSnippetForm.UpdateMacroCardMenuVisibility(AOnCard: Boolean);
+var
+    I: Integer;
+begin
+    for I := 0 to pmMacroCard.Items.Count - 1 do
+        pmMacroCard.Items[I].Visible := (pmMacroCard.Items[I].Tag <> 0) = AOnCard;
+end;
+
+function TAddEditSnippetForm.CardPosAtCaret: Integer;
+var
+    Caret: TBufferCoord;
+begin
+    Result := FMacroCards.TokenAtBufferPos(mContent.CaretXY);
+    if (Result < 0) and (mContent.CaretXY.Char > 1) then
+    begin
+        Caret := mContent.CaretXY;
+        Dec(Caret.Char);
+        Result := FMacroCards.TokenAtBufferPos(Caret);
+    end;
+end;
+
+function TAddEditSnippetForm.CardInsideAtCaret: Integer;
+var
+    Caret, Prev: TBufferCoord;
+begin
+    Result := -1;
+    if not Assigned(FMacroCards) then
+        Exit;
+
+    Caret := mContent.CaretXY;
+    if Caret.Char <= 1 then
+        Exit;
+
+    Result := FMacroCards.TokenAtBufferPos(Caret);
+    if Result < 0 then
+        Exit;
+
+    Prev := Caret;
+    Dec(Prev.Char);
+    if FMacroCards.TokenAtBufferPos(Prev) <> Result then
+        Result := -1;
+end;
+
+procedure TAddEditSnippetForm.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+var
+    CardPos: Integer;
+    GoEdit, GoDuplicate, GoDelete, GoCopy, GoPaste: Boolean;
+begin
+    if not Assigned(FMacroCards) or IsAutocompleteVisible then
+        Exit;
+
+    GoEdit := (Shift = []) and (Key = VK_F2);
+    GoDuplicate := (Shift = [ssCtrl, ssShift]) and (Key = Ord('D'));
+    GoDelete := (Shift = [ssCtrl]) and (Key = VK_DELETE);
+    GoCopy := (Shift = [ssCtrl, ssShift]) and (Key = Ord('C'));
+    GoPaste := (Shift = [ssCtrl, ssShift]) and (Key = Ord('V'));
+
+    if not (GoEdit or GoDuplicate or GoDelete or GoCopy or GoPaste) then
+        Exit;
+
+    if ActiveControl <> mContent then
+        Exit;
+
+    CardPos := CardPosAtCaret;
+    if CardPos < 0 then
+        Exit;
+
+    Key := 0;
+    mContent.CaretXY := FMacroCards.BufferPosFromOffset(FMacroCards.CardToken(CardPos).StartOffset - 1);
+
+    if GoEdit then
+        miCardEditClick(Sender)
+    else if GoDuplicate then
+        miCardDuplicateClick(Sender)
+    else if GoDelete then
+        miCardDeleteClick(Sender)
+    else if GoCopy then
+        miCardCopyClick(Sender)
+    else if GoPaste then
+        miEditPasteClick(Sender);
+end;
+
 procedure TAddEditSnippetForm.mContentProcessCommand(Sender: TObject; var Command: TSynEditorCommand; var Char: WideChar; Data: Pointer);
+var
+    CardPos: Integer;
 begin
     if FBlockEnter then
     begin
@@ -860,6 +1469,19 @@ begin
         Exit;
     end;
 
+    // Enter на карточке макроса открывает редактор вместо перевода строки
+    if (Command = ecLineBreak) or ((Command = ecChar) and (Char = #13)) then
+    begin
+        CardPos := CardInsideAtCaret;
+        if CardPos >= 0 then
+        begin
+            Command := ecNone;
+            Char := #0;
+            EditMacroCard(CardPos);
+            Exit;
+        end;
+    end;
+
     if IsAutocompleteVisible then
     begin
         if (Command = ecUp) or (Command = ecDown) or (Command = ecPageUp) or (Command = ecPageDown) then
@@ -867,27 +1489,32 @@ begin
             Command := ecNone;
         end;
     end;
-end;
 
-procedure TAddEditSnippetForm.bMacroBuilderClick(Sender: TObject);
-var
-    Builder: TMacroBuilderForm;
-    Res: TModalResult;
-begin
-    Builder := TMacroBuilderForm.Create(nil);
-    try
-        Builder.Initialize(AppContext);
-        Builder.InitializeBuilder(mContent.Text);
-
-        Res := Builder.ShowModal;
-        if Res = mrOk then
-            mContent.Text := Builder.GetMacroText;
-    finally
-        Builder.Free;
+    if Assigned(FMacroCards) and (FMacroCards.CardCount > 0) then
+    begin
+        case Command of
+            ecWordRight:
+            begin
+                Command := ecNone;
+                GotoMacroCard(FMacroCards.Navigate(FCardPlugin.SelectedCard, 1));
+            end;
+            ecWordLeft:
+            begin
+                Command := ecNone;
+                GotoMacroCard(FMacroCards.Navigate(FCardPlugin.SelectedCard, -1));
+            end;
+            ecScrollDown:
+            begin
+                Command := ecNone;
+                GotoMacroCard(FMacroCards.NavigateLine(FCardPlugin.SelectedCard, 1));
+            end;
+            ecScrollUp:
+            begin
+                Command := ecNone;
+                GotoMacroCard(FMacroCards.NavigateLine(FCardPlugin.SelectedCard, -1));
+            end;
+        end;
     end;
-
-    if mContent.CanFocus then
-        mContent.SetFocus;
 end;
 
 procedure TAddEditSnippetForm.PopulateModels(HubIndex: Integer);
@@ -1064,20 +1691,21 @@ begin
     // Если стоит галочка "Игнорировать", то UI всегда разрешает сохранение
     if cbIgnoreSecurityChecks.Checked then
     begin
-        sbBottom.SimpleText := TUIStateLoader.GetMessage('AddEditSnippet.SecurityDisabledStatus');
+        FSecurityStatusText := TUIStateLoader.GetMessage('AddEditSnippet.SecurityDisabledStatus');
         bOK.Enabled := True;
+        UpdateStatusBar;
         Exit;
     end;
 
     if IsSafe then
     begin
-        sbBottom.SimpleText := TUIStateLoader.GetMessage('AddEditSnippet.SecuritySafeStatus');
+        FSecurityStatusText := TUIStateLoader.GetMessage('AddEditSnippet.SecuritySafeStatus');
         bOK.Enabled := True;
     end
     else
     begin
         // Найдена угроза, а исключение не настроено
-        sbBottom.SimpleText := TUIStateLoader.GetMessage('AddEditSnippet.SecurityThreatStatus', [Reason]);
+        FSecurityStatusText := TUIStateLoader.GetMessage('AddEditSnippet.SecurityThreatStatus', [Reason]);
         if FWasSecuritySafe then
             ShowSimpleToast(
                 TUIStateLoader.GetMessage('AddEditSnippet.SecurityToastFound', [Reason]),
@@ -1088,6 +1716,7 @@ begin
     end;
 
     FWasSecuritySafe := IsSafe;
+    UpdateStatusBar;
 end;
 
 end.

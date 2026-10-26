@@ -41,10 +41,11 @@ type
 
     TSynThemeAdapter = class
     private
-        class function IsDarkTheme(BgColor: TColor): Boolean;
         class function GetDarkPalette: TSynPalette;
         class function GetLightPalette: TSynPalette;
     public
+        class function IsDarkTheme(BgColor: TColor): Boolean;
+        class function GetPaletteFor(BgColor: TColor): TSynPalette;
         class procedure ApplyTheme(SynEdit: TCustomSynEdit);
         class procedure ApplyThemeToAll;
         class procedure ThemeFormControls(ARoot: TWinControl);
@@ -114,6 +115,14 @@ begin
     Result.RightEdge := clSilver;
 end;
 
+class function TSynThemeAdapter.GetPaletteFor(BgColor: TColor): TSynPalette;
+begin
+    if IsDarkTheme(BgColor) then
+        Result := GetDarkPalette
+    else
+        Result := GetLightPalette;
+end;
+
 class procedure TSynThemeAdapter.ApplyTheme(SynEdit: TCustomSynEdit);
 var
     SysBgColor: TColor;
@@ -132,10 +141,7 @@ begin
     else
         SysBgColor := clWindow;
 
-    if IsDarkTheme(SysBgColor) then
-        Palette := GetDarkPalette
-    else
-        Palette := GetLightPalette;
+    Palette := GetPaletteFor(SysBgColor);
 
     // Базовые цвета редактора
     SynEdit.Color := SysBgColor;

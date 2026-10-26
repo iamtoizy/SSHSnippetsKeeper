@@ -245,26 +245,6 @@ object AddEditSnippetForm: TAddEditSnippetForm
       TabOrder = 1
       object tsSnippet: TTabSheet
         Caption = #1057#1086#1076#1077#1088#1078#1080#1084#1086#1077' '#1089#1085#1080#1087#1087#1077#1090#1072
-        object pEditorTools: TPanel
-          Left = 0
-          Top = 0
-          Width = 521
-          Height = 26
-          Align = alTop
-          BevelOuter = bvNone
-          ParentBackground = False
-          TabOrder = 3
-          object bMacroBuilder: TButton
-            Left = 417
-            Top = 1
-            Width = 100
-            Height = 24
-            Anchors = [akTop, akRight]
-            Caption = #1050#1086#1085#1089#1090#1088#1091#1082#1090#1086#1088
-            TabOrder = 0
-            OnClick = bMacroBuilderClick
-          end
-        end
         object sMiddle: TSplitter
           Left = 0
           Top = 169
@@ -275,18 +255,51 @@ object AddEditSnippetForm: TAddEditSnippetForm
           ExplicitLeft = 3
           ExplicitTop = 280
         end
-        object pAIOverlay: TPanel
+        object pEditorTools: TPanel
           Left = 0
           Top = 0
           Width = 521
-          Height = 169
+          Height = 26
+          Align = alTop
+          BevelOuter = bvNone
+          ParentBackground = False
+          TabOrder = 3
+          DesignSize = (
+            521
+            26)
+          object bMacroHelp: TButton
+            Left = 379
+            Top = 0
+            Width = 26
+            Height = 24
+            Anchors = [akTop, akRight]
+            Caption = '?'
+            TabOrder = 1
+            OnClick = bMacroHelpClick
+          end
+          object bMacroInsert: TButton
+            Left = 409
+            Top = 0
+            Width = 110
+            Height = 24
+            Anchors = [akTop, akRight]
+            Caption = #1042#1089#1090#1072#1074#1080#1090#1100'...'
+            TabOrder = 0
+            OnClick = bMacroInsertClick
+          end
+        end
+        object pAIOverlay: TPanel
+          Left = 0
+          Top = 26
+          Width = 521
+          Height = 143
           Align = alClient
           BevelOuter = bvNone
           TabOrder = 1
           Visible = False
           object pbLoading: TProgressBar
             Left = 0
-            Top = 152
+            Top = 126
             Width = 521
             Height = 17
             Align = alBottom
@@ -299,7 +312,7 @@ object AddEditSnippetForm: TAddEditSnippetForm
             Left = 0
             Top = 0
             Width = 521
-            Height = 152
+            Height = 126
             Cursor = crDefault
             Align = alClient
             CaseSensitive = True
@@ -421,9 +434,9 @@ object AddEditSnippetForm: TAddEditSnippetForm
         end
         object mContent: TSynEdit
           Left = 0
-          Top = 0
+          Top = 26
           Width = 521
-          Height = 169
+          Height = 143
           Align = alClient
           DoubleBuffered = True
           Font.Charset = DEFAULT_CHARSET
@@ -524,6 +537,8 @@ object AddEditSnippetForm: TAddEditSnippetForm
             #9'{INPUT[Hex:FF] '#1062#1074#1077#1090'}'
             #9'{INPUT[Password] '#1055#1072#1088#1086#1083#1100'}'
             #9'{INPUT[DATE:2026-01-31] '#1044#1072#1090#1072'}'
+            #9'{INPUT[TIME:12:00] '#1042#1088#1077#1084#1103'}'
+            #9'{INPUT[DATETIME:2026-01-31 12:00] '#1044#1072#1090#1072' '#1080' '#1042#1088#1077#1084#1103'}'
             
               '{INPUT[Confirm] '#1058#1077#1082#1089#1090' '#1076#1083#1103' '#1087#1086#1083#1100#1079#1086#1074#1072#1090#1077#1083#1103'} - '#1055#1088#1080#1086#1089#1090#1072#1085#1086#1074#1080#1090#1100' '#1074#1099#1087#1086#1083#1085#1077#1085 +
               #1080#1077' '#1080' '
@@ -537,6 +552,14 @@ object AddEditSnippetForm: TAddEditSnippetForm
         end
       end
     end
+  end
+  object pmMacroCard: TPopupMenu
+    Left = 490
+    Top = 200
+  end
+  object pmMacroInsert: TPopupMenu
+    Left = 490
+    Top = 250
   end
   object SynUNIXShellScriptSyn: TSynUNIXShellScriptSyn
     Left = 589

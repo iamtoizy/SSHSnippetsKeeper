@@ -89,6 +89,9 @@
     "puRunSnippet": {
       "Caption": "Run"
     },
+    "puDryRunSnippet": {
+      "Caption": "Dry run"
+    },
     "puAddSnippet": {
       "Caption": "Add"
     },
@@ -164,6 +167,15 @@
   },
   "TagEditorForm": {
     "Caption": "Tag Editor",
+    "actAddTag": {
+      "Caption": "Add tag"
+    },
+    "actDeleteTag": {
+      "Caption": "Delete tag"
+    },
+    "actEditTag": {
+      "Caption": "Edit tag"
+    },
     "nActions": {
       "Caption": "Actions"
     },
@@ -223,48 +235,35 @@
       "Caption": "Parameters:"
     }
   },
-  "MacroBuilderForm": {
-    "Caption": "Macro Builder",
-    "lbHint": {
-      "Caption": "Macro steps:"
+  "DryRunForm": {
+    "Caption": "Dry Run",
+    "bRun": {
+      "Caption": "Run"
     },
-    "lbPropsEmpty": {
-      "Caption": "Select a step on the left - its properties will appear here"
+    "bClose": {
+      "Caption": "Close"
+    }
+  },
+  "MacroCardEditorForm": {
+    "Caption": "Macro editor",
+    "lbStepType": {
+      "Caption": "Macro type:"
     },
-    "lbAddType": {
-      "Caption": "Step type:"
-    },
-    "bAddStep": {
-      "Caption": "Add"
-    },
-    "bStepUp": {
-      "Caption": "↑"
-    },
-    "bStepDown": {
-      "Caption": "↓"
-    },
-    "bStepDelete": {
-      "Caption": "Delete"
-    },
-    "lbPreview": {
-      "Caption": "Preview:"
-    },
-    "bApply": {
-      "Caption": "Apply"
+    "bOK": {
+      "Caption": "OK"
     },
     "bCancel": {
       "Caption": "Cancel"
-    },
-    "lvSteps": {
-      "Columns": {
-        "0": "#",
-        "1": "Type",
-        "2": "Step"
-      }
     }
   },
   "AddEditSnippetForm": {
     "Caption": "SSH Snippets Keeper - Add/Edit Snippet",
+    "actShowAIForm": {
+      "Caption": "Show AI Assistant"
+    },
+    "actConfigureAI": {
+      "Caption": "Configure AI Assistant"
+    },
     "ebTitle": {
       "Text": ""
     },
@@ -283,8 +282,13 @@
     "bHistory": {
       "Caption": "History…"
     },
-    "bMacroBuilder": {
-      "Caption": "Builder"
+    "bMacroInsert": {
+      "Caption": "Insert...",
+      "Hint": "Insert macro at caret position"
+    },
+    "bMacroHelp": {
+      "Caption": "?",
+      "Hint": "Macro documentation: how it works"
     },
     "nAI": {
       "Caption": "AI Assistant"
@@ -314,11 +318,32 @@
       "Caption": "Macros"
     },
     "mInfo": {
-      "Text": "Current test macros:\n{SLEEP N} - Delay execution by N milliseconds.\n{ENTER} - Send ENTER key press.\n{SENDKEY X} - Send character X, a key name (ENTER, TAB, F1-F12) or a VK code to the target window.\n{INPUT[TYPE:DEFAULT_VALUE] NAME} - Show a text input dialog and replace macro with input. Examples:\n  {INPUT Name}\n  {INPUT[STRING:test string] Name}\n  {INPUT[NUMBER:100] Size}\n  {INPUT[FLOAT:3.14] Size}\n  {INPUT[Hex:FF] Color}\n  {INPUT[Password] Password}\n  {INPUT[DATE:2026-01-31] Date}\n  {INPUT[SELECT:prod|stage|dev] Env} - Pick one value from the list (options separated by |).\n  {INPUT[Confirm] Text for user} - Pause execution and wait for user confirmation.\n{DATETIME:FORMAT} - Current date and time (FormatDateTime mask), default yyyy-MM-dd HH:mm:ss.\n{UUID} - New UUID (lowercase).\n{RANDOM:N} - Random string of N letters and digits (default 16).\n{COUNTER} - Snippet run number (1, 2, 3...).\n{ENV:NAME} - Value of an environment variable.\n{CLIPBOARD} - Clipboard text at run time.\n{SENDKEY CTRL+K} - Key combinations: CTRL, ALT, SHIFT + key (e.g., CTRL+C, ALT+F4, CTRL+SHIFT+T).\n{CLEAR_LINE} - Clear the current terminal line: Ctrl+C, pause, Ctrl+U.\n{KEYDELAY N} - Delay between characters (ms) for the following text.\n\n..."
+      "Text": "Current test macros:\n{SLEEP N} - Delay execution by N milliseconds.\n{ENTER} - Send ENTER key press.\n{SENDKEY X} - Send character X, a key name (ENTER, TAB, F1-F12) or a VK code to the target window.\n{INPUT[TYPE:DEFAULT_VALUE] NAME} - Show a text input dialog and replace macro with input. Examples:\n  {INPUT Name}\n  {INPUT[STRING:test string] Name}\n  {INPUT[NUMBER:100] Size}\n  {INPUT[FLOAT:3.14] Size}\n  {INPUT[Hex:FF] Color}\n  {INPUT[Password] Password}\n  {INPUT[DATE:2026-01-31] Date}\n  {INPUT[TIME:12:00] Time}\n  {INPUT[DATETIME:2026-01-31 12:00] Date and time}\n  {INPUT[SELECT:prod|stage|dev] Env} - Pick one value from the list (options separated by |).\n  {INPUT[Confirm] Text for user} - Pause execution and wait for user confirmation.\n{DATETIME:FORMAT} - Current date and time (FormatDateTime mask), default yyyy-MM-dd HH:mm:ss.\n{UUID} - New UUID (lowercase).\n{RANDOM:N} - Random string of N letters and digits (default 16).\n{COUNTER} - Snippet run number (1, 2, 3...). Params (semicolon-separated): start=NUM (initial value), step=NUM (increment), pad=N (zero-pad to N digits), current (reuse this run's number without incrementing), volatile (do not persist across runs). Example: {COUNTER:start=100;step=2;pad=3} yields 100, 102, 104...\n{ENV:NAME} - Value of an environment variable.\n{CLIPBOARD} - Clipboard text at run time.\n{SENDKEY CTRL+K} - Key combinations: CTRL, ALT, SHIFT + key (e.g., CTRL+C, ALT+F4, CTRL+SHIFT+T).\n{CLEAR_LINE} - Clear the current terminal line: Ctrl+C, pause, Ctrl+U.\n{KEYDELAY N} - Delay between characters (ms) for the following text.\n\n..."
     }
   },
   "AISettingsForm": {
     "Caption": "AI Settings",
+    "actSave": {
+      "Caption": "Save settings"
+    },
+    "actCreateProvider": {
+      "Caption": "Create provider"
+    },
+    "actDeleteProvider": {
+      "Caption": "Delete provider"
+    },
+    "actEditProvider": {
+      "Caption": "Edit provider"
+    },
+    "actCreateModel": {
+      "Caption": "Create model"
+    },
+    "actDeleteModel": {
+      "Caption": "Delete model"
+    },
+    "actEditModel": {
+      "Caption": "Edit model"
+    },
     "nFile": {
       "Caption": "File"
     },
@@ -388,6 +413,15 @@
   },
   "WorkspaceManagerForm": {
     "Caption": "Workspace Management",
+    "actAddWorkspace": {
+      "Caption": "Add workspace"
+    },
+    "actDeleteWorkspace": {
+      "Caption": "Delete workspace"
+    },
+    "actEditWorkspace": {
+      "Caption": "Edit workspace"
+    },
     "nWorkspaces": {
       "Caption": "Workspaces"
     },
@@ -883,6 +917,21 @@
     "bAppPick": {
       "Caption": "From list..."
     },
+    "tsCounters": {
+      "Caption": "Counters"
+    },
+    "lvCounters": {
+      "Columns": {
+        "0": "Snippet ID",
+        "1": "Current value"
+      }
+    },
+    "bCounterReset": {
+      "Caption": "Reset selected"
+    },
+    "bCounterResetAll": {
+      "Caption": "Reset all"
+    },
     "tsLocalSync": {
       "Caption": "Markdown Sync"
     },
@@ -988,7 +1037,11 @@
     }
   },
   "CustomHelpForm": {
-    "Caption": "Reference information"
+    "Caption": "Reference information",
+    "bCopyText": {
+      "Caption": "Copy text",
+      "Hint": "Copy help text to the clipboard"
+    }
   },
   "Messages": {
     "Help": {
@@ -1225,13 +1278,13 @@
           "Slot0": "Slot 0"
         }
       },
-  "AddEditSnippetForm": {
+      "AddEditSnippetForm": {
         "Caption": "Snippet Editor",
         "actShowAIForm": "Show AI Assistant",
         "actConfigureAI": "Configure AI Assistant"
       },
       "AISettingsForm": {
-        "Caption": "AI Assistant",
+        "Caption": "AI Settings",
         "actSave": "Save settings",
         "actCreateProvider": "Create provider",
         "actDeleteProvider": "Delete provider",
@@ -1247,7 +1300,7 @@
         "actEditTag": "Edit tag"
       },
       "WorkspaceManagerForm": {
-        "Caption": "Workspaces",
+        "Caption": "Workspace Management",
         "actAddWorkspace": "Add workspace",
         "actDeleteWorkspace": "Delete workspace",
         "actEditWorkspace": "Edit workspace"
@@ -1267,6 +1320,9 @@
       "Information": "Information",
       "OK": "OK",
       "Cancel": "Cancel",
+      "Copy": "Copy",
+      "Cut": "Cut",
+      "Paste": "Paste",
       "Help": "Help",
       "MoreInfo": "More Info",
       "WinEventHookError": "Failed to set up WinEventHook. Error: %s",
@@ -1300,6 +1356,8 @@
     },
     "Settings": {
       "ResetAllHotkeysConfirm": "Reset all hotkeys to their default values?",
+      "CountersResetConfirm": "Reset the counter for snippet #%s?",
+      "CountersResetAllConfirm": "Reset all counters?",
       "SelectVaultPath": "Select vault folder",
       "ApplicationsAddPrompt": "Application executable file name (e.g., ssh.exe):",
       "ApplicationsRenamePrompt": "New application executable file name:",
@@ -1440,15 +1498,6 @@
         "NotFound": "Chain not found.",
         "SnippetNotFound": "Step %d: snippet not found."
       }
-    },
-    "Macro": {
-      "StopPanelTitle": "Typing snippet...",
-      "StopButton": "Stop",
-      "FocusLost": "Target window focus lost - typing aborted.",
-      "UnknownCommand": "Unknown command %s - typing aborted.",
-      "TypingInProgress": "Snippet typing is in progress - wait for completion and run again.",
-      "ProgressChars": "%d/%d characters (%d%%)",
-      "PauseRemaining": "Pause: ~%d s left"
     },
     "MultiSelect": {
       "Menu": {
@@ -1609,7 +1658,8 @@
       "Dow-3": "Wednesday",
       "Dow-4": "Thursday",
       "Dow-5": "Friday",
-      "Dow-6": "Saturday"
+      "Dow-6": "Saturday",
+      "Dow-7": "Sunday"
     },
     "AddEditSnippet": {
       "CloseConfirmText": "Changes detected that will be lost if you close this window.\n\nClose window without saving changes?",
@@ -1621,7 +1671,9 @@
       "SecurityToastTitle": "⚠ Security Threat",
       "AutocompleteUpdated": "Autocomplete file updated. Content will be reloaded.",
       "AIChooseModelError": "Select an AI provider and model!",
-      "EnterSnippetTextHere": "Enter snippet name here..."
+      "EnterSnippetTextHere": "Enter snippet name here...",
+      "MacroCounter": "Macros: %d",
+      "MacroCounterSel": "Macro: %d of %d"
     },
     "AISettingsForm": {
       "DeleteModelConfirm": "Delete this model?",
@@ -1685,14 +1737,18 @@
         "Hex": "Enter HEX value (e.g., FF or 0xFF)",
         "Float": "Enter a float number (e.g., 3.14)",
         "Password": "Enter password",
-        "Date": "Enter date (YYYY-MM-DD)",
+        "Date": "Enter date (YYYY-MM-DD or local format)",
+        "Time": "Enter time (HH:MM)",
+        "DateTime": "Enter date and time (YYYY-MM-DD HH:MM, YYYY-MM-DD or local format; use _ instead of space)",
         "Select": "Pick a value from the list"
       },
       "Error": {
         "Number": "Error: enter an integer",
         "Hex": "Error: enter a HEX value (0-9, A-F)",
         "Float": "Error: enter a float (e.g., 3.14)",
-        "Date": "Error: date format must be YYYY-MM-DD"
+        "Date": "Error: enter a date (e.g., 2026-01-31)",
+        "Time": "Error: enter a time (e.g., 14:30)",
+        "DateTime": "Error: date/time format must be YYYY-MM-DD HH:MM (or YYYY-MM-DD; use _ instead of space)"
       }
     },
     "ParamsForm": {
@@ -1701,9 +1757,44 @@
         "Invalid": "Invalid parameter: %s"
       }
     },
+    "DryRun": {
+      "PreviewTitle": "Dry run: %s",
+      "Summary": "Steps: %d, warnings: %d",
+      "Line": {
+        "Enter": "Press Enter",
+        "Sleep": "Pause %s ms",
+        "Input": "Input \"%s\" (%s)",
+        "Default": "default: %s",
+        "Confirm": "Wait for confirmation: \"%s\"",
+        "SendKey": "Press keys %s",
+        "Value": "%s → %s",
+        "ClearLine": "Clear line (Ctrl+C → Ctrl+U)",
+        "KeyDelay": "Key delay: %s ms",
+        "CounterNote": "(preview: the counter is not incremented)"
+      },
+      "Warn": {
+        "Unknown": "Unrecognized macro - it will be skipped on run: %s",
+        "Invalid": "Typo in macro parameters - check before run"
+      },
+      "TypeName": {
+        "String": "string",
+        "Number": "number",
+        "Hex": "hex",
+        "Float": "float",
+        "Password": "password",
+        "Date": "date",
+        "Time": "time",
+        "DateTime": "date/time",
+        "Confirm": "confirm",
+        "Select": "select"
+      }
+    },
+    "MacroDoc": {
+      "Title": "Macros: how it works",
+      "Body": "<h3>Basics</h3><p>The snippet is typed into the target window character by character, like keyboard input. Every new line of text sends ENTER. Macros in curly braces are replaced with values at run time. A mistake in macro parameters highlights the card in red but does not abort the run - the value falls back to safe default behavior.</p><h3>Data input: INPUT</h3><ul><li><code>{INPUT Name}</code> - asks for text and inserts it at the macro position.</li><li><code>{INPUT[NUMBER:100] Size}</code> - types: STRING, NUMBER, HEX, FLOAT, PASSWORD, DATE, TIME, DATETIME; after the colon comes the default value.</li><li><code>{INPUT[SELECT:prod|stage|dev] Env}</code> - pick one value from a list (options separated by |).</li><li><code>{INPUT[Confirm] Proceed?}</code> - pause and wait for confirmation.</li><li>An underscore _ can be used instead of a space in date values.</li></ul><h3>Substituted values</h3><ul><li><code>{DATETIME:yyyy-MM-dd}</code> - current date and time, FormatDateTime mask; default yyyy-MM-dd HH:mm:ss.</li><li><code>{UUID}</code> - new lowercase UUID.</li><li><code>{RANDOM:16}</code> - random string of the given length (default 16, max 1024).</li><li><code>{ENV:HOME}</code> - environment variable value.</li><li><code>{CLIPBOARD}</code> - clipboard text at run time.</li></ul><h3>COUNTER counter</h3><p><code>{COUNTER}</code> - sequential run number of the snippet: 1, 2, 3… Each snippet has its own state; the state is stored in the counters.json file (next to settings.json) and survives application restarts.</p><p>Parameters are separated by a semicolon:</p><ul><li><code>start=N</code> - initial value, applies while the counter has no stored state;</li><li><code>step=N</code> - increment applied after each take (0 is forbidden, negative allowed);</li><li><code>pad=N</code> - zero-padding on the left to N digits (1..18), display only;</li><li><code>current</code> - return this run's number without incrementing the counter;</li><li><code>volatile</code> - do not persist the change across runs.</li></ul><p>Examples: <code>{COUNTER:start=100;step=2;pad=3}</code> yields 100, 102, 104… To repeat the same number twice in one run: <code>{COUNTER}</code> … <code>{COUNTER:current}</code>. One-off counter without saving to file: <code>{COUNTER:volatile}</code>. Reset values in Settings, the Counters tab.</p><h3>Terminal control</h3><ul><li><code>{SLEEP 500}</code> - pause in milliseconds (max 600000).</li><li><code>{ENTER}</code> - press ENTER.</li><li><code>{SENDKEY CTRL+C}</code> - key by name (ENTER, TAB, F1-F12), character or VK code; combinations with CTRL, ALT, SHIFT are supported.</li><li><code>{CLEAR_LINE}</code> - clear the current line: Ctrl+C, pause, Ctrl+U.</li><li><code>{KEYDELAY 20}</code> - delay between characters for the following text (ms).</li></ul><h3>Card editor</h3><p>Double-click a card to edit the step, drag cards to reorder. A red card means a mistake in the step parameters.</p>"
+    },
     "MacroBuilder": {
       "StepType": {
-        "Text": "Text",
         "Sleep": "Pause",
         "Enter": "ENTER",
         "Key": "Key",
@@ -1712,7 +1803,6 @@
         "ClearLine": "Clear line",
         "KeyDelay": "Delay"
       },
-      "PropText": "Step text:",
       "PropMs": "Pause, ms:",
       "PropKey": "Key (CTRL+C, F5, a):",
       "PropName": "Name (prompt):",
@@ -1724,8 +1814,34 @@
       "DefaultParamName": "Parameter",
       "Error": {
         "BadKey": "Unknown key: %s",
-        "EnvEmpty": "Set a variable name for ENV"
+        "EnvEmpty": "Set a variable name for ENV",
+        "BadMs": "Delay must be an integer >= 0 (ms)",
+        "BadRandom": "RANDOM length must be an integer >= 1",
+        "BadCounter": "Invalid COUNTER parameters. Allowed: start=N, step=N (non-zero), pad=N (1..18), current, volatile",
+        "BadDefault": "Default value is not valid for type %s",
+        "BadOptions": "For SELECT specify at least one option (separated by |)"
       }
+    },
+    "Macro": {
+      "StopPanelTitle": "Typing snippet...",
+      "StopButton": "Stop",
+      "FocusLost": "Target window focus lost - typing aborted.",
+      "UnknownCommand": "Unknown command %s - typing aborted.",
+      "TypingInProgress": "Snippet typing is in progress - wait for completion and run again.",
+      "ProgressChars": "%d/%d characters (%d%%)",
+      "PauseRemaining": "Pause: ~%d s left",
+      "CardEdit": "Edit macro",
+      "CardDuplicate": "Duplicate",
+      "CardDelete": "Delete",
+      "CardCopy": "Copy",
+      "CardPaste": "Paste",
+      "InsertSleep": "Pause (SLEEP)",
+      "InsertEnter": "ENTER",
+      "InsertKey": "Key (SENDKEY)",
+      "InsertInput": "Input (INPUT)",
+      "InsertValue": "Value (DATETIME/UUID/...)",
+      "InsertClearLine": "Clear line (CLEAR_LINE)",
+      "InsertKeyDelay": "Key delay (KEYDELAY)"
     },
     "TagEditorForm": {
       "InputQueryTitle": "New Tag",

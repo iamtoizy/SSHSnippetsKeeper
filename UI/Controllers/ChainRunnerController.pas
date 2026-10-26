@@ -214,7 +214,7 @@ begin
 
             with TSnippetRunner.Create(RunnerID, AppContext) do
             try
-                ExecuteSnippetInWindow(Snippet, TargetHWND, False);
+                ExecuteSnippetInWindow(Snippet, TargetHWND);
             finally
                 Free;
             end;

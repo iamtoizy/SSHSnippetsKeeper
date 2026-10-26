@@ -6,13 +6,32 @@ uses
     System.SysUtils
     ;
 
+const
+    // Ключи предупреждений строки транскрипта сухого прогона
+    DRY_RUN_WARN_UNKNOWN = 'unknown';
+    DRY_RUN_WARN_INVALID = 'invalid';
+
 type
     TMacroTokenKind = (tkText, tkSleep, tkEnter, tkInput, tkSendKey, tkValue, tkClearLine, tkKeyDelay, tkUnknown);
-    TMacroInputType = (mitString, mitNumber, mitHex, mitFloat, mitPassword, mitDate, mitConfirm, mitSelect);
+    TMacroInputType = (mitString, mitNumber, mitHex, mitFloat, mitPassword, mitDate, mitTime, mitDateTime, mitConfirm, mitSelect);
     TMacroParamDescriptor = record
         Name: string;
         InputType: TMacroInputType;
         DefaultValue: string;
+    end;
+    TTranscriptKind = (tlText, tlEnter, tlSleep, tlInput, tlConfirm, tlSendKey, tlValue, tlClearLine, tlKeyDelay, tlWarning);
+    // Строка предпросмотра сухого прогона: шаг без исполнения
+    TTranscriptLine = record
+        Kind: TTranscriptKind;
+        // Исходный фрагмент сниппета: обычный текст либо макрос в фигурных скобках
+        Macro: string;
+        // Промпт INPUT либо имя директивы значения (DATETIME, COUNTER, ...)
+        Name: string;
+        // Вычисленное значение либо параметр шага (мс сна, задержка, значение по умолчанию)
+        Detail: string;
+        InputType: TMacroInputType;
+        // Ключ предупреждения: DRY_RUN_WARN_*, '' - предупреждения нет
+        Warning: string;
     end;
     TInputCallback = reference to function(const Prompt: string): string;
     TConfirmCallback = reference to function(const Prompt: string): Boolean;
@@ -34,6 +53,8 @@ type
         CurrentInputType: TMacroInputType;
         CurrentDefaultValue: string;
         UserCanceled: Boolean;
+        // Сухой прогон: значения только вычисляются, COUNTER не увеличивается
+        DryRun: Boolean;
         SnippetID: Integer;
         UserID: Integer;
         // Прогресс печати: 32-битные поля под Interlocked, читаются панелью Stop
@@ -118,6 +139,11 @@ type
         procedure Execute; override;
     end;
 
+function IsMacroValueValid(const Value: string; InputType: TMacroInputType): Boolean;
+function TryParseDateValue(const Value: string; out ADate: TDateTime): Boolean;
+function TryParseTimeValue(const Value: string; out ATime: TDateTime): Boolean;
+function TryParseDateTimeValue(const Value: string; out ADateTime: TDateTime): Boolean;
+
 implementation
 
 uses
@@ -125,6 +151,113 @@ uses
     System.SyncObjs,
     System.Classes
     ;
+
+function TryParseDateValue(const Value: string; out ADate: TDateTime): Boolean;
+var
+    FS: TFormatSettings;
+begin
+    // Локальный формат, затем ISO: yyyy-MM-dd
+    Result := TryStrToDate(Trim(Value), ADate);
+    if Result then
+        Exit;
+
+    FS := TFormatSettings.Create;
+    FS.DateSeparator := '-';
+    FS.ShortDateFormat := 'yyyy-MM-dd';
+    Result := TryStrToDate(Trim(Value), ADate, FS);
+end;
+
+function TryParseTimeValue(const Value: string; out ATime: TDateTime): Boolean;
+var
+    FS: TFormatSettings;
+begin
+    // Локальный формат, затем ISO: hh:mm[:ss]
+    Result := TryStrToTime(Trim(Value), ATime);
+    if Result then
+        Exit;
+
+    FS := TFormatSettings.Create;
+    FS.TimeSeparator := ':';
+    FS.ShortTimeFormat := 'hh:mm';
+    FS.LongTimeFormat := 'hh:mm:ss';
+    Result := TryStrToTime(Trim(Value), ATime, FS);
+end;
+
+function TryParseDateTimeValue(const Value: string; out ADateTime: TDateTime): Boolean;
+var
+    FS: TFormatSettings;
+    S: string;
+begin
+    // Подчёркивание вместо пробела между датой и временем: терминал
+    // разбивает аргументы по пробелу, значение без пробела безопаснее
+    S := StringReplace(Trim(Value), '_', ' ', [rfReplaceAll]);
+
+    // Сначала формат текущей локали, затем ISO: yyyy-MM-dd[ hh:mm[:ss]]
+    Result := TryStrToDateTime(S, ADateTime);
+    if Result then
+        Exit;
+
+    FS := TFormatSettings.Create;
+    FS.DateSeparator := '-';
+    FS.ShortDateFormat := 'yyyy-MM-dd';
+    FS.TimeSeparator := ':';
+    FS.ShortTimeFormat := 'hh:mm';
+    FS.LongTimeFormat := 'hh:mm:ss';
+
+    if (Length(S) > 10) and CharInSet(S[11], ['T', 't']) then
+        S[11] := ' ';
+
+    Result := TryStrToDateTime(S, ADateTime, FS);
+end;
+
+function IsMacroValueValid(const Value: string; InputType: TMacroInputType): Boolean;
+var
+    HexStr: string;
+    IntVal: Integer;
+    FloatVal: Double;
+    DateVal: TDateTime;
+    I: Integer;
+begin
+    case InputType of
+        mitNumber:
+            Result := TryStrToInt(Value, IntVal);
+
+        mitHex:
+            begin
+                HexStr := Value;
+                if (Length(HexStr) >= 2) and (Copy(HexStr, 1, 2) = '0x') then
+                    HexStr := Copy(HexStr, 3, MaxInt);
+
+                Result := (HexStr <> '') and (Length(HexStr) <= 8);
+                if Result then
+                begin
+                    for I := 1 to Length(HexStr) do
+                    begin
+                        if not CharInSet(HexStr[I], ['0'..'9', 'A'..'F', 'a'..'f']) then
+                            Exit(False);
+                    end;
+                end;
+            end;
+
+        mitFloat:
+            Result := TryStrToFloat(StringReplace(Value, ',', '.', [rfReplaceAll]), FloatVal, TFormatSettings.Invariant);
+
+        mitPassword:
+            Result := Length(Value) > 0;
+
+        mitDate:
+            Result := TryParseDateValue(Value, DateVal);
+
+        mitTime:
+            Result := TryParseTimeValue(Value, DateVal);
+
+        mitDateTime:
+            Result := TryParseDateTimeValue(Value, DateVal);
+
+    else
+        Result := True;
+    end;
+end;
 
 { TScriptAction }
 

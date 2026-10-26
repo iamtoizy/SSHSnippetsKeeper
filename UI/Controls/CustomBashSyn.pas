@@ -16,6 +16,7 @@ type
     public
         constructor Create(Owner: TComponent); override;
         destructor Destroy; override;
+        function IsIdentChar(AChar: WideChar): Boolean; override;
         // Этот метод SynEdit вызывает для КАЖДОГО слова, чтобы узнать его цвет
         function GetTokenAttribute: TSynHighlighterAttributes; override;
 
@@ -30,6 +31,7 @@ implementation
 constructor TCustomBashSyn.Create(Owner: TComponent);
 begin
     inherited Create(Owner);
+
     FExtraKeywords := TStringList.Create;
 
     // КРИТИЧНО для Linux: команды чувствительны к регистру (Docker != docker)
@@ -43,6 +45,16 @@ destructor TCustomBashSyn.Destroy;
 begin
     FExtraKeywords.Free;
     inherited Destroy;
+end;
+
+function TCustomBashSyn.IsIdentChar(AChar: WideChar): Boolean;
+var
+    Code: Integer;
+begin
+    Code := Ord(AChar);
+    Result := inherited IsIdentChar(AChar) or
+        ((Code >= $0410) and (Code <= $044F)) or
+        (Code = $0401) or (Code = $0451);
 end;
 
 function TCustomBashSyn.GetTokenAttribute: TSynHighlighterAttributes;

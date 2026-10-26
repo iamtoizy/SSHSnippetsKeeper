@@ -5195,6 +5195,9 @@ object MainForm: TMainForm
     object puRunSnippet: TMenuItem
       Action = actRunSnippet
     end
+    object puDryRunSnippet: TMenuItem
+      Action = actDryRunSnippet
+    end
     object puRunSequence: TMenuItem
       Action = actRunSequence
     end
@@ -5414,6 +5417,11 @@ object MainForm: TMainForm
       Category = 'Snippets'
       Caption = 'actRunSnippet'
       OnExecute = actRunSnippetExecute
+    end
+    object actDryRunSnippet: TAction
+      Category = 'Snippets'
+      Caption = 'actDryRunSnippet'
+      OnExecute = actDryRunSnippetExecute
     end
     object actRunSequence: TAction
       Category = 'Snippets'

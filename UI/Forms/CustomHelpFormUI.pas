@@ -8,6 +8,7 @@ uses
     HtmlView,
     System.Classes,
     Vcl.Controls,
+    Vcl.ExtCtrls,
     Vcl.Forms,
     Vcl.Graphics,
     Vcl.StdCtrls,
@@ -17,16 +18,24 @@ uses
 type
     TCustomHelpForm = class(TForm)
         HtmlViewer: THtmlViewer;
+        pBottom: TPanel;
+        bCopyText: TButton;
         procedure FormCreate(Sender: TObject);
         procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
         procedure FormShow(Sender: TObject);
         procedure HtmlViewerHotSpotClick(Sender: TObject; const SRC: ThtString; var Handled: Boolean);
+        procedure bCopyTextClick(Sender: TObject);
     private
         FFocusCatcher: TButton;
+        FBodyHtml: string;
         function ColorToHtmlHex(AColor: TColor): string;
         function GetHtmlTemplate(const BgColor, TxtColor, AccentColor, PreBgColor, BorderColor: string): string;
+        procedure GetThemeColors(out VclBg, VclText, VclAccent, VclPreBg, VclBorder: string);
+        procedure BuildAndLoad(const ABodyContent: string);
     public
         procedure SetContent(Title, MainText, ExpandedText: string);
+        procedure SetContentHtml(const ATitle, ABodyHtml: string);
+        procedure CopyPlainTextToClipboard;
     end;
 
 var
@@ -87,6 +96,13 @@ begin
         Key := 0;
         Close;
     end;
+
+    if (Key = Ord('C')) and (Shift = [ssCtrl]) then
+    begin
+        Key := 0;
+        CopyPlainTextToClipboard;
+        ShowSimpleToast(TUIStateLoader.GetMessage('Common.CopiedToClipboard'));
+    end;
 end;
 
 procedure TCustomHelpForm.FormShow(Sender: TObject);
@@ -96,17 +112,13 @@ begin
     ActiveControl := FFocusCatcher;
 end;
 
-procedure TCustomHelpForm.SetContent(Title, MainText, ExpandedText: string);
-var
-    VclBg, VclText, VclAccent, VclPreBg, VclBorder: string;
-    BodyContent, FinalHtml: string;
+procedure TCustomHelpForm.GetThemeColors(out VclBg, VclText, VclAccent, VclPreBg, VclBorder: string);
 begin
-    // Вместо clWindow берем clBtnFace, чтобы фон совпал с формой
     VclBg := ColorToHtmlHex(StyleServices.GetSystemColor(clBtnFace));
     VclText := ColorToHtmlHex(StyleServices.GetSystemColor(clWindowText));
     VclAccent := ColorToHtmlHex(StyleServices.GetSystemColor(clHighlight));
 
-    // Настройка контраста заговоров и блоков под темы
+    // Настройка контраста заголовков и блоков под темы
     if StyleServices.IsSystemStyle then
     begin
         // СВЕТЛАЯ ТЕМА
@@ -121,10 +133,15 @@ begin
         VclPreBg := '#252526';   // Глубокий темно-серый фон для кода
         VclBorder := '#3F3F46';  // Серая граница
     end;
-    // -------------------------------------------------------
+end;
 
-    // Явно перекрашиваем сам компонент, чтобы при рендеринге не было старых артефактов
-    HtmlViewer.DefBackground := StyleServices.GetSystemColor(clBtnFace);
+procedure TCustomHelpForm.SetContent(Title, MainText, ExpandedText: string);
+var
+    VclAccent: string;
+    VclBg, VclText, VclPreBg, VclBorder: string;
+    BodyContent: string;
+begin
+    GetThemeColors(VclBg, VclText, VclAccent, VclPreBg, VclBorder);
 
     // Формируем чистое тело (Body) страницы блоками
     BodyContent := '<h2>' + Title + '</h2>';
@@ -142,17 +159,74 @@ begin
             '</div>';
     end;
 
+    BuildAndLoad(BodyContent);
+end;
+
+procedure TCustomHelpForm.SetContentHtml(const ATitle, ABodyHtml: string);
+begin
+    BuildAndLoad('<h2>' + ATitle + '</h2>' + ABodyHtml);
+end;
+
+procedure TCustomHelpForm.BuildAndLoad(const ABodyContent: string);
+var
+    VclBg, VclText, VclAccent, VclPreBg, VclBorder: string;
+    Content, FinalHtml: string;
+begin
+    GetThemeColors(VclBg, VclText, VclAccent, VclPreBg, VclBorder);
+
+    // Явно перекрашиваем сам компонент, чтобы при рендеринге не было старых артефактов
+    HtmlViewer.DefBackground := StyleServices.GetSystemColor(clBtnFace);
+
+    FBodyHtml := ABodyContent;
+
     // Автоматическое превращение <code>text</code> в кликабельные кнопки копирования
-    BodyContent := TRegEx.Replace(
-        BodyContent, '<code>(.*?)</code>',
+    Content := TRegEx.Replace(
+        ABodyContent, '<code>(.*?)</code>',
         '<a href="copy:$1" class="copy-cmd" title="' + TUIStateLoader.GetMessage('Common.CopyTooltip') + '"><code class="copyable">$1</code></a>'
     );
 
     // Собираем финальный HTML, внедряя контент CSS-шаблон
-    FinalHtml := Format(GetHtmlTemplate(VclBg, VclText, VclAccent, VclPreBg, VclBorder), [BodyContent]);
+    FinalHtml := Format(GetHtmlTemplate(VclBg, VclText, VclAccent, VclPreBg, VclBorder), [Content]);
 
     // Загружаем в память
     HtmlViewer.LoadFromString(FinalHtml);
+end;
+
+procedure TCustomHelpForm.CopyPlainTextToClipboard;
+var
+    S: string;
+begin
+    S := FBodyHtml;
+
+    // Структурные теги превращаем в переносы строк и маркеры списка
+    S := TRegEx.Replace(S, '<h2[^>]*>', #13#10);
+    S := TRegEx.Replace(S, '</h2>', #13#10);
+    S := TRegEx.Replace(S, '<h3[^>]*>', #13#10);
+    S := TRegEx.Replace(S, '</h3>', #13#10);
+    S := TRegEx.Replace(S, '<blockquote[^>]*>', '  ');
+    S := TRegEx.Replace(S, '</blockquote>', #13#10);
+    S := S.Replace('<li>', '  • ');
+    S := S.Replace('</li>', #13#10);
+    S := S.Replace('<p>', '');
+    S := S.Replace('</p>', #13#10);
+
+    // Остальные теги срезаем
+    S := TRegEx.Replace(S, '<[^>]+>', '');
+
+    // Расшифровываем HTML-сущности
+    S := S.Replace('&nbsp;', ' ');
+    S := S.Replace('&lt;', '<');
+    S := S.Replace('&gt;', '>');
+    S := S.Replace('&quot;', '"');
+    S := S.Replace('&amp;', '&');
+
+    Clipboard.AsText := Trim(S);
+end;
+
+procedure TCustomHelpForm.bCopyTextClick(Sender: TObject);
+begin
+    CopyPlainTextToClipboard;
+    ShowSimpleToast(TUIStateLoader.GetMessage('Common.CopiedToClipboard'));
 end;
 
 function TCustomHelpForm.GetHtmlTemplate(const BgColor, TxtColor, AccentColor, PreBgColor, BorderColor: string): string;

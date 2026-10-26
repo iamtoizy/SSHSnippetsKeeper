@@ -3,7 +3,7 @@
         <ProjectGuid>{810A4712-AF34-44C0-AC10-3D1AAD1C40D5}</ProjectGuid>
         <MainSource>SSHSnippetsKeeper.dpr</MainSource>
         <Base>True</Base>
-        <Config Condition="'$(Config)'==''">Release</Config>
+        <Config Condition="'$(Config)'==''">Debug</Config>
         <TargetedPlatforms>3</TargetedPlatforms>
         <AppType>Application</AppType>
         <FrameworkType>VCL</FrameworkType>
@@ -147,6 +147,7 @@
         <RcCompile Include="Database\Schema\000_schema_init.rc">
             <Form>Resources\000_schema_init.res</Form>
         </RcCompile>
+        <DCCReference Include="Core\Core.Shutdown.pas"/>
         <DCCReference Include="UI\Forms\MainFormUI.pas">
             <Form>MainForm</Form>
         </DCCReference>
@@ -185,6 +186,7 @@
         <DCCReference Include="MacroEngine\MacroActions.pas"/>
         <DCCReference Include="MacroEngine\MacroThread.pas"/>
         <DCCReference Include="MacroEngine\MacroEngine.pas"/>
+        <DCCReference Include="MacroEngine\MacroCounters.pas"/>
         <DCCReference Include="MacroEngine\MacroBuilder.pas"/>
         <DCCReference Include="Automation\WindowMonitor.pas"/>
         <DCCReference Include="Automation\ProcessProfile.pas"/>
@@ -201,9 +203,14 @@
         <DCCReference Include="UI\Forms\ParamsFormUI.pas">
             <Form>ParamsForm</Form>
         </DCCReference>
-        <DCCReference Include="UI\Forms\MacroBuilderFormUI.pas">
-            <Form>MacroBuilderForm</Form>
+        <DCCReference Include="UI\Forms\DryRunFormUI.pas">
+            <Form>DryRunForm</Form>
         </DCCReference>
+        <DCCReference Include="UI\Forms\MacroCardEditorFormUI.pas">
+            <Form>MacroCardEditorForm</Form>
+        </DCCReference>
+        <DCCReference Include="UI\Controllers\MacroCardController.pas"/>
+        <DCCReference Include="UI\Controls\MacroCardPlugin.pas"/>
         <DCCReference Include="MacroEngine\MacroInputTypes.pas"/>
         <DCCReference Include="UI\Forms\TagEditorFormUI.pas">
             <Form>TagEditorForm</Form>

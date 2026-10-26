@@ -7,6 +7,7 @@ uses
     Core.Interfaces.App,
     MacroInputTypes,
     System.Classes,
+    System.Types,
     Vcl.ComCtrls,
     Vcl.Controls,
     Vcl.ExtCtrls,
@@ -35,13 +36,22 @@ type
         FInputType: TMacroInputType;
         FDefaultValue: string;
         FResultValue: string;
+        FPrompt: string;
+        FStatusText: string;
+        procedure SetPrompt(const AValue: string);
+        procedure SetStatusText(const AText: string);
+        procedure ApplyStatusText;
+        procedure AdjustLayout;
+        function DpiScale(AValue: Integer): Integer;
+        function TargetWorkArea: TRect;
         procedure FillSelectItems;
         procedure ValidateInput;
+    protected
+        procedure DoAfterMonitorDpiChanged(OldDPI, NewDPI: Integer); override;
     public
         property ResultValue: string read FResultValue;
     end;
 
-function IsMacroValueValid(const Value: string; InputType: TMacroInputType): Boolean;
 function ShowInputForm(const Prompt, DefaultValue: string; InputType: TMacroInputType; const AppContext: IAppContext; var FormResult: string): Boolean;
 
 var
@@ -50,58 +60,28 @@ var
 implementation
 
 uses
+    System.Math,
     System.SysUtils,
-    Common.Localization
+    Common.Localization,
+    Winapi.Windows
     ;
 
 const
     SP_PREFIX = '⏵ ';
     SP_POSTFIX = ', ⏎';
+    ELLIPSIS = '…';
+    BASE_CLIENT_WIDTH = 347;
+    PAD = 8;
+    LABEL_TOP = 8;
+    LABEL_EDIT_GAP = 6;
+    EDIT_H = 21;
+    EDIT_BTN_GAP = 5;
+    BTN_H = 25;
+    BTN_SB_GAP = 6;
+    WORKAREA_MARGIN = 24;
+    STATUS_LEFT_PAD = 8;
 
 {$R *.dfm}
-
-function IsMacroValueValid(const Value: string; InputType: TMacroInputType): Boolean;
-var
-    HexStr: string;
-    IntVal: Integer;
-    FloatVal: Double;
-    DateVal: TDateTime;
-    I: Integer;
-begin
-    case InputType of
-        mitNumber:
-            Result := TryStrToInt(Value, IntVal);
-
-        mitHex:
-            begin
-                HexStr := Value;
-                if (Length(HexStr) >= 2) and (Copy(HexStr, 1, 2) = '0x') then
-                    HexStr := Copy(HexStr, 3, MaxInt);
-
-                Result := (HexStr <> '') and (Length(HexStr) <= 8);
-                if Result then
-                begin
-                    for I := 1 to Length(HexStr) do
-                    begin
-                        if not CharInSet(HexStr[I], ['0'..'9', 'A'..'F', 'a'..'f']) then
-                            Exit(False);
-                    end;
-                end;
-            end;
-
-        mitFloat:
-            Result := TryStrToFloat(Value, FloatVal);
-
-        mitPassword:
-            Result := Length(Value) > 0;
-
-        mitDate:
-            Result := TryStrToDate(Value, DateVal);
-
-    else
-        Result := True;
-    end;
-end;
 
 function ShowInputFormModal(const Prompt, DefaultValue: string; InputType: TMacroInputType; const AppContext: IAppContext; var Value: string): Boolean;
 var
@@ -110,11 +90,7 @@ begin
     Form := TInputForm.Create(nil);
     try
         Form.Initialize(AppContext);
-        if (Prompt <> '') then
-        begin
-            Form.Caption := Prompt;
-            Form.lbPrompt.Caption := Prompt;
-        end;
+        Form.SetPrompt(Prompt);
 
         Form.FInputType := InputType;
         if (DefaultValue <> '') then
@@ -167,48 +143,62 @@ begin
     case FInputType of
         mitString:
             begin
-                sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.String') + SP_POSTFIX;
+                SetStatusText(SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.String') + SP_POSTFIX);
                 ebEdit.Text := FDefaultValue;
             end;
 
         mitNumber:
             begin
-                sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Number') + SP_POSTFIX;
+                SetStatusText(SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Number') + SP_POSTFIX);
                 ebEdit.Text := FDefaultValue;
             end;
 
         mitHex:
             begin
-                sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Hex') + SP_POSTFIX;
+                SetStatusText(SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Hex') + SP_POSTFIX);
                 ebEdit.Text := FDefaultValue;
                 ebEdit.CharCase := ecUpperCase;
             end;
 
         mitFloat:
             begin
-                sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Float') + SP_POSTFIX;
+                SetStatusText(SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Float') + SP_POSTFIX);
                 ebEdit.Text := FDefaultValue;
             end;
 
         mitPassword:
             begin
-                sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Password') + SP_POSTFIX;
+                SetStatusText(SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Password') + SP_POSTFIX);
                 ebEdit.PasswordChar := '*';
                 ebEdit.Text := FDefaultValue;
             end;
 
         mitDate:
             begin
-                sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Date') + SP_POSTFIX;
+                SetStatusText(SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Date') + SP_POSTFIX);
+                ebEdit.Text := FDefaultValue;
+            end;
+
+        mitTime:
+            begin
+                SetStatusText(SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Time') + SP_POSTFIX);
+                ebEdit.Text := FDefaultValue;
+            end;
+
+        mitDateTime:
+            begin
+                SetStatusText(SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.DateTime') + SP_POSTFIX);
                 ebEdit.Text := FDefaultValue;
             end;
 
         mitSelect:
             begin
                 FillSelectItems;
-                sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Select') + SP_POSTFIX;
+                SetStatusText(SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Select') + SP_POSTFIX);
             end;
     end;
+
+    AdjustLayout;
 
     if FInputType = mitSelect then
     begin
@@ -280,26 +270,34 @@ begin
     begin
         case FInputType of
             mitNumber:
-                sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Number') + SP_POSTFIX;
+                SetStatusText(SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Number') + SP_POSTFIX);
             mitHex:
-                sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Hex') + SP_POSTFIX;
+                SetStatusText(SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Hex') + SP_POSTFIX);
             mitFloat:
-                sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Float') + SP_POSTFIX;
+                SetStatusText(SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Float') + SP_POSTFIX);
             mitDate:
-                sbBottom.SimpleText := SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Date') + SP_POSTFIX;
+                SetStatusText(SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Date') + SP_POSTFIX);
+            mitTime:
+                SetStatusText(SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.Time') + SP_POSTFIX);
+            mitDateTime:
+                SetStatusText(SP_PREFIX + TUIStateLoader.GetMessage('InputForm.Prompt.DateTime') + SP_POSTFIX);
         end;
     end
     else
     begin
         case FInputType of
             mitNumber:
-                sbBottom.SimpleText := TUIStateLoader.GetMessage('InputForm.Error.Number');
+                SetStatusText(TUIStateLoader.GetMessage('InputForm.Error.Number'));
             mitHex:
-                sbBottom.SimpleText := TUIStateLoader.GetMessage('InputForm.Error.Hex');
+                SetStatusText(TUIStateLoader.GetMessage('InputForm.Error.Hex'));
             mitFloat:
-                sbBottom.SimpleText := TUIStateLoader.GetMessage('InputForm.Error.Float');
+                SetStatusText(TUIStateLoader.GetMessage('InputForm.Error.Float'));
             mitDate:
-                sbBottom.SimpleText := TUIStateLoader.GetMessage('InputForm.Error.Date');
+                SetStatusText(TUIStateLoader.GetMessage('InputForm.Error.Date'));
+            mitTime:
+                SetStatusText(TUIStateLoader.GetMessage('InputForm.Error.Time'));
+            mitDateTime:
+                SetStatusText(TUIStateLoader.GetMessage('InputForm.Error.DateTime'));
         end;
     end;
 
@@ -319,6 +317,101 @@ begin
         FResultValue := Trim(ebEdit.Text);
 
     ModalResult := mrOk;
+end;
+
+procedure TInputForm.SetPrompt(const AValue: string);
+begin
+    FPrompt := AValue;
+    if FPrompt <> '' then
+    begin
+        Caption := FPrompt;
+        lbPrompt.Caption := FPrompt;
+    end;
+end;
+
+procedure TInputForm.SetStatusText(const AText: string);
+begin
+    FStatusText := AText;
+    ApplyStatusText;
+end;
+
+procedure TInputForm.ApplyStatusText;
+var
+    S: string;
+    MaxW: Integer;
+begin
+    S := FStatusText;
+    MaxW := sbBottom.ClientWidth - DpiScale(STATUS_LEFT_PAD);
+    if (S <> '') and (sbBottom.Canvas.TextWidth(S) > MaxW) then
+    begin
+        while (Length(S) > 1) and (sbBottom.Canvas.TextWidth(S + ELLIPSIS) > MaxW) do
+            Delete(S, Length(S), 1);
+        S := S + ELLIPSIS;
+    end;
+    sbBottom.SimpleText := S;
+end;
+
+function TInputForm.DpiScale(AValue: Integer): Integer;
+begin
+    Result := MulDiv(AValue, CurrentPPI, 96);
+end;
+
+function TInputForm.TargetWorkArea: TRect;
+var
+    Ref: TCustomForm;
+begin
+    Ref := Screen.ActiveCustomForm;
+    if (Ref <> nil) and (Ref <> Self) and Ref.Visible and (Ref.Monitor <> nil) then
+        Result := Ref.Monitor.WorkareaRect
+    else
+        Result := Screen.WorkAreaRect;
+end;
+
+procedure TInputForm.AdjustLayout;
+var
+    Work: TRect;
+    PromptW, NeededW, LabelW, Lines, LineH, EditTop, ButtonsTop, NeededH: Integer;
+begin
+    Work := TargetWorkArea;
+
+    PromptW := Canvas.TextWidth(FPrompt);
+    NeededW := 2 * DpiScale(PAD) + PromptW;
+    NeededW := Max(NeededW, DpiScale(BASE_CLIENT_WIDTH));
+    NeededW := Min(NeededW, Work.Width - DpiScale(WORKAREA_MARGIN));
+    ClientWidth := NeededW;
+
+    LabelW := ClientWidth - 2 * DpiScale(PAD);
+    if PromptW > LabelW then
+    begin
+        lbPrompt.AutoSize := False;
+        lbPrompt.EllipsisPosition := epEndEllipsis;
+        Lines := Max(1, Ceil(PromptW / Max(LabelW, 1)));
+        LineH := Canvas.TextHeight(FPrompt);
+        lbPrompt.Width := LabelW;
+        lbPrompt.Height := Lines * LineH;
+    end
+    else
+        lbPrompt.AutoSize := True;
+
+    EditTop := DpiScale(LABEL_TOP) + lbPrompt.Height + DpiScale(LABEL_EDIT_GAP);
+    ButtonsTop := EditTop + DpiScale(EDIT_H) + DpiScale(EDIT_BTN_GAP);
+    NeededH := ButtonsTop + DpiScale(BTN_H) + DpiScale(BTN_SB_GAP) + sbBottom.Height;
+    NeededH := Min(NeededH, Work.Height - DpiScale(WORKAREA_MARGIN));
+    ClientHeight := NeededH;
+
+    ebEdit.Top := EditTop;
+    cbSelect.Top := EditTop;
+    bOK.Top := ButtonsTop;
+    bCancel.Top := ButtonsTop;
+
+    ApplyStatusText;
+end;
+
+procedure TInputForm.DoAfterMonitorDpiChanged(OldDPI, NewDPI: Integer);
+begin
+    inherited;
+    if FPrompt <> '' then
+        AdjustLayout;
 end;
 
 end.
