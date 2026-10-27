@@ -46,7 +46,8 @@ CREATE TABLE IF NOT EXISTS snippets (
   comment             TEXT NOT NULL DEFAULT '',
   is_security_ignored INTEGER NOT NULL DEFAULT 0, -- v7: 0 = проверять сканером, 1 = доверять
   created_at          INTEGER NOT NULL DEFAULT (strftime('%s','now')),
-  updated_at          INTEGER, 
+  updated_at          INTEGER,
+  language            TEXT NOT NULL DEFAULT 'bash', -- v11: язык подсветки синтаксиса
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 

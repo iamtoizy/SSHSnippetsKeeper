@@ -4,6 +4,7 @@ interface
 
 uses
     Common.Consts,
+    Common.SnippetLanguages,
     Core.Entities.Category,
     Core.Entities.Snippet,
     Core.Entities.Tag,
@@ -30,6 +31,7 @@ type
         Comment: string;
         Content: string;
         Tags: TArray<string>;
+        Language: string;
         CreatedAt: Int64;
         UpdatedAt: Int64;
         HasKeeperMarker: Boolean;
@@ -94,7 +96,7 @@ end;
 class function TMarkdownImporter.ParseMarkdownFile(const FilePath: string; out Parsed: TParsedMarkdown): Boolean;
 var
     Lines: TArray<string>;
-    Line, Key, Value, LowerLine: string;
+    Line, Key, Value, LowerLine, FenceTag: string;
     InCodeBlock: Boolean;
     YamlLines, BodyLines, CodeLines: TList<string>;
     I, FirstDashIdx, SecondDashIdx: Integer;
@@ -158,6 +160,7 @@ begin
                     else if Key = 'title' then Parsed.Title := Value
                     else if Key = 'generator' then Parsed.HasKeeperMarker := SameText(Value, 'SSHSnippetsKeeper')
                     else if Key = 'tags' then Parsed.Tags := ExtractTagsFromYaml(Value)
+                    else if Key = 'language' then Parsed.Language := Value
                     else if Key = 'created_at' then
                     begin
                         Parsed.CreatedAt := StrToInt64Def(Value, DateTimeToUnix(Now));
@@ -182,6 +185,7 @@ begin
             StartBodyIdx := SecondDashIdx + 1;
 
         InCodeBlock := False;
+        FenceTag := '';
 
         for I := StartBodyIdx to High(Lines) do
         begin
@@ -190,6 +194,9 @@ begin
 
             if LowerLine.StartsWith('```') then
             begin
+                // Тег ограждения ('```bash') - запасной источник языка
+                if (not InCodeBlock) and (FenceTag = '') then
+                    FenceTag := Trim(Copy(LowerLine, 4));
                 InCodeBlock := not InCodeBlock;
                 Continue; // Пропускаем сами строки с маркдауновскими ```
             end;
@@ -210,6 +217,11 @@ begin
         // Фоллбэк для заголовка: если в YAML не было title, берем имя файла
         if Parsed.Title = '' then
             Parsed.Title := TPath.GetFileNameWithoutExtension(FilePath);
+
+        // Язык: YAML или тег ограждения; неизвестные значения -> 'bash'
+        if Parsed.Language = '' then
+            Parsed.Language := FenceTag;
+        Parsed.Language := NormalizeSnippetLanguage(Parsed.Language);
 
         Result := True;
     finally
@@ -395,6 +407,7 @@ begin
                     Snippet.Title := Parsed.Title;
                     Snippet.Comment := Parsed.Comment;
                     Snippet.Content := Parsed.Content;
+                    Snippet.Language := Parsed.Language;
                     Snippet.CreatedAt := Parsed.CreatedAt;
                     Snippet.UpdatedAt := Parsed.UpdatedAt;
 

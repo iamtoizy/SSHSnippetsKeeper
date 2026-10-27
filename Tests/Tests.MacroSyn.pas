@@ -28,6 +28,15 @@ type
         procedure Tokenize_EmptyAndUnclosed;
     end;
 
+    [TestFixture]
+    TMacroBodySynTests = class(TObject)
+    public
+        [Test]
+        procedure Body_DirectiveAndArgs;
+        [Test]
+        procedure Body_ContinuationLine_StaysArg;
+    end;
+
 implementation
 
 uses
@@ -122,6 +131,53 @@ begin
     Assert.AreEqual('{', Tokens[1].Text);
     Assert.AreEqual('FOO', Tokens[2].Text);
     Assert.AreEqual(' no close', Tokens[3].Text);
+end;
+
+{ TMacroBodySynTests }
+
+procedure TMacroBodySynTests.Body_DirectiveAndArgs;
+var
+    Syn: TMacroBodySyn;
+begin
+    Syn := TMacroBodySyn.Create(nil);
+    try
+        // На вход TSynMultiSyn подает тело макроса без '{' и '}'
+        Syn.SetLine('INPUT[SELECT:1|2] name', 1);
+
+        Assert.IsFalse(Syn.GetEol);
+        Assert.AreEqual('INPUT', Syn.GetToken);
+        Assert.AreEqual(Ord(mbtKey), Integer(Syn.GetTokenKind));
+
+        Syn.Next;
+        Assert.AreEqual('[SELECT:1|2] name', Syn.GetToken);
+        Assert.AreEqual(Ord(mbtArg), Integer(Syn.GetTokenKind));
+
+        Syn.Next;
+        Assert.IsTrue(Syn.GetEol);
+    finally
+        Syn.Free;
+    end;
+end;
+
+procedure TMacroBodySynTests.Body_ContinuationLine_StaysArg;
+var
+    Syn: TMacroBodySyn;
+begin
+    Syn := TMacroBodySyn.Create(nil);
+    try
+        Syn.SetLine('INPUT line1', 1);
+        Syn.Next; // Key
+        Syn.Next; // Arg
+
+        // Эмуляция переноса строки внутри макроса: состояние (аргументы)
+        // переносится через Range, поэтому на новой строке сразу Arg
+        Syn.SetLine('continuation', 2);
+
+        Assert.AreEqual('continuation', Syn.GetToken);
+        Assert.AreEqual(Ord(mbtArg), Integer(Syn.GetTokenKind));
+    finally
+        Syn.Free;
+    end;
 end;
 
 end.

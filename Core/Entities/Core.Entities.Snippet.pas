@@ -20,6 +20,7 @@ type
         UpdatedAt: Int64;
         Tags: TArray<TTagDTO>;
         IsSecurityCheckIgnored: Boolean;
+        Language: string; // 'bash' | 'bat' | 'powershell' | 'xml' | 'json' | 'ini' | 'markdown'
     end;
 
     TSnippetVersionDTO = record

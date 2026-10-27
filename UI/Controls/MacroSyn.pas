@@ -38,6 +38,32 @@ type
         procedure SetRange(Value: Pointer); override;
     end;
 
+    TMacroBodyTokenKind = (mbtKey, mbtArg);
+
+    // Тело макроса внутри TSynMultiSyn: открывающий '{' и закрывающий '}'
+    // отрезаются маркерами схемы, поэтому на вход приходит "INPUT[...] Имя".
+    // Первое слово - имя директивы (Key), остаток строки - аргументы (Arg).
+    // Имена атрибутов (Key/String) подбираются темой в SynThemeAdapter.
+    TMacroBodySyn = class(TSynCustomHighlighter)
+    private
+        FKeyAttri: TSynHighlighterAttributes;
+        FArgAttri: TSynHighlighterAttributes;
+        FTokenKind: TMacroBodyTokenKind;
+        FInArgs: Boolean;
+    public
+        constructor Create(AOwner: TComponent); override;
+        class function GetLanguageName: string; override;
+        class function GetFriendlyLanguageName: string; override;
+        function GetDefaultAttribute(Index: Integer): TSynHighlighterAttributes; override;
+        function GetEol: Boolean; override;
+        function GetTokenAttribute: TSynHighlighterAttributes; override;
+        function GetTokenKind: TSynNativeInt; override;
+        procedure Next; override;
+        function GetRange: Pointer; override;
+        procedure ResetRange; override;
+        procedure SetRange(Value: Pointer); override;
+    end;
+
 implementation
 
 { TMacroSyn }
@@ -202,6 +228,120 @@ end;
 procedure TMacroSyn.SetRange(Value: Pointer);
 begin
     FState := Integer(Value);
+end;
+
+{ TMacroBodySyn }
+
+constructor TMacroBodySyn.Create(AOwner: TComponent);
+begin
+    inherited Create(AOwner);
+
+    FKeyAttri := TSynHighlighterAttributes.Create('Key', 'Key');
+    FKeyAttri.Style := [fsBold];
+    AddAttribute(FKeyAttri);
+
+    FArgAttri := TSynHighlighterAttributes.Create('String', 'String');
+    AddAttribute(FArgAttri);
+
+    SetAttributesOnChange(DefHighlightChange);
+
+    FTokenKind := mbtKey;
+    FInArgs := False;
+end;
+
+class function TMacroBodySyn.GetLanguageName: string;
+begin
+    Result := 'MacroBody';
+end;
+
+class function TMacroBodySyn.GetFriendlyLanguageName: string;
+begin
+    Result := 'MacroBody';
+end;
+
+function TMacroBodySyn.GetDefaultAttribute(Index: Integer): TSynHighlighterAttributes;
+begin
+    case Index of
+        SYN_ATTR_KEYWORD: Result := FKeyAttri;
+        SYN_ATTR_STRING: Result := FArgAttri;
+    else
+        Result := FKeyAttri;
+    end;
+end;
+
+function TMacroBodySyn.GetEol: Boolean;
+begin
+    Result := Run > fLineLen;
+end;
+
+function TMacroBodySyn.GetTokenAttribute: TSynHighlighterAttributes;
+begin
+    if FTokenKind = mbtKey then
+        Result := FKeyAttri
+    else
+        Result := FArgAttri;
+end;
+
+function TMacroBodySyn.GetTokenKind: TSynNativeInt;
+begin
+    Result := Ord(FTokenKind);
+end;
+
+procedure TMacroBodySyn.Next;
+var
+    C: WideChar;
+begin
+    fTokenPos := Run;
+
+    if Run >= fLineLen then
+    begin
+        Inc(Run);
+        inherited;
+        Exit;
+    end;
+
+    if not FInArgs then
+    begin
+        C := fLine[Run];
+        if ((C >= 'A') and (C <= 'Z')) or ((C >= 'a') and (C <= 'z')) or
+            ((C >= '0') and (C <= '9')) or (C = '_') then
+        begin
+            while Run < fLineLen do
+            begin
+                C := fLine[Run];
+                if not (((C >= 'A') and (C <= 'Z')) or ((C >= 'a') and (C <= 'z')) or
+                    ((C >= '0') and (C <= '9')) or (C = '_')) then
+                    Break;
+                Inc(Run);
+            end;
+        end
+        else
+            Inc(Run);
+        FTokenKind := mbtKey;
+        FInArgs := True;
+    end
+    else
+    begin
+        FTokenKind := mbtArg;
+        Run := fLineLen;
+    end;
+
+    inherited;
+end;
+
+function TMacroBodySyn.GetRange: Pointer;
+begin
+    Result := Pointer(Ord(FInArgs));
+end;
+
+procedure TMacroBodySyn.ResetRange;
+begin
+    FInArgs := False;
+end;
+
+procedure TMacroBodySyn.SetRange(Value: Pointer);
+begin
+    FInArgs := Value <> nil;
 end;
 
 end.

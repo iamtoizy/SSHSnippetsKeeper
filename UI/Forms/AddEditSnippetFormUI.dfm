@@ -267,6 +267,18 @@ object AddEditSnippetForm: TAddEditSnippetForm
           DesignSize = (
             521
             26)
+          object cbLanguage: TComboBox
+            Left = 264
+            Top = 1
+            Width = 108
+            Height = 23
+            Style = csDropDownList
+            Anchors = [akTop, akRight]
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 2
+            OnChange = cbLanguageChange
+          end
           object bMacroHelp: TButton
             Left = 379
             Top = 0

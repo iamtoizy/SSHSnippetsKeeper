@@ -72,4 +72,9 @@ CREATE TABLE IF NOT EXISTS snippet_chain_steps (
 CREATE INDEX IF NOT EXISTS ix_chain_steps_chain   ON snippet_chain_steps(chain_id, position);
 CREATE INDEX IF NOT EXISTS ix_chain_steps_snippet ON snippet_chain_steps(snippet_id);
 
-PRAGMA user_version = 10;
+-- v11: Язык сниппета для подсветки синтаксиса (snippets.language TEXT NOT NULL DEFAULT 'bash').
+-- ALTER TABLE ADD COLUMN не идемпотентен и не поддерживает IF NOT EXISTS, а этот скрипт
+-- выполняется при каждом открытии БД, поэтому колонка добавляется кодом в
+-- TAppDatabase.ApplySchemaMigrations по проверке pragma_table_info.
+-- Для новых БД колонку сразу задаёт 000_schema_init.sql.
+PRAGMA user_version = 11;

@@ -145,14 +145,13 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <RcCompile Include="Database\Schema\000_schema_init.rc">
-            <Form>Resources\000_schema_init.res</Form>
+            <Form>000_schema_init.res</Form>
         </RcCompile>
         <DCCReference Include="Core\Core.Shutdown.pas"/>
         <DCCReference Include="UI\Forms\MainFormUI.pas">
             <Form>MainForm</Form>
         </DCCReference>
         <DCCReference Include="ThirdParty\JSONSerializer.pas"/>
-        <DCCReference Include="Common\Common.Settings.pas"/>
         <DCCReference Include="Data\Data.Database.pas">
             <Form>AppDatabase</Form>
             <DesignClass>TDataModule</DesignClass>
@@ -223,11 +222,6 @@
         <DCCReference Include="UI\Controls\CustomBashSyn.pas"/>
         <DCCReference Include="UI\Controls\MacroSyn.pas"/>
         <DCCReference Include="Core\Core.BashCompletionEngine.pas"/>
-        <DCCReference Include="Common\Common.AppState.pas"/>
-        <DCCReference Include="Common\Common.Consts.pas"/>
-        <DCCReference Include="Common\Common.Helpers.pas"/>
-        <DCCReference Include="Common\Common.QueryLanguage.pas"/>
-        <DCCReference Include="Common\Common.VCLStyleService.pas"/>
         <DCCReference Include="Core\Services\SnippetService.pas"/>
         <DCCReference Include="Core\Services\SnippetHistoryService.pas"/>
         <DCCReference Include="Core\Services\TagService.pas"/>
@@ -284,7 +278,6 @@
             <Form>PasswordGenForm</Form>
         </DCCReference>
         <DCCReference Include="Core\Core.AppContext.pas"/>
-        <DCCReference Include="Common\Common.Localization.pas"/>
         <DCCReference Include="UI\Helpers\UI.HoverHelpManager.pas"/>
         <DCCReference Include="UI\Forms\CustomHelpFormUI.pas">
             <Form>CustomHelpForm</Form>
@@ -328,6 +321,17 @@
             <Form>HistoryForm</Form>
         </DCCReference>
         <DCCReference Include="Core\Core.LocalAIService.pas"/>
+        <DCCReference Include="Common\Common.AppState.pas"/>
+        <DCCReference Include="Common\Common.CmdLine.pas"/>
+        <DCCReference Include="Common\Common.Consts.pas"/>
+        <DCCReference Include="Common\Common.Helpers.pas"/>
+        <DCCReference Include="Common\Common.Localization.pas"/>
+        <DCCReference Include="Common\Common.QueryLanguage.pas"/>
+        <DCCReference Include="Common\Common.Settings.pas"/>
+        <DCCReference Include="Common\Common.SnippetLanguageDetect.pas"/>
+        <DCCReference Include="Common\Common.SnippetLanguages.pas"/>
+        <DCCReference Include="Common\Common.VCLStyleService.pas"/>
+        <DCCReference Include="UI\Controls\SynHighlighterFactory.pas"/>
         <RcItem Include="Database\Schema\000_schema_init.sql">
             <ContainerId>ResourceItem</ContainerId>
             <ResourceType>RCDATA</ResourceType>
@@ -368,8 +372,26 @@
                 <DeployFile LocalName="Assets\Images\main-icon\main-icon.png" Configuration="Debug" Class="UWP_DelphiLogo44"/>
                 <DeployFile LocalName="Binary\Win32\Debug\SSHSnippetsKeeper.exe" Configuration="Debug" Class="ProjectOutput"/>
                 <DeployFile LocalName="Binary\Win64\Debug\SSHSnippetsKeeper.exe" Configuration="Debug" Class="ProjectOutput"/>
+                <DeployFile LocalName="Binary\Win64\Debug\SSHSnippetsKeeper.exe" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="Win64">
+                        <RemoteName>SSHSnippetsKeeper.exe</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployFile LocalName="Database\Schema\000_schema_init.sql" Configuration="Debug" Class="ProjectFile"/>
+                <DeployFile LocalName="Database\Schema\000_schema_init.sql" Configuration="Debug" Class="ProjectFile">
+                    <Platform Name="Win64">
+                        <RemoteDir>.\</RemoteDir>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployFile LocalName="Database\Schema\000_seed_data_full.sql" Configuration="Debug" Class="ProjectFile"/>
+                <DeployFile LocalName="Database\Schema\000_seed_data_full.sql" Configuration="Debug" Class="ProjectFile">
+                    <Platform Name="Win64">
+                        <RemoteDir>.\</RemoteDir>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployClass Name="AdditionalDebugSymbols">
                     <Platform Name="iOSSimulator">
                         <Operation>1</Operation>

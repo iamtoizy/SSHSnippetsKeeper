@@ -177,6 +177,8 @@ begin
                 Attr.Foreground := Palette.Number
             else if Pos('SYMBOL', AttrName) > 0 then
                 Attr.Foreground := Palette.Symbol
+            else if Pos('MARKER', AttrName) > 0 then
+                Attr.Foreground := Palette.Symbol
             else if Pos('IDENTIFIER', AttrName) > 0 then
                 Attr.Foreground := Palette.Foreground
             else if Pos('SPACE', AttrName) > 0 then

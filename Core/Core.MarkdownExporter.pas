@@ -51,7 +51,8 @@ type
 implementation
 
 uses
-    Common.Localization
+    Common.Localization,
+    Common.SnippetLanguages
     ;
 
 class function TMarkdownExporter.SanitizeFileName(const Name: string): string;
@@ -132,6 +133,7 @@ begin
         'title: "' + Snippet.Title.Replace('"', '\"') + '"' + sLineBreak +
         SYNC_MARKER + sLineBreak +
         'tags: [' + TagsList + ']' + sLineBreak +
+        'language: ' + FenceTagForSnippetLanguage(Snippet.Language) + sLineBreak +
         'created_at: ' + Snippet.CreatedAt.ToString + sLineBreak +
         'updated_at: ' + Snippet.UpdatedAt.ToString + sLineBreak +
         '---' + sLineBreak + sLineBreak +
@@ -140,7 +142,8 @@ begin
     if Trim(Snippet.Comment) <> '' then
         Result := Result + Snippet.Comment + sLineBreak + sLineBreak;
 
-    Result := Result + '```bash' + sLineBreak + Snippet.Content + sLineBreak + '```' + sLineBreak;
+    Result := Result + '```' + FenceTagForSnippetLanguage(Snippet.Language) + sLineBreak +
+        Snippet.Content + sLineBreak + '```' + sLineBreak;
 end;
 
 class procedure TMarkdownExporter.ExportDatabase(const AppContext: IAppContext; const BaseDir: string);

@@ -14,6 +14,7 @@ uses
     CustomBashSyn,
     MacroCardController,
     MacroCardPlugin,
+    MacroSyn,
     SynCompletionProposal,
     SynEdit,
     SynEditHighlighter,
@@ -21,6 +22,7 @@ uses
     SynEditRegexSearch,
     SynEditTypes,
     SynHighlighterMarkdown,
+    SynHighlighterMulti,
     SynHighlighterUNIXShellScript,
     System.Classes,
     System.Types,
@@ -73,6 +75,7 @@ type
         bAISettings: TButton;
         cbAIModel: TComboBox;
         cbAIHub: TComboBox;
+        cbLanguage: TComboBox;
         pcSnippet: TPageControl;
         tsSnippet: TTabSheet;
         sMiddle: TSplitter;
@@ -104,6 +107,7 @@ type
         procedure bCancelClick(Sender: TObject);
         procedure cbAIHubChange(Sender: TObject);
         procedure cbAIModelChange(Sender: TObject);
+        procedure cbLanguageChange(Sender: TObject);
         procedure cbIgnoreSecurityChecksClick(Sender: TObject);
         procedure FormClose(Sender: TObject; var Action: TCloseAction);
         procedure FormCloseQueryAI(Sender: TObject; var CanClose: Boolean);
@@ -146,7 +150,10 @@ type
         FIsEditMode: Boolean;
         FBasicCommands: TStringList;
         FBlockEnter: Boolean;
-        FCurrentHighlighter: TCustomBashSyn;
+        FCurrentHighlighter: TSynCustomHighlighter;
+        FCurrentMulti: TSynMultiSyn;
+        FMacroBodySyn: TMacroBodySyn;
+        FCurrentLanguage: string;
         FCompletionEngine: TBashCompletionEngine;
         FAIService: IAIService;
         FAIThread: TThread;
@@ -166,6 +173,8 @@ type
         function IsAutocompleteVisible: Boolean;
         function IsSnippetChanged: Boolean;
         procedure SetSyntax;
+        procedure ApplySnippetLanguage(const ALanguage: string);
+        procedure SyncLanguageCombo;
         procedure PopulateHubs;
         procedure PopulateModels(HubIndex: Integer);
         procedure UpdateSecurityStatusUI(IsSafe: Boolean; const Reason: string);
@@ -201,6 +210,8 @@ uses
     UI.Services.AITextCleaner,
     AISettingsFormUI,
     Common.Consts,
+    Common.SnippetLanguageDetect,
+    Common.SnippetLanguages,
     Common.Localization,
     Common.Settings,
     Common.Helpers,
@@ -211,6 +222,7 @@ uses
     MacroEngine,
     SecurityScanner,
     SynEditKeyCmds,
+    SynHighlighterFactory,
     SynThemeAdapter,
     System.DateUtils,
     System.Generics.Collections,
@@ -218,6 +230,7 @@ uses
     UI.BusyIndicator,
     UI.Helpers,
     UI.HoverHelpManager,
+    Vcl.Graphics,
     Winapi.ActiveX,
     Winapi.Windows
     ;
@@ -297,8 +310,9 @@ begin
     FreeAndNil(FMacroCards);
     FreeAndNil(FInsertTemplates);
 
-    if Assigned(FCurrentHighlighter) then
-        FCurrentHighlighter.Free;
+    FreeAndNil(FCurrentMulti);
+    FreeAndNil(FCurrentHighlighter);
+    FreeAndNil(FMacroBodySyn);
 
     if Assigned(FCompletionEngine) then
         FCompletionEngine.Free;
@@ -333,7 +347,12 @@ begin
     FCompletionEngine := TBashCompletionEngine.Create(FBasicCommands);
     FCompletionEngine.LoadFromJsonFile(ResolvePath('bash.autocomplete.json'));
 
+    // Схема подсветки макросов: одна на все языки
+    FMacroBodySyn := TMacroBodySyn.Create(nil);
+
     // Сразу применяем подсветку синтаксиса до показа формы (не ждем таймер)
+    FCurrentLanguage := SNIPPET_LANG_BASH;
+    SyncLanguageCombo;
     SetSyntax;
 
     // Карточки макросов в mContent
@@ -415,6 +434,7 @@ begin
     Snippet.Title := ebTitle.Text;
     Snippet.Content := UnixText;
     Snippet.Comment := mComment.Text;
+    Snippet.Language := NormalizeSnippetLanguage(FCurrentLanguage);
     Snippet.IsSecurityCheckIgnored := cbIgnoreSecurityChecks.Checked;
 
     try
@@ -476,6 +496,46 @@ begin
     // Сюда можно добавить код обновления UI. Например:
     // lbAIInfo.Caption := Format('Лимит: %d токенов, Temp: %0.1f',
     //   [SelectedAI.Params.MaxOutputTokens, SelectedAI.Params.Temperature]);
+end;
+
+procedure TAddEditSnippetForm.cbLanguageChange(Sender: TObject);
+var
+    Langs: TArray<string>;
+begin
+    if cbLanguage.ItemIndex < 0 then
+        Exit;
+
+    Langs := TSynHighlighterFactory.SupportedLanguages;
+    FCurrentLanguage := NormalizeSnippetLanguage(Langs[cbLanguage.ItemIndex]);
+    SetSyntax;
+end;
+
+procedure TAddEditSnippetForm.ApplySnippetLanguage(const ALanguage: string);
+begin
+    FCurrentLanguage := NormalizeSnippetLanguage(ALanguage);
+    SyncLanguageCombo;
+    SetSyntax;
+end;
+
+procedure TAddEditSnippetForm.SyncLanguageCombo;
+var
+    I: Integer;
+    Langs: TArray<string>;
+begin
+    if cbLanguage.Items.Count = 0 then
+    begin
+        Langs := TSynHighlighterFactory.SupportedLanguages;
+        for I := 0 to High(Langs) do
+            cbLanguage.Items.AddObject(TSynHighlighterFactory.DisplayName(Langs[I]), TObject(IntPtr(I)));
+    end;
+
+    cbLanguage.ItemIndex := -1;
+    for I := 0 to High(SNIPPET_LANGUAGE_IDS) do
+        if SNIPPET_LANGUAGE_IDS[I] = FCurrentLanguage then
+        begin
+            cbLanguage.ItemIndex := I;
+            Break;
+        end;
 end;
 
 procedure TAddEditSnippetForm.cbIgnoreSecurityChecksClick(Sender: TObject);
@@ -1599,6 +1659,12 @@ begin
             mContent.Text := FSnippet.Content;
             mComment.Text := FSnippet.Comment;
 
+            // Язык: сохранённый; для bash (значение по умолчанию) пробуем автодетект
+            if NormalizeSnippetLanguage(FSnippet.Language) = SNIPPET_LANG_BASH then
+                ApplySnippetLanguage(DetectSnippetLanguage(FSnippet.Content))
+            else
+                ApplySnippetLanguage(FSnippet.Language);
+
             if Assigned(AppContext.TagService) then
             begin
                 SnippetTags := AppContext.TagService.GetSnippetTags(FSnippet.ID);
@@ -1640,19 +1706,44 @@ begin
 end;
 
 procedure TAddEditSnippetForm.SetSyntax;
+var
+    NewBase: TSynCustomHighlighter;
+    NewMulti: TSynMultiSyn;
+    Scheme: TScheme;
 begin
-    if Assigned(FCurrentHighlighter) then
-        FreeAndNil(FCurrentHighlighter);
+    NewBase := TSynHighlighterFactory.CreateHighlighter(FCurrentLanguage);
 
-    FCurrentHighlighter := TCustomBashSyn.Create(nil);
+    if NewBase is TCustomBashSyn then
+    begin
+        if Assigned(FBasicCommands) then
+            TCustomBashSyn(NewBase).ExtraKeywords.AddStrings(FBasicCommands);
 
-    if Assigned(FBasicCommands) then
-        TCustomBashSyn(FCurrentHighlighter).ExtraKeywords.AddStrings(FBasicCommands);
+        if Assigned(FCompletionEngine) then
+            FCompletionEngine.ExportKeywords(TCustomBashSyn(NewBase).ExtraKeywords);
+    end;
 
-    if Assigned(FCompletionEngine) then
-        FCompletionEngine.ExportKeywords(FCurrentHighlighter.ExtraKeywords);
+    // Обертка TSynMultiSyn: подсветка макросов {INPUT...} поверх любого языка.
+    // '{' не считается макросом после '$' (bash ${VAR}) и '@' (PS-хэштаблицы).
+    NewMulti := TSynMultiSyn.Create(nil);
+    NewMulti.DefaultHighlighter := NewBase;
 
-    mContent.Highlighter := FCurrentHighlighter;
+    Scheme := NewMulti.Schemes.Add as TScheme;
+    Scheme.CaseSensitive := True;
+    Scheme.StartExpr := '(?<![@$])\{(?=[A-Z])';
+    Scheme.EndExpr := '\}';
+    Scheme.Highlighter := FMacroBodySyn;
+    Scheme.MarkerAttri.Background := clNone;
+    Scheme.MarkerAttri.Style := [];
+
+    mContent.Highlighter := NewMulti;
+    TSynThemeAdapter.ApplyTheme(mContent);
+
+    // Старую пару освобождаем только после подключения новой к редактору
+    FreeAndNil(FCurrentMulti);
+    FreeAndNil(FCurrentHighlighter);
+
+    FCurrentMulti := NewMulti;
+    FCurrentHighlighter := NewBase;
 end;
 
 procedure TAddEditSnippetForm.ShowAIOverlay;
