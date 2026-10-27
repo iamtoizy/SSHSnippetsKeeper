@@ -1328,6 +1328,12 @@
       "GlobalRepeatLast": "Repeat Last Snippet",
       "FavoriteSlot": "Favorite Slot"
     },
+    "CmdLine": {
+      "HelpTitle": "Command Line Parameters",
+      "HelpText": "SSHSnippetsKeeper.exe [-db=<file>] [-user=<name>] [-nosync] [-minimized] [-help]\n\n  -db=<path>    Open the specified SQLite database on startup.\n  -user=<name>  Select a workspace by name (use after -db).\n  -nosync       Disable automatic sync with the Markdown vault.\n  -minimized    Start minimized.\n  -help         Show this help.",
+      "DbFileNotFound": "Database file not found: %s",
+      "UserNotFound": "Workspace \"%s\" not found."
+    },
     "Common": {
       "GeneralError": "Error: %s",
       "CopyTooltip": "Click to copy",

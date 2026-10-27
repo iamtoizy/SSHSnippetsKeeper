@@ -1,6 +1,6 @@
 ﻿program SSHSnippetsKeeper;
 
-{$R 'Resources\000_schema_init.res' 'Database\Schema\000_schema_init.rc'}
+{$R '000_schema_init.res' 'Database\Schema\000_schema_init.rc'}
 {$R *.dres}
 
 {$IFDEF RELEASE}
@@ -48,17 +48,16 @@ uses
   System.SysUtils,
   MainFormUI in 'UI\Forms\MainFormUI.pas' {MainForm},
   JSONSerializer in 'ThirdParty\JSONSerializer.pas',
-   Common.Settings in 'Common\Common.Settings.pas',
-   Data.Database in 'Data\Data.Database.pas' {AppDatabase: TDataModule},
-   Core.Entities.Snippet in 'Core\Entities\Core.Entities.Snippet.pas',
+  Data.Database in 'Data\Data.Database.pas' {AppDatabase: TDataModule},
+  Core.Entities.Snippet in 'Core\Entities\Core.Entities.Snippet.pas',
   SnippetRepository in 'Data\Repositories\SnippetRepository.pas',
   SnippetHistoryRepository in 'Data\Repositories\SnippetHistoryRepository.pas',
-   Core.Entities.Tag in 'Core\Entities\Core.Entities.Tag.pas',
-   Core.Entities.Category in 'Core\Entities\Core.Entities.Category.pas',
-   Core.Entities.Chain in 'Core\Entities\Core.Entities.Chain.pas',
+  Core.Entities.Tag in 'Core\Entities\Core.Entities.Tag.pas',
+  Core.Entities.Category in 'Core\Entities\Core.Entities.Category.pas',
+  Core.Entities.Chain in 'Core\Entities\Core.Entities.Chain.pas',
   CategoryRepository in 'Data\Repositories\CategoryRepository.pas',
   UserRepository in 'Data\Repositories\UserRepository.pas',
-   Core.Entities.User in 'Core\Entities\Core.Entities.User.pas',
+  Core.Entities.User in 'Core\Entities\Core.Entities.User.pas',
   TagRepository in 'Data\Repositories\TagRepository.pas',
   ChainRepository in 'Data\Repositories\ChainRepository.pas',
   RepositoryBase in 'Data\RepositoryBase.pas',
@@ -73,8 +72,8 @@ uses
   UI.BusyIndicator in 'UI\Helpers\UI.BusyIndicator.pas',
   UI.Helpers in 'UI\Helpers\UI.Helpers.pas',
   UI.TreeViewSearchHelper in 'UI\Helpers\UI.TreeViewSearchHelper.pas',
-   SnippetViewData in 'UI\ViewModels\SnippetViewData.pas',
-   PresetData in 'UI\ViewModels\PresetData.pas',
+  SnippetViewData in 'UI\ViewModels\SnippetViewData.pas',
+  PresetData in 'UI\ViewModels\PresetData.pas',
   MacroActions in 'MacroEngine\MacroActions.pas',
   MacroThread in 'MacroEngine\MacroThread.pas',
   MacroEngine in 'MacroEngine\MacroEngine.pas',
@@ -98,11 +97,6 @@ uses
   CustomBashSyn in 'UI\Controls\CustomBashSyn.pas',
   MacroSyn in 'UI\Controls\MacroSyn.pas',
   Core.BashCompletionEngine in 'Core\Core.BashCompletionEngine.pas',
-  Common.AppState in 'Common\Common.AppState.pas',
-  Common.Consts in 'Common\Common.Consts.pas',
-  Common.Helpers in 'Common\Common.Helpers.pas',
-  Common.QueryLanguage in 'Common\Common.QueryLanguage.pas',
-  Common.VCLStyleService in 'Common\Common.VCLStyleService.pas',
   SnippetService in 'Core\Services\SnippetService.pas',
   SnippetHistoryService in 'Core\Services\SnippetHistoryService.pas',
   TagService in 'Core\Services\TagService.pas',
@@ -141,7 +135,6 @@ uses
   PasswordService in 'Core\Services\PasswordService.pas',
   PasswordGenFormUI in 'UI\Forms\PasswordGenFormUI.pas' {PasswordGenForm},
   Core.AppContext in 'Core\Core.AppContext.pas',
-  Common.Localization in 'Common\Common.Localization.pas',
   UI.HoverHelpManager in 'UI\Helpers\UI.HoverHelpManager.pas',
   CustomHelpFormUI in 'UI\Forms\CustomHelpFormUI.pas' {CustomHelpForm},
   UI.Services.MessagesHandler in 'UI\Services\UI.Services.MessagesHandler.pas',
@@ -161,7 +154,18 @@ uses
   Core.MarkdownImporter in 'Core\Core.MarkdownImporter.pas',
   Core.TextDiff in 'Core\Core.TextDiff.pas',
   HistoryFormUI in 'UI\Forms\HistoryFormUI.pas' {HistoryForm},
-  Core.LocalAIService in 'Core\Core.LocalAIService.pas';
+  Core.LocalAIService in 'Core\Core.LocalAIService.pas',
+  Common.AppState in 'Common\Common.AppState.pas',
+  Common.CmdLine in 'Common\Common.CmdLine.pas',
+  Common.Consts in 'Common\Common.Consts.pas',
+  Common.Helpers in 'Common\Common.Helpers.pas',
+  Common.Localization in 'Common\Common.Localization.pas',
+  Common.QueryLanguage in 'Common\Common.QueryLanguage.pas',
+  Common.Settings in 'Common\Common.Settings.pas',
+  Common.SnippetLanguageDetect in 'Common\Common.SnippetLanguageDetect.pas',
+  Common.SnippetLanguages in 'Common\Common.SnippetLanguages.pas',
+  Common.VCLStyleService in 'Common\Common.VCLStyleService.pas',
+  SynHighlighterFactory in 'UI\Controls\SynHighlighterFactory.pas';
 
 {$R *.res}
 

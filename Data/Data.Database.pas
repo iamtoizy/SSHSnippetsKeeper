@@ -160,6 +160,14 @@ begin
                 TUIStateLoader.GetMessage('DB.SQLExecutionError', [E.Message])
             );
     end;
+
+    // v11: язык сниппета. ALTER TABLE ADD COLUMN не поддерживает IF NOT EXISTS,
+    // а миграции выполняются при каждом открытии БД, поэтому колонку добавляем по условию.
+    // На новой БД таблицы snippets ещё нет (InitializeDatabase накатывает базовую схему
+    // после миграций) — там колонку задаёт 000_schema_init.sql.
+    if FDConnection.ExecSQLScalar('SELECT COUNT(*) FROM sqlite_master WHERE type = ''table'' AND name = ''snippets''') > 0 then
+        if FDConnection.ExecSQLScalar('SELECT COUNT(*) FROM pragma_table_info(''snippets'') WHERE name = ''language''') = 0 then
+            FDConnection.ExecSQL('ALTER TABLE snippets ADD COLUMN language TEXT NOT NULL DEFAULT ''bash''');
 end;
 
 procedure TAppDatabase.CloseDatabase;

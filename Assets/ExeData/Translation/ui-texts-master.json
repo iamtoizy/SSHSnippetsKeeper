@@ -1328,6 +1328,12 @@
       "GlobalRepeatLast": "Повтор последнего сниппета",
       "FavoriteSlot": "Слот избранного"
     },
+    "CmdLine": {
+      "HelpTitle": "Параметры запуска",
+      "HelpText": "SSHSnippetsKeeper.exe [-db=<файл>] [-user=<имя>] [-nosync] [-minimized] [-help]\n\n  -db=<путь>    Открыть указанную базу данных SQLite при запуске.\n  -user=<имя>   Выбрать пространство по имени (используется после -db).\n  -nosync       Отключить автоматическую синхронизацию с Markdown-хранилищем.\n  -minimized    Запустить приложение свёрнутым.\n  -help         Показать эту справку.",
+      "DbFileNotFound": "Файл базы данных не найден: %s",
+      "UserNotFound": "Пространство «%s» не найдено."
+    },
     "Common": {
       "GeneralError": "Ошибка: %s",
       "CopyTooltip": "Кликните, чтобы скопировать",

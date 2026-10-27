@@ -100,6 +100,7 @@ implementation
 
 uses
     Common.Localization,
+    SynEdit,
     SynThemeAdapter,
     UI.BusyIndicator,
     Vcl.Dialogs,
@@ -349,7 +350,8 @@ procedure TBaseForm.WarmUpPaint;
         if Control <> Self then
         begin
             Control.HandleNeeded;
-            Control.Perform(WM_PAINT, DC, 0);
+            if not (Control is TSynEdit) then
+                Control.Perform(WM_PAINT, DC, 0);
         end;
 
         for I := 0 to Control.ControlCount - 1 do

@@ -7,6 +7,7 @@ uses
     DUnitX.TestFramework,
     DUnitX.Loggers.Console,
     Tests.EpochService in 'Tests.EpochService.pas',
+    Tests.CmdLine in 'Tests.CmdLine.pas',
     Tests.PasswordService in 'Tests.PasswordService.pas',
     Tests.MacroEngine in 'Tests.MacroEngine.pas',
     Tests.MacroCounters in 'Tests.MacroCounters.pas',
@@ -20,7 +21,10 @@ uses
     Tests.Chains in 'Tests.Chains.pas',
     Tests.MultiSelect in 'Tests.MultiSelect.pas',
     Tests.CustomBashSyn in 'Tests.CustomBashSyn.pas',
-    Tests.MacroInputTypes in 'Tests.MacroInputTypes.pas'
+    Tests.MacroInputTypes in 'Tests.MacroInputTypes.pas',
+    Tests.SnippetLanguages in 'Tests.SnippetLanguages.pas',
+    Tests.SnippetLanguageDetect in 'Tests.SnippetLanguageDetect.pas',
+    Tests.SynHighlighterFactory in 'Tests.SynHighlighterFactory.pas'
     ;
 
 var
@@ -30,6 +34,7 @@ var
 begin
     try
         TDUnitX.RegisterTestFixture(TEpochServiceTests);
+        TDUnitX.RegisterTestFixture(TCmdLineTests);
         TDUnitX.RegisterTestFixture(TPasswordServiceTests);
         TDUnitX.RegisterTestFixture(TMacroEngineTests);
         TDUnitX.RegisterTestFixture(TMacroCountersTests);
@@ -44,6 +49,10 @@ begin
         TDUnitX.RegisterTestFixture(TMultiSelectTests);
         TDUnitX.RegisterTestFixture(TCustomBashSynTests);
         TDUnitX.RegisterTestFixture(TMacroInputTypesTests);
+        TDUnitX.RegisterTestFixture(TSnippetLanguagesTests);
+        TDUnitX.RegisterTestFixture(TSnippetLanguageDetectTests);
+        TDUnitX.RegisterTestFixture(TSynHighlighterFactoryTests);
+        TDUnitX.RegisterTestFixture(TMacroBodySynTests);
         Runner := TDUnitX.CreateRunner([TDUnitXConsoleLogger.Create(False)]);
         Runner.UseRTTI := True;
         Results := Runner.Execute;

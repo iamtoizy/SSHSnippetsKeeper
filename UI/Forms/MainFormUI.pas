@@ -5,6 +5,7 @@ interface
 uses
     BaseFormUI,
     CategoryTreeController,
+    Common.CmdLine,
     Core.Entities.Chain,
     Core.Entities.Snippet,
     Core.Entities.Tag,
@@ -27,7 +28,6 @@ uses
     System.DateUtils,
     System.Generics.Collections,
     System.ImageList,
-    System.IOUtils,
     System.SysUtils,
     System.Threading,
     System.Types,
@@ -259,6 +259,9 @@ type
         FFilterUserID: Integer;
         FIgnoreCategoryChange: Boolean;
         FCloseAfterChainStop: Boolean;
+        FNoSyncMode: Boolean;
+        FCmdProcessed: Boolean;
+        FCmdParams: TCmdLineParams;
         FHotkeyMgr: TGlobalHotkeyManager;
         FSync: TSyncController;
         FStatus: TAppStatusBar;
@@ -295,6 +298,9 @@ type
         // UI Helpers
         procedure SetUserFilter(UserID: Integer);
         procedure LoadUsersToComboBox;
+        procedure ProcessCommandLineParams;
+        function OpenDatabaseFile(const AFileName: string): Boolean;
+        procedure SelectWorkspaceByName(const AName: string);
         procedure UpdateMenuState;
         procedure UpdateFavoriteMenuState;
         procedure UpdateChainMenuState;
@@ -317,6 +323,7 @@ type
     protected
         procedure WMActivate(var Msg: TWMActivate); message WM_ACTIVATE;
         procedure DoInitialize; override;
+        procedure DoShownOnScreen; override;
     public
         procedure UpdateUI(const State: TBaseFormState); override;
         procedure ApplyLanguage; override;
@@ -475,31 +482,86 @@ begin
     OpenDialog.InitialDir := GetDefaultDataDir;
     OpenDialog.FileName := 'snippets.sqlite';
     if OpenDialog.Execute(Handle) then
-    begin
-        try
-            AppContext.DatabaseManager.OpenDatabase(OpenDialog.FileName);
-            TStateMgr.Instance.OpenDatabase;
+        OpenDatabaseFile(OpenDialog.FileName);
+end;
 
-            LoadUsersToComboBox;  // Сначала загружаем выпадающий список
-            cbUserChange(cbUser); // Вызываем OnChange, что инициирует ReloadUI с правильным ID
+function TMainForm.OpenDatabaseFile(const AFileName: string): Boolean;
+begin
+    Result := False;
+    try
+        AppContext.DatabaseManager.OpenDatabase(AFileName);
+        TStateMgr.Instance.OpenDatabase;
 
-            // Возвращаем фокус дереву, чтобы на восстановленном выделении
-            // был виден пунктирный прямоугольник
-            if tvCategories.CanFocus then
-                tvCategories.SetFocus;
+        LoadUsersToComboBox;  // Сначала загружаем выпадающий список
+        cbUserChange(cbUser); // Вызываем OnChange, что инициирует ReloadUI с правильным ID
 
-            ShowSimpleToast(TUIStateLoader.GetMessage('DB.OpenedSuccess'));
+        // Возвращаем фокус дереву, чтобы на восстановленном выделении
+        // был виден пунктирный прямоугольник
+        if tvCategories.CanFocus then
+            tvCategories.SetFocus;
 
-            // Авто-синхронизация при старте
-            if AppContext.SettingsManager.Data.SyncOnStart then
-            begin
-                PerformSync(True, True); // Асинхронно, чтобы не тормозить показ формы
-            end;
-        except
-            on E: Exception do
-                MessagesHandler.ShowError(TUIStateLoader.GetMessage('DB.OpenError', [E.Message]));
+        ShowSimpleToast(TUIStateLoader.GetMessage('DB.OpenedSuccess'));
+
+        // Авто-синхронизация при старте
+        if AppContext.SettingsManager.Data.SyncOnStart and (not FNoSyncMode) then
+        begin
+            PerformSync(True, True); // Асинхронно, чтобы не тормозить показ формы
         end;
+
+        Result := True;
+    except
+        on E: Exception do
+            MessagesHandler.ShowError(TUIStateLoader.GetMessage('DB.OpenError', [E.Message]));
     end;
+end;
+
+procedure TMainForm.ProcessCommandLineParams;
+var
+    DbFile: string;
+begin
+    if FCmdProcessed then
+        Exit;
+    FCmdProcessed := True;
+
+    if FCmdParams.DbPath <> '' then
+    begin
+        DbFile := ExpandFileName(FCmdParams.DbPath);
+
+        // FireDAC при Connected := True молча СОЗДАЁТ несуществующий SQLite-файл,
+        // поэтому путь из параметра проверяем явно
+        if not FileExists(DbFile) then
+        begin
+            MessagesHandler.ShowError(TUIStateLoader.GetMessage('CmdLine.DbFileNotFound', [DbFile]));
+            Exit;
+        end;
+
+        if not OpenDatabaseFile(DbFile) then
+            Exit;
+    end;
+
+    if FCmdParams.UserName <> '' then
+        SelectWorkspaceByName(FCmdParams.UserName);
+end;
+
+procedure TMainForm.SelectWorkspaceByName(const AName: string);
+var
+    I, Idx: Integer;
+begin
+    Idx := -1;
+    for I := 0 to cbUser.Items.Count - 1 do
+        if SameText(cbUser.Items[I], AName) then
+        begin
+            Idx := I;
+            Break;
+        end;
+
+    if Idx >= 0 then
+    begin
+        cbUser.ItemIndex := Idx;
+        cbUserChange(cbUser);
+    end
+    else
+        MessagesHandler.ShowInfo(TUIStateLoader.GetMessage('CmdLine.UserNotFound', [AName]));
 end;
 
 procedure TMainForm.actPasswordGeneratorExecute(Sender: TObject);
@@ -1158,6 +1220,12 @@ end;
 
 procedure TMainForm.DoInitialize;
 begin
+    FCmdParams := TCmdLineParams.Parse;
+    FNoSyncMode := FCmdParams.NoSync;
+
+    if FCmdParams.Minimized then
+        WindowState := wsMinimized;
+
     KeyPreview := True;
     OnKeyDown := FormKeyDown;
 
@@ -1227,6 +1295,13 @@ begin
     TStateMgr.Instance.FirstRun;
 
     GWinMonitor.StartMonitoring;
+end;
+
+procedure TMainForm.DoShownOnScreen;
+begin
+    inherited;
+
+    ProcessCommandLineParams;
 end;
 
 procedure TMainForm.ApplyLanguage;
@@ -2038,6 +2113,9 @@ end;
 
 procedure TMainForm.MarkDataChanged;
 begin
+    if FNoSyncMode then
+        Exit;
+
     GetSyncEngine.MarkDataChanged;
     FStatus.SetDirty(True);
 end;

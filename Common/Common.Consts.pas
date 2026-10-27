@@ -9,6 +9,9 @@ const
     MAX_TAG_NAME_LENGTH = 64;
     MAX_SNIPPET_TAGS = 32;
 
+    // Язык подсветки по умолчанию (v11, snippets.language)
+    DEFAULT_SNIPPET_LANGUAGE = 'bash';
+
 implementation
 
 end.
