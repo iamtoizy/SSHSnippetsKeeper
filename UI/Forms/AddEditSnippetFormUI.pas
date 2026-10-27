@@ -215,6 +215,7 @@ uses
     System.DateUtils,
     System.Generics.Collections,
     System.SysUtils,
+    UI.BusyIndicator,
     UI.Helpers,
     UI.HoverHelpManager,
     Winapi.ActiveX,
@@ -533,28 +534,29 @@ var
     Frm: TAddEditSnippetForm;
     NewSnippet: TSnippetDTO;
 begin
-    // Используем локальную переменную Frm, а не глобальную форму!
-    Frm := TAddEditSnippetForm.Create(Owner);
+    // Индикатор с момента клика и до фактического показа формы
+    // (скрывается в TBaseForm.DoShownOnScreen при первом показе)
+    TUIBusyIndicator.Show(Owner as TCustomForm, TUIStateLoader.GetMessage('Common.PreparingForm'));
     try
-        // Тяжёлая подготовка (Initialize + Prepare) под индикатором занятости
-        (Owner as TBaseForm).ShowBusyWhile(
-            TUIStateLoader.GetMessage('Common.PreparingForm'),
-            procedure
-            begin
-                Frm.Initialize(AppContext);
-                Frm.CategoryID := CategoryID;
-                Frm.UserID := UserID;
+        // Используем локальную переменную Frm, а не глобальную форму!
+        Frm := TAddEditSnippetForm.Create(Owner);
+        try
+            Frm.Initialize(AppContext);
+            Frm.CategoryID := CategoryID;
+            Frm.UserID := UserID;
 
-                NewSnippet := Default(TSnippetDTO);
-                Frm.Prepare(False, NewSnippet, CategoryID, UserID);
-            end);
+            NewSnippet := Default(TSnippetDTO);
+            Frm.Prepare(False, NewSnippet, CategoryID, UserID);
 
-        Frm.WarmUpPaint;
-        Frm.PrepareGuardedShow;
+            Frm.WarmUpPaint;
+            Frm.PrepareGuardedShow;
 
-        Result := (Frm.ShowModal = mrOk);
+            Result := (Frm.ShowModal = mrOk);
+        finally
+            Frm.Free;
+        end;
     finally
-        Frm.Free;
+        TUIBusyIndicator.Hide;
     end;
 end;
 
@@ -677,32 +679,29 @@ end;
 class function TAddEditSnippetForm.ExecuteEdit(Owner: TComponent; AppContext: IAppContext; var SnippetToEdit: TSnippetDTO): Boolean;
 var
     Frm: TAddEditSnippetForm;
-    Snippet: TSnippetDTO;
 begin
-    Frm := TAddEditSnippetForm.Create(Owner);
+    // Индикатор с момента клика и до фактического показа формы
+    // (скрывается в TBaseForm.DoShownOnScreen при первом показе)
+    TUIBusyIndicator.Show(Owner as TCustomForm, TUIStateLoader.GetMessage('Common.PreparingForm'));
     try
-        // var-параметр нельзя захватить в анонимном методе - используем копию
-        Snippet := SnippetToEdit;
-        // Тяжёлая подготовка (Initialize + Prepare) под индикатором занятости
-        (Owner as TBaseForm).ShowBusyWhile(
-            TUIStateLoader.GetMessage('Common.PreparingForm'),
-            procedure
-            begin
-                Frm.LockDrawing;  // Попытка уменьшить мерцание формы со стилями VCL
-                try
-                    Frm.Initialize(AppContext);
-                    Frm.Prepare(True, Snippet, Snippet.CategoryID, Snippet.UserID);
-                finally
-                    Frm.UnlockDrawing;  // Попытка уменьшить мерцание формы со стилями VCL
-                end;
-            end);
+        Frm := TAddEditSnippetForm.Create(Owner);
+        try
+            Frm.LockDrawing;  // Попытка уменьшить мерцание формы со стилями VCL
+            try
+                Frm.Initialize(AppContext);
+                Frm.Prepare(True, SnippetToEdit, SnippetToEdit.CategoryID, SnippetToEdit.UserID);
+            finally
+                Frm.UnlockDrawing;  // Попытка уменьшить мерцание формы со стилями VCL
+            end;
+            Frm.WarmUpPaint;
+            Frm.PrepareGuardedShow;
 
-        Frm.WarmUpPaint;
-        Frm.PrepareGuardedShow;
-
-        Result := (Frm.ShowModal = mrOk) or Frm.Restored;
+            Result := (Frm.ShowModal = mrOk) or Frm.Restored;
+        finally
+            Frm.Free;
+        end;
     finally
-        Frm.Free;
+        TUIBusyIndicator.Hide;
     end;
 end;
 

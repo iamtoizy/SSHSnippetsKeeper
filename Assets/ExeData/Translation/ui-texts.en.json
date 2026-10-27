@@ -1343,7 +1343,7 @@
       "Paste": "Paste",
       "Help": "Help",
       "MoreInfo": "More Info",
-      "PreparingForm": "Preparing the form...",
+      "PreparingForm": "Preparing...",
       "WinEventHookError": "Failed to set up WinEventHook. Error: %s",
       "CopiedToClipboard": "Copied to clipboard.",
       "NoDataToCopy": "❌ No data to copy to the clipboard.",

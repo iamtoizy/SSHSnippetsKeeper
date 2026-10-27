@@ -74,6 +74,12 @@ type
         FFadeStartTick: Int64;
         FOldWndProc: TWndMethod;
 
+        class var
+            // Пока активен индикатор занятости, плавающие кнопки помощи не показываются
+            FBusySuppressed: Boolean;
+            // Живые экземпляры менеджеров (по одному на форму) для глобального подавления
+            FInstances: TList;
+
         procedure HookTarget(Target: TControl);
         procedure UnhookTarget;
         procedure TargetWndProc(var Message: TMessage);
@@ -98,6 +104,12 @@ type
         procedure UnregisterControl(Control: TControl);
         procedure UnregisterAllForOwner(AOwner: TComponent);
         procedure Configure(Settings: TUISettings);
+
+        // Прячет все плавающие кнопки помощи и запрещает их показ до ResumeAfterBusy.
+        // Поверх индикатора занятости кнопка замирала непокрашенным белым квадратом:
+        // сообщения не прокачиваются, и она не может ни перерисоваться, ни скрыться.
+        class procedure SuppressForBusy;
+        class procedure ResumeAfterBusy;
 
         property OnShowHelp: TOnShowHelpEvent read FOnShowHelp write FOnShowHelp;
     end;
@@ -170,9 +182,30 @@ begin
     FSettings := Settings;
 end;
 
+class procedure TUIHoverHelpManager.SuppressForBusy;
+var
+    I: Integer;
+begin
+    FBusySuppressed := True;
+    if FInstances = nil then
+        Exit;
+    for I := 0 to FInstances.Count - 1 do
+        TUIHoverHelpManager(FInstances[I]).HideButton;
+end;
+
+class procedure TUIHoverHelpManager.ResumeAfterBusy;
+begin
+    FBusySuppressed := False;
+end;
+
 constructor TUIHoverHelpManager.Create(Owner: TComponent);
 begin
     inherited Create(Owner);
+
+    if FInstances = nil then
+        FInstances := TList.Create;
+    FInstances.Add(Self);
+
     FRegistered := TDictionary<TControl, THelpSetup>.Create;
     FHelpState := hsHidden;
 
@@ -189,6 +222,16 @@ end;
 
 destructor TUIHoverHelpManager.Destroy;
 begin
+    if FInstances <> nil then
+    begin
+        FInstances.Remove(Self);
+        if FInstances.Count = 0 then
+        begin
+            FInstances.Free;
+            FInstances := nil;
+        end;
+    end;
+
     UnhookTarget;
     FTimer.Free;
     FSharedButton.Free;
@@ -361,6 +404,9 @@ var
     CurrentTime: Int64;
     Elapsed: Int64;
 begin
+    if FBusySuppressed then
+        Exit;
+
     if (not Assigned(Owner)) or (csDestroying in Owner.ComponentState) then Exit;
 
     Pt := Mouse.CursorPos;

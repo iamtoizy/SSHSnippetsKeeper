@@ -428,6 +428,9 @@ begin
 
     if FShowGuardPending then
         FinishGuardedShow;
+
+    // Индикатор занятости живёт до фактического показа подготовленной формы
+    TUIBusyIndicator.Hide;
 end;
 
 procedure TBaseForm.ForceForeground;
