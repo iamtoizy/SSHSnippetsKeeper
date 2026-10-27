@@ -27,7 +27,6 @@ uses
     System.DateUtils,
     System.Generics.Collections,
     System.ImageList,
-    System.IOUtils,
     System.SysUtils,
     System.Threading,
     System.Types,
