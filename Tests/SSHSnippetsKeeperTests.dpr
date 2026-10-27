@@ -7,6 +7,7 @@ uses
     DUnitX.TestFramework,
     DUnitX.Loggers.Console,
     Tests.EpochService in 'Tests.EpochService.pas',
+    Tests.CmdLine in 'Tests.CmdLine.pas',
     Tests.PasswordService in 'Tests.PasswordService.pas',
     Tests.MacroEngine in 'Tests.MacroEngine.pas',
     Tests.MacroCounters in 'Tests.MacroCounters.pas',
@@ -30,6 +31,7 @@ var
 begin
     try
         TDUnitX.RegisterTestFixture(TEpochServiceTests);
+        TDUnitX.RegisterTestFixture(TCmdLineTests);
         TDUnitX.RegisterTestFixture(TPasswordServiceTests);
         TDUnitX.RegisterTestFixture(TMacroEngineTests);
         TDUnitX.RegisterTestFixture(TMacroCountersTests);

@@ -141,6 +141,7 @@ uses
   PasswordService in 'Core\Services\PasswordService.pas',
   PasswordGenFormUI in 'UI\Forms\PasswordGenFormUI.pas' {PasswordGenForm},
   Core.AppContext in 'Core\Core.AppContext.pas',
+  Common.CmdLine in 'Common\Common.CmdLine.pas',
   Common.Localization in 'Common\Common.Localization.pas',
   UI.HoverHelpManager in 'UI\Helpers\UI.HoverHelpManager.pas',
   CustomHelpFormUI in 'UI\Forms\CustomHelpFormUI.pas' {CustomHelpForm},
@@ -250,14 +251,25 @@ ReportMemoryLeaksOnShutdown := True;
         ErrorHandler               //
     );
     //-----------------------------------
-    QuickSearchForm.Initialize(AppContext);
-    MainForm.LockDrawing;
-    try
-        MainForm.Initialize(AppContext);
-    finally
-        MainForm.UnlockDrawing;
+    if TCmdLineParams.Parse.Help then
+    begin
+        MessageBox(0,
+            PChar(TUIStateLoader.GetMessage('CmdLine.HelpText')),
+            PChar(TUIStateLoader.GetMessage('CmdLine.HelpTitle')),
+            MB_OK or MB_ICONINFORMATION);
+        Application.Terminate;
+    end
+    else
+    begin
+        QuickSearchForm.Initialize(AppContext);
+        MainForm.LockDrawing;
+        try
+            MainForm.Initialize(AppContext);
+        finally
+            MainForm.UnlockDrawing;
+        end;
+        MainForm.Show;
     end;
-    MainForm.Show;
 
     Application.Run;
 
