@@ -41,6 +41,8 @@ type
         procedure AdvancedText_TagFilter_Unchanged;
         [Test]
         procedure AdvancedFTS_BareWord_FindsByTag;
+        [Test]
+        procedure LanguageLocked_RoundTrip;
     end;
 
 implementation
@@ -232,6 +234,40 @@ begin
     Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('deploy'), True, 1);
     Assert.AreEqual(1, Integer(Length(Found)));
     Assert.AreEqual('run script', Found[0].Title);
+end;
+
+procedure TSearchTagsTests.LanguageLocked_RoundTrip;
+var
+    Snippet, Loaded: TSnippetDTO;
+    ID: Integer;
+begin
+    FConn.ExecSQL('INSERT OR IGNORE INTO snippet_categories (id, user_id, name) VALUES (1, 1, ''General'')');
+
+    Snippet := Default(TSnippetDTO);
+    Snippet.UserID := 1;
+    Snippet.CategoryID := 1;
+    Snippet.Title := 'locked language';
+    Snippet.Content := 'Get-Service | Where-Object { $_.Status -eq ''Running'' }';
+    Snippet.Language := 'powershell';
+    Snippet.LanguageLocked := True;
+    Snippet.CreatedAt := 1700000000;
+
+    ID := FRepo.Add(Snippet);
+    try
+        Loaded := FRepo.GetById(ID);
+        Assert.AreEqual('powershell', Loaded.Language);
+        Assert.IsTrue(Loaded.LanguageLocked);
+
+        Loaded.Language := 'bat';
+        Loaded.LanguageLocked := False;
+        FRepo.Update(Loaded);
+
+        Loaded := FRepo.GetById(ID);
+        Assert.AreEqual('bat', Loaded.Language);
+        Assert.IsFalse(Loaded.LanguageLocked);
+    finally
+        FConn.ExecSQL('DELETE FROM snippets WHERE id = ?', [ID]);
+    end;
 end;
 
 initialization

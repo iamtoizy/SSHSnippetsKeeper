@@ -77,4 +77,7 @@ CREATE INDEX IF NOT EXISTS ix_chain_steps_snippet ON snippet_chain_steps(snippet
 -- выполняется при каждом открытии БД, поэтому колонка добавляется кодом в
 -- TAppDatabase.ApplySchemaMigrations по проверке pragma_table_info.
 -- Для новых БД колонку сразу задаёт 000_schema_init.sql.
-PRAGMA user_version = 11;
+
+-- v12: Признак ручного выбора языка (snippets.language_locked INTEGER NOT NULL DEFAULT 0).
+-- Добавляется тем же способом, что и v11: через TAppDatabase.ApplySchemaMigrations.
+PRAGMA user_version = 12;

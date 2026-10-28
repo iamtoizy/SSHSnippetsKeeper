@@ -7,6 +7,12 @@ unit Common.SnippetLanguages;
 interface
 
 const
+    // Автодетект языка запускается только при накопленном существенном изменении:
+    // короче порога текст слишком похож на префикс и классификатор шумит
+    SNIPPET_DETECT_MIN_TEXT_LENGTH = 40;
+    SNIPPET_DETECT_MIN_DELTA = 20;
+    SNIPPET_DETECT_DELTA_PERCENT = 10;
+
     SNIPPET_LANG_BASH = 'bash';
     SNIPPET_LANG_BAT = 'bat';
     SNIPPET_LANG_POWERSHELL = 'powershell';
@@ -32,6 +38,11 @@ var
 function NormalizeSnippetLanguage(const Value: string): string;
 
 function IsSupportedSnippetLanguage(const Value: string): Boolean;
+
+// Стоит ли пересчитывать язык после правки: True, если текст изменился не меньше
+// чем на SNIPPET_DETECT_MIN_DELTA символов или на 10% длины, и текста достаточно
+// для уверенного прогноза (SNIPPET_DETECT_MIN_TEXT_LENGTH).
+function ShouldRedetectSnippetLanguage(const APreviousText, ACurrentText: string): Boolean;
 
 // Тег ограждения кода для Markdown (```<tag>); совпадает с каноническим id
 function FenceTagForSnippetLanguage(const Value: string): string;
@@ -81,6 +92,26 @@ begin
         if L = Id then
             Exit(True);
     Result := False;
+end;
+
+function ShouldRedetectSnippetLanguage(const APreviousText, ACurrentText: string): Boolean;
+var
+    PrevLen, CurLen, Delta, Threshold: Integer;
+begin
+    if ACurrentText = APreviousText then
+        Exit(False);
+
+    CurLen := Length(Trim(ACurrentText));
+    if CurLen < SNIPPET_DETECT_MIN_TEXT_LENGTH then
+        Exit(False);
+
+    PrevLen := Length(Trim(APreviousText));
+    Threshold := (PrevLen * SNIPPET_DETECT_DELTA_PERCENT) div 100;
+    if Threshold < SNIPPET_DETECT_MIN_DELTA then
+        Threshold := SNIPPET_DETECT_MIN_DELTA;
+
+    Delta := Abs(CurLen - PrevLen);
+    Result := Delta >= Threshold;
 end;
 
 function FenceTagForSnippetLanguage(const Value: string): string;

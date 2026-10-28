@@ -24,6 +24,9 @@ object InputForm: TInputForm
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 0
+    DesignSize = (
+      347
+      103)
     object lbPrompt: TLabel
       Left = 8
       Top = 8
@@ -78,7 +81,6 @@ object InputForm: TInputForm
       Height = 21
       Style = csDropDownList
       Anchors = [akLeft, akTop, akRight]
-      ItemHeight = 13
       TabOrder = 4
       Visible = False
       OnKeyDown = cbSelectKeyDown

@@ -267,6 +267,17 @@ object AddEditSnippetForm: TAddEditSnippetForm
           DesignSize = (
             521
             26)
+          object chkAutoLanguage: TCheckBox
+            Left = 176
+            Top = 3
+            Width = 80
+            Height = 17
+            Anchors = [akTop, akRight]
+            Caption = 'Auto'
+            ShowHint = True
+            TabOrder = 3
+            OnClick = chkAutoLanguageClick
+          end
           object cbLanguage: TComboBox
             Left = 264
             Top = 1
