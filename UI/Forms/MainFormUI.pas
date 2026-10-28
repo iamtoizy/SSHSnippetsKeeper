@@ -39,10 +39,12 @@ uses
     Vcl.Dialogs,
     Vcl.ExtCtrls,
     Vcl.Forms,
+    Vcl.Graphics,
     Vcl.ImageCollection,
     Vcl.ImgList,
     Vcl.Menus,
     Vcl.StdCtrls,
+    Vcl.Themes,
     Vcl.VirtualImageList,
     Winapi.Messages,
     Winapi.Windows
@@ -235,6 +237,8 @@ type
         procedure tvCategoriesContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);
         procedure lvSnippetsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
         procedure lvTagsClick(Sender: TObject);
+        procedure lvTagsAdvancedCustomDrawItem(Sender: TCustomListView; Item: TListItem;
+            State: TCustomDrawState; Stage: TCustomDrawStage; var DefaultDraw: Boolean);
         procedure lvTagsContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);
         procedure lvTagsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
         procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -278,6 +282,8 @@ type
         function GetSyncEngine: TSyncController;
         function GetSearchEngine: TMainSearchController;
         procedure FillSnippetListView(const Snippets: TArray<TSnippetDTO>);
+        function GetSelectedSnippetID: Integer;
+        procedure SelectSnippetByID(SnippetID: Integer);
         function ExtractSnippetByListItem(Item: TListItem): TSnippetDTO;
         procedure FillUserInterfaceFromSnippet(const Snippet: TSnippetDTO);
         procedure UpdateSnippetLanguageInfo(const ALanguage: string; ALocked: Boolean);
@@ -1061,6 +1067,11 @@ begin
             FCategoryTree.AfterRebuild;
         end;
         RefreshCurrentSnippetList;
+
+        // После перезагрузки список тегов мог быть перерисован:
+        // восстанавливаем выделение, соответствующее активному фильтру
+        if Length(FTags.FilterTagIDs) > 0 then
+            FTags.SyncFilterSelection;
     finally
         FIgnoreCategoryChange := False;
     end;
@@ -1083,10 +1094,12 @@ end;
 procedure TMainForm.RefreshCurrentSnippetList;
 var
     Node: TTreeNode;
-    CatID, ChainID, I: Integer;
+    CatID, ChainID, I, ActiveSnippetID: Integer;
     Snippets: TArray<TSnippetDTO>;
     Steps: TArray<TChainStepDTO>;
 begin
+    ActiveSnippetID := GetSelectedSnippetID;
+
     Node := tvCategories.Selected;
     if Node = nil then
     begin
@@ -1096,6 +1109,16 @@ begin
 
     if AppContext.DatabaseManager.IsConnected = False then
         Exit;
+
+    // Активный фильтр по тегам имеет приоритет над выбранной категорией:
+    // список остаётся отфильтрованным до ручного сброса фильтра
+    if Length(FTags.FilterTagIDs) > 0 then
+    begin
+        FillSnippetListView(AppContext.SnippetService.GetSnippetsByTags(
+            FTags.FilterTagIDs, AppContext.SettingsManager.Data.TagsMatchAll));
+        SelectSnippetByID(ActiveSnippetID);
+        Exit;
+    end;
 
     if TChainRunner.TryGetChainID(Integer(IntPtr(Node.Data)), ChainID) then
     begin
@@ -1237,6 +1260,9 @@ begin
     OnKeyDown := FormKeyDown;
 
     lvTags.OnMouseDown := lvTagsMouseDown;
+    // Активный фильтр должен оставаться видимым, когда фокус уходит из списка тегов
+    lvTags.HideSelection := False;
+    lvTags.OnAdvancedCustomDrawItem := lvTagsAdvancedCustomDrawItem;
     TChainRunner.OnStarted := ChainStarted;
     TChainRunner.OnFinished := ChainFinished;
 
@@ -1412,17 +1438,14 @@ procedure TMainForm.DoEditSnippet;
 var
     Item: TListItem;
     Snippet: TSnippetDTO;
-    Node: TTreeNode;
 begin
     Item := lvSnippets.Selected;
     if not Assigned(Item) then
         Exit;
 
+    // CategoryID и UserID берём из самого сниппета: при активном фильтре по тегам
+    // (и в цепочках) список может содержать сниппеты из другой категории/пространства
     Snippet := ExtractSnippetByListItem(Item);
-    Node := tvCategories.Selected;
-
-    if (Node <> nil) and not FCategoryTree.IsVirtualCategory(Node) and (Node.Data <> nil) then
-        Snippet.CategoryID := Integer(IntPtr(Node.Data));
 
     if TAddEditSnippetForm.ExecuteEdit(Self, AppContext, Snippet) then
     begin
@@ -1430,6 +1453,10 @@ begin
             ReloadUI(Integer(IntPtr(tvCategories.Selected.Data)))
         else
             ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
+
+        // Обновляем панель сниппета; при активном фильтре RefreshCurrentSnippetList
+        // уже восстановил выделение в отфильтрованном списке
+        lvSnippetsClick(lvSnippets);
 
         MarkDataChanged;
     end;
@@ -1503,26 +1530,16 @@ end;
 
 procedure TMainForm.ReloadSnippetListKeepingSelection;
 var
-    SelID, I: Integer;
+    SelID: Integer;
 begin
-    SelID := 0;
-    if (lvSnippets.Selected <> nil) and Assigned(lvSnippets.Selected.Data) then
-        SelID := TSnippetViewData(lvSnippets.Selected.Data).ID;
+    SelID := GetSelectedSnippetID;
 
     if Trim(ebSearch.Text) <> '' then
         PerformSearchAsync(ebSearch.Text)
     else
         RefreshCurrentSnippetList;
 
-    if SelID > 0 then
-        for I := 0 to lvSnippets.Items.Count - 1 do
-            if Assigned(lvSnippets.Items[I].Data) and
-               (TSnippetViewData(lvSnippets.Items[I].Data).ID = SelID) then
-            begin
-                lvSnippets.Selected := lvSnippets.Items[I];
-                lvSnippets.ItemFocused := lvSnippets.Items[I];
-                Break;
-            end;
+    SelectSnippetByID(SelID);
 
     // Панель справа показывает язык выбранного сниппета и признак ручного выбора
     if (lvSnippets.Selected <> nil) and Assigned(lvSnippets.Selected.Data) then
@@ -1684,6 +1701,31 @@ procedure TMainForm.lvSnippetsDeletion(Sender: TObject; Item: TListItem);
 begin
     if Assigned(Item.Data) then
         TSnippetViewData(Item.Data).Free;
+end;
+
+function TMainForm.GetSelectedSnippetID: Integer;
+begin
+    Result := 0;
+    if (lvSnippets.Selected <> nil) and Assigned(lvSnippets.Selected.Data) then
+        Result := TSnippetViewData(lvSnippets.Selected.Data).ID;
+end;
+
+procedure TMainForm.SelectSnippetByID(SnippetID: Integer);
+var
+    I: Integer;
+begin
+    if SnippetID <= 0 then
+        Exit;
+
+    for I := 0 to lvSnippets.Items.Count - 1 do
+        if Assigned(lvSnippets.Items[I].Data) and
+            (TSnippetViewData(lvSnippets.Items[I].Data).ID = SnippetID) then
+        begin
+            lvSnippets.Selected := lvSnippets.Items[I];
+            lvSnippets.ItemFocused := lvSnippets.Items[I];
+            lvSnippets.Items[I].MakeVisible(False);
+            Break;
+        end;
 end;
 
 procedure TMainForm.lvSnippetsInfoTip(Sender: TObject; Item: TListItem; var InfoTip: string);
@@ -2432,6 +2474,62 @@ end;
 procedure TMainForm.lvTagsClick(Sender: TObject);
 begin
     FTags.HandleClick;
+end;
+
+procedure TMainForm.lvTagsAdvancedCustomDrawItem(Sender: TCustomListView; Item: TListItem;
+    State: TCustomDrawState; Stage: TCustomDrawStage; var DefaultDraw: Boolean);
+var
+    R: TRect;
+    BgColor, FgColor: TColor;
+    StateImages: TCustomImageList;
+begin
+    // Тёмные стили (например, Carbon) рисуют выделение в списке без фокуса
+    // почти тем же цветом, что и фон, из-за чего активный фильтр по тегам
+    // становится не виден. Выбранные элементы рисуем сами везде, где штатная
+    // отрисовка дала бы неразличимый фон: список без фокуса, неактивное
+    // приложение или заблокированная модальным диалогом форма.
+    if (Stage <> cdPrePaint) or not Item.Selected then
+        Exit;
+    if Sender.Focused and Application.Active and IsWindowEnabled(Sender.Handle) then
+        Exit;
+
+    R := Item.DisplayRect(drBounds);
+    if (R.Right <= R.Left) or (R.Bottom <= R.Top) then
+        Exit;
+
+    DefaultDraw := False;
+
+    if TStyleManager.IsCustomStyleActive then
+    begin
+        BgColor := TStyleManager.ActiveStyle.GetSystemColor(clHighlight);
+        FgColor := TStyleManager.ActiveStyle.GetSystemColor(clHighlightText);
+    end
+    else
+    begin
+        BgColor := clHighlight;
+        FgColor := clHighlightText;
+    end;
+
+    Sender.Canvas.Brush.Color := BgColor;
+    Sender.Canvas.Brush.Style := bsSolid;
+    Sender.Canvas.FillRect(R);
+
+    // Иконка состояния (тег привязан к сниппету или нет)
+    StateImages := TListView(Sender).StateImages;
+    if (Item.StateIndex >= 0) and (StateImages <> nil) then
+    begin
+        StateImages.Draw(Sender.Canvas, R.Left + 2,
+            R.Top + (R.Height - StateImages.Height) div 2, Item.StateIndex);
+        Inc(R.Left, StateImages.Width + 4);
+    end
+    else
+        Inc(R.Left, 4);
+
+    Sender.Canvas.Brush.Style := bsClear;
+    Sender.Canvas.Font := TListView(Sender).Font;
+    Sender.Canvas.Font.Color := FgColor;
+    DrawText(Sender.Canvas.Handle, PChar(Item.Caption), Length(Item.Caption), R,
+        DT_LEFT or DT_VCENTER or DT_SINGLELINE or DT_END_ELLIPSIS or DT_NOPREFIX);
 end;
 
 procedure TMainForm.lvTagsContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);

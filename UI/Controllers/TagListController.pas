@@ -47,6 +47,8 @@ type
         procedure ClearFilter;
         // Сброс состояния фильтра без уведомлений и без статуса (при смене категории)
         procedure ResetFilterState;
+        // Возвращает выделение тегов, соответствующее активному фильтру
+        procedure SyncFilterSelection;
 
         // ID тегов активного фильтра (пустой массив = фильтр не активен)
         property FilterTagIDs: TArray<Integer> read FFilterByTagIDs;
@@ -275,6 +277,30 @@ procedure TTagListController.ResetFilterState;
 begin
     SetLength(FFilterByTagIDs, 0);
     ClearTagSelection;
+end;
+
+procedure TTagListController.SyncFilterSelection;
+var
+    I, J: Integer;
+    IsSelected: Boolean;
+begin
+    if Length(FFilterByTagIDs) = 0 then
+        Exit;
+
+    for I := 0 to FListView.Items.Count - 1 do
+    begin
+        IsSelected := False;
+        for J := 0 to High(FFilterByTagIDs) do
+            if FFilterByTagIDs[J] = Integer(IntPtr(FListView.Items[I].Data)) then
+            begin
+                IsSelected := True;
+                Break;
+            end;
+
+        FListView.Items[I].Selected := IsSelected;
+        if IsSelected then
+            FListView.ItemFocused := FListView.Items[I];
+    end;
 end;
 
 procedure TTagListController.ApplyFilter(const TagIDs: TArray<Integer>; const TagNames: string);
