@@ -219,8 +219,6 @@ object MainForm: TMainForm
         Height = 41
         Align = alClient
         Layout = tlCenter
-        ExplicitLeft = 8
-        ExplicitTop = 13
         ExplicitWidth = 3
         ExplicitHeight = 15
       end
@@ -305,17 +303,16 @@ object MainForm: TMainForm
       BevelOuter = bvNone
       TabOrder = 1
       object lbSnippetLanguage: TLabel
-        Left = 0
-        Top = 0
-        Width = 191
-        Height = 20
-        Align = alTop
         AlignWithMargins = True
+        Left = 6
+        Top = 2
+        Width = 179
+        Height = 20
         Margins.Left = 6
         Margins.Top = 2
         Margins.Right = 6
+        Align = alTop
         AutoSize = False
-        Caption = ''
         EllipsisPosition = epEndEllipsis
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clGrayText
@@ -323,15 +320,19 @@ object MainForm: TMainForm
         Font.Name = 'Segoe UI'
         Font.Style = []
         ParentFont = False
-        Layout = tlCenter
+        ParentShowHint = False
         ShowAccelChar = False
         ShowHint = True
+        Layout = tlCenter
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 191
       end
       object lvTags: TListView
         Left = 0
-        Top = 0
+        Top = 25
         Width = 191
-        Height = 495
+        Height = 470
         Align = alClient
         Columns = <>
         HideSelection = False

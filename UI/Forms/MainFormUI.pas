@@ -226,6 +226,8 @@ type
         procedure ebSearchChange(Sender: TObject);
         procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
         procedure lvSnippetsDeletion(Sender: TObject; Item: TListItem);
+        procedure lvSnippetsAdvancedCustomDrawItem(Sender: TCustomListView; Item: TListItem;
+            State: TCustomDrawState; Stage: TCustomDrawStage; var DefaultDraw: Boolean);
         procedure lvSnippetsInfoTip(Sender: TObject; Item: TListItem; var InfoTip: string);
         procedure FormDestroy(Sender: TObject);
         procedure tvCategoriesMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -1268,6 +1270,10 @@ begin
     // Активный фильтр должен оставаться видимым, когда фокус уходит из списка тегов
     lvTags.HideSelection := False;
     lvTags.OnAdvancedCustomDrawItem := lvTagsAdvancedCustomDrawItem;
+
+    // Выбранный сниппет тоже должен оставаться видимым без фокуса
+    lvSnippets.HideSelection := False;
+    lvSnippets.OnAdvancedCustomDrawItem := lvSnippetsAdvancedCustomDrawItem;
     TChainRunner.OnStarted := ChainStarted;
     TChainRunner.OnFinished := ChainFinished;
 
@@ -1706,6 +1712,61 @@ procedure TMainForm.lvSnippetsDeletion(Sender: TObject; Item: TListItem);
 begin
     if Assigned(Item.Data) then
         TSnippetViewData(Item.Data).Free;
+end;
+
+procedure TMainForm.lvSnippetsAdvancedCustomDrawItem(Sender: TCustomListView; Item: TListItem;
+    State: TCustomDrawState; Stage: TCustomDrawStage; var DefaultDraw: Boolean);
+var
+    R: TRect;
+    BgColor, FgColor: TColor;
+    Images: TCustomImageList;
+begin
+    // Тёмные стили рисуют выделение в списке без фокуса почти тем же цветом,
+    // что и фон. Из-за этого выбранный сниппет визуально "пропадает", когда
+    // фокус уходит в поиск, теги или в другое приложение. В таких случаях
+    // выбранные строки рисуем сами (как это уже сделано для lvTags).
+    if (Stage <> cdPrePaint) or not Item.Selected then
+        Exit;
+    if Sender.Focused and Application.Active and IsWindowEnabled(Sender.Handle) then
+        Exit;
+
+    R := Item.DisplayRect(drBounds);
+    if (R.Right <= R.Left) or (R.Bottom <= R.Top) then
+        Exit;
+
+    DefaultDraw := False;
+
+    if TStyleManager.IsCustomStyleActive then
+    begin
+        BgColor := TStyleManager.ActiveStyle.GetSystemColor(clHighlight);
+        FgColor := TStyleManager.ActiveStyle.GetSystemColor(clHighlightText);
+    end
+    else
+    begin
+        BgColor := clHighlight;
+        FgColor := clHighlightText;
+    end;
+
+    Sender.Canvas.Brush.Color := BgColor;
+    Sender.Canvas.Brush.Style := bsSolid;
+    Sender.Canvas.FillRect(R);
+
+    // Иконка строки (если она когда-нибудь появится у сниппета)
+    Images := TListView(Sender).SmallImages;
+    if (Item.ImageIndex >= 0) and (Images <> nil) then
+    begin
+        Images.Draw(Sender.Canvas, R.Left + 2,
+            R.Top + (R.Height - Images.Height) div 2, Item.ImageIndex);
+        Inc(R.Left, Images.Width + 4);
+    end
+    else
+        Inc(R.Left, 4);
+
+    Sender.Canvas.Brush.Style := bsClear;
+    Sender.Canvas.Font := TListView(Sender).Font;
+    Sender.Canvas.Font.Color := FgColor;
+    DrawText(Sender.Canvas.Handle, PChar(Item.Caption), Length(Item.Caption), R,
+        DT_LEFT or DT_VCENTER or DT_SINGLELINE or DT_END_ELLIPSIS or DT_NOPREFIX);
 end;
 
 procedure TMainForm.FreeSnippetListData;

@@ -155,7 +155,7 @@ begin
         TUIStateLoader.GetMessage('Common.Warning')) then Exit;
 
     try
-        // Бизнес-проверка "ID=1" теперь выполн¤етс¤ внутри сервиса
+        // Бизнес-проверка "ID=1" теперь выполняется внутри сервиса
         AppContext.UserService.DeleteUser(UserID);
         Item.Delete;
     except
