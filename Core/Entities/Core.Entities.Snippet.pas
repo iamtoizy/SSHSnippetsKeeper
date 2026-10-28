@@ -21,6 +21,7 @@ type
         Tags: TArray<TTagDTO>;
         IsSecurityCheckIgnored: Boolean;
         Language: string; // 'bash' | 'bat' | 'powershell' | 'xml' | 'json' | 'ini' | 'markdown'
+        LanguageLocked: Boolean; // True = язык выбран вручную, автодетект его не меняет
     end;
 
     TSnippetVersionDTO = record

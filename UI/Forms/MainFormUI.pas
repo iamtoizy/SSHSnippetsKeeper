@@ -20,6 +20,7 @@ uses
     GlobalHotkeyManager,
     LanguageMenuController,
     SearchController,
+    SynHighlighterFactory,
     SyncController,
     TagListController,
     UI.AppStatusBar,
@@ -85,6 +86,7 @@ type
         lblChainName: TLabel;
         lvSnippets: TListView;
         pRight: TPanel;
+        lbSnippetLanguage: TLabel;
         lvTags: TListView;
         icCategory: TImageCollection;
         vilCategory: TVirtualImageList;
@@ -278,6 +280,9 @@ type
         procedure FillSnippetListView(const Snippets: TArray<TSnippetDTO>);
         function ExtractSnippetByListItem(Item: TListItem): TSnippetDTO;
         procedure FillUserInterfaceFromSnippet(const Snippet: TSnippetDTO);
+        procedure UpdateSnippetLanguageInfo(const ALanguage: string; ALocked: Boolean);
+        procedure ClearSnippetLanguageInfo;
+        function FormatSnippetLanguageText(const ALanguage: string; ALocked: Boolean; AHint: Boolean): string;
 
         // Do-методы
         procedure DoAddSnippet;
@@ -689,6 +694,7 @@ begin
                 rbFTS.Enabled := False;
                 tvCategories.Enabled := False;
                 lvSnippets.Enabled := False;
+                ClearSnippetLanguageInfo;
 
                 // Жестко отключаем все зависимые от контента действия (главное меню и попапы)
                 actAddCategory.Enabled := False;
@@ -750,6 +756,7 @@ begin
         bfsSnippetDeselected:
             begin
                 UpdateMenuState; // Отключит пункты "Изменить/Удалить сниппет"
+                ClearSnippetLanguageInfo;
 
                 // Сбрасываем теги. При активном фильтре выделение тегов сохраняем,
                 // чтобы пользователь видел выбранную комбинацию тегов
@@ -1342,6 +1349,8 @@ begin
             Snippet.Title := Title;
             Snippet.Content := Content;
             Snippet.Comment := Comment;
+            Snippet.Language := Language;
+            Snippet.LanguageLocked := LanguageLocked;
         end;
 
     FillUserInterfaceFromSnippet(Snippet);
@@ -1515,6 +1524,14 @@ begin
                 Break;
             end;
 
+    // Панель справа показывает язык выбранного сниппета и признак ручного выбора
+    if (lvSnippets.Selected <> nil) and Assigned(lvSnippets.Selected.Data) then
+        UpdateSnippetLanguageInfo(
+            TSnippetViewData(lvSnippets.Selected.Data).Language,
+            TSnippetViewData(lvSnippets.Selected.Data).LanguageLocked)
+    else
+        ClearSnippetLanguageInfo;
+
     UpdateMenuState;
     UpdateSnippetCount;
 end;
@@ -1647,6 +1664,8 @@ begin
             ViewData.Title := Snippet.Title;
             ViewData.Content := Snippet.Content;
             ViewData.Comment := Snippet.Comment;
+            ViewData.Language := Snippet.Language;
+            ViewData.LanguageLocked := Snippet.LanguageLocked;
             ViewData.IsFavorite := IsFav;
             if (Pos >= 0) and (Pos <= 9) then
                 ViewData.FavoriteSlot := Pos
@@ -1679,7 +1698,8 @@ begin
             Comment := TUIStateLoader.GetMessage('Snippet.NoComment')
         else
             Comment := Data.Comment;
-        InfoTip := Format('[%s] %s'#13#10'%s', [Data.ID.ToString, Data.Title, Comment]);
+        InfoTip := Format('[%s] %s'#13#10'%s'#13#10'%s', [Data.ID.ToString, Data.Title,
+            FormatSnippetLanguageText(Data.Language, Data.LanguageLocked, True), Comment]);
     end;
 end;
 
@@ -2340,6 +2360,11 @@ procedure TMainForm.FillUserInterfaceFromSnippet(const Snippet: TSnippetDTO);
 var
     SnippetTags: TArray<TTagDTO>;
 begin
+    if Snippet.ID > 0 then
+        UpdateSnippetLanguageInfo(Snippet.Language, Snippet.LanguageLocked)
+    else
+        ClearSnippetLanguageInfo;
+
     FTags.CurrentSnippetID := Snippet.ID;
 
     // Отрисовка тегов через TUIHelpers.
@@ -2350,6 +2375,44 @@ begin
         SnippetTags := AppContext.TagService.GetSnippetTags(Snippet.ID);
         TUIHelpers.FillTagListWithSelection(lvTags, FAllTagsCache, SnippetTags);
     end;
+end;
+
+function TMainForm.FormatSnippetLanguageText(const ALanguage: string; ALocked: Boolean; AHint: Boolean): string;
+var
+    MsgKey: string;
+begin
+    if ALocked then
+    begin
+        if AHint then
+            MsgKey := 'Snippet.LanguageManualHint'
+        else
+            MsgKey := 'Snippet.LanguageManualLabel';
+    end
+    else
+    begin
+        if AHint then
+            MsgKey := 'Snippet.LanguageAutoHint'
+        else
+            MsgKey := 'Snippet.LanguageAutoLabel';
+    end;
+
+    Result := TUIStateLoader.GetMessage(MsgKey, [TSynHighlighterFactory.DisplayName(ALanguage)]);
+end;
+
+procedure TMainForm.UpdateSnippetLanguageInfo(const ALanguage: string; ALocked: Boolean);
+begin
+    if not Assigned(lbSnippetLanguage) then
+        Exit;
+    lbSnippetLanguage.Caption := FormatSnippetLanguageText(ALanguage, ALocked, False);
+    lbSnippetLanguage.Hint := FormatSnippetLanguageText(ALanguage, ALocked, True);
+end;
+
+procedure TMainForm.ClearSnippetLanguageInfo;
+begin
+    if not Assigned(lbSnippetLanguage) then
+        Exit;
+    lbSnippetLanguage.Caption := '';
+    lbSnippetLanguage.Hint := '';
 end;
 
 procedure TMainForm.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);

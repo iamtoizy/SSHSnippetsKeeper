@@ -44,6 +44,8 @@ type
         Content: string;
         Comment: string;
         Tags: string;
+        Language: string;
+        LanguageLocked: Boolean;
     end;
 
     TAddEditSnippetForm = class(TBaseForm)
@@ -68,6 +70,7 @@ type
         nShowAIPrompt: TMenuItem;
         nAISettings: TMenuItem;
         cbIgnoreSecurityChecks: TCheckBox;
+        chkAutoLanguage: TCheckBox;
         tmrSecurityScan: TTimer;
         sbBottom: TStatusBar;
         pClient: TPanel;
@@ -108,6 +111,7 @@ type
         procedure cbAIHubChange(Sender: TObject);
         procedure cbAIModelChange(Sender: TObject);
         procedure cbLanguageChange(Sender: TObject);
+        procedure chkAutoLanguageClick(Sender: TObject);
         procedure cbIgnoreSecurityChecksClick(Sender: TObject);
         procedure FormClose(Sender: TObject; var Action: TCloseAction);
         procedure FormCloseQueryAI(Sender: TObject; var CanClose: Boolean);
@@ -156,8 +160,10 @@ type
         FMacroBodySyn: TMacroBodySyn;
         FCurrentLanguage: string;
         FLangTimer: TTimer;
-        FLangAutoDetect: Boolean;
+        FLangLocked: Boolean;
+        FLangSyncing: Boolean;
         FSuppressDetect: Boolean;
+        FDetectBaselineText: string;
         FCompletionEngine: TBashCompletionEngine;
         FAIService: IAIService;
         FAIThread: TThread;
@@ -180,6 +186,7 @@ type
         procedure ApplySnippetLanguage(const ALanguage: string);
         function DetectSnippetLanguageSmart(const AContent: string): string;
         procedure SyncLanguageCombo;
+        procedure UpdateAutoLanguageCheck;
         procedure PopulateHubs;
         procedure PopulateModels(HubIndex: Integer);
         procedure UpdateSecurityStatusUI(IsSafe: Boolean; const Reason: string);
@@ -356,9 +363,12 @@ begin
     // Схема подсветки макросов: одна на все языки
     FMacroBodySyn := TMacroBodySyn.Create(nil);
 
-    // Автодетект языка при изменении текста: дебаунс 1 c после последней правки
-    FLangAutoDetect := True;
+    // Автодетект языка запускается только после существенных правок текста:
+    // ручной выбор фиксируется флагом LanguageLocked и переживает переоткрытие
+    FLangLocked := False;
     FSuppressDetect := False;
+    FLangSyncing := False;
+    FDetectBaselineText := '';
     FLangTimer := TTimer.Create(Self);
     FLangTimer.Interval := 1000;
     FLangTimer.Enabled := False;
@@ -367,6 +377,7 @@ begin
     // Сразу применяем подсветку синтаксиса до показа формы (не ждем таймер)
     FCurrentLanguage := SNIPPET_LANG_BASH;
     SyncLanguageCombo;
+    UpdateAutoLanguageCheck;
     SetSyntax;
 
     // Карточки макросов в mContent
@@ -397,7 +408,9 @@ begin
         (ebTitle.Text <> FOriginalSnippet.Title) or
         (mContent.Text <> FOriginalSnippet.Content) or
         (mComment.Text <> FOriginalSnippet.Comment) or
-        (TagsStr <> FOriginalSnippet.Tags);
+        (TagsStr <> FOriginalSnippet.Tags) or
+        (FCurrentLanguage <> NormalizeSnippetLanguage(FOriginalSnippet.Language)) or
+        (FLangLocked <> FOriginalSnippet.LanguageLocked);
 end;
 
 procedure TAddEditSnippetForm.bCancelClick(Sender: TObject);
@@ -449,6 +462,7 @@ begin
     Snippet.Content := UnixText;
     Snippet.Comment := mComment.Text;
     Snippet.Language := NormalizeSnippetLanguage(FCurrentLanguage);
+    Snippet.LanguageLocked := FLangLocked;
     Snippet.IsSecurityCheckIgnored := cbIgnoreSecurityChecks.Checked;
 
     try
@@ -516,15 +530,20 @@ procedure TAddEditSnippetForm.cbLanguageChange(Sender: TObject);
 var
     Langs: TArray<string>;
 begin
+    // Программная синхронизация комбобокса (загрузка, автодетект) не является
+    // ручным выбором и не должна включать замок
+    if FLangSyncing or FSuppressDetect then
+        Exit;
     if cbLanguage.ItemIndex < 0 then
         Exit;
 
-    // Ручной выбор фиксирует язык: автодетект больше не переключает
-    // комбобокс до закрытия формы
-    FLangAutoDetect := False;
+    // Ручной выбор фиксируется в БД (LanguageLocked) и переживает переоткрытие
+    FLangLocked := True;
+    UpdateAutoLanguageCheck;
 
     Langs := TSynHighlighterFactory.SupportedLanguages;
     FCurrentLanguage := NormalizeSnippetLanguage(Langs[cbLanguage.ItemIndex]);
+    FDetectBaselineText := mContent.Text;
     SetSyntax;
 end;
 
@@ -532,6 +551,7 @@ procedure TAddEditSnippetForm.ApplySnippetLanguage(const ALanguage: string);
 begin
     FCurrentLanguage := NormalizeSnippetLanguage(ALanguage);
     SyncLanguageCombo;
+    FDetectBaselineText := mContent.Text;
     SetSyntax;
 end;
 
@@ -552,10 +572,16 @@ var
     Detected: string;
 begin
     FLangTimer.Enabled := False;
-    if FSuppressDetect or not FLangAutoDetect then
+    if FSuppressDetect or FLangLocked then
+        Exit;
+
+    // Одиночные правки и опечатки не должны переключать язык: детект идёт
+    // только при накопленном существенном изменении относительно последнего замера
+    if not ShouldRedetectSnippetLanguage(FDetectBaselineText, mContent.Text) then
         Exit;
 
     Detected := DetectSnippetLanguageSmart(mContent.Text);
+    FDetectBaselineText := mContent.Text;
     if (Detected <> '') and (Detected <> FCurrentLanguage) then
         ApplySnippetLanguage(Detected);
 end;
@@ -565,20 +591,52 @@ var
     I: Integer;
     Langs: TArray<string>;
 begin
-    if cbLanguage.Items.Count = 0 then
-    begin
-        Langs := TSynHighlighterFactory.SupportedLanguages;
-        for I := 0 to High(Langs) do
-            cbLanguage.Items.AddObject(TSynHighlighterFactory.DisplayName(Langs[I]), TObject(IntPtr(I)));
-    end;
-
-    cbLanguage.ItemIndex := -1;
-    for I := 0 to High(SNIPPET_LANGUAGE_IDS) do
-        if SNIPPET_LANGUAGE_IDS[I] = FCurrentLanguage then
+    FLangSyncing := True;
+    try
+        if cbLanguage.Items.Count = 0 then
         begin
-            cbLanguage.ItemIndex := I;
-            Break;
+            Langs := TSynHighlighterFactory.SupportedLanguages;
+            for I := 0 to High(Langs) do
+                cbLanguage.Items.AddObject(TSynHighlighterFactory.DisplayName(Langs[I]), TObject(IntPtr(I)));
         end;
+
+        cbLanguage.ItemIndex := -1;
+        for I := 0 to High(SNIPPET_LANGUAGE_IDS) do
+            if SNIPPET_LANGUAGE_IDS[I] = FCurrentLanguage then
+            begin
+                cbLanguage.ItemIndex := I;
+                Break;
+            end;
+    finally
+        FLangSyncing := False;
+    end;
+end;
+
+procedure TAddEditSnippetForm.UpdateAutoLanguageCheck;
+begin
+    FLangSyncing := True;
+    try
+        chkAutoLanguage.Checked := not FLangLocked;
+    finally
+        FLangSyncing := False;
+    end;
+end;
+
+procedure TAddEditSnippetForm.chkAutoLanguageClick(Sender: TObject);
+begin
+    if FLangSyncing or FSuppressDetect then
+        Exit;
+
+    if chkAutoLanguage.Checked then
+    begin
+        // Пользователь вернул автоопределение: снимаем замок и сразу пробуем
+        FLangLocked := False;
+        FDetectBaselineText := '';
+        FLangTimer.Enabled := False;
+        tmrLangDetectTimer(nil);
+    end
+    else
+        FLangLocked := True;
 end;
 
 procedure TAddEditSnippetForm.cbIgnoreSecurityChecksClick(Sender: TObject);
@@ -1009,9 +1067,9 @@ begin
     end;
 
     // Перезапуск дебаунса автоопределения языка: таймер сработает через
-    // 1 c после последней правки текста
+    // 1 c после последней правки, но пересчёт будет только при существенном изменении
     FLangTimer.Enabled := False;
-    if FLangAutoDetect and not FSuppressDetect then
+    if not FLangLocked and not FSuppressDetect then
         FLangTimer.Enabled := True;
 
     UpdateStatusBar;
@@ -1706,16 +1764,20 @@ begin
             FOriginalSnippet.Content := FSnippet.Content;
             FOriginalSnippet.Comment := FSnippet.Comment;
             FOriginalSnippet.Tags := '';
+            FOriginalSnippet.Language := NormalizeSnippetLanguage(FSnippet.Language);
+            FOriginalSnippet.LanguageLocked := FSnippet.LanguageLocked;
 
             ebTitle.Text := FSnippet.Title;
             mContent.Text := FSnippet.Content;
             mComment.Text := FSnippet.Comment;
 
-            // Язык: сохранённый; для bash (значение по умолчанию) пробуем автодетект
-            if NormalizeSnippetLanguage(FSnippet.Language) = SNIPPET_LANG_BASH then
-                ApplySnippetLanguage(DetectSnippetLanguageSmart(FSnippet.Content))
-            else
-                ApplySnippetLanguage(FSnippet.Language);
+            // Автодетект при открытии не запускаем: сохранённый язык всегда
+            // приоритетнее, иначе ручной выбор пользователя теряется
+            FLangLocked := FSnippet.LanguageLocked;
+            FCurrentLanguage := NormalizeSnippetLanguage(FSnippet.Language);
+            SyncLanguageCombo;
+            UpdateAutoLanguageCheck;
+            SetSyntax;
 
             if Assigned(AppContext.TagService) then
             begin
@@ -1750,12 +1812,19 @@ begin
             ebTitle.Text := '';
             mContent.Text := '';
             mComment.Text := '';
+
+            FLangLocked := False;
+            FCurrentLanguage := SNIPPET_LANG_BASH;
+            SyncLanguageCombo;
+            UpdateAutoLanguageCheck;
+            SetSyntax;
         end;
     finally
         lvSelectedTags.Items.EndUpdate;
         lvAllTags.Items.EndUpdate;
     end;
 
+    FDetectBaselineText := mContent.Text;
     FSuppressDetect := False;
 end;
 

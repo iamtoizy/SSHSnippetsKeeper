@@ -279,6 +279,10 @@
     "mComment": {
       "TextHint": "Комментарий к сниппету вводи сюда...."
     },
+    "chkAutoLanguage": {
+      "Caption": "Auto",
+      "Hint": "Detect language from content on substantial edits"
+    },
     "bOK": {
       "Caption": "ОК"
     },
@@ -1417,6 +1421,10 @@
       "EmptyNameError": "Имя категории не может быть пустым."
     },
     "Snippet": {
+      "LanguageManualLabel": "%s · вручную",
+      "LanguageAutoLabel": "%s · авто",
+      "LanguageManualHint": "Язык: %s. Выбран вручную — автодетект отключён.",
+      "LanguageAutoHint": "Язык: %s. Определяется автоматически при правках.",
       "NotFound": "Сниппет не найден.",
       "SelectPrompt": "Выбери конкретную категорию для добавления сниппета.",
       "WorkspaceUndefined": "Не удалось определить пространство для сниппета (UserID=%d). Попробуй выбрать конкретное пространство в фильтре.",

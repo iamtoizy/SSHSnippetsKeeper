@@ -166,8 +166,15 @@ begin
     // На новой БД таблицы snippets ещё нет (InitializeDatabase накатывает базовую схему
     // после миграций) — там колонку задаёт 000_schema_init.sql.
     if FDConnection.ExecSQLScalar('SELECT COUNT(*) FROM sqlite_master WHERE type = ''table'' AND name = ''snippets''') > 0 then
+    begin
         if FDConnection.ExecSQLScalar('SELECT COUNT(*) FROM pragma_table_info(''snippets'') WHERE name = ''language''') = 0 then
             FDConnection.ExecSQL('ALTER TABLE snippets ADD COLUMN language TEXT NOT NULL DEFAULT ''bash''');
+
+        // v12: флаг ручного выбора языка. Пока его нет, автодетект считает язык
+        // автоматическим и может переопределить выбор пользователя.
+        if FDConnection.ExecSQLScalar('SELECT COUNT(*) FROM pragma_table_info(''snippets'') WHERE name = ''language_locked''') = 0 then
+            FDConnection.ExecSQL('ALTER TABLE snippets ADD COLUMN language_locked INTEGER NOT NULL DEFAULT 0');
+    end;
 end;
 
 procedure TAppDatabase.CloseDatabase;

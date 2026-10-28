@@ -19,12 +19,15 @@ type
         procedure Supported_List_CoversAll;
         [Test]
         procedure FenceTag_MatchesNormalized;
+        [Test]
+        procedure ShouldRedetect_OnlySubstantialChanges;
     end;
 
 implementation
 
 uses
-    Common.Consts
+    Common.Consts,
+    System.SysUtils
     ;
 
 { TSnippetLanguagesTests }
@@ -62,6 +65,25 @@ begin
     Assert.AreEqual(SNIPPET_LANG_BASH, FenceTagForSnippetLanguage(''));
     Assert.AreEqual(SNIPPET_LANG_BAT, FenceTagForSnippetLanguage('cmd'));
     Assert.AreEqual(SNIPPET_LANG_MARKDOWN, FenceTagForSnippetLanguage('md'));
+end;
+
+procedure TSnippetLanguagesTests.ShouldRedetect_OnlySubstantialChanges;
+var
+    Base: string;
+begin
+    Base := StringOfChar('a', 100);
+
+    Assert.IsFalse(ShouldRedetectSnippetLanguage(Base, Base), 'identical text');
+    Assert.IsFalse(ShouldRedetectSnippetLanguage(Base, Base + 'b'), 'one char edit');
+    Assert.IsFalse(ShouldRedetectSnippetLanguage(Base, Copy(Base, 1, 95)), 'five chars removed');
+    Assert.IsTrue(ShouldRedetectSnippetLanguage(Base, Base + StringOfChar('b', 20)), 'twenty chars added');
+
+    Assert.IsFalse(ShouldRedetectSnippetLanguage('', 'short text'), 'too short to detect');
+    Assert.IsTrue(ShouldRedetectSnippetLanguage('', StringOfChar('b', 50)), 'first meaningful block');
+
+    Base := StringOfChar('c', 400);
+    Assert.IsFalse(ShouldRedetectSnippetLanguage(Base, Base + StringOfChar('d', 30)), 'below ten percent');
+    Assert.IsTrue(ShouldRedetectSnippetLanguage(Base, Base + StringOfChar('d', 40)), 'ten percent reached');
 end;
 
 end.

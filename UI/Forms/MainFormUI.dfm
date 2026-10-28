@@ -304,6 +304,29 @@ object MainForm: TMainForm
       Align = alRight
       BevelOuter = bvNone
       TabOrder = 1
+      object lbSnippetLanguage: TLabel
+        Left = 0
+        Top = 0
+        Width = 191
+        Height = 20
+        Align = alTop
+        AlignWithMargins = True
+        Margins.Left = 6
+        Margins.Top = 2
+        Margins.Right = 6
+        AutoSize = False
+        Caption = ''
+        EllipsisPosition = epEndEllipsis
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clGrayText
+        Font.Height = -12
+        Font.Name = 'Segoe UI'
+        Font.Style = []
+        ParentFont = False
+        Layout = tlCenter
+        ShowAccelChar = False
+        ShowHint = True
+      end
       object lvTags: TListView
         Left = 0
         Top = 0

@@ -2,7 +2,7 @@ PRAGMA foreign_keys = ON;
 PRAGMA journal_mode = WAL;
 PRAGMA synchronous = NORMAL;
 PRAGMA temp_store = MEMORY;
-PRAGMA user_version = 10; -- v10: Добавлены цепочки сниппетов (snippet_chains, snippet_chain_steps)
+PRAGMA user_version = 12; -- v12: язык сниппета (language) и признак ручного выбора (language_locked)
 PRAGMA recursive_triggers = OFF;
 PRAGMA busy_timeout = 5000;
 PRAGMA cache_size = -20000;
@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS snippets (
   created_at          INTEGER NOT NULL DEFAULT (strftime('%s','now')),
   updated_at          INTEGER,
   language            TEXT NOT NULL DEFAULT 'bash', -- v11: язык подсветки синтаксиса
+  language_locked     INTEGER NOT NULL DEFAULT 0, -- v12: 1 = язык выбран вручную, автодетект отключён
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
