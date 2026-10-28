@@ -284,6 +284,7 @@ type
         procedure FillSnippetListView(const Snippets: TArray<TSnippetDTO>);
         function GetSelectedSnippetID: Integer;
         procedure SelectSnippetByID(SnippetID: Integer);
+        procedure FreeSnippetListData;
         function ExtractSnippetByListItem(Item: TListItem): TSnippetDTO;
         procedure FillUserInterfaceFromSnippet(const Snippet: TSnippetDTO);
         procedure UpdateSnippetLanguageInfo(const ALanguage: string; ALocked: Boolean);
@@ -620,6 +621,10 @@ end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
 begin
+    // VCL не вызывает OnDeletion при уничтожении самого списка,
+    // поэтому данные строк освобождаем явно, пока список ещё существует
+    FreeSnippetListData;
+
     FreeAndNil(FLangMenu);
     FreeAndNil(FTags);
     FreeAndNil(FCategoryTree);
@@ -1701,6 +1706,19 @@ procedure TMainForm.lvSnippetsDeletion(Sender: TObject; Item: TListItem);
 begin
     if Assigned(Item.Data) then
         TSnippetViewData(Item.Data).Free;
+end;
+
+procedure TMainForm.FreeSnippetListData;
+var
+    I: Integer;
+begin
+    for I := 0 to lvSnippets.Items.Count - 1 do
+        if Assigned(lvSnippets.Items[I].Data) then
+        begin
+            TSnippetViewData(lvSnippets.Items[I].Data).Free;
+            // Обнуляем, чтобы возможный OnDeletion не освободил указатель повторно
+            lvSnippets.Items[I].Data := nil;
+        end;
 end;
 
 function TMainForm.GetSelectedSnippetID: Integer;

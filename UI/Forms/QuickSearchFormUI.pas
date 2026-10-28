@@ -56,6 +56,7 @@ type
         procedure InsertSelectedSnippet;
         procedure UpdateResults;
         procedure LoadUsersToComboBox;
+        procedure FreeQuickResultsData;
         procedure WMActivate(var Msg: TWMActivate); message WM_ACTIVATE;
     protected
         procedure CreateParams(var Params: TCreateParams); override;
@@ -97,6 +98,7 @@ begin
     Application.OnShowHint := FOldAppShowHint;
     FOldAppShowHint := nil;
 
+    FreeQuickResultsData;
     lvQuickResults.Items.Clear;
 
     inherited;
@@ -555,6 +557,18 @@ procedure TQuickSearchForm.lvQuickResultsDeletion(Sender: TObject; Item: TListIt
 begin
     if Assigned(Item.Data) then
         TSnippetViewData(Item.Data).Free;
+end;
+
+procedure TQuickSearchForm.FreeQuickResultsData;
+var
+    I: Integer;
+begin
+    for I := 0 to lvQuickResults.Items.Count - 1 do
+        if Assigned(lvQuickResults.Items[I].Data) then
+        begin
+            TSnippetViewData(lvQuickResults.Items[I].Data).Free;
+            lvQuickResults.Items[I].Data := nil;
+        end;
 end;
 
 procedure TQuickSearchForm.InsertSelectedSnippet;
