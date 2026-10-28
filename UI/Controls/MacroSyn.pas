@@ -9,6 +9,11 @@ uses
     Vcl.Graphics
     ;
 
+const
+    // Конец макроса в схеме TSynMultiSyn; стартовое выражение собирается
+    // из реестра имён движка через MacroEngine.BuildMacroStartExpr
+    MACRO_END_EXPR = '\}';
+
 type
     TMacroTokenKind = (mtkText, mtkKey, mtkArg, mtkBrace);
 

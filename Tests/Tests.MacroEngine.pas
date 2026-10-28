@@ -33,6 +33,10 @@ type
         [Test]
         procedure UnknownMacro_SkipsCommandAndReports;
         [Test]
+        procedure LanguageBraces_ArePlainText_NoUnknownCards;
+        [Test]
+        procedure MacroAttemptTypo_StillUnknown;
+        [Test]
         procedure SendKey_Name_ParsedToVirtualKey;
         [Test]
         procedure SendKey_SingleChar_ParsedAsText;
@@ -349,6 +353,50 @@ begin
         Assert.AreEqual('{UNKNOWN_CMD}', Unknown[0]);
     finally
         Ctx.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.LanguageBraces_ArePlainText_NoUnknownCards;
+var
+    Engine: TMacroEngine;
+    Tokens: TArray<TMacroToken>;
+    T: TMacroToken;
+    UnknownCount: Integer;
+begin
+    Engine := TMacroEngine.Create;
+    try
+        Tokens := Engine.GetTokens('Where-Object { $_.CPU -gt 10 }');
+        UnknownCount := 0;
+        for T in Tokens do
+            if T.Kind = tkUnknown then
+                Inc(UnknownCount);
+        Assert.AreEqual(0, UnknownCount);
+
+        Tokens := Engine.GetTokens('switch ($x) { Default { 1 } }');
+        for T in Tokens do
+            Assert.AreNotEqual(tkUnknown, T.Kind);
+
+        Assert.AreEqual(0, Integer(Length(Engine.ValidateCommands('if ($a) { Write-Output $a }'))));
+    finally
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.MacroAttemptTypo_StillUnknown;
+var
+    Engine: TMacroEngine;
+    Actions: TArray<IScriptAction>;
+    Unknown: TArray<string>;
+begin
+    Engine := TMacroEngine.Create;
+    try
+        Actions := Engine.Parse('a{SLEP 500}b', MakeContext);
+        Assert.AreEqual(2, Integer(Length(Actions)));
+
+        Unknown := Engine.ValidateCommands('a{SLEP 500}b');
+        Assert.AreEqual(1, Integer(Length(Unknown)));
+    finally
         Engine.Free;
     end;
 end;

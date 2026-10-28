@@ -164,6 +164,7 @@ uses
   Common.Settings in 'Common\Common.Settings.pas',
   Common.SnippetLanguageDetect in 'Common\Common.SnippetLanguageDetect.pas',
   Common.SnippetLanguages in 'Common\Common.SnippetLanguages.pas',
+  Common.SnippetLanguageNB in 'Common\Common.SnippetLanguageNB.pas',
   Common.VCLStyleService in 'Common\Common.VCLStyleService.pas',
   SynHighlighterFactory in 'UI\Controls\SynHighlighterFactory.pas';
 
@@ -231,6 +232,10 @@ ReportMemoryLeaksOnShutdown := True;
 
     TUIStateLoader.LoadLanguageFile(ResolvePath('Translation\ui-texts.' + GlobalLang + '.json'));
     // ---------------------------------------------------------
+
+    // Предзагрузка весов NB-детектора языков: чтение файла и парсинг
+    // выполняются один раз за сессию, окно редактора сниппета их не платит
+    TScriptLanguageClassifier.Shared;
 
     WindowHelper := TWindowHelper.Create(SettingsManager);
     RegisterShutdownWindowHelper(WindowHelper);
