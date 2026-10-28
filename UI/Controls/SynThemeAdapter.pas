@@ -57,15 +57,8 @@ uses
     SynEditHighlighter,
     System.SysUtils,
     Vcl.Forms,
-    Vcl.StdCtrls,
     Vcl.Themes
     ;
-
-type
-    TControlAccess = class(TControl)
-    public
-        property Color;
-    end;
 
 { TSynThemeAdapter }
 
@@ -226,10 +219,12 @@ class procedure TSynThemeAdapter.ThemeFormControls(ARoot: TWinControl);
     var
         I: Integer;
     begin
+        // Фон стандартных TEdit/TMemo под активным VCL-стилем рисует стилевой
+        // хук по цвету scEdit, поэтому Color этих контролов трогать нельзя:
+        // записанный один раз тёмный цвет остаётся навсегда и проявляется
+        // при переключении на светлую тему (поле поиска главной формы).
         if Control is TCustomSynEdit then
-            ApplyTheme(TCustomSynEdit(Control))
-        else if (Control is TCustomEdit) and (TControlAccess(Control).Color = clWindow) then
-            TControlAccess(Control).Color := TStyleManager.ActiveStyle.GetStyleColor(scEdit);
+            ApplyTheme(TCustomSynEdit(Control));
 
         if Control is TWinControl then
             for I := 0 to TWinControl(Control).ControlCount - 1 do
