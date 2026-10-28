@@ -4,8 +4,10 @@ interface
 
 uses
     DUnitX.TestFramework,
+    MacroEngine,
     SynEditTypes,
     SynEditHighlighter,
+    System.RegularExpressions,
     MacroSyn
     ;
 
@@ -35,6 +37,17 @@ type
         procedure Body_DirectiveAndArgs;
         [Test]
         procedure Body_ContinuationLine_StaysArg;
+    end;
+
+    [TestFixture]
+    TMacroSchemeRegexTests = class(TObject)
+    public
+        [Test]
+        procedure Scheme_Matches_KnownDirectives;
+        [Test]
+        procedure Scheme_Ignores_LanguageBraces;
+        [Test]
+        procedure Registry_MatchesEngineKnowledge;
     end;
 
 implementation
@@ -178,6 +191,56 @@ begin
     finally
         Syn.Free;
     end;
+end;
+
+{ TMacroSchemeRegexTests }
+
+procedure TMacroSchemeRegexTests.Scheme_Matches_KnownDirectives;
+const
+    POSITIVES: TArray<string> = [
+        '{INPUT name}', '{INPUT[SELECT:1|2] name}', '{SLEEP 500}',
+        '{ENTER}', '{SENDKEY CTRL+C}', '{SENDKEYEX CTRL+ALT+DEL}',
+        '{KEYDELAY 50}', '{CLEARLINE}', '{UUID}', '{COUNTER}',
+        '{COUNTER:start=5;step=2;pad=3}', '{DATETIME:yyyy-MM-dd}',
+        '{ENV:HOME}', '{CLIPBOARD}'
+    ];
+var
+    S: string;
+begin
+    for S in POSITIVES do
+        Assert.IsTrue(TRegEx.IsMatch(S, BuildMacroStartExpr),
+            S + '  EXPR=[' + BuildMacroStartExpr + ']');
+end;
+
+procedure TMacroSchemeRegexTests.Scheme_Ignores_LanguageBraces;
+const
+    NEGATIVES: TArray<string> = [
+        '{ $_.CPU -gt 10 }', '@{ Name = 1 }', '${HOME}',
+        '${USER} on ${HOST}', 'switch ($x) { Default { 1 } }',
+        'foreach { Write-Host Test }', 'foo() { printf bar }',
+        '{a..b}', '{"Key": 1}', '{ lowercase }'
+    ];
+var
+    S: string;
+begin
+    for S in NEGATIVES do
+        Assert.IsFalse(TRegEx.IsMatch(S, BuildMacroStartExpr), S);
+end;
+
+procedure TMacroSchemeRegexTests.Registry_MatchesEngineKnowledge;
+begin
+    // Голый VALUE и неизвестные имена движку не известны - красных
+    // карточек для них быть не должно
+    Assert.IsFalse(TRegEx.IsMatch('{VALUE}', BuildMacroStartExpr));
+    Assert.IsFalse(TRegEx.IsMatch('{VALUE_UUID}', BuildMacroStartExpr));
+    Assert.IsFalse(TRegEx.IsMatch('{FOO}', BuildMacroStartExpr));
+    Assert.IsFalse(TRegEx.IsMatch('{INPUTX}', BuildMacroStartExpr));
+
+    Assert.IsTrue(IsKnownMacroName('SENDKEYEX'));
+    Assert.IsTrue(IsKnownMacroName('COUNTER'));
+    Assert.IsTrue(IsKnownMacroName('CLIPBOARD'));
+    Assert.IsFalse(IsKnownMacroName('VALUE'));
+    Assert.IsFalse(IsKnownMacroName('VALUE_UUID'));
 end;
 
 end.

@@ -18,6 +18,18 @@ const
     DEFAULT_DATETIME_FORMAT = 'yyyy-MM-dd HH:mm:ss';
     RANDOM_CHARSET = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
+    // Единый реестр имён макросов (источник истины, ровно как парсит
+    // ParseTokens): подсветка схемы в TSynMultiSyn собирается из него
+    // через BuildMacroStartExpr. Короткие формы {UUID}, {COUNTER},
+    // {DATETIME:fmt}, {ENV:VAR}, {CLIPBOARD} и т.д.
+    MACRO_BASE_NAMES: TArray<string> = [
+        'CLEARLINE', 'CLIPBOARD', 'COUNTER', 'DATETIME', 'ENTER', 'ENV',
+        'INPUT', 'KEYDELAY', 'RANDOM', 'SENDKEY', 'SENDKEYEX', 'SLEEP', 'UUID'
+    ];
+
+function IsKnownMacroName(const AName: string): Boolean;
+function BuildMacroStartExpr: string;
+
 type
     TMacroToken = record
         Kind: TMacroTokenKind;
@@ -69,6 +81,70 @@ uses
     Vcl.Clipbrd,
     Winapi.Windows
     ;
+
+function IsKnownMacroName(const AName: string): Boolean;
+var
+    N: string;
+begin
+    Result := True;
+    for N in MACRO_BASE_NAMES do
+        if N = AName then
+            Exit;
+    Result := False;
+end;
+
+function BuildMacroStartExpr: string;
+var
+    Names: TArray<string>;
+    Sb: TStringBuilder;
+    I, J: Integer;
+    Tmp: string;
+begin
+    // Сортировка по длине по убыванию, иначе SENDKEYEX перебивается
+    // коротким SENDKEY
+    Names := Copy(MACRO_BASE_NAMES, 0, Length(MACRO_BASE_NAMES));
+    for I := 0 to High(Names) - 1 do
+        for J := I + 1 to High(Names) do
+            if Length(Names[J]) > Length(Names[I]) then
+            begin
+                Tmp := Names[I];
+                Names[I] := Names[J];
+                Names[J] := Tmp;
+            end;
+
+    // Создание без строкового аргумента: перегрузки TStringBuilder.Create
+    // разрешаются нестабильно (строка уходила в Capacity и терялась)
+    Sb := TStringBuilder.Create;
+    try
+        Sb.Append('(?<![@$])\{(?=(?:');
+        for I := 0 to High(Names) do
+        begin
+            if I > 0 then
+                Sb.Append('|');
+            Sb.Append(Names[I]);
+        end;
+        Sb.Append(')(?=[\[:\s}]))');
+        Result := Sb.ToString;
+    finally
+        Sb.Free;
+    end;
+end;
+
+// Похож ли первый идентификатор в скобках на попытку макроса: только
+// ВЕРХНИЙ_РЕГИСТР/цифры/подчёркивание - так пишутся директивы движка.
+// '{ $_.CPU }', '{ Default }' из PowerShell/bash - не макросы, а
+// '{SLEP 500}' (опечатка в верхнем регистре) подсказку сохранит.
+function IsMacroAttemptLike(const ARawName: string): Boolean;
+var
+    C: Char;
+begin
+    Result := Length(ARawName) >= 2;
+    if not Result then
+        Exit;
+    for C in ARawName do
+        if not CharInSet(C, ['A'..'Z', '0'..'9', '_']) then
+            Exit(False);
+end;
 
 constructor TMacroEngine.Create;
 begin
@@ -205,6 +281,7 @@ var
     Token: TMacroToken;
     LastPos, MatchStart: Integer;
     Cmd, Name, Args, ParamStr, KeyChar: string;
+    RawName: string;
     ValueDir, ValueArg: string;
     P, BracketEnd, ValueColon: Integer;
     SleepMs, RandomLen: Integer;
@@ -300,7 +377,8 @@ begin
             while (P <= Length(Cmd)) and not CharInSet(Cmd[P], [' ', '[']) do
                 Inc(P);
 
-            Name := UpperCase(Trim(Copy(Cmd, 1, P - 1)));
+            RawName := Trim(Copy(Cmd, 1, P - 1));
+            Name := UpperCase(RawName);
             Args := Trim(Copy(Cmd, P, MaxInt));
 
             Token.Text := '';
@@ -321,6 +399,18 @@ begin
             begin
                 ValueArg := Trim(Copy(Cmd, ValueColon + 1, MaxInt));
                 ValueDir := Copy(ValueDir, 1, ValueColon - 1);
+            end;
+
+            // Скобки без макро-намерения (PowerShell/bash/JSON) - обычный
+            // текст: без токена, красной карточки и предупреждений.
+            // Проверка ПОСЛЕ разделения '{ENV:ARG}'/'{VALUE_X:ARG}' на имя
+            // и аргумент, иначе колоночные формы терялись.
+            if (not IsKnownMacroName(Name)) and
+               (not ((ValueColon > 0) and IsKnownMacroName(ValueDir))) and
+               (not IsMacroAttemptLike(RawName)) then
+            begin
+                LastPos := MatchStart + Match.Length;
+                Continue;
             end;
 
             if (ValueDir = 'DATETIME') or (ValueDir = 'UUID') or (ValueDir = 'RANDOM') or

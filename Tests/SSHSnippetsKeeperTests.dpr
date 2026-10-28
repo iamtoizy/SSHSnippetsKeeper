@@ -24,6 +24,7 @@ uses
     Tests.MacroInputTypes in 'Tests.MacroInputTypes.pas',
     Tests.SnippetLanguages in 'Tests.SnippetLanguages.pas',
     Tests.SnippetLanguageDetect in 'Tests.SnippetLanguageDetect.pas',
+    Tests.SnippetLanguageNB in 'Tests.SnippetLanguageNB.pas',
     Tests.SynHighlighterFactory in 'Tests.SynHighlighterFactory.pas'
     ;
 
@@ -51,8 +52,10 @@ begin
         TDUnitX.RegisterTestFixture(TMacroInputTypesTests);
         TDUnitX.RegisterTestFixture(TSnippetLanguagesTests);
         TDUnitX.RegisterTestFixture(TSnippetLanguageDetectTests);
+        TDUnitX.RegisterTestFixture(TSnippetLanguageNBTests);
         TDUnitX.RegisterTestFixture(TSynHighlighterFactoryTests);
         TDUnitX.RegisterTestFixture(TMacroBodySynTests);
+        TDUnitX.RegisterTestFixture(TMacroSchemeRegexTests);
         Runner := TDUnitX.CreateRunner([TDUnitXConsoleLogger.Create(False)]);
         Runner.UseRTTI := True;
         Results := Runner.Execute;
