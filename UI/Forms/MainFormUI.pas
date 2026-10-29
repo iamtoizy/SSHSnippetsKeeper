@@ -741,7 +741,9 @@ begin
                 actFavSlot9.Enabled := False;
                 actFavSlot0.Enabled := False;
 
-                // Очищаем списки
+                // Очищаем списки (данные строк освобождаем вручную:
+                // TListItems.Clear не вызывает OnDeletion)
+                FreeSnippetListData;
                 lvSnippets.Items.Clear;
                 lvTags.Items.Clear;
                 tvCategories.Items.BeginUpdate;
@@ -1110,6 +1112,7 @@ begin
     Node := tvCategories.Selected;
     if Node = nil then
     begin
+        FreeSnippetListData;
         lvSnippets.Items.Clear;
         Exit;
     end;
@@ -1299,7 +1302,10 @@ begin
             if tvCategories.Selected <> nil then
                 tvCategoriesChange(tvCategories, tvCategories.Selected)
             else
+            begin
+                FreeSnippetListData;
                 lvSnippets.Items.Clear;
+            end;
         end,
         procedure
         begin
@@ -1654,6 +1660,9 @@ begin
 
     lvSnippets.Items.BeginUpdate;
     try
+        // TListItems.Clear не вызывает OnDeletion, поэтому старые данные
+        // строк освобождаем до перезаполнения списка
+        FreeSnippetListData;
         lvSnippets.Items.Clear;
         for Snippet in Snippets do
         begin

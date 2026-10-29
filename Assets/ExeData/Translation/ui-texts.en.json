@@ -540,6 +540,9 @@
     },
     "rbFTS": {
       "Caption": "FTS5 Search"
+    },
+    "cbUser": {
+      "Hint": "Current workspace"
     }
   },
   "CronGenForm": {
@@ -1230,6 +1233,11 @@
           "Main": "Visual constructor for safe and fast generation of Linux permission configuration commands.",
           "Expanded": "Matrix of permissions and special bits:<br>• R (Read), W (Write), X (Execute / Enter directory).<br>• SUID / SGID: Run as owner / Inherit directory group.<br>• Sticky Bit: Prevents deletion of others' files in shared folders (e.g., /tmp).<br>Smart modifiers:<br>• Smart X (+X): Safe recursion. Grants execute (enter) permissions only to directories, without making regular text files executable.<br>• Separate mode: Generates a `find` command chain for bulk web server permissions (directories — 755, files — 644).<br>• Recursive (-R): Applies the command to all nested items.<br>Formats and history:<br>• The \"Octal\" (0755) and \"Symbolic\" (drwxr-xr-x) fields synchronize with the checkboxes. Entering `d` as the first character automatically marks the target as a directory.<br>• Usernames, groups, and paths are automatically remembered (saved to history) when the \"Copy\" button is pressed.<br>• Frequent settings (e.g., for SSH keys) can be saved in \"Presets\"."
         }
+      },
+      "QuickSearchForm": {
+        "Title": "Quick Search",
+        "Main": "Floating quick search panel for snippets. Opens with the global <code>ALT+Q</code> hotkey. Start typing — the result list updates automatically. With an empty query, favorite snippets are shown (the first ten are hot slots for quick launching). Drag the panel edges to resize; <code>CTRL</code>+left mouse button moves the whole window.",
+        "Expanded": "<b>Search modes</b><br>• «Text search» — substring search across snippets.<br>• «FTS5 search» — full-text search supporting <code>AND</code>, <code>OR</code>, <code>NOT</code> operators, quotes and <code>*</code> prefixes.<br>• Queries shorter than three characters are not executed.<br>• The drop-down list on the right limits the search to a single workspace.<br><br><b>Keys</b><br><code>ENTER</code> — run the selected snippet<br><code>↑</code> / <code>↓</code> — move focus from the search box to the results list<br><code>ESC</code> — clear the query; press again to close the panel<br><code>1</code>…<code>0</code> — launch a favorite by number (with an empty query)<br><code>CTRL+ALT+↑</code> / <code>↓</code> — adjust window opacity (<code>SHIFT</code> — larger step)<br><br>Double-click a row to run the snippet. Hover a row to preview its content."
       }
     },
     "Actions": {

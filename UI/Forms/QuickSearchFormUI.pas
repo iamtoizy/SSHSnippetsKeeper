@@ -21,6 +21,7 @@ uses
 
 type
     TQuickSearchForm = class(TBaseForm)
+        pnlTop: TPanel;
         lvQuickResults: TListView;
         ebQuickSearch: TEdit;
         rbText: TRadioButton;
@@ -28,6 +29,7 @@ type
         cbUser: TComboBox;
         procedure FormDestroy(Sender: TObject);
         procedure FormCreate(Sender: TObject);
+        procedure FormResize(Sender: TObject);
         procedure cbUserChange(Sender: TObject);
         procedure ebQuickSearchChange(Sender: TObject);
         procedure FormHide(Sender: TObject);
@@ -36,6 +38,7 @@ type
         procedure lvQuickResultsEnter(Sender: TObject);
         procedure lvQuickResultsKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
         procedure lvQuickResultsDeletion(Sender: TObject; Item: TListItem);
+        procedure pnlTopResize(Sender: TObject);
     private
         FSnippetService: ISnippetService;
         FUserService: IUserService;
@@ -47,6 +50,10 @@ type
         FOldAppShowHint: TShowHintEvent;
         FDeactivateTimer: TTimer;
         FSearchTimer: TTimer;
+        // Защита от повторного входа при пересчете раскладки верхней панели
+        FLayoutLock: Boolean;
+        // Естественная ширина cbUser до первого растягивания в вертикальном режиме
+        FCbUserBaseWidth: Integer;
 
         procedure AppMessage(var Msg: TMsg; var Handled: Boolean);
         // Генератор подсказок
@@ -57,11 +64,17 @@ type
         procedure UpdateResults;
         procedure LoadUsersToComboBox;
         procedure FreeQuickResultsData;
+        // Адаптивная раскладка верхней панели: в строку или в столбец
+        procedure LayoutTopPanel;
+        // Минимальная ширина верхней панели, при которой элементы помещаются в строку
+        function TopPanelRequiredWidth: Integer;
         procedure WMActivate(var Msg: TWMActivate); message WM_ACTIVATE;
     protected
         procedure CreateParams(var Params: TCreateParams); override;
         procedure DoClose(var Action: TCloseAction); override;
+        procedure DoShownOnScreen; override;
     public
+        procedure DoInitialize; override;
         procedure ShowWithService(
             Sender: TObject;
             AppContext: IAppContext;
@@ -81,6 +94,7 @@ uses
     SnippetViewData,
     System.UITypes,
     Common.Localization,
+    UI.HoverHelpManager,
 
     Core.Entities.User
     ;
@@ -89,6 +103,10 @@ uses
 
 const
     RESIZE_BORDER_WIDTH = 6;
+    // Параметры адаптивной раскладки верхней панели
+    TOP_PANEL_GAP = 6;       // Промежуток между элементами
+    TOP_PANEL_MARGIN = 2;    // Отступ сверху и снизу внутри панели
+    MIN_SEARCH_WIDTH = 150;  // Минимальная ширина поля поиска в горизонтальном режиме
 
 procedure TQuickSearchForm.FormDestroy(Sender: TObject);
 begin
@@ -126,6 +144,124 @@ begin
     FSearchTimer.Interval := 250;
     FSearchTimer.Enabled := False;
     FSearchTimer.OnTimer := SearchTimerTick;
+end;
+
+procedure TQuickSearchForm.DoInitialize;
+begin
+    // Справка по панели быстрого поиска. Кнопка «?» появляется при наведении
+    // на верхнюю панель или на список результатов.
+    RegisterHelp(pnlTop, hipTopRight, 'Help.QuickSearchForm', hkCustomForm, -2, 2);
+    RegisterHelp(lvQuickResults, hipTopRight, 'Help.QuickSearchForm', hkCustomForm, -2, 2);
+
+    // Локализация уже применена, радиокнопки получили итоговую ширину
+    LayoutTopPanel;
+end;
+
+function TQuickSearchForm.TopPanelRequiredWidth: Integer;
+begin
+    // Ширину cbUser запоминаем до первого растягивания: в вертикальном
+    // режиме он растягивается на всю панель, и если считать требуемую
+    // ширину по текущей, обратный переход в строку станет невозможным
+    if FCbUserBaseWidth = 0 then
+        FCbUserBaseWidth := cbUser.Width;
+
+    Result := MIN_SEARCH_WIDTH + TOP_PANEL_GAP + rbText.Width +
+        TOP_PANEL_GAP + rbFTS.Width + TOP_PANEL_GAP + FCbUserBaseWidth;
+end;
+
+procedure TQuickSearchForm.LayoutTopPanel;
+var
+    ContentWidth: Integer;
+    RequiredWidth: Integer;
+    CenterTop: Integer;
+    PanelHeight: Integer;
+    ListHeight: Integer;
+begin
+    if FLayoutLock then Exit;
+    if (pnlTop = nil) or (ebQuickSearch = nil) or (rbText = nil) or
+       (rbFTS = nil) or (cbUser = nil) or (lvQuickResults = nil) then Exit;
+
+    FLayoutLock := True;
+    try
+        ContentWidth := pnlTop.ClientWidth;
+        if ContentWidth < 1 then
+            ContentWidth := 1;
+
+        RequiredWidth := TopPanelRequiredWidth;
+
+        if ContentWidth >= RequiredWidth then
+        begin
+            // Элементы помещаются в строку: поиск растягивается,
+            // остальные контролы прижимаются к правому краю
+            PanelHeight := cbUser.Height + 2 * TOP_PANEL_MARGIN;
+
+            cbUser.SetBounds(ContentWidth - FCbUserBaseWidth, TOP_PANEL_MARGIN,
+                FCbUserBaseWidth, cbUser.Height);
+            rbFTS.SetBounds(cbUser.Left - TOP_PANEL_GAP - rbFTS.Width, 0,
+                rbFTS.Width, rbFTS.Height);
+            rbText.SetBounds(rbFTS.Left - TOP_PANEL_GAP - rbText.Width, 0,
+                rbText.Width, rbText.Height);
+            ebQuickSearch.SetBounds(0, TOP_PANEL_MARGIN,
+                rbText.Left - TOP_PANEL_GAP, ebQuickSearch.Height);
+
+            // Радиокнопки центрируем по вертикали относительно поля поиска
+            CenterTop := TOP_PANEL_MARGIN + (cbUser.Height - rbText.Height) div 2;
+            rbText.Top := CenterTop;
+            rbFTS.Top := CenterTop;
+        end
+        else
+        begin
+            // Элементы не помещаются: выстраиваем их в столбец
+            ebQuickSearch.SetBounds(0, TOP_PANEL_MARGIN, ContentWidth, ebQuickSearch.Height);
+
+            rbText.SetBounds(0, ebQuickSearch.Top + ebQuickSearch.Height + TOP_PANEL_GAP,
+                rbText.Width, rbText.Height);
+            rbFTS.SetBounds(0, rbText.Top + rbText.Height + TOP_PANEL_GAP,
+                rbFTS.Width, rbFTS.Height);
+            cbUser.SetBounds(0, rbFTS.Top + rbFTS.Height + TOP_PANEL_GAP,
+                ContentWidth, cbUser.Height);
+
+            PanelHeight := cbUser.Top + cbUser.Height + TOP_PANEL_MARGIN;
+        end;
+
+        // Высоту меняем только при необходимости: любое изменение панели
+        // снова вызывает OnResize, а раскладка уже посчитана
+        if pnlTop.Height <> PanelHeight then
+            pnlTop.Height := PanelHeight;
+
+        // Список результатов позиционируем вручную, а не через alClient:
+        // VCL выравнивает alClient-контролы до того, как панель получит новую
+        // высоту, и при переходе в столбец список перекрывал бы панель
+        ListHeight := ClientHeight - pnlTop.Top - PanelHeight - Padding.Bottom;
+        if ListHeight < 1 then
+            ListHeight := 1;
+        lvQuickResults.SetBounds(pnlTop.Left, pnlTop.Top + PanelHeight,
+            ClientWidth - pnlTop.Left - Padding.Right, ListHeight);
+    finally
+        FLayoutLock := False;
+    end;
+end;
+
+procedure TQuickSearchForm.FormResize(Sender: TObject);
+begin
+    // При изменении размеров формы панель и список пересчитываются вместе
+    LayoutTopPanel;
+end;
+
+procedure TQuickSearchForm.pnlTopResize(Sender: TObject);
+begin
+    LayoutTopPanel;
+end;
+
+procedure TQuickSearchForm.DoShownOnScreen;
+begin
+    inherited;
+
+    // Форма прячется через caHide и помнит размер с прошлого показа, поэтому
+    // событие OnResize панели при открытии может не прийти. А изменения
+    // размеров, сделанные в скрытом состоянии, не всегда применяются к
+    // реальным окнам - пересчитываем раскладку в момент фактического показа
+    LayoutTopPanel;
 end;
 
 procedure TQuickSearchForm.AppShowHint(var HintStr: string; var CanShow: Boolean; var HintInfo: VCL.Controls.THintInfo);
@@ -222,6 +358,8 @@ var
 begin
     if not Self.Visible then Exit;
     if TSnippetRunner.IsExecuting then Exit;
+    // Пока открыта модальная форма (например, справка), панель не прячем
+    if Application.ModalLevel > 0 then Exit;
 
     ForeWnd := GetForegroundWindow;
     if (ForeWnd <> 0) and (ForeWnd <> FTargetHWND) and (ForeWnd <> Self.Handle) then
@@ -252,7 +390,10 @@ begin
                 begin
                     GetClassName(WndAtPos, WinClassName, Length(WinClassName));
                     ClsName := string(WinClassName);
-                    if (ClsName <> 'ComboLBox') and (ClsName <> 'THintWindow') and (ClsName <> 'tooltips_class32') then
+                    // THelpPopupWindow - плавающая кнопка справки: клик по ней
+                    // не должен закрывать панель
+                    if (ClsName <> 'ComboLBox') and (ClsName <> 'THintWindow') and
+                       (ClsName <> 'tooltips_class32') and (ClsName <> 'THelpPopupWindow') then
                     begin
                         Close;
                         Exit;
@@ -637,6 +778,9 @@ begin
 
     lvQuickResults.Items.BeginUpdate;
     try
+        // TListItems.Clear не вызывает OnDeletion, поэтому данные строк
+        // освобождаем вручную, иначе каждая перезагрузка списка течёт
+        FreeQuickResultsData;
         lvQuickResults.Items.Clear;
 
         if IsFavoritesMode then
@@ -685,6 +829,8 @@ begin
     inherited;
     if Msg.Active = WA_INACTIVE then
     begin
+        // Модальная справка забирает активацию — панель при этом не закрываем
+        if Application.ModalLevel > 0 then Exit;
         if not TSnippetRunner.IsExecuting then
             Close;
     end;

@@ -73,7 +73,14 @@ type
         FWaitStartTick: Int64;
         FFadeStartTick: Int64;
         FOldWndProc: TWndMethod;
-
+        // Пока форма-владелец в модальном цикле перемещения/изменения размера
+        // (WM_ENTERSIZEMOVE..WM_EXITSIZEMOVE), показ кнопки запрещён
+        FDragSuppressed: Boolean;
+        // Экранная позиция цели на момент последнего позиционирования кнопки.
+        // Страховка на перемещение окна без WM_ENTERSIZEMOVE (программное,
+        // через SetWindowPos): кнопка - отдельное окно и за формой не едет
+        FTargetOrigin: TPoint;
+        FTargetOriginValid: Boolean;
         class var
             // Пока активен индикатор занятости, плавающие кнопки помощи не показываются
             FBusySuppressed: Boolean;
@@ -110,6 +117,13 @@ type
         // сообщения не прокачиваются, и она не может ни перерисоваться, ни скрыться.
         class procedure SuppressForBusy;
         class procedure ResumeAfterBusy;
+
+        // Прячет кнопку и запрещает её показ, пока форма перемещается или
+        // меняет размер. Кнопка - отдельное topmost-окно и за формой не едет,
+        // поэтому при перетаскивании оставалась висеть на прежнем месте экрана.
+        // Вызывается формой по WM_ENTERSIZEMOVE/WM_EXITSIZEMOVE.
+        procedure BeginDragSuppress;
+        procedure EndDragSuppress;
 
         property OnShowHelp: TOnShowHelpEvent read FOnShowHelp write FOnShowHelp;
     end;
@@ -384,12 +398,24 @@ begin
     FLastHoveredCtrl := nil;
     FLastMousePt := Point(-1, -1);
     FLastWnd := 0;
+    FTargetOriginValid := False;
 
     if Assigned(FSharedButton) and FSharedButton.HandleAllocated then
     begin
         FSharedButton.AlphaBlendValue := 0;
         ShowWindow(FSharedButton.Handle, SW_HIDE);
     end;
+end;
+
+procedure TUIHoverHelpManager.BeginDragSuppress;
+begin
+    HideButton;
+    FDragSuppressed := True;
+end;
+
+procedure TUIHoverHelpManager.EndDragSuppress;
+begin
+    FDragSuppressed := False;
 end;
 
 procedure TUIHoverHelpManager.OnTimerTick(Sender: TObject);
@@ -403,11 +429,31 @@ var
     IsOverButton: Boolean;
     CurrentTime: Int64;
     Elapsed: Int64;
+    TargetOrigin: TPoint;
 begin
     if FBusySuppressed then
         Exit;
 
     if (not Assigned(Owner)) or (csDestroying in Owner.ComponentState) then Exit;
+
+    if FDragSuppressed then
+    begin
+        // Страховка на случай потерянного WM_EXITSIZEMOVE: без зажатой кнопки
+        // мыши перемещение или ресайз продолжаться не могут
+        if GetAsyncKeyState(VK_LBUTTON) >= 0 then
+            FDragSuppressed := False
+        else
+            Exit;
+    end;
+
+    // Окно могли сдвинуть без WM_ENTERSIZEMOVE - тогда кнопка осталась бы
+    // висеть на прежнем месте экрана, поэтому просто прячем её
+    if FTargetOriginValid and Assigned(FCurrentTarget) then
+    begin
+        TargetOrigin := FCurrentTarget.ClientToScreen(Point(0, 0));
+        if (TargetOrigin.X <> FTargetOrigin.X) or (TargetOrigin.Y <> FTargetOrigin.Y) then
+            HideButton;
+    end;
 
     Pt := Mouse.CursorPos;
     Wnd := WindowFromPoint(Pt);
@@ -558,6 +604,10 @@ begin
     Pt.Y := Pt.Y + ScaledOffsetY;
 
     Pt := Target.ClientToScreen(Pt);
+
+    // Запоминаем, где находится цель: если её окно уедет, кнопку надо спрятать
+    FTargetOrigin := Target.ClientToScreen(Point(0, 0));
+    FTargetOriginValid := True;
 
     // Перемещаем кнопку и выводим на передний план
     SetWindowPos(FSharedButton.Handle, HWND_TOPMOST, Pt.X, Pt.Y, ActualBtnW, ActualBtnH, SWP_NOACTIVATE);

@@ -330,6 +330,7 @@
         <DCCReference Include="Common\Common.Settings.pas"/>
         <DCCReference Include="Common\Common.SnippetLanguageDetect.pas"/>
         <DCCReference Include="Common\Common.SnippetLanguages.pas"/>
+        <DCCReference Include="Common\Common.SnippetLanguageNB.pas"/>
         <DCCReference Include="Common\Common.VCLStyleService.pas"/>
         <DCCReference Include="UI\Controls\SynHighlighterFactory.pas"/>
         <RcItem Include="Database\Schema\000_schema_init.sql">

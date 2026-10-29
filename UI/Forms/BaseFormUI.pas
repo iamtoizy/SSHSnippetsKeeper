@@ -78,6 +78,7 @@ type
     public
         constructor Create(Owner: TComponent); override;
         destructor Destroy; override;
+        procedure WndProc(var Message: TMessage); override;
         procedure UpdateUI(const State: TBaseFormState); virtual;
         procedure Initialize(AppContext: IAppContext);
         procedure WarmUpPaint;
@@ -240,6 +241,7 @@ procedure TBaseForm.DoShowHelp(Target: TControl; const HelpKey: string; HelpKind
 var
     TaskDlg: TTaskDialog;
     Title, MainText, ExpText: string;
+    HelpTopmost: Boolean;
 begin
     if csDestroying in ComponentState then Exit;
 
@@ -252,10 +254,17 @@ begin
             begin
                 if FCustomHelpForm = nil then
                     FCustomHelpForm := TCustomHelpForm.Create(Self);
-                with FCustomHelpForm do
-                begin
-                    SetContent(Title, MainText, ExpText);
-                    ShowModal;
+                FCustomHelpForm.SetContent(Title, MainText, ExpText);
+                // Форма в слое TOPMOST (например, панель быстрого поиска) перекрыла бы
+                // модальную справку; на время показа поднимаем справку в тот же слой
+                HelpTopmost := Self.FormStyle = fsStayOnTop;
+                if HelpTopmost then
+                    FCustomHelpForm.FormStyle := fsStayOnTop;
+                try
+                    FCustomHelpForm.ShowModal;
+                finally
+                    if HelpTopmost then
+                        FCustomHelpForm.FormStyle := fsNormal;
                 end;
             end;
 
@@ -282,6 +291,20 @@ begin
                 end;
             end;
     end;
+end;
+
+procedure TBaseForm.WndProc(var Message: TMessage);
+begin
+    if Assigned(FHelpManager) then
+        case Message.Msg of
+            // Перетаскивание или изменение размера окна: плавающая кнопка справки -
+            // отдельное topmost-окно и не следует за формой, поэтому её надо спрятать
+            WM_ENTERSIZEMOVE:
+                FHelpManager.BeginDragSuppress;
+            WM_EXITSIZEMOVE:
+                FHelpManager.EndDragSuppress;
+        end;
+    inherited WndProc(Message);
 end;
 
 class procedure TBaseForm.ExecuteGlobal(Owner: TComponent; AppContext: IAppContext);

@@ -5,9 +5,11 @@ object QuickSearchForm: TQuickSearchForm
   AlphaBlendValue = 230
   BorderStyle = bsNone
   Caption = #1041#1099#1089#1090#1088#1099#1081' '#1087#1086#1080#1089#1082
-  ClientHeight = 199
+  ClientHeight = 200
   ClientWidth = 667
   Color = clBtnFace
+  Constraints.MinHeight = 200
+  Constraints.MinWidth = 200
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -12
@@ -26,16 +28,62 @@ object QuickSearchForm: TQuickSearchForm
   OnDestroy = FormDestroy
   OnHide = FormHide
   OnKeyDown = FormKeyDown
-  DesignSize = (
-    667
-    199)
+  OnResize = FormResize
   TextHeight = 15
+  object pnlTop: TPanel
+    Left = 3
+    Top = 3
+    Width = 661
+    Height = 27
+    Align = alTop
+    BevelOuter = bvNone
+    TabOrder = 0
+    OnResize = pnlTopResize
+    object ebQuickSearch: TEdit
+      Left = 0
+      Top = 2
+      Width = 164
+      Height = 23
+      TabOrder = 0
+      OnChange = ebQuickSearchChange
+    end
+    object rbText: TRadioButton
+      Left = 170
+      Top = 5
+      Width = 125
+      Height = 17
+      Caption = #1058#1077#1082#1089#1090#1086#1074#1099#1081
+      Checked = True
+      TabOrder = 1
+      TabStop = True
+    end
+    object rbFTS: TRadioButton
+      Left = 301
+      Top = 5
+      Width = 108
+      Height = 17
+      Caption = 'FTS'
+      TabOrder = 2
+    end
+    object cbUser: TComboBox
+      Left = 415
+      Top = 2
+      Width = 220
+      Height = 23
+      Hint = #1058#1077#1082#1091#1097#1077#1077' '#1087#1088#1086#1089#1090#1088#1072#1085#1089#1090#1074#1086
+      Style = csDropDownList
+      DropDownCount = 18
+      ParentShowHint = False
+      ShowHint = True
+      TabOrder = 3
+      OnChange = cbUserChange
+    end
+  end
   object lvQuickResults: TListView
-    Left = 1
-    Top = 25
-    Width = 663
-    Height = 172
-    Anchors = [akLeft, akTop, akRight, akBottom]
+    Left = 3
+    Top = 30
+    Width = 661
+    Height = 166
     Columns = <>
     ParentShowHint = False
     ShowHint = True
@@ -45,48 +93,5 @@ object QuickSearchForm: TQuickSearchForm
     OnDeletion = lvQuickResultsDeletion
     OnEnter = lvQuickResultsEnter
     OnKeyDown = lvQuickResultsKeyDown
-  end
-  object cbUser: TComboBox
-    Left = 444
-    Top = 1
-    Width = 220
-    Height = 23
-    Hint = #1058#1077#1082#1091#1097#1077#1077' '#1087#1088#1086#1089#1090#1088#1072#1085#1089#1090#1074#1086'. '#1053#1072#1078#1084#1080' '#9881' '#1076#1083#1103' '#1091#1087#1088#1072#1074#1083#1077#1085#1080#1103'.'
-    Style = csDropDownList
-    Anchors = [akTop, akRight]
-    DropDownCount = 18
-    ParentShowHint = False
-    ShowHint = True
-    TabOrder = 2
-    OnChange = cbUserChange
-  end
-  object ebQuickSearch: TEdit
-    Left = 1
-    Top = 1
-    Width = 184
-    Height = 23
-    Anchors = [akLeft, akTop, akRight]
-    TabOrder = 0
-    OnChange = ebQuickSearchChange
-  end
-  object rbFTS: TRadioButton
-    Left = 327
-    Top = 4
-    Width = 108
-    Height = 17
-    Anchors = [akTop, akRight]
-    Caption = 'FTS'
-    TabOrder = 3
-  end
-  object rbText: TRadioButton
-    Left = 196
-    Top = 4
-    Width = 125
-    Height = 17
-    Anchors = [akTop, akRight]
-    Caption = #1058#1077#1082#1089#1090#1086#1074#1099#1081
-    Checked = True
-    TabOrder = 4
-    TabStop = True
   end
 end
