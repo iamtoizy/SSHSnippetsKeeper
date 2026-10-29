@@ -71,6 +71,7 @@ type
         nAISettings: TMenuItem;
         cbIgnoreSecurityChecks: TCheckBox;
         chkAutoLanguage: TCheckBox;
+        bForceDetect: TButton;
         tmrSecurityScan: TTimer;
         sbBottom: TStatusBar;
         pClient: TPanel;
@@ -111,6 +112,7 @@ type
         procedure cbAIHubChange(Sender: TObject);
         procedure cbAIModelChange(Sender: TObject);
         procedure cbLanguageChange(Sender: TObject);
+        procedure bForceDetectClick(Sender: TObject);
         procedure chkAutoLanguageClick(Sender: TObject);
         procedure cbIgnoreSecurityChecksClick(Sender: TObject);
         procedure FormClose(Sender: TObject; var Action: TCloseAction);
@@ -185,6 +187,9 @@ type
         procedure SetSyntax;
         procedure ApplySnippetLanguage(const ALanguage: string);
         function DetectSnippetLanguageSmart(const AContent: string): string;
+        // Принудительный пересчёт языка: в обход дебаунса, порогов существенности
+        // и замка автоопределения (кнопка в панели инструментов редактора)
+        procedure ForceDetectLanguage;
         procedure SyncLanguageCombo;
         procedure UpdateAutoLanguageCheck;
         procedure PopulateHubs;
@@ -553,6 +558,37 @@ begin
     SyncLanguageCombo;
     FDetectBaselineText := mContent.Text;
     SetSyntax;
+end;
+
+procedure TAddEditSnippetForm.ForceDetectLanguage;
+var
+    Detected: string;
+begin
+    // Принудительный прогон: в обход дебаунса таймера и порога существенности
+    // правок. Замок автоопределения не трогаем - кнопка выполняет ровно один
+    // пересчёт, а фиксирует язык ручной выбор в комбобоксе.
+    FLangTimer.Enabled := False;
+
+    // На пустом редакторе детект дал бы bash просто как значение по умолчанию:
+    // это выглядит как сломанная кнопка, поэтому объясняем причину отдельно
+    if Trim(mContent.Text) = '' then
+    begin
+        ShowSimpleToast(TUIStateLoader.GetMessage('AddEditSnippet.DetectNoContent'));
+        Exit;
+    end;
+
+    Detected := DetectSnippetLanguageSmart(mContent.Text);
+    FDetectBaselineText := mContent.Text;
+
+    if (Detected <> '') and (Detected <> FCurrentLanguage) then
+        ApplySnippetLanguage(Detected);
+end;
+
+procedure TAddEditSnippetForm.bForceDetectClick(Sender: TObject);
+begin
+    ForceDetectLanguage;
+    if mContent.CanFocus then
+        mContent.SetFocus;
 end;
 
 function TAddEditSnippetForm.DetectSnippetLanguageSmart(const AContent: string): string;
@@ -1835,6 +1871,19 @@ var
     Scheme: TScheme;
 begin
     NewBase := TSynHighlighterFactory.CreateHighlighter(FCurrentLanguage);
+
+    // Plaintext: подсветки нет вообще - редактор рисует текст одним цветом.
+    // Обёртка TSynMultiSyn не создаётся; карточки макросов при этом остаются
+    // (их отрисовывает TMacroCardPlugin, он от Highlighter не зависит).
+    if NewBase = nil then
+    begin
+        mContent.Highlighter := nil;
+        TSynThemeAdapter.ApplyTheme(mContent);
+
+        FreeAndNil(FCurrentMulti);
+        FreeAndNil(FCurrentHighlighter);
+        Exit;
+    end;
 
     if NewBase is TCustomBashSyn then
     begin

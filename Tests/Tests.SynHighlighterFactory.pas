@@ -16,6 +16,8 @@ type
         [Test]
         procedure Create_ReturnsClassPerLanguage;
         [Test]
+        procedure Create_PlainText_ReturnsNil;
+        [Test]
         procedure Create_Unknown_FallsBackToBash;
         [Test]
         procedure DisplayName_NonEmpty_ForAllLanguages;
@@ -90,6 +92,13 @@ begin
     end;
 end;
 
+procedure TSynHighlighterFactoryTests.Create_PlainText_ReturnsNil;
+begin
+    // Подсветка отключена: фабрика не создаёт объект, освобождать нечего
+    Assert.IsNull(TSynHighlighterFactory.CreateHighlighter(SNIPPET_LANG_PLAINTEXT));
+    Assert.IsNull(TSynHighlighterFactory.CreateHighlighter('TXT'));
+end;
+
 procedure TSynHighlighterFactoryTests.Create_Unknown_FallsBackToBash;
 var
     HL: TSynCustomHighlighter;
@@ -117,6 +126,7 @@ begin
         Assert.IsNotEmpty(TSynHighlighterFactory.DisplayName(Id));
 
     Assert.AreEqual('Batch (cmd)', TSynHighlighterFactory.DisplayName('CMD'));
+    Assert.AreEqual('Plain text', TSynHighlighterFactory.DisplayName('TXT'));
 end;
 
 end.

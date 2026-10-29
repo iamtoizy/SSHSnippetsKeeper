@@ -283,6 +283,9 @@
       "Caption": "Auto",
       "Hint": "Detect language from content on substantial edits"
     },
+    "bForceDetect": {
+      "Hint": "Detect the language now, ignoring the autodetect lock and edit thresholds"
+    },
     "bOK": {
       "Caption": "OK"
     },
@@ -1714,7 +1717,8 @@
       "AIChooseModelError": "Select an AI provider and model!",
       "EnterSnippetTextHere": "Enter snippet name here...",
       "MacroCounter": "Macros: %d",
-      "MacroCounterSel": "Macro: %d of %d"
+      "MacroCounterSel": "Macro: %d of %d",
+      "DetectNoContent": "No code to detect language from - add some code first"
     },
     "AISettingsForm": {
       "DeleteModelConfirm": "Delete this model?",

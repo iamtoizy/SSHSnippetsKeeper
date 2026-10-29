@@ -123,7 +123,7 @@ begin
         UserDTO := Default(TUserDTO);
         UserDTO.Name := NewName;
 
-        // Получаем ID новой записи из сервиса (а не пытаемс¤ прочитать UserDTO.ID)
+        // Получаем ID новой записи из сервиса (а не пытаемся прочитать UserDTO.ID)
         NewID := AppContext.UserService.AddUser(UserDTO);
 
         Item := lvWorkspaces.Items.Add;
@@ -231,7 +231,7 @@ procedure TWorkspaceManagerForm.AdjustColumnWidth;
 begin
     if not Assigned(lvWorkspaces) or (lvWorkspaces.Handle = 0) then
         Exit;
-    // Константа LVSCW_AUTOSIZE_USEHEADER (-2) приказывает Windows автоматически раст¤нуть
+    // Константа LVSCW_AUTOSIZE_USEHEADER (-2) приказывает Windows автоматически растянуть
     // последнюю колонку на всЄ доступное пространство.
     lvWorkspaces.Columns[0].Width := LVSCW_AUTOSIZE_USEHEADER;
 end;

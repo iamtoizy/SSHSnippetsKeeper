@@ -283,6 +283,9 @@
       "Caption": "Авто",
       "Hint": "Определять язык по содержимому при существенных правках"
     },
+    "bForceDetect": {
+      "Hint": "Определить язык прямо сейчас, независимо от замка автоопределения и порога правок"
+    },
     "bOK": {
       "Caption": "ОК"
     },
@@ -1714,7 +1717,8 @@
       "AIChooseModelError": "Выбери провайдера и модель ИИ!",
       "EnterSnippetTextHere": "Здесь введи имя сниппета...",
       "MacroCounter": "Макросов: %d",
-      "MacroCounterSel": "Макрос: %d из %d"
+      "MacroCounterSel": "Макрос: %d из %d",
+      "DetectNoContent": "Нечего анализировать — добавьте код"
     },
     "AISettingsForm": {
       "DeleteModelConfirm": "Удалить эту модель?",

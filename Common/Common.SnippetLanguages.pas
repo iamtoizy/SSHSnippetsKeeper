@@ -20,8 +20,11 @@ const
     SNIPPET_LANG_JSON = 'json';
     SNIPPET_LANG_INI = 'ini';
     SNIPPET_LANG_MARKDOWN = 'markdown';
+    // Отключение подсветки: текст рендерится как есть, хайлайтер не создаётся
+    SNIPPET_LANG_PLAINTEXT = 'plaintext';
 
-// Канонические идентификаторы в порядке для комбобокса (bash - по умолчанию)
+// Канонические идентификаторы в порядке для комбобокса (bash - по умолчанию,
+// plaintext - последним: это не язык, а режим «без подсветки»)
 var
     SNIPPET_LANGUAGE_IDS: TArray<string> = [
         SNIPPET_LANG_BASH,
@@ -30,7 +33,8 @@ var
         SNIPPET_LANG_XML,
         SNIPPET_LANG_JSON,
         SNIPPET_LANG_INI,
-        SNIPPET_LANG_MARKDOWN
+        SNIPPET_LANG_MARKDOWN,
+        SNIPPET_LANG_PLAINTEXT
     ];
 
 // Приводит значение к каноническому идентификатору; '' и неизвестные
@@ -75,6 +79,9 @@ begin
 
     if (L = 'md') then
         Exit(SNIPPET_LANG_MARKDOWN);
+
+    if (L = 'text') or (L = 'txt') or (L = 'nohighlight') then
+        Exit(SNIPPET_LANG_PLAINTEXT);
 
     for Id in SNIPPET_LANGUAGE_IDS do
         if L = Id then

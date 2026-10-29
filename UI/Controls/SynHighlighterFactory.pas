@@ -57,6 +57,8 @@ begin
         Result := 'INI'
     else if Id = SNIPPET_LANG_MARKDOWN then
         Result := 'Markdown'
+    else if Id = SNIPPET_LANG_PLAINTEXT then
+        Result := 'Plain text'
     else
         Result := 'Bash / Shell';
 end;
@@ -79,6 +81,10 @@ begin
         Result := TSynIniSyn.Create(nil)
     else if Id = SNIPPET_LANG_MARKDOWN then
         Result := TSynMarkdownSyn.Create(nil)
+    else if Id = SNIPPET_LANG_PLAINTEXT then
+        // Подсветки нет: nil = редактор рисует текст одним цветом.
+        // Исключение для вызывающего кода — сам факт nil-возврата.
+        Result := nil
     else
         Result := TCustomBashSyn.Create(nil);
 end;

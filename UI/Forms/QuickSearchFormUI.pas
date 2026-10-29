@@ -132,7 +132,7 @@ begin
     Application.OnShowHint := AppShowHint;
 
     Self.ShowHint := True;
-    lvQuickResults.ShowHint := True; // Обязательно включаем VCL-подсказки дл¤ списка
+    lvQuickResults.ShowHint := True; // Обязательно включаем VCL-подсказки для списка
     lvQuickResults.HideSelection := False;
 
     FDeactivateTimer := TTimer.Create(Self);
@@ -279,7 +279,7 @@ begin
     if Assigned(FOldAppShowHint) then
         FOldAppShowHint(HintStr, CanShow, HintInfo);
 
-    // Если система просит подсказку именно дл¤ нашего списка:
+    // Если система просит подсказку именно для нашего списка:
     if HintInfo.HintControl = lvQuickResults then
     begin
         // Находим, над какой строчкой сейчас мышь
@@ -299,8 +299,8 @@ begin
             Exit;
         end;
 
-        // Говорим менеджеру подсказок: "Ёта подсказка действительна только в границах этого Item-а".
-        // пока мышь двигаетс¤ внутри этих границ, VCL не будет перерисовывать окно и моргать.
+        // Говорим менеджеру подсказок: "Эта подсказка действительна только в границах этого Item-а".
+        // пока мышь двигается внутри этих границ, VCL не будет перерисовывать окно и моргать.
         // как только мышь выйдет за границы Item-а, VCL сам скроет хинт и запросит новый.
         HintInfo.CursorRect := Item.DisplayRect(drBounds);
 

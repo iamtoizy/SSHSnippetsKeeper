@@ -43,6 +43,9 @@ begin
     Assert.AreEqual(SNIPPET_LANG_MARKDOWN, NormalizeSnippetLanguage('MD'));
     Assert.AreEqual(SNIPPET_LANG_JSON, NormalizeSnippetLanguage('JSON'));
     Assert.AreEqual(SNIPPET_LANG_POWERSHELL, NormalizeSnippetLanguage('PowerShell'));
+    Assert.AreEqual(SNIPPET_LANG_PLAINTEXT, NormalizeSnippetLanguage('PlainText'));
+    Assert.AreEqual(SNIPPET_LANG_PLAINTEXT, NormalizeSnippetLanguage('text'));
+    Assert.AreEqual(SNIPPET_LANG_PLAINTEXT, NormalizeSnippetLanguage(' TXT '));
 end;
 
 procedure TSnippetLanguagesTests.Normalize_Unknown_AndEmpty_DefaultBash;
@@ -54,9 +57,13 @@ end;
 
 procedure TSnippetLanguagesTests.Supported_List_CoversAll;
 begin
-    Assert.AreEqual(7, Integer(Length(SNIPPET_LANGUAGE_IDS)));
+    Assert.AreEqual(8, Integer(Length(SNIPPET_LANGUAGE_IDS)));
     Assert.AreEqual(SNIPPET_LANG_BASH, SNIPPET_LANGUAGE_IDS[0]);
+    // plaintext - не язык, а режим без подсветки: в списке последний,
+    // чтобы автодетект (перебирающий ids) не мог его вернуть
+    Assert.AreEqual(SNIPPET_LANG_PLAINTEXT, SNIPPET_LANGUAGE_IDS[High(SNIPPET_LANGUAGE_IDS)]);
     Assert.IsTrue(IsSupportedSnippetLanguage(SNIPPET_LANG_MARKDOWN));
+    Assert.IsTrue(IsSupportedSnippetLanguage(SNIPPET_LANG_PLAINTEXT));
     Assert.IsFalse(IsSupportedSnippetLanguage('python'));
 end;
 
@@ -65,6 +72,10 @@ begin
     Assert.AreEqual(SNIPPET_LANG_BASH, FenceTagForSnippetLanguage(''));
     Assert.AreEqual(SNIPPET_LANG_BAT, FenceTagForSnippetLanguage('cmd'));
     Assert.AreEqual(SNIPPET_LANG_MARKDOWN, FenceTagForSnippetLanguage('md'));
+    // plaintext - валидный fence-тег: ```plaintext корректен и читаем,
+    // roundtrip export->import сохраняет режим без подсветки
+    Assert.AreEqual(SNIPPET_LANG_PLAINTEXT, FenceTagForSnippetLanguage('plaintext'));
+    Assert.AreEqual(SNIPPET_LANG_PLAINTEXT, FenceTagForSnippetLanguage('TXT'));
 end;
 
 procedure TSnippetLanguagesTests.ShouldRedetect_OnlySubstantialChanges;

@@ -31,6 +31,8 @@ type
         procedure Detect_Markdown;
         [Test]
         procedure Detect_PlainText_AndEmpty_DefaultBash;
+        [Test]
+        procedure Detect_NeverReturnsPlainText;
     end;
 
 implementation
@@ -38,6 +40,7 @@ implementation
 uses
     Common.Consts,
     Common.SnippetLanguageDetect,
+    Common.SnippetLanguageNB,
     System.SysUtils
     ;
 
@@ -107,6 +110,21 @@ procedure TSnippetLanguageDetectTests.Detect_PlainText_AndEmpty_DefaultBash;
 begin
     Assert.AreEqual(SNIPPET_LANG_BASH, DetectSnippetLanguage('echo hello world'));
     Assert.AreEqual(DEFAULT_SNIPPET_LANGUAGE, DetectSnippetLanguage(''));
+end;
+
+procedure TSnippetLanguageDetectTests.Detect_NeverReturnsPlainText;
+begin
+    // plaintext — режим «без подсветки», а не язык.
+    // Автодетект ни через эвристику, ни через NB-классификатор
+    // не должен вернуть его: это нарушает контракты UI.
+    Assert.AreNotEqual(SNIPPET_LANG_PLAINTEXT, DetectSnippetLanguage(''));
+    Assert.AreNotEqual(SNIPPET_LANG_PLAINTEXT, DetectSnippetLanguage('echo hello'));
+    Assert.AreNotEqual(SNIPPET_LANG_PLAINTEXT, DetectSnippetLanguage('# Title'));
+
+    // NB обучена только на скриптовых языках; проза для неё — '' или
+    // случайный язык, но никогда plaintext
+    Assert.AreNotEqual(SNIPPET_LANG_PLAINTEXT,
+        TScriptLanguageClassifier.Shared.PredictLanguage('Just a prose without any code at all'));
 end;
 
 end.

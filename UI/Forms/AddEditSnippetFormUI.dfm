@@ -278,6 +278,18 @@ object AddEditSnippetForm: TAddEditSnippetForm
             TabOrder = 3
             OnClick = chkAutoLanguageClick
           end
+          object bForceDetect: TButton
+            Left = 148
+            Top = 0
+            Width = 26
+            Height = 24
+            Anchors = [akTop, akRight]
+            Caption = #8635
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 4
+            OnClick = bForceDetectClick
+          end
           object cbLanguage: TComboBox
             Left = 264
             Top = 1
