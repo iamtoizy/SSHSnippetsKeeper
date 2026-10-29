@@ -1432,8 +1432,6 @@
       "EmptyNameError": "Category name cannot be empty."
     },
     "Snippet": {
-      "LanguageManualLabel": "%s · manual",
-      "LanguageAutoLabel": "%s · auto",
       "LanguageManualHint": "Language: %s. Chosen manually — autodetect is off.",
       "LanguageAutoHint": "Language: %s. Detected automatically as you edit.",
       "NotFound": "Snippet not found.",

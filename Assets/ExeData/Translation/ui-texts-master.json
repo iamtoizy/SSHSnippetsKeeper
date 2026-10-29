@@ -1432,8 +1432,6 @@
       "EmptyNameError": "Имя категории не может быть пустым."
     },
     "Snippet": {
-      "LanguageManualLabel": "%s · вручную",
-      "LanguageAutoLabel": "%s · авто",
       "LanguageManualHint": "Язык: %s. Выбран вручную — автодетект отключён.",
       "LanguageAutoHint": "Язык: %s. Определяется автоматически при правках.",
       "NotFound": "Сниппет не найден.",
