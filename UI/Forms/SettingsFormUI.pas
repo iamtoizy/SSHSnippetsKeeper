@@ -155,10 +155,12 @@ end;
 
 procedure TSettingsForm.DoInitialize;
 begin
+    OutputDebugString(PChar('[SettingsTrace] DoInitialize enter'));
     hkEditor.HotKey := 0;
     pEditor.Enabled := False;
     LoadSettingsToUI;
     PopulateCountersList;
+    OutputDebugString(PChar('[SettingsTrace] DoInitialize done: uiApps=' + IntToStr(lvApplications.Items.Count)));
 end;
 
 procedure TSettingsForm.LoadSettingsToUI;
@@ -422,6 +424,9 @@ procedure TSettingsForm.PopulateApplicationsList;
 var
     Item: TListItem;
 begin
+    OutputDebugString(PChar('[SettingsTrace] PopulateApplicationsList: data=' +
+        IntToStr(Length(AppContext.SettingsManager.Data.AllowedApplications.Items)) +
+        ' uiBefore=' + IntToStr(lvApplications.Items.Count)));
     lvApplications.Items.BeginUpdate;
     try
         lvApplications.Items.Clear;
@@ -435,6 +440,7 @@ begin
     finally
         lvApplications.Items.EndUpdate;
     end;
+    OutputDebugString(PChar('[SettingsTrace] PopulateApplicationsList done: ui=' + IntToStr(lvApplications.Items.Count)));
 end;
 
 function TSettingsForm.TryNormalizeAppName(var AName: string; const AIgnoreExisting: string): Boolean;
@@ -573,6 +579,10 @@ begin
     else
         NewStyle := cbVCLStyle.Items[cbVCLStyle.ItemIndex];
 
+    OutputDebugString(PChar('[SettingsTrace] cbVCLStyleChange: idx=' + IntToStr(cbVCLStyle.ItemIndex) +
+        ' newStyle="' + NewStyle + '" dataApps=' +
+        IntToStr(Length(AppContext.SettingsManager.Data.AllowedApplications.Items))));
+
     Setts := AppContext.SettingsManager.Data;
     if SameText(NewStyle, Setts.UISettings.VCLStyle) then
         Exit;
@@ -598,12 +608,29 @@ begin
 
     Setts.UISettings.VCLStyle := NewStyle;
     AppContext.SettingsManager.Data := Setts;
+    OutputDebugString(PChar('[SettingsTrace] cbVCLStyleChange before Save: settsApps=' +
+        IntToStr(Length(Setts.AllowedApplications.Items)) +
+        ' uiApps=' + IntToStr(lvApplications.Items.Count)));
     AppContext.SettingsManager.Save;
+
+    cbVCLStyle.ItemIndex := cbVCLStyle.Items.IndexOf(NewStyle);
+    if cbVCLStyle.ItemIndex < 0 then
+        cbVCLStyle.ItemIndex := 0;
 end;
 
 procedure TSettingsForm.DoStyleRecreated;
 begin
     inherited;
+
+    OutputDebugString(PChar('[SettingsTrace] DoStyleRecreated enter: ctx=' +
+        BoolToStr(Assigned(FAppContext), True)));
+    if not Assigned(FAppContext) then
+        Exit;
+
+    DoInitialize;
+    CaptureSnapshot;
+    OutputDebugString(PChar('[SettingsTrace] DoStyleRecreated after DoInitialize: uiApps=' +
+        IntToStr(lvApplications.Items.Count)));
 
     if (FStyleSavedPage <> nil) and FStyleSavedPage.TabVisible then
         pcSettings.ActivePage := FStyleSavedPage;
@@ -622,6 +649,9 @@ var
     Info: TActionHotkeyInfo;
 begin
     Setts := AppContext.SettingsManager.Data;
+    OutputDebugString(PChar('[SettingsTrace] bSaveClick enter: uiApps=' +
+        IntToStr(lvApplications.Items.Count) +
+        ' dataApps=' + IntToStr(Length(Setts.AllowedApplications.Items))));
 
     Setts.Hotkeys.QuickSearch := VCLHotkeyToWin32(hkQuickSearch, chkEnableQuickSearch.Checked);
     Setts.Hotkeys.PasswordGen := VCLHotkeyToWin32(hkPassGen, chkEnablePassGen.Checked);
@@ -649,6 +679,8 @@ begin
     Setts.CustomShortCuts := AppContext.HotkeyService.SaveToSettings;
 
     AppContext.SettingsManager.Data := Setts;
+    OutputDebugString(PChar('[SettingsTrace] bSaveClick before Save: settsApps=' +
+        IntToStr(Length(Setts.AllowedApplications.Items))));
     AppContext.SettingsManager.Save;
 
     GWinMonitor.ClearAllowedProcesses;

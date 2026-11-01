@@ -13,6 +13,7 @@ type
     TVCLStyleService = class
     private
         class var FLoadedStyles: TList<TCustomStyleServices>;
+        class procedure RecycleFormStyleHooks;
     public
         class constructor Create;
         class destructor Destroy;
@@ -81,6 +82,7 @@ begin
             if TStyleManager.IsCustomStyleActive then
             begin
                 ResetActiveControls;
+                TThread.ForceQueue(nil, RecycleFormStyleHooks);
                 Exit(TStyleManager.TrySetStyle('Windows', False));
             end;
             Exit(True);
@@ -111,6 +113,20 @@ begin
             FLoadedStyles.Add(TStyleManager.ActiveStyle);
     except
         Result := False;
+    end;
+end;
+
+class procedure TVCLStyleService.RecycleFormStyleHooks;
+begin
+    try
+        TStyleManager.Engine.UnRegisterStyleHook(TCustomForm, TFormStyleHook);
+        TStyleManager.Engine.UnRegisterStyleHook(TForm, TFormStyleHook);
+    except
+    end;
+    try
+        TStyleManager.Engine.RegisterStyleHook(TForm, TFormStyleHook);
+        TStyleManager.Engine.RegisterStyleHook(TCustomForm, TFormStyleHook);
+    except
     end;
 end;
 

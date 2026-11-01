@@ -19,6 +19,9 @@ uses
 
 type
     TForm = class(Vcl.Forms.TForm)
+    private
+        FStyleRecreateQueued: Boolean;
+        procedure DeferredStyleRecreated;
     protected
         procedure DoStyleRecreated; virtual;
         procedure DoShownOnScreen; virtual;
@@ -113,17 +116,45 @@ procedure TForm.WndProc(var Message: TMessage);
 var
     StyleChanged: Boolean;
     ShownNow: Boolean;
+    RecreateMsg: Boolean;
+    MsgName: string;
 begin
     StyleChanged := Message.Msg = CM_CUSTOMSTYLECHANGED;
+    RecreateMsg := (Message.Msg = CM_RECREATEWND) or (Message.Msg = CM_DESTROYHANDLE)
+        or (Message.Msg = WM_DESTROY);
     ShownNow := (Message.Msg = WM_WINDOWPOSCHANGED) and (PWindowPos(Message.LParam) <> nil)
         and ((PWindowPos(Message.LParam).flags and SWP_SHOWWINDOW) <> 0);
+    if RecreateMsg then
+    begin
+        MsgName := 'CM_RECREATEWND';
+        if Message.Msg = CM_DESTROYHANDLE then
+            MsgName := 'CM_DESTROYHANDLE'
+        else if Message.Msg = WM_DESTROY then
+            MsgName := 'WM_DESTROY';
+        OutputDebugString(PChar('[BaseTrace] msg=' + MsgName + ' form=' + ClassName));
+    end;
     if StyleChanged then
         ActiveControl := nil;
     inherited WndProc(Message);
     if StyleChanged then
-        DoStyleRecreated;
+    begin
+        if not FStyleRecreateQueued then
+        begin
+            FStyleRecreateQueued := True;
+            TThread.ForceQueue(nil, DeferredStyleRecreated);
+            OutputDebugString(PChar('[BaseTrace] DoStyleRecreated queued: form=' + ClassName));
+        end;
+    end;
     if ShownNow then
         DoShownOnScreen;
+end;
+
+procedure TForm.DeferredStyleRecreated;
+begin
+    FStyleRecreateQueued := False;
+    if csDestroying in ComponentState then
+        Exit;
+    DoStyleRecreated;
 end;
 
 procedure TForm.DoStyleRecreated;
@@ -155,6 +186,8 @@ end;
 
 destructor TBaseForm.Destroy;
 begin
+    TThread.RemoveQueuedEvents(DeferredStyleRecreated);
+
     // 1. Менеджер справки уничтожаем первым: его всплывающая кнопка
     // является самостоятельным окном и иначе переживёт разрушение формы.
     if Assigned(FHelpManager) then
