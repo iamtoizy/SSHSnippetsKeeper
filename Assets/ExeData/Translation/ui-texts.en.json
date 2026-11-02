@@ -1482,7 +1482,16 @@
       "HistoryEmpty": "History is empty. First, activate a terminal window.",
       "WindowsFound": "Found %d terminal windows. Select target window:",
       "WindowNoLongerExists": "The selected window no longer exists.",
-      "ConfirmTarget": "Insert the snippet into window \"%s\"?"
+      "ConfirmTarget": "Insert the snippet into window \"%s\"?",
+      "WindowsCount": "Windows: %d",
+      "KeyboardHint": "Enter — select · Esc — cancel · 1-9 — quick pick",
+      "FilterEmpty": "No matches",
+      "FilterHint": "Filter: title or process",
+      "ViewTiles": "Tiles",
+      "ViewTable": "Table",
+      "ColTitle": "Title",
+      "ColProcess": "Process",
+      "ColActivated": "Activated"
     },
     "Workspace": {
       "AllSpaces": "All Workspaces",

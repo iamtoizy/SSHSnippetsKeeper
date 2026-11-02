@@ -1482,7 +1482,16 @@
       "HistoryEmpty": "История пуста. Сначала активируйте окно терминала.",
       "WindowsFound": "Найдено %d окон терминала. Выберите целевое окно:",
       "WindowNoLongerExists": "Выбранное окно больше не существует.",
-      "ConfirmTarget": "Вставить сниппет в окно «%s»?"
+      "ConfirmTarget": "Вставить сниппет в окно «%s»?",
+      "WindowsCount": "Окон: %d",
+      "KeyboardHint": "Enter — выбрать · Esc — отмена · 1–9 — быстрый выбор",
+      "FilterEmpty": "Ничего не найдено",
+      "FilterHint": "Фильтр: заголовок или процесс",
+      "ViewTiles": "Плитки",
+      "ViewTable": "Таблица",
+      "ColTitle": "Заголовок",
+      "ColProcess": "Процесс",
+      "ColActivated": "Активировано"
     },
     "Workspace": {
       "AllSpaces": "Все пространства",

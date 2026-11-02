@@ -142,6 +142,9 @@ type
 
         // Фильтр по тегам: True = сниппет должен иметь все выбранные теги
         TagsMatchAll: Boolean;
+
+        // Окно выбора терминала: True = режим таблицы, False = плитки
+        TerminalChooserTableView: Boolean;
     end;
 
     // Интерфейс менеджера
