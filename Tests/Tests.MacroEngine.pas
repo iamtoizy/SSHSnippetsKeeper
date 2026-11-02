@@ -35,6 +35,8 @@ type
         [Test]
         procedure LanguageBraces_ArePlainText_NoUnknownCards;
         [Test]
+        procedure BashSigilBraces_ArePlainText_NoUnknownCards;
+
         procedure MacroAttemptTypo_StillUnknown;
         [Test]
         procedure SendKey_Name_ParsedToVirtualKey;
@@ -378,6 +380,42 @@ begin
             Assert.AreNotEqual(tkUnknown, T.Kind);
 
         Assert.AreEqual(0, Integer(Length(Engine.ValidateCommands('if ($a) { Write-Output $a }'))));
+    finally
+        Engine.Free;
+    end;
+end;
+
+procedure TMacroEngineTests.BashSigilBraces_ArePlainText_NoUnknownCards;
+var
+    Engine: TMacroEngine;
+    Tokens: TArray<TMacroToken>;
+    T: TMacroToken;
+    UnknownCount: Integer;
+begin
+    Engine := TMacroEngine.Create;
+    try
+        Tokens := Engine.GetTokens('export PATH=${PATH}:/usr/local/bin');
+        UnknownCount := 0;
+        for T in Tokens do
+            if T.Kind = tkUnknown then
+                Inc(UnknownCount);
+        Assert.AreEqual(0, UnknownCount);
+
+        Tokens := Engine.GetTokens('arr=(${ARRAY[0]} ${ARRAY[1]})');
+        for T in Tokens do
+            Assert.AreNotEqual(tkUnknown, T.Kind);
+
+        Tokens := Engine.GetTokens('@{KEY = VALUE}');
+        for T in Tokens do
+            Assert.AreNotEqual(tkUnknown, T.Kind);
+
+        Assert.AreEqual(0, Integer(Length(Engine.ValidateCommands('tar -xf ${ARCHIVE}.tar.gz'))));
+
+        // Известный макрос после сигила остаётся макросом
+        Tokens := Engine.GetTokens('echo ${ENV:HOME}');
+        Assert.AreEqual(2, Integer(Length(Tokens)));
+        Assert.AreEqual(tkValue, Tokens[1].Kind);
+        Assert.AreEqual('HOME', Tokens[1].DefaultValue);
     finally
         Engine.Free;
     end;

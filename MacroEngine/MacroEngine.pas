@@ -403,11 +403,15 @@ begin
 
             // Скобки без макро-намерения (PowerShell/bash/JSON) - обычный
             // текст: без токена, красной карточки и предупреждений.
+            // '${VAR}'/'@{KEY}' (сигил $/@ перед '{') - тоже обычный текст,
+            // как в подсветке; известные имена ('${INPUT:x}') остаются
+            // макросами.
             // Проверка ПОСЛЕ разделения '{ENV:ARG}'/'{VALUE_X:ARG}' на имя
             // и аргумент, иначе колоночные формы терялись.
             if (not IsKnownMacroName(Name)) and
                (not ((ValueColon > 0) and IsKnownMacroName(ValueDir))) and
-               (not IsMacroAttemptLike(RawName)) then
+               ((not IsMacroAttemptLike(RawName)) or
+                ((MatchStart > 1) and CharInSet(Text[MatchStart - 1], ['$', '@']))) then
             begin
                 LastPos := MatchStart + Match.Length;
                 Continue;
