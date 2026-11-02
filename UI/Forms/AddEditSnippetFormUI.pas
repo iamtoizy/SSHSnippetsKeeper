@@ -46,6 +46,7 @@ type
         Tags: string;
         Language: string;
         LanguageLocked: Boolean;
+        SecurityIgnore: Boolean;
     end;
 
     TAddEditSnippetForm = class(TBaseForm)
@@ -405,30 +406,31 @@ end;
 function TAddEditSnippetForm.IsSnippetChanged: Boolean;
 var
     TagsStr: string;
+    UIContent, DBContent: string;
+    UIComment, DBComment: string;
     I: Integer;
 begin
     TagsStr := '';
     for I := 0 to lvSelectedTags.Items.Count - 1 do
         TagsStr := TagsStr + ';' + lvSelectedTags.Items[I].Caption;
 
+    UIContent := StringReplace(mContent.Text, #13#10, #10, [rfReplaceAll]);
+    DBContent := StringReplace(FOriginalSnippet.Content, #13#10, #10, [rfReplaceAll]);
+    UIComment := StringReplace(mComment.Text, #13#10, #10, [rfReplaceAll]);
+    DBComment := StringReplace(FOriginalSnippet.Comment, #13#10, #10, [rfReplaceAll]);
+
     Result :=
         (ebTitle.Text <> FOriginalSnippet.Title) or
-        (mContent.Text <> FOriginalSnippet.Content) or
-        (mComment.Text <> FOriginalSnippet.Comment) or
+        (UIContent <> DBContent) or
+        (UIComment <> DBComment) or
         (TagsStr <> FOriginalSnippet.Tags) or
         (FCurrentLanguage <> NormalizeSnippetLanguage(FOriginalSnippet.Language)) or
-        (FLangLocked <> FOriginalSnippet.LanguageLocked);
+        (FLangLocked <> FOriginalSnippet.LanguageLocked) or
+        (cbIgnoreSecurityChecks.Checked <> FOriginalSnippet.SecurityIgnore);
 end;
 
 procedure TAddEditSnippetForm.bCancelClick(Sender: TObject);
 begin
-    if FIsEditMode and
-        IsSnippetChanged and
-        (Application.MessageBox(
-            PChar(TUIStateLoader.GetMessage('AddEditSnippet.CloseConfirmText')),
-            PChar(TUIStateLoader.GetMessage('Common.Warning')),
-            MB_YESNO) = IDNO ) then Exit;
-
     ModalResult := mrCancel;
 end;
 
@@ -916,7 +918,12 @@ begin
     // закрытие формы во время запроса = обращение к освобождённой форме
     CanClose := not FAIInProgress;
     if not CanClose then
-        MessageBeep(MB_ICONWARNING);
+        MessageBeep(MB_ICONWARNING)
+    else if FIsEditMode and (ModalResult <> mrOk) and IsSnippetChanged then
+        CanClose := Application.MessageBox(
+            PChar(TUIStateLoader.GetMessage('AddEditSnippet.CloseConfirmText')),
+            PChar(TUIStateLoader.GetMessage('Common.Warning')),
+            MB_YESNO) <> IDNO;
 end;
 
 procedure TAddEditSnippetForm.FormCreate(Sender: TObject);
@@ -1821,10 +1828,12 @@ begin
             FOriginalSnippet.Tags := '';
             FOriginalSnippet.Language := NormalizeSnippetLanguage(FSnippet.Language);
             FOriginalSnippet.LanguageLocked := FSnippet.LanguageLocked;
+            FOriginalSnippet.SecurityIgnore := FSnippet.IsSecurityCheckIgnored;
 
             ebTitle.Text := FSnippet.Title;
             mContent.Text := FSnippet.Content;
             mComment.Text := FSnippet.Comment;
+            cbIgnoreSecurityChecks.Checked := FSnippet.IsSecurityCheckIgnored;
 
             // Автодетект при открытии не запускаем: сохранённый язык всегда
             // приоритетнее, иначе ручной выбор пользователя теряется
@@ -1863,10 +1872,12 @@ begin
             FOriginalSnippet.Content := '';
             FOriginalSnippet.Comment := '';
             FOriginalSnippet.Tags := '';
+            FOriginalSnippet.SecurityIgnore := False;
 
             ebTitle.Text := '';
             mContent.Text := '';
             mComment.Text := '';
+            cbIgnoreSecurityChecks.Checked := False;
 
             FLangLocked := False;
             FCurrentLanguage := SNIPPET_LANG_BASH;

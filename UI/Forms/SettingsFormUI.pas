@@ -577,6 +577,16 @@ begin
     if SameText(NewStyle, Setts.UISettings.VCLStyle) then
         Exit;
 
+    if IsUIChanged and (not MessagesHandler.AskWarning(
+        TUIStateLoader.GetMessage('Common.DiscardChangesConfirm'),
+        TUIStateLoader.GetMessage('Common.Warning'))) then
+    begin
+        cbVCLStyle.ItemIndex := cbVCLStyle.Items.IndexOf(Setts.UISettings.VCLStyle);
+        if cbVCLStyle.ItemIndex < 0 then
+            cbVCLStyle.ItemIndex := 0;
+        Exit;
+    end;
+
     FStyleSavedPage := pcSettings.ActivePage;
     FStyleSavedFocus := ActiveControl;
 
@@ -725,7 +735,7 @@ begin
             .Append(chkEnableRepeatLast.Checked).Append('|')
             .Append(hkFavSlots.HotKey).Append('|')
             .Append(chkEnableFavSlots.Checked).Append('|')
-            .Append(ledMarkdownPath.Text).Append('|')
+            .Append(Trim(ledMarkdownPath.Text)).Append('|')
             .Append(cbSyncOnStart.Checked).Append('|')
             .Append(cbSyncOnExit.Checked).Append('|')
             .Append(cbTagsMatchAll.Checked).Append('|');
