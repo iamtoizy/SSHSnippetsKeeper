@@ -129,6 +129,7 @@ type
         procedure mContentMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
         procedure mContentMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
         procedure mContentMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+        procedure mContentMouseCursor(Sender: TObject; const aLineCharPos: TBufferCoord; var aCursor: TCursor);
         procedure mContentDblClick(Sender: TObject);
         procedure bMacroInsertClick(Sender: TObject);
         procedure bMacroHelpClick(Sender: TObject);
@@ -179,6 +180,7 @@ type
         FDragCard: Integer;
         FDragActive: Boolean;
         FDragDropOffset: Integer;
+        FSaveDragCursor: TCursor;
 
         procedure ShowAIOverlay;
         procedure ExecuteAICommand;
@@ -1129,6 +1131,7 @@ begin
         if FDragActive then
         begin
             FinishCardDrag;
+            mContent.Cursor := FSaveDragCursor;
             mContent.Invalidate;
         end;
         mContent.SuppressMouseSelection := False;
@@ -1176,6 +1179,8 @@ begin
         FDragActive := True;
         if Assigned(FCardPlugin) then
             FCardPlugin.DragActive := True;
+        FSaveDragCursor := mContent.Cursor;
+        mContent.Cursor := crDrag;
         mContent.SuppressMouseSelection := True;
         if mContent.CanFocus then
             mContent.SetFocus;
@@ -1201,6 +1206,7 @@ begin
         FDragDropOffset := -1;
         FCardPlugin.DropOffset := -1;
         FCardPlugin.DragActive := False;
+        mContent.Cursor := FSaveDragCursor;
         mContent.Invalidate;
         Exit;
     end;
@@ -1212,8 +1218,20 @@ begin
     begin
         FCardPlugin.DropOffset := DropOffset;
         FCardPlugin.DropValid := FMacroCards.CardMoveDropValid(FDragCard, DropOffset);
+        if FCardPlugin.DropValid then
+            mContent.Cursor := crDrag
+        else
+            mContent.Cursor := crNoDrop;
         mContent.Invalidate;
     end;
+end;
+
+procedure TAddEditSnippetForm.mContentMouseCursor(Sender: TObject; const aLineCharPos: TBufferCoord; var aCursor: TCursor);
+begin
+    if FDragActive or (Mouse.Capture <> 0) then
+        Exit;
+    if Assigned(FMacroCards) and (FMacroCards.TokenAtBufferPos(aLineCharPos) >= 0) then
+        aCursor := crArrow;
 end;
 
 procedure TAddEditSnippetForm.FinishCardDrag;
@@ -1294,6 +1312,7 @@ procedure TAddEditSnippetForm.SetupMacroCards;
 begin
     FMacroCards := TMacroCardController.Create(mContent.Lines);
     FCardPlugin := TMacroCardPlugin.Create(mContent, FMacroCards);
+    mContent.OnMouseCursor := mContentMouseCursor;
     FInsertTemplates := TStringList.Create;
 
     pmMacroCard.Items.Clear;
