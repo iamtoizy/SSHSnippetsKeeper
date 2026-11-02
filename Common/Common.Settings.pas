@@ -489,10 +489,7 @@ begin
         // 3. Восстановление списков, если они оказались пустыми
         // Это спасет юзера, если он удалил их из JSON или обновил программу с очень старой версии
         if Length(FSettings.AllowedApplications.Items) = 0 then
-        begin
-            OutputDebugString(PChar('[SettingsTrace] TSettingsManager.Load: file had 0 apps, restoring defaults'));
             InitDefaultAllowedApplications;
-        end;
 
         if Length(FSettings.AISettings.Items) = 0 then
             InitDefaultAISettings;
@@ -516,9 +513,6 @@ var
     TmpPath: string;
     SafeSettings: TAppSettings;
 begin
-    OutputDebugString(PChar('[SettingsTrace] TSettingsManager.Save: apps=' +
-        IntToStr(Length(FSettings.AllowedApplications.Items)) +
-        ' style="' + FSettings.UISettings.VCLStyle + '"'));
     try
         // Шифруем копию настроек: в памяти FSettings остается с открытыми ключами
         SafeSettings := FSettings;

@@ -116,23 +116,10 @@ procedure TForm.WndProc(var Message: TMessage);
 var
     StyleChanged: Boolean;
     ShownNow: Boolean;
-    RecreateMsg: Boolean;
-    MsgName: string;
 begin
     StyleChanged := Message.Msg = CM_CUSTOMSTYLECHANGED;
-    RecreateMsg := (Message.Msg = CM_RECREATEWND) or (Message.Msg = CM_DESTROYHANDLE)
-        or (Message.Msg = WM_DESTROY);
     ShownNow := (Message.Msg = WM_WINDOWPOSCHANGED) and (PWindowPos(Message.LParam) <> nil)
         and ((PWindowPos(Message.LParam).flags and SWP_SHOWWINDOW) <> 0);
-    if RecreateMsg then
-    begin
-        MsgName := 'CM_RECREATEWND';
-        if Message.Msg = CM_DESTROYHANDLE then
-            MsgName := 'CM_DESTROYHANDLE'
-        else if Message.Msg = WM_DESTROY then
-            MsgName := 'WM_DESTROY';
-        OutputDebugString(PChar('[BaseTrace] msg=' + MsgName + ' form=' + ClassName));
-    end;
     if StyleChanged then
         ActiveControl := nil;
     inherited WndProc(Message);
@@ -142,7 +129,6 @@ begin
         begin
             FStyleRecreateQueued := True;
             TThread.ForceQueue(nil, DeferredStyleRecreated);
-            OutputDebugString(PChar('[BaseTrace] DoStyleRecreated queued: form=' + ClassName));
         end;
     end;
     if ShownNow then
