@@ -41,6 +41,7 @@ procedure WipeString(var S: string);
 procedure Win32HotkeyToVCL(const Config: THotkeyConfig; HotKeyCtrl: THotKey);
 { Конвертация из VCL (THotKey) в Win32 (RegisterHotKey) }
 function VCLHotkeyToWin32(HotKeyCtrl: THotKey; Enabled: Boolean = True): THotkeyConfig;
+function Win32ModifiersToShiftState(Modifiers: Cardinal): TShiftState;
 { Преобразование комбинации в красивую строку для интерфейса (например "Ctrl + Alt + Q") }
 function HotkeyToString(const Config: THotkeyConfig): string;
 { Функция для генерации заголовка Basic Auth }
@@ -304,22 +305,22 @@ begin
         SetLength(History, MaxItems);
 end;
 
-procedure Win32HotkeyToVCL(const Config: THotkeyConfig; HotKeyCtrl: THotKey);
-var
-    ShiftState: TShiftState;
+function Win32ModifiersToShiftState(Modifiers: Cardinal): TShiftState;
 begin
-    ShiftState := [];
-    // Собираем стандартный VCL TShiftState из Win32 флагов
-    if (Config.Modifiers and MOD_ALT) <> 0 then
-        Include(ShiftState, ssAlt);
-    if (Config.Modifiers and MOD_CONTROL) <> 0 then
-        Include(ShiftState, ssCtrl);
-    if (Config.Modifiers and MOD_SHIFT) <> 0 then
-        Include(ShiftState, ssShift);
+    Result := [];
+    if (Modifiers and MOD_ALT) <> 0 then
+        Include(Result, ssAlt);
+    if (Modifiers and MOD_CONTROL) <> 0 then
+        Include(Result, ssCtrl);
+    if (Modifiers and MOD_SHIFT) <> 0 then
+        Include(Result, ssShift);
+end;
 
+procedure Win32HotkeyToVCL(const Config: THotkeyConfig; HotKeyCtrl: THotKey);
+begin
     // Vcl.Menus.ShortCut сам соберет правильный Integer (TShortCut),
     // а компонент THotKey автоматически обновит свои визуальные Modifiers
-    HotKeyCtrl.HotKey := Vcl.Menus.ShortCut(Config.Key, ShiftState);
+    HotKeyCtrl.HotKey := Vcl.Menus.ShortCut(Config.Key, Win32ModifiersToShiftState(Config.Modifiers));
 end;
 
 function VCLHotkeyToWin32(HotKeyCtrl: THotKey; Enabled: Boolean = True): THotkeyConfig;

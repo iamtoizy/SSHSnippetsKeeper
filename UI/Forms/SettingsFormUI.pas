@@ -104,6 +104,10 @@ type
         FFirstShowDone: Boolean;
         FStyleSavedPage: TTabSheet;
         FStyleSavedFocus: TWinControl;
+        FSavedQuickSearch: THotkeyConfig;
+        FSavedPasswordGen: THotkeyConfig;
+        FSavedRepeatLast: THotkeyConfig;
+        FSavedFavoriteSlots: THotkeyConfig;
         procedure LoadSettingsToUI;
         procedure PopulateHotkeysList(const FilterText: string = '');
         procedure PopulateApplicationsList;
@@ -112,6 +116,7 @@ type
         function BuildUISnapshot: string;
         procedure CaptureSnapshot;
         function IsUIChanged: Boolean;
+        function ResolveHotkey(HotKeyCtrl: THotKey; Enabled: Boolean; const Saved: THotkeyConfig): THotkeyConfig;
     protected
         procedure DoInitialize; override;
         procedure DoStyleRecreated; override;
@@ -172,15 +177,19 @@ begin
 
     Win32HotkeyToVCL(Setts.Hotkeys.QuickSearch, hkQuickSearch);
     chkEnableQuickSearch.Checked := Setts.Hotkeys.QuickSearch.Enabled;
+    FSavedQuickSearch := Setts.Hotkeys.QuickSearch;
 
     Win32HotkeyToVCL(Setts.Hotkeys.PasswordGen, hkPassGen);
     chkEnablePassGen.Checked := Setts.Hotkeys.PasswordGen.Enabled;
+    FSavedPasswordGen := Setts.Hotkeys.PasswordGen;
 
     Win32HotkeyToVCL(Setts.Hotkeys.RepeatLast, hkRepeatLast);
     chkEnableRepeatLast.Checked := Setts.Hotkeys.RepeatLast.Enabled;
+    FSavedRepeatLast := Setts.Hotkeys.RepeatLast;
 
     Win32HotkeyToVCL(Setts.Hotkeys.FavoriteSlots, hkFavSlots);
     chkEnableFavSlots.Checked := Setts.Hotkeys.FavoriteSlots.Enabled;
+    FSavedFavoriteSlots := Setts.Hotkeys.FavoriteSlots;
 
     // --- Блок синхронизации Markdown ---
     if Setts.SyncDirectory.IsEmpty then
@@ -635,6 +644,17 @@ begin
     FStyleSavedFocus := nil;
 end;
 
+function TSettingsForm.ResolveHotkey(HotKeyCtrl: THotKey; Enabled: Boolean; const Saved: THotkeyConfig): THotkeyConfig;
+begin
+    if HotKeyCtrl.HotKey = Vcl.Menus.ShortCut(Saved.Key, Win32ModifiersToShiftState(Saved.Modifiers)) then
+    begin
+        Result := Saved;
+        Result.Enabled := Enabled;
+    end
+    else
+        Result := VCLHotkeyToWin32(HotKeyCtrl, Enabled);
+end;
+
 procedure TSettingsForm.bSaveClick(Sender: TObject);
 var
     Setts: TAppSettings;
@@ -642,10 +662,10 @@ var
     Info: TActionHotkeyInfo;
 begin
     Setts := AppContext.SettingsManager.Data;
-    Setts.Hotkeys.QuickSearch := VCLHotkeyToWin32(hkQuickSearch, chkEnableQuickSearch.Checked);
-    Setts.Hotkeys.PasswordGen := VCLHotkeyToWin32(hkPassGen, chkEnablePassGen.Checked);
-    Setts.Hotkeys.RepeatLast := VCLHotkeyToWin32(hkRepeatLast, chkEnableRepeatLast.Checked);
-    Setts.Hotkeys.FavoriteSlots := VCLHotkeyToWin32(hkFavSlots, chkEnableFavSlots.Checked);
+    Setts.Hotkeys.QuickSearch := ResolveHotkey(hkQuickSearch, chkEnableQuickSearch.Checked, FSavedQuickSearch);
+    Setts.Hotkeys.PasswordGen := ResolveHotkey(hkPassGen, chkEnablePassGen.Checked, FSavedPasswordGen);
+    Setts.Hotkeys.RepeatLast := ResolveHotkey(hkRepeatLast, chkEnableRepeatLast.Checked, FSavedRepeatLast);
+    Setts.Hotkeys.FavoriteSlots := ResolveHotkey(hkFavSlots, chkEnableFavSlots.Checked, FSavedFavoriteSlots);
 
     // --- Сохраняем настройки синхронизации ---
     Setts.SyncDirectory := Trim(ledMarkdownPath.Text);
