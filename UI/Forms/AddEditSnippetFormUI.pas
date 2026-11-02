@@ -919,7 +919,7 @@ begin
     CanClose := not FAIInProgress;
     if not CanClose then
         MessageBeep(MB_ICONWARNING)
-    else if FIsEditMode and (ModalResult <> mrOk) and IsSnippetChanged then
+    else if (ModalResult <> mrOk) and IsSnippetChanged then
         CanClose := Application.MessageBox(
             PChar(TUIStateLoader.GetMessage('AddEditSnippet.CloseConfirmText')),
             PChar(TUIStateLoader.GetMessage('Common.Warning')),
