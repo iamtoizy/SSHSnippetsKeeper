@@ -50,6 +50,9 @@ type
         OnFocusLost: TProc;
         OnTypingFinished: TProc;
         Canceled: Integer;
+        // Пауза печати: фокус ушёл из целевого окна, ждём возврата.
+        // 32-битное поле под Interlocked, читается панелью Stop
+        Paused: Integer;
         CurrentInputType: TMacroInputType;
         CurrentDefaultValue: string;
         UserCanceled: Boolean;

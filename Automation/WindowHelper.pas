@@ -24,6 +24,7 @@ type
         procedure ActivateTargetWindow;
         procedure StopActiveThread;
         procedure AbortMacro(Context: TMacroContext);
+        function WaitForTargetFocus(Context: TMacroContext): Boolean;
         class function IsMacroCanceled(Context: TMacroContext): Boolean; static;
 
         // Явная реализация IUnknown для отключения reference counting
@@ -174,6 +175,9 @@ begin
     StopActiveThread;
 end;
 
+// Финальное прерывание: целевое окно закрыто, продолжать некуда.
+// Взводим Canceled, чтобы поток завершился между действиями, и зовём
+// OnFocusLost - тот показывает предупреждение в главном потоке
 procedure TWindowHelper.AbortMacro(Context: TMacroContext);
 begin
     if Context = nil then
@@ -182,6 +186,38 @@ begin
     TInterlocked.Exchange(Context.Canceled, 1);
     if Assigned(Context.OnFocusLost) then
         Context.OnFocusLost();
+end;
+
+// Пауза печати: чужое окно в фокусе. Ждём без таймаута, пока пользователь
+// сам вернётся в целевое окно - перехватывать фокус у него нельзя.
+// True - можно печатать дальше; False - прерывание: цель закрыта (тогда
+// AbortMacro уже взвёл Canceled и уведомил) либо подана отмена (без
+// уведомления). Сон обязателен: StopActiveThread ждёт поток не дольше 3 c
+function TWindowHelper.WaitForTargetFocus(Context: TMacroContext): Boolean;
+begin
+    if Context <> nil then
+        TInterlocked.Exchange(Context.Paused, 1);
+    try
+        while True do
+        begin
+            if not IsWindow(FWindowHelperInfo.Handle) then
+            begin
+                AbortMacro(Context);
+                Exit(False);
+            end;
+
+            if GetForegroundWindow = FWindowHelperInfo.Handle then
+                Exit(True);
+
+            if IsMacroCanceled(Context) then
+                Exit(False);
+
+            Sleep(80);
+        end;
+    finally
+        if Context <> nil then
+            TInterlocked.Exchange(Context.Paused, 0);
+    end;
 end;
 
 class function TWindowHelper.IsMacroCanceled(Context: TMacroContext): Boolean;
@@ -258,6 +294,12 @@ begin
     if IsMacroCanceled(Context) then
         Exit;
 
+    // Клавиши не должны уйти в чужое окно: как и текст, встаём на паузу
+    if (FWindowHelperInfo.Handle <> 0) and
+        (GetForegroundWindow <> FWindowHelperInfo.Handle) and
+        (not WaitForTargetFocus(Context)) then
+        Exit;
+
     ZeroMemory(@Inputs, SizeOf(Inputs));
 
     Inputs[0].Itype := INPUT_KEYBOARD;
@@ -291,6 +333,12 @@ var
 
 begin
     if IsMacroCanceled(Context) then
+        Exit;
+
+    // Клавиши не должны уйти в чужое окно: как и текст, встаём на паузу
+    if (FWindowHelperInfo.Handle <> 0) and
+        (GetForegroundWindow <> FWindowHelperInfo.Handle) and
+        (not WaitForTargetFocus(Context)) then
         Exit;
 
     ZeroMemory(@Inputs, SizeOf(Inputs));
@@ -349,11 +397,9 @@ begin
         ActivateTargetWindow;
         Sleep(FActiveSettings.WindowHelper.SetFocusDelay);
 
-        if GetForegroundWindow <> FWindowHelperInfo.Handle then
-        begin
-            AbortMacro(Context);
+        // Активация не удалась - пауза: ждём возврата фокуса без таймаута
+        if not WaitForTargetFocus(Context) then
             Exit;
-        end;
     end;
 
     for I := 1 to Length(Text) do
@@ -361,12 +407,10 @@ begin
         if IsMacroCanceled(Context) then
             Exit;
 
-        // Чужое окно в фокусе - печатать нельзя, уйдёт не туда
-        if GetForegroundWindow <> FWindowHelperInfo.Handle then
-        begin
-            AbortMacro(Context);
+        // Чужое окно в фокусе - пауза: печатать нельзя, уйдёт не туда
+        if (GetForegroundWindow <> FWindowHelperInfo.Handle) and
+            (not WaitForTargetFocus(Context)) then
             Exit;
-        end;
 
         if (Text[I] = #13) or (Text[I] = #10) then
             PressEnter(Context)
@@ -427,6 +471,22 @@ begin
         {$IFDEF DEBUG}
         OutputDebugString('[WinHelper] Pre-collection completed successfully');
         {$ENDIF}
+
+        // Диалоги INPUT вернули фокус нашему приложению: переактивируем цель
+        // здесь, в главном потоке, пока процесс ещё имеет право менять
+        // foreground (последний ввод был в модальной форме). Из рабочего
+        // потока тот же вызов система может игнорировать, и печать встала бы
+        // на паузу до ручного клика по терминалу. Без INPUT-макросов блок
+        // пропускается: фокус уже в цели (SetForegroundWindow в TSnippetRunner)
+        if (FWindowHelperInfo.Handle <> 0) and
+            (GetForegroundWindow <> FWindowHelperInfo.Handle) then
+        begin
+            SetForegroundWindow(FWindowHelperInfo.Handle);
+            Sleep(FActiveSettings.WindowHelper.ActivationDelay);
+
+            ActivateTargetWindow;
+            Sleep(FActiveSettings.WindowHelper.SetFocusDelay);
+        end;
 
         // Общий объём печати для прогресса Stop-панели: после PreCollect
         // известны и собранные значения INPUT

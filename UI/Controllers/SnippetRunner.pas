@@ -150,7 +150,8 @@ begin
                 Context.UserCanceled := True;
         end;
 
-    // Фокус ушёл из целевого окна - печать прервана, чтобы не утекли данные.
+    // Финальное прерывание: целевое окно закрыто, продолжать некуда (при
+    // простой потере фокуса печать встаёт на паузу - см. TWindowHelper).
     // MessageBox показывается в главном потоке: из рабочего он качает чужую
     // очередь сообщений, а при закрытии приложения блокирует StopActiveThread -
     // в главном потоке его обслужит CheckSynchronize из цикла ожидания
@@ -161,7 +162,7 @@ begin
                 procedure
                 begin
                     MessageBox(0,
-                        PChar(TUIStateLoader.GetMessage('Macro.FocusLost')),
+                        PChar(TUIStateLoader.GetMessage('Macro.TargetWindowClosed')),
                         PChar(TUIStateLoader.GetMessage('Common.Warning')),
                         MB_OK or MB_ICONWARNING or MB_TOPMOST or MB_SETFOREGROUND);
                 end);

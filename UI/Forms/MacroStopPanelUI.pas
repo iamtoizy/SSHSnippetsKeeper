@@ -94,6 +94,14 @@ begin
     if FContext = nil then
         Exit;
 
+    // Пауза печати (фокус ушёл из цели) важнее прогресса
+    if TInterlocked.CompareExchange(FContext.Paused, 0, 0) <> 0 then
+    begin
+        lblInfo.Caption := FTitle + sLineBreak +
+            TUIStateLoader.GetMessage('Macro.PauseWaiting');
+        Exit;
+    end;
+
     // SLEEP публикует остаток прямо из своего цикла ожидания
     if TInterlocked.CompareExchange(FContext.SleepRemainingMs, 0, 0) > 0 then
     begin

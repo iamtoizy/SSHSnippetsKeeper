@@ -1868,7 +1868,8 @@
     "Macro": {
       "StopPanelTitle": "Typing snippet...",
       "StopButton": "Stop",
-      "FocusLost": "Target window focus lost - typing aborted.",
+      "TargetWindowClosed": "Target window closed - typing aborted.",
+      "PauseWaiting": "Paused: switch back to the target window - typing will resume",
       "UnknownCommand": "Unknown command %s - typing aborted.",
       "TypingInProgress": "Snippet typing is in progress - wait for completion and run again.",
       "ProgressChars": "%d/%d characters (%d%%)",
