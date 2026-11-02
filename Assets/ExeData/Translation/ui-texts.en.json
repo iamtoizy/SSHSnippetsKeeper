@@ -1484,14 +1484,21 @@
       "WindowNoLongerExists": "The selected window no longer exists.",
       "ConfirmTarget": "Insert the snippet into window \"%s\"?",
       "WindowsCount": "Windows: %d",
-      "KeyboardHint": "Enter — select · Esc — cancel · 1-9 — quick pick",
+      "KeyboardHint": "Enter - select · Esc - cancel · 1..9 - quick pick",
       "FilterEmpty": "No matches",
       "FilterHint": "Filter: title or process",
       "ViewTiles": "Tiles",
       "ViewTable": "Table",
       "ColTitle": "Title",
       "ColProcess": "Process",
-      "ColActivated": "Activated"
+      "ColActivated": "Activated",
+      "LastUsed": "last used",
+      "ViewGroups": "Groups",
+      "ViewGroupsHint": "Group windows by process",
+      "PreviewEmpty": "No window to preview",
+      "PreviewUnavailable": "Preview unavailable",
+      "PreviewHeader": "Preview",
+      "PreviewMinimized": "Window is minimized"
     },
     "Workspace": {
       "AllSpaces": "All Workspaces",

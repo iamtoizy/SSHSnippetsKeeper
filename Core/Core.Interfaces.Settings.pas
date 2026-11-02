@@ -145,6 +145,12 @@ type
 
         // Окно выбора терминала: True = режим таблицы, False = плитки
         TerminalChooserTableView: Boolean;
+
+        // Окно выбора терминала: True = группировать окна таблицы по процессу
+        TerminalChooserGroupByProcess: Boolean;
+
+        // Окно выбора терминала: True = панель предпросмотра развернута
+        TerminalChooserPreviewVisible: Boolean;
     end;
 
     // Интерфейс менеджера

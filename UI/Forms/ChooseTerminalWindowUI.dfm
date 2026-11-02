@@ -4,7 +4,7 @@ object ChooseTerminalWindow: TChooseTerminalWindow
   BorderStyle = bsToolWindow
   Caption = #1042#1099#1073#1086#1088' '#1090#1077#1088#1084#1080#1085#1072#1083#1072
   ClientHeight = 333
-  ClientWidth = 415
+  ClientWidth = 780
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -23,7 +23,7 @@ object ChooseTerminalWindow: TChooseTerminalWindow
   object pTop: TPanel
     Left = 0
     Top = 0
-    Width = 415
+    Width = 780
     Height = 34
     Align = alTop
     BevelOuter = bvNone
@@ -31,20 +31,20 @@ object ChooseTerminalWindow: TChooseTerminalWindow
     Padding.Top = 5
     Padding.Right = 4
     Padding.Bottom = 5
-    TabOrder = 1
+    TabOrder = 0
     object ebFilter: TEdit
       Left = 4
       Top = 5
-      Width = 260
+      Width = 424
       Height = 24
       Align = alClient
       TabOrder = 0
       OnChange = ebFilterChange
     end
     object pViewButtons: TPanel
-      Left = 264
+      Left = 428
       Top = 5
-      Width = 147
+      Width = 348
       Height = 24
       Align = alRight
       BevelOuter = bvNone
@@ -54,25 +54,95 @@ object ChooseTerminalWindow: TChooseTerminalWindow
         Top = 0
         Width = 70
         Height = 24
+        AlignWithMargins = True
+        Margins.Left = 0
+        Margins.Top = 0
+        Margins.Right = 1
+        Margins.Bottom = 0
+        Align = alRight
         GroupIndex = 1
-        Caption = #1051#1083#1080#1090#1082#1080
+        Caption = #1055#1083#1080#1090#1082#1080
         OnClick = ViewButtonClick
       end
       object sbTable: TSpeedButton
-        Left = 74
+        Left = 71
         Top = 0
         Width = 73
         Height = 24
+        AlignWithMargins = True
+        Margins.Left = 0
+        Margins.Top = 0
+        Margins.Right = 1
+        Margins.Bottom = 0
+        Align = alRight
         GroupIndex = 1
         Caption = #1058#1072#1073#1083#1080#1094#1072
         OnClick = ViewButtonClick
       end
+      object sbGroup: TSpeedButton
+        Left = 145
+        Top = 0
+        Width = 72
+        Height = 24
+        AlignWithMargins = True
+        Margins.Left = 0
+        Margins.Top = 0
+        Margins.Right = 1
+        Margins.Bottom = 0
+        Align = alRight
+        AllowAllUp = True
+        GroupIndex = 2
+        Caption = #1043#1088#1091#1087#1087#1099
+        OnClick = sbGroupClick
+      end
+      object sbPreview: TSpeedButton
+        Left = 218
+        Top = 0
+        Width = 130
+        Height = 24
+        AlignWithMargins = True
+        Margins.Left = 0
+        Margins.Top = 0
+        Margins.Right = 0
+        Margins.Bottom = 0
+        Align = alRight
+        AllowAllUp = True
+        GroupIndex = 3
+        Caption = #9656' '#1055#1088#1077#1076#1087#1088#1086#1084#1086#1090#1088
+        OnClick = sbPreviewClick
+      end
+    end
+  end
+  object pPreview: TPanel
+    Left = 0
+    Top = 34
+    Width = 780
+    Height = 300
+    Align = alTop
+    BevelOuter = bvNone
+    Padding.Left = 6
+    Padding.Top = 6
+    Padding.Right = 6
+    Padding.Bottom = 6
+    TabOrder = 2
+    Visible = False
+    OnResize = pPreviewResize
+    object lbPreviewEmpty: TLabel
+      Left = 6
+      Top = 6
+      Width = 768
+      Height = 288
+      Align = alClient
+      Alignment = taCenter
+      AutoSize = False
+      Caption = #1055#1088#1077#1076#1087#1088#1086#1089#1084#1086#1090#1088
+      Layout = tlCenter
     end
   end
   object lvTerminalList: TListView
     Left = 0
     Top = 34
-    Width = 415
+    Width = 780
     Height = 280
     Align = alClient
     Columns = <
@@ -81,44 +151,43 @@ object ChooseTerminalWindow: TChooseTerminalWindow
         Width = 195
       end
       item
-        Caption = #1051#1088#1086#1094#1077#1089#1089
+        Caption = #1055#1088#1086#1094#1077#1089#1089
         Width = 120
       end
       item
         Caption = #1040#1082#1090#1080#1074#1080#1088#1086#1074#1072#1085#1086
         Width = 95
       end>
-    LargeImages = ilIcons
-    SmallImages = ilSmallIcons
     TileOptions.SubLineCount = 1
     TileOptions.SizeType = tstFixedSize
-    TileOptions.Width = 200
     TileOptions.Height = 64
+    TileOptions.Width = 200
+    LargeImages = ilIcons
     ReadOnly = True
     RowSelect = True
-    TabOrder = 0
+    SmallImages = ilSmallIcons
+    TabOrder = 1
     ViewStyle = vsTile
     OnColumnClick = lvTerminalListColumnClick
     OnDblClick = lvTerminalListDblClick
+    OnSelectItem = lvTerminalListSelectItem
   end
   object sbBottom: TStatusBar
     Left = 0
     Top = 314
-    Width = 415
+    Width = 780
     Height = 19
     Panels = <>
     SimplePanel = True
   end
   object ilIcons: TImageList
+    ColorDepth = cd32Bit
     Height = 32
     Width = 32
-    ColorDepth = cd32Bit
     Left = 16
     Top = 64
   end
   object ilSmallIcons: TImageList
-    Height = 16
-    Width = 16
     ColorDepth = cd32Bit
     Left = 72
     Top = 64
