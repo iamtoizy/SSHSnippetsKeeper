@@ -151,6 +151,11 @@ type
 
         // Окно выбора терминала: True = панель предпросмотра развернута
         TerminalChooserPreviewVisible: Boolean;
+
+        // Окно выбора терминала: сохраненная пользователем геометрия (0 = авто)
+        TerminalChooserWidth: Integer;
+        TerminalChooserHeight: Integer;
+        TerminalChooserPreviewHeight: Integer;
     end;
 
     // Интерфейс менеджера

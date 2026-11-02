@@ -22,6 +22,7 @@ type
         pTop: TPanel;
         ebFilter: TEdit;
         pPreview: TPanel;
+        splPreview: TSplitter;
         pViewButtons: TPanel;
         sbTiles: TSpeedButton;
         sbTable: TSpeedButton;
@@ -40,6 +41,8 @@ type
         procedure sbPreviewClick(Sender: TObject);
         procedure ttPreviewWatchTimer(Sender: TObject);
         procedure pPreviewResize(Sender: TObject);
+        procedure splPreviewMoved(Sender: TObject);
+        procedure FormResize(Sender: TObject);
         procedure ebFilterChange(Sender: TObject);
         procedure FormShow(Sender: TObject);
         procedure FormCreate(Sender: TObject);
@@ -60,6 +63,8 @@ type
         FThumbHwnd: HWND;
         FPreviewWanted: HWND;
         FPreviewWasIconic: Boolean;
+        FUserSized: Boolean;
+        FPreviewSavedHeight: Integer;
         ttPreviewWatch: TTimer;
         FDefListProc: TWndMethod;
         procedure PopulateList;
@@ -83,6 +88,13 @@ type
         function IsDarkStyleActive: Boolean;
         procedure UpdateColumnCaptions;
         procedure UpdateStatusText(AShownCount: Integer);
+        procedure RestoreGeometry;
+        procedure SaveGeometry;
+        procedure FillLastColumn;
+        function FormSizeValid(AWidth, AHeight: Integer): Boolean;
+        function PreviewHeightValid(AHeight: Integer): Boolean;
+        procedure WMSizing(var Message: TMessage); message WM_SIZING;
+        procedure WMExitSizeMove(var Message: TMessage); message WM_EXITSIZEMOVE;
     public
         property SelectedWindow: TWindowMonitorInfo read FSelectedWindow;
     end;
@@ -117,6 +129,8 @@ begin
     FThumbHwnd := 0;
     FPreviewWanted := 0;
     FPreviewWasIconic := False;
+    FUserSized := False;
+    FPreviewSavedHeight := 0;
     FGroupByProcess := False;
     FIconCache := TDictionary<string, Integer>.Create;
     FSmallIconCache := TDictionary<string, Integer>.Create;
@@ -144,6 +158,7 @@ end;
 
 procedure TChooseTerminalWindow.FormDestroy(Sender: TObject);
 begin
+    SaveGeometry;
     if Assigned(FDefListProc) then
         lvTerminalList.WindowProc := FDefListProc;
     ClearPreview;
@@ -159,6 +174,7 @@ begin
     ApplyViewStyle(FAppContext.SettingsManager.Data.TerminalChooserTableView);
     sbPreview.Down := FAppContext.SettingsManager.Data.TerminalChooserPreviewVisible;
     ApplyPreviewState;
+    RestoreGeometry;
     PopulateList;
     if lvTerminalList.Items.Count > 0 then
         lvTerminalList.SetFocus;
@@ -431,11 +447,14 @@ end;
 
 procedure TChooseTerminalWindow.ApplyPreviewState;
 begin
+    if sbPreview.Down and (FPreviewSavedHeight > 0) then
+        pPreview.Height := FPreviewSavedHeight;
     pPreview.Visible := sbPreview.Down;
+    splPreview.Visible := sbPreview.Down;
     if sbPreview.Down then
         sbPreview.Caption := #9660 + ' ' + TUIStateLoader.GetMessage('Terminal.PreviewHeader')
     else
-        sbPreview.Caption := #9656 + ' ' + TUIStateLoader.GetMessage('Terminal.PreviewHeader');
+        sbPreview.Caption := #9650 + ' ' + TUIStateLoader.GetMessage('Terminal.PreviewHeader');
     if pPreview.Visible then
     begin
         if FPreviewWanted <> 0 then
@@ -458,10 +477,46 @@ begin
 end;
 
 procedure TChooseTerminalWindow.sbPreviewClick(Sender: TObject);
+var
+    MinNeeded: Integer;
 begin
     SavePreviewSetting(sbPreview.Down);
     ApplyPreviewState;
+    if sbPreview.Down and FUserSized then
+    begin
+        // Ручная геометрия: не даём списку схлопнуться, растим форму в пределах рабочей области
+        MinNeeded := pTop.Height + pPreview.Height + splPreview.Height +
+            sbBottom.Height + 100;
+        if ClientHeight < MinNeeded then
+            ClientHeight := Min(MinNeeded, Screen.WorkAreaHeight);
+    end;
     AdjustFormHeight;
+end;
+
+procedure TChooseTerminalWindow.splPreviewMoved(Sender: TObject);
+begin
+    if pPreview.Height >= splPreview.MinSize then
+        FPreviewSavedHeight := pPreview.Height;
+    SaveGeometry;
+end;
+
+procedure TChooseTerminalWindow.FormResize(Sender: TObject);
+begin
+    FillLastColumn;
+end;
+
+procedure TChooseTerminalWindow.FillLastColumn;
+var
+    I, Fill: Integer;
+begin
+    if (lvTerminalList.ViewStyle = vsReport) and lvTerminalList.HandleAllocated then
+    begin
+        Fill := lvTerminalList.ClientWidth;
+        for I := 0 to lvTerminalList.Columns.Count - 2 do
+            Dec(Fill, ListView_GetColumnWidth(lvTerminalList.Handle, I));
+        if Fill > 0 then
+            ListView_SetColumnWidth(lvTerminalList.Handle, lvTerminalList.Columns.Count - 1, Fill);
+    end;
 end;
 
 procedure TChooseTerminalWindow.ttPreviewWatchTimer(Sender: TObject);
@@ -566,6 +621,9 @@ procedure TChooseTerminalWindow.AdjustFormHeight;
 var
     LvH, PerRow, Rows, Total, MaxAvail: Integer;
 begin
+    // Размер задан пользователем вручную: авто-подгонку не трогаем
+    if FUserSized then
+        Exit;
     if lvTerminalList.Items.Count <= 0 then
         Exit;
 
@@ -582,7 +640,96 @@ begin
     if pPreview.Visible then
         Inc(Total, pPreview.Height);
     MaxAvail := Screen.WorkAreaHeight - 60;
+    if Total > MaxAvail then
+    begin
+        // Сначала сжимаем превью до минимума сплиттера
+        if pPreview.Visible then
+        begin
+            pPreview.Height := Max(splPreview.MinSize, pPreview.Height - (Total - MaxAvail));
+            FPreviewSavedHeight := pPreview.Height;
+            Total := pTop.Height + sbBottom.Height + LvH + pPreview.Height;
+        end;
+    end;
     ClientHeight := Min(Total, MaxAvail);
+end;
+
+function TChooseTerminalWindow.FormSizeValid(AWidth, AHeight: Integer): Boolean;
+begin
+    // Адекватные размеры: не мельче Constraints и в пределах рабочей области
+    Result := (AWidth >= Constraints.MinWidth) and (AHeight >= Constraints.MinHeight) and
+        (AWidth <= Screen.WorkAreaWidth) and (AHeight <= Screen.WorkAreaHeight);
+end;
+
+function TChooseTerminalWindow.PreviewHeightValid(AHeight: Integer): Boolean;
+begin
+    // Превью не мельче минимума сплиттера и оставляет место остальному окну
+    Result := (AHeight >= splPreview.MinSize) and
+        (AHeight <= Screen.WorkAreaHeight - Constraints.MinHeight);
+end;
+
+procedure TChooseTerminalWindow.RestoreGeometry;
+var
+    SavedW, SavedH: Integer;
+begin
+    SavedW := FAppContext.SettingsManager.Data.TerminalChooserWidth;
+    SavedH := FAppContext.SettingsManager.Data.TerminalChooserHeight;
+    // Неадекватная сохранённая геометрия игнорируется: окно остаётся авто-размера
+    if FormSizeValid(SavedW, SavedH) then
+    begin
+        FUserSized := True;
+        // poScreenCenter не пересчитает центр после смены размера в OnShow
+        SetBounds((Screen.Width - SavedW) div 2, (Screen.Height - SavedH) div 2,
+            SavedW, SavedH);
+    end
+    else
+        FUserSized := False;
+
+    FPreviewSavedHeight := 0;
+    if PreviewHeightValid(FAppContext.SettingsManager.Data.TerminalChooserPreviewHeight) then
+    begin
+        FPreviewSavedHeight := FAppContext.SettingsManager.Data.TerminalChooserPreviewHeight;
+        if pPreview.Visible then
+            pPreview.Height := FPreviewSavedHeight;
+    end;
+end;
+
+procedure TChooseTerminalWindow.SaveGeometry;
+var
+    Settings: TAppSettings;
+begin
+    Settings := FAppContext.SettingsManager.Data;
+    // Неадекватную геометрию не храним: 0 = авто-подгон при следующем открытии
+    if FUserSized and FormSizeValid(Width, Height) then
+    begin
+        Settings.TerminalChooserWidth := Width;
+        Settings.TerminalChooserHeight := Height;
+    end
+    else
+    begin
+        Settings.TerminalChooserWidth := 0;
+        Settings.TerminalChooserHeight := 0;
+    end;
+
+    if pPreview.Visible and PreviewHeightValid(pPreview.Height) then
+        Settings.TerminalChooserPreviewHeight := pPreview.Height
+    else
+        Settings.TerminalChooserPreviewHeight := 0;
+
+    FAppContext.SettingsManager.Data := Settings;
+    FAppContext.SettingsManager.Save;
+end;
+
+procedure TChooseTerminalWindow.WMSizing(var Message: TMessage);
+begin
+    // WM_SIZING приходит только при интерактивном ресайзе пользователем
+    FUserSized := True;
+    DefaultHandler(Message);
+end;
+
+procedure TChooseTerminalWindow.WMExitSizeMove(var Message: TMessage);
+begin
+    inherited;
+    SaveGeometry;
 end;
 
 procedure TChooseTerminalWindow.lvTerminalListColumnClick(Sender: TObject; Column: TListColumn);
@@ -716,7 +863,6 @@ var
     GroupId: Integer;
     LG: TLVGroup;
     RawIt: TLVItem;
-    Fill: Integer;
 begin
     GroupMap := nil;
     Filter := Trim(ebFilter.Text).ToLower;
@@ -820,14 +966,7 @@ begin
         lvTerminalList.Items.EndUpdate;
     end;
 
-    if (lvTerminalList.ViewStyle = vsReport) and lvTerminalList.HandleAllocated then
-    begin
-        Fill := lvTerminalList.ClientWidth;
-        for I := 0 to lvTerminalList.Columns.Count - 2 do
-            Dec(Fill, ListView_GetColumnWidth(lvTerminalList.Handle, I));
-        if Fill > 0 then
-            ListView_SetColumnWidth(lvTerminalList.Handle, lvTerminalList.Columns.Count - 1, Fill);
-    end;
+    FillLastColumn;
 end;
 
 end.

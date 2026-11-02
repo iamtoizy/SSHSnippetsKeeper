@@ -1,10 +1,12 @@
 object ChooseTerminalWindow: TChooseTerminalWindow
   Left = 0
   Top = 0
-  BorderStyle = bsToolWindow
+  BorderStyle = bsSizeToolWin
   Caption = #1042#1099#1073#1086#1088' '#1090#1077#1088#1084#1080#1085#1072#1083#1072
   ClientHeight = 333
   ClientWidth = 780
+  Constraints.MinHeight = 220
+  Constraints.MinWidth = 480
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -18,6 +20,7 @@ object ChooseTerminalWindow: TChooseTerminalWindow
   OnDestroy = FormDestroy
   OnKeyDown = FormKeyDown
   OnKeyPress = FormKeyPress
+  OnResize = FormResize
   OnShow = FormShow
   TextHeight = 15
   object pTop: TPanel
@@ -108,7 +111,7 @@ object ChooseTerminalWindow: TChooseTerminalWindow
         Align = alRight
         AllowAllUp = True
         GroupIndex = 3
-        Caption = #9656' '#1055#1088#1077#1076#1087#1088#1086#1084#1086#1090#1088
+        Caption = #9650' '#1055#1088#1077#1076#1087#1088#1086#1089#1084#1086#1090#1088
         OnClick = sbPreviewClick
       end
     end
@@ -138,6 +141,20 @@ object ChooseTerminalWindow: TChooseTerminalWindow
       Caption = #1055#1088#1077#1076#1087#1088#1086#1089#1084#1086#1090#1088
       Layout = tlCenter
     end
+  end
+  object splPreview: TSplitter
+    Left = 0
+    Top = 334
+    Width = 780
+    Height = 6
+    Align = alTop
+    AutoSnap = False
+    MinSize = 90
+    ResizeStyle = rsUpdate
+    Visible = False
+    OnMoved = splPreviewMoved
+    ExplicitTop = 334
+    ExplicitWidth = 780
   end
   object lvTerminalList: TListView
     Left = 0
