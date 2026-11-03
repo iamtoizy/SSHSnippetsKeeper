@@ -32,6 +32,12 @@ type
         [Test]
         procedure Detect_PlainText_AndEmpty_DefaultBash;
         [Test]
+        procedure Detect_MacroOnly_IsNotJson_DefaultBash;
+        [Test]
+        procedure Detect_MacroHeavy_BashStaysBash;
+        [Test]
+        procedure Detect_RealBat_WithMacros;
+        [Test]
         procedure Detect_NeverReturnsPlainText;
     end;
 
@@ -125,6 +131,29 @@ begin
     // случайный язык, но никогда plaintext
     Assert.AreNotEqual(SNIPPET_LANG_PLAINTEXT,
         TScriptLanguageClassifier.Shared.PredictLanguage('Just a prose without any code at all'));
+end;
+
+procedure TSnippetLanguageDetectTests.Detect_MacroOnly_IsNotJson_DefaultBash;
+begin
+    // Чисто-макросный текст раньше набирал JSON-балл за фигурные скобки
+    // (первый символ '{' +2, последний '}' +1); после чистки текст
+    // пуст -> уверенного языка нет -> дефолт (bash)
+    Assert.AreEqual(DEFAULT_SNIPPET_LANGUAGE,
+        DetectSnippetLanguage('{SLEEP 500}' + LF + '{ENTER}' + LF + '{SLEEP 1000}'));
+end;
+
+procedure TSnippetLanguageDetectTests.Detect_MacroHeavy_BashStaysBash;
+begin
+    Assert.AreEqual(SNIPPET_LANG_BASH, DetectSnippetLanguage(
+        'docker compose down' + LF + '{SLEEP 2000}' + LF +
+        'docker compose up -d {ENTER}'));
+end;
+
+procedure TSnippetLanguageDetectTests.Detect_RealBat_WithMacros;
+begin
+    Assert.AreEqual(SNIPPET_LANG_BAT, DetectSnippetLanguage(
+        '@echo off' + LF + 'setlocal' + LF + 'set DIR=%~dp0' + LF +
+        '{SLEEP 1000}' + LF + 'echo done {ENTER}'));
 end;
 
 end.

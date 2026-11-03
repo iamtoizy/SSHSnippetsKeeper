@@ -13,6 +13,7 @@ implementation
 uses
     Common.Consts,
     Common.SnippetLanguages,
+    MacroEngine,
     System.Math,
     System.SysUtils
     ;
@@ -48,7 +49,7 @@ var
     Scores: array[0..6] of Integer;
     Best, BestScore: Integer;
 begin
-    CT := Trim(AContent);
+    CT := Trim(StripMacroSyntax(AContent));
     if CT = '' then
         Exit(DEFAULT_SNIPPET_LANGUAGE);
 

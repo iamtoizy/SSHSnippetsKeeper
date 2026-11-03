@@ -17,6 +17,7 @@ const
     MAX_RANDOM_LENGTH = 1024;
     DEFAULT_DATETIME_FORMAT = 'yyyy-MM-dd HH:mm:ss';
     RANDOM_CHARSET = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    MACRO_TOKEN_EXPR = '\{([^}]*)\}';
 
     // Единый реестр имён макросов (источник истины, ровно как парсит
     // ParseTokens): подсветка схемы в TSynMultiSyn собирается из него
@@ -28,6 +29,7 @@ const
     ];
 
 function IsKnownMacroName(const AName: string): Boolean;
+function StripMacroSyntax(const AText: string): string;
 function BuildMacroStartExpr: string;
 
 type
@@ -146,13 +148,68 @@ begin
             Exit(False);
 end;
 
+// Скобки без макро-намерения (PowerShell/bash/JSON) - обычный текст:
+// без токена, красной карточки и предупреждений. '${VAR}'/'@{KEY}'
+// (сигил $/@ перед '{') - тоже обычный текст, как в подсветке;
+// известные имена ('${INPUT:x}') остаются макросами. Проверка ПОСЛЕ
+// разделения '{ENV:ARG}' на имя и аргумент, иначе колоночные формы
+// терялись. Общая формула для ParseTokens и StripMacroSyntax.
+function MacroBraceIsPlainText(const AText, AGroupValue: string; AMatchStart: Integer): Boolean;
+var
+    Cmd, RawName, Name, ValueDir: string;
+    P, ValueColon: Integer;
+begin
+    Cmd := TrimLeft(AGroupValue);
+
+    P := 1;
+    while (P <= Length(Cmd)) and not CharInSet(Cmd[P], [' ', '[']) do
+        Inc(P);
+
+    RawName := Trim(Copy(Cmd, 1, P - 1));
+    Name := UpperCase(RawName);
+    ValueDir := Name;
+    ValueColon := Pos(':', ValueDir);
+    if ValueColon > 0 then
+        ValueDir := Copy(ValueDir, 1, ValueColon - 1);
+
+    Result := (not IsKnownMacroName(Name)) and
+        (not ((ValueColon > 0) and IsKnownMacroName(ValueDir))) and
+        ((not IsMacroAttemptLike(RawName)) or
+         ((AMatchStart > 1) and CharInSet(AText[AMatchStart - 1], ['$', '@'])));
+end;
+
+function StripMacroSyntax(const AText: string): string;
+var
+    Matches: TMatchCollection;
+    SB: TStringBuilder;
+    I, LastPos: Integer;
+begin
+    if AText = '' then
+        Exit('');
+    Matches := TRegEx.Matches(AText, MACRO_TOKEN_EXPR);
+    SB := TStringBuilder.Create;
+    try
+        LastPos := 1;
+        for I := 0 to Matches.Count - 1 do
+            if not MacroBraceIsPlainText(AText, Matches[I].Groups[1].Value, Matches[I].Index) then
+            begin
+                SB.Append(Copy(AText, LastPos, Matches[I].Index - LastPos));
+                LastPos := Matches[I].Index + Matches[I].Length;
+            end;
+        SB.Append(Copy(AText, LastPos, Length(AText) - LastPos + 1));
+        Result := SB.ToString;
+    finally
+        SB.Free;
+    end;
+end;
+
 constructor TMacroEngine.Create;
 begin
     inherited;
     FCache := TDictionary<string, TArray<TMacroToken>>.Create;
     FCacheOrder := TQueue<string>.Create;
     FCacheLock := TObject.Create;
-    FRegex := TRegEx.Create('\{([^}]*)\}');
+    FRegex := TRegEx.Create(MACRO_TOKEN_EXPR);
 end;
 
 destructor TMacroEngine.Destroy;
@@ -401,17 +458,7 @@ begin
                 ValueDir := Copy(ValueDir, 1, ValueColon - 1);
             end;
 
-            // Скобки без макро-намерения (PowerShell/bash/JSON) - обычный
-            // текст: без токена, красной карточки и предупреждений.
-            // '${VAR}'/'@{KEY}' (сигил $/@ перед '{') - тоже обычный текст,
-            // как в подсветке; известные имена ('${INPUT:x}') остаются
-            // макросами.
-            // Проверка ПОСЛЕ разделения '{ENV:ARG}'/'{VALUE_X:ARG}' на имя
-            // и аргумент, иначе колоночные формы терялись.
-            if (not IsKnownMacroName(Name)) and
-               (not ((ValueColon > 0) and IsKnownMacroName(ValueDir))) and
-               ((not IsMacroAttemptLike(RawName)) or
-                ((MatchStart > 1) and CharInSet(Text[MatchStart - 1], ['$', '@']))) then
+            if MacroBraceIsPlainText(Text, Match.Groups[1].Value, MatchStart) then
             begin
                 LastPos := MatchStart + Match.Length;
                 Continue;

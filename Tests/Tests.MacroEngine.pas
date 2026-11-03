@@ -36,6 +36,10 @@ type
         procedure LanguageBraces_ArePlainText_NoUnknownCards;
         [Test]
         procedure BashSigilBraces_ArePlainText_NoUnknownCards;
+        [Test]
+        procedure StripMacroSyntax_RemovesMacros_KeepsPlainText;
+        [Test]
+        procedure StripMacroSyntax_EmptyAndNoMatches_ReturnsInput;
 
         procedure MacroAttemptTypo_StillUnknown;
         [Test]
@@ -419,6 +423,34 @@ begin
     finally
         Engine.Free;
     end;
+end;
+
+procedure TMacroEngineTests.StripMacroSyntax_RemovesMacros_KeepsPlainText;
+begin
+    Assert.AreEqual('', StripMacroSyntax('{SLEEP 500}{ENTER}'));
+    Assert.AreEqual('git status && ', StripMacroSyntax('git status && {SLEEP 500}'));
+
+    // Сигильные скобки и скобки языков остаются обычным текстом
+    Assert.AreEqual('export PATH=${PATH}:/usr/local/bin',
+        StripMacroSyntax('export PATH=${PATH}:/usr/local/bin'));
+    Assert.AreEqual('@{KEY = VALUE}', StripMacroSyntax('@{KEY = VALUE}'));
+    Assert.AreEqual('Where-Object { $_.CPU -gt 10 }',
+        StripMacroSyntax('Where-Object { $_.CPU -gt 10 }'));
+
+    // Unknown-макрос (в т.ч. опечатка) тоже вырезается: он уводит вес детектора
+    Assert.AreEqual('ab', StripMacroSyntax('a{SLEP 500}b'));
+
+    // Известный макрос (в т.ч. после сигила) вырезается; сам '$' остаётся -
+    // он часть текста до скобок
+    Assert.AreEqual('echo ', StripMacroSyntax('echo {ENV:HOME}'));
+    Assert.AreEqual('echo $', StripMacroSyntax('echo ${ENV:HOME}'));
+end;
+
+procedure TMacroEngineTests.StripMacroSyntax_EmptyAndNoMatches_ReturnsInput;
+begin
+    Assert.AreEqual('', StripMacroSyntax(''));
+    Assert.AreEqual('echo hello world', StripMacroSyntax('echo hello world'));
+    Assert.AreEqual('{ unclosed brace', StripMacroSyntax('{ unclosed brace'));
 end;
 
 procedure TMacroEngineTests.MacroAttemptTypo_StillUnknown;

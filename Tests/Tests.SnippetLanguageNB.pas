@@ -18,6 +18,10 @@ type
         [Test]
         procedure Predict_ObviousScripts;
         [Test]
+        procedure Predict_MacroOnly_ReturnsEmpty;
+        [Test]
+        procedure Predict_WithMacros_SameLanguage;
+        [Test]
         procedure Predict_LowConfidence_Surrenders;
         [Test]
         procedure Predict_WrapperMajority_Wins;
@@ -129,6 +133,35 @@ begin
             Clf.PredictLanguage('@echo off' + #10 + 'setlocal' + #10 + 'if errorlevel 1 goto :eof'));
         Assert.AreEqual(SNIPPET_LANG_POWERSHELL,
             Clf.PredictLanguage('Get-ChildItem -Recurse | Export-Csv out.csv'));
+    finally
+        Clf.Free;
+    end;
+end;
+
+procedure TSnippetLanguageNBTests.Predict_MacroOnly_ReturnsEmpty;
+var
+    Clf: TScriptLanguageClassifier;
+begin
+    // Чисто-макросный текст: StripMacroSyntax в PredictLanguage вырезает
+    // макро-спаны, знакомых токенов нет -> '' -> решает эвристика
+    Clf := TrainedClassifier;
+    try
+        Assert.AreEqual('',
+            Clf.PredictLanguage('{SLEEP 500}' + #10 + '{ENTER}' + #10 + '{SLEEP 1000}'));
+    finally
+        Clf.Free;
+    end;
+end;
+
+procedure TSnippetLanguageNBTests.Predict_WithMacros_SameLanguage;
+var
+    Clf: TScriptLanguageClassifier;
+begin
+    // Макросы не меняют прогноз: после чистки текст совпадает с исходным
+    Clf := TrainedClassifier;
+    try
+        Assert.AreEqual(SNIPPET_LANG_POWERSHELL,
+            Clf.PredictLanguage('Get-ChildItem -Recurse | Export-Csv out.csv' + #10 + '{SLEEP 500}'));
     finally
         Clf.Free;
     end;

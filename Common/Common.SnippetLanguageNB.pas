@@ -24,6 +24,7 @@ unit Common.SnippetLanguageNB;
 interface
 
 uses
+    MacroEngine,
     System.Character,
     System.Classes,
     System.Generics.Collections,
@@ -493,7 +494,7 @@ var
 begin
     Result := '';
     // Полностью незнакомый текст не классифицируем - пусть решает эвристика
-    if not PredictInternal(AText, Scores, Matched) then
+    if not PredictInternal(StripMacroSyntax(AText), Scores, Matched) then
         Exit;
     if (Matched = 0) or (Length(Scores) = 0) then
         Exit;
