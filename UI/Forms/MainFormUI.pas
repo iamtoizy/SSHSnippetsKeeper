@@ -5,6 +5,7 @@ interface
 uses
     BaseFormUI,
     CategoryTreeController,
+    Common.AppVersion,
     Common.CmdLine,
     Core.Entities.Chain,
     Core.Entities.Snippet,
@@ -604,6 +605,9 @@ end;
 
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
+    // Версия в заголовке: по ней тестер указывает сборку в баг-репорте
+    Caption := Caption + ' ' + GetAppVersionShort;
+
 //    Winapi.Windows.DebugBreak;
 
     SetProp(Self.Handle, PChar(UNIQUE_APP_STR), 1);

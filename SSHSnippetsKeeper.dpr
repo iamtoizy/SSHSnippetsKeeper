@@ -1,6 +1,7 @@
 ﻿program SSHSnippetsKeeper;
 
 {$R '000_schema_init.res' 'Database\Schema\000_schema_init.rc'}
+{$R 'SSHSnippetsKeeperVersion.res' 'Resources\SSHSnippetsKeeperVersion.rc'}
 {$R *.dres}
 
 {$IFDEF RELEASE}
@@ -156,6 +157,7 @@ uses
   HistoryFormUI in 'UI\Forms\HistoryFormUI.pas' {HistoryForm},
   Core.LocalAIService in 'Core\Core.LocalAIService.pas',
   Common.AppState in 'Common\Common.AppState.pas',
+  Common.AppVersion in 'Common\Common.AppVersion.pas',
   Common.CmdLine in 'Common\Common.CmdLine.pas',
   Common.Consts in 'Common\Common.Consts.pas',
   Common.Helpers in 'Common\Common.Helpers.pas',

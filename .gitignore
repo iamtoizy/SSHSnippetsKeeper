@@ -91,3 +91,7 @@ Styles/
 
 # Артефакты сборки тестов
 Tests/bin/
+
+# Generated version resource (built by Tools\make-version.ps1)
+Resources/SSHSnippetsKeeperVersion.rc
+Resources/SSHSnippetsKeeperVersion.res

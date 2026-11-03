@@ -70,7 +70,7 @@
         <VerInfo_Locale>1049</VerInfo_Locale>
         <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=0.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=;CFBundleName=</VerInfo_Keys>
         <DCC_DcuOutput>Binary\DCU\$(Platform)\$(Config)</DCC_DcuOutput>
-        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+        <VerInfo_IncludeVerInfo>false</VerInfo_IncludeVerInfo>
         <VerInfo_MajorVer>0</VerInfo_MajorVer>
         <VerInfo_Debug>true</VerInfo_Debug>
         <VerInfo_AutoGenVersion>true</VerInfo_AutoGenVersion>
@@ -140,12 +140,18 @@
         <UWP_DelphiLogo150>Assets\Images\main-icon\main-icon.png</UWP_DelphiLogo150>
         <Debugger_DebugSourcePath>vendor\python4delphi\Source\;$(Debugger_DebugSourcePath)</Debugger_DebugSourcePath>
     </PropertyGroup>
+    <Target Name="GenerateVersionResource" BeforeTargets="BuildVersionResource">
+        <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\Tools\make-version.ps1&quot; -ProjectDir &quot;$(MSBuildProjectDirectory)&quot; -Config $(Config)"/>
+    </Target>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <RcCompile Include="Database\Schema\000_schema_init.rc">
             <Form>000_schema_init.res</Form>
+        </RcCompile>
+        <RcCompile Include="Resources\SSHSnippetsKeeperVersion.rc">
+            <Form>SSHSnippetsKeeperVersion.res</Form>
         </RcCompile>
         <DCCReference Include="Core\Core.Shutdown.pas"/>
         <DCCReference Include="UI\Forms\MainFormUI.pas">
@@ -322,6 +328,7 @@
         </DCCReference>
         <DCCReference Include="Core\Core.LocalAIService.pas"/>
         <DCCReference Include="Common\Common.AppState.pas"/>
+        <DCCReference Include="Common\Common.AppVersion.pas"/>
         <DCCReference Include="Common\Common.CmdLine.pas"/>
         <DCCReference Include="Common\Common.Consts.pas"/>
         <DCCReference Include="Common\Common.Helpers.pas"/>
