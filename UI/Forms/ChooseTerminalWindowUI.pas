@@ -14,6 +14,7 @@ uses
     Vcl.StdCtrls,
     Winapi.Messages,
     Winapi.Windows,
+    Vcl.Graphics,
     WindowMonitor, System.ImageList
     ;
 
@@ -42,6 +43,7 @@ type
         procedure ttPreviewWatchTimer(Sender: TObject);
         procedure pPreviewResize(Sender: TObject);
         procedure splPreviewMoved(Sender: TObject);
+        procedure splPreviewCanResize(Sender: TObject; var NewSize: Integer; var Accept: Boolean);
         procedure FormResize(Sender: TObject);
         procedure ebFilterChange(Sender: TObject);
         procedure FormShow(Sender: TObject);
@@ -65,8 +67,15 @@ type
         FPreviewWasIconic: Boolean;
         FUserSized: Boolean;
         FPreviewSavedHeight: Integer;
+        FColDesired: TArray<Integer>;
+        FMinimizedShot: TBitmap;
+        FMinimizedShotHwnd: HWND;
+        FShotTried: HWND;
+        pbShot: TPaintBox;
         ttPreviewWatch: TTimer;
         FDefListProc: TWndMethod;
+        FListEraseBrush: HBRUSH;
+        FListEraseBrushColor: TColor;
         procedure PopulateList;
         procedure AdjustFormHeight;
         function ResolveIconIndex(const ExePath: string; ASmall: Boolean): Integer;
@@ -82,6 +91,10 @@ type
         procedure LayoutPreview;
         procedure ClearPreview;
         procedure ShowPreviewPlaceholder(const AMsgKey: string);
+        procedure ShowMinimizedShot;
+        procedure pbShotPaint(Sender: TObject);
+        function CaptureWindowShot(AHwnd: HWND): Boolean;
+        function TryPrintWindowShot(AHwnd: HWND; W, H: Integer): Boolean;
         procedure ApplyPreviewState;
         procedure SavePreviewSetting(AVisible: Boolean);
         procedure ListWndProc(var Message: TMessage);
@@ -90,7 +103,12 @@ type
         procedure UpdateStatusText(AShownCount: Integer);
         procedure RestoreGeometry;
         procedure SaveGeometry;
-        procedure FillLastColumn;
+        procedure AutoSizeColumns;
+        procedure MeasureColumns;
+        procedure ApplyColumnLayout;
+        procedure EnableAntiFlicker;
+        function MaxPreviewHeight: Integer;
+        procedure FitPreviewToForm;
         function FormSizeValid(AWidth, AHeight: Integer): Boolean;
         function PreviewHeightValid(AHeight: Integer): Boolean;
         procedure WMSizing(var Message: TMessage); message WM_SIZING;
@@ -113,7 +131,6 @@ uses
     System.Types,
     SynThemeAdapter,
     Vcl.Forms,
-    Vcl.Graphics,
     Vcl.Themes,
     Winapi.CommCtrl,
     Winapi.Dwmapi,
@@ -121,6 +138,13 @@ uses
     ;
 
 {$R *.dfm}
+
+const
+    // В RTL не объявлен: флаг требует от окна актуальный кадр через DWM
+    PW_RENDERFULLCONTENT = $00000002;
+
+function PrintWindow(HWnd: HWND; DstDC: HDC; Flags: DWORD): BOOL; stdcall;
+    external user32 name 'PrintWindow';
 
 procedure TChooseTerminalWindow.FormCreate(Sender: TObject);
 begin
@@ -131,6 +155,7 @@ begin
     FPreviewWasIconic := False;
     FUserSized := False;
     FPreviewSavedHeight := 0;
+    FShotTried := 0;
     FGroupByProcess := False;
     FIconCache := TDictionary<string, Integer>.Create;
     FSmallIconCache := TDictionary<string, Integer>.Create;
@@ -138,6 +163,18 @@ begin
     FSortAscending := True;
     FDefListProc := lvTerminalList.WindowProc;
     lvTerminalList.WindowProc := ListWndProc;
+    // Двойная буферизация: без неё форма и панели мерцают при ресайзе
+    DoubleBuffered := True;
+    pTop.DoubleBuffered := True;
+    pPreview.DoubleBuffered := True;
+    ebFilter.DoubleBuffered := True;
+    EnableAntiFlicker;
+    // Поверх pPreview: последний кадр свёрнутого окна (PrintWindow)
+    pbShot := TPaintBox.Create(Self);
+    pbShot.Parent := pPreview;
+    pbShot.Align := alClient;
+    pbShot.OnPaint := pbShotPaint;
+    pbShot.Visible := False;
     ttPreviewWatch := TTimer.Create(Self);
     ttPreviewWatch.Interval := 500;
     ttPreviewWatch.OnTimer := ttPreviewWatchTimer;
@@ -161,7 +198,13 @@ begin
     SaveGeometry;
     if Assigned(FDefListProc) then
         lvTerminalList.WindowProc := FDefListProc;
+    if FListEraseBrush <> 0 then
+    begin
+        DeleteObject(FListEraseBrush);
+        FListEraseBrush := 0;
+    end;
     ClearPreview;
+    FreeAndNil(FMinimizedShot);
     FreeAndNil(FIconCache);
     FreeAndNil(FSmallIconCache);
 end;
@@ -359,10 +402,22 @@ begin
     if IsIconic(AHwnd) then
     begin
         FPreviewWasIconic := True;
-        ShowPreviewPlaceholder('Terminal.PreviewMinimized');
+        // Свёрнутое окно не рендерится: тянем последний кадр через
+        // PrintWindow, при неудаче остаётся прежний снимок или плейсхолдер.
+        // Неудачу кэшируем: окно, которое не удалось развернуть (elevated),
+        // нет смысла дёргать повторно при каждом выборе
+        if FShotTried <> AHwnd then
+        begin
+            if CaptureWindowShot(AHwnd) then
+                FShotTried := 0
+            else
+                FShotTried := AHwnd;
+        end;
+        ShowMinimizedShot;
         Exit;
     end;
     FPreviewWasIconic := False;
+    FShotTried := 0;
     if (FThumb = 0) or (FThumbHwnd <> AHwnd) then
         RegisterPreview(AHwnd)
     else
@@ -379,6 +434,7 @@ begin
         FThumb := Thumb;
         FThumbHwnd := AHwnd;
         lbPreviewEmpty.Visible := False;
+        pbShot.Visible := False;
         LayoutPreview;
     end
     else
@@ -443,6 +499,177 @@ begin
     FThumbHwnd := 0;
     lbPreviewEmpty.Caption := TUIStateLoader.GetMessage(AMsgKey);
     lbPreviewEmpty.Visible := True;
+    pbShot.Visible := False;
+end;
+
+procedure TChooseTerminalWindow.ShowMinimizedShot;
+begin
+    if FThumb <> 0 then
+    begin
+        DwmUnregisterThumbnail(FThumb);
+        FThumb := 0;
+    end;
+    FThumbHwnd := 0;
+    if (FMinimizedShot <> nil) and (FMinimizedShotHwnd = FPreviewWanted) and
+        (FMinimizedShot.Width > 0) and (FMinimizedShot.Height > 0) then
+    begin
+        lbPreviewEmpty.Visible := False;
+        pbShot.Visible := True;
+        pbShot.Invalidate;
+    end
+    else
+        ShowPreviewPlaceholder('Terminal.PreviewMinimized');
+end;
+
+procedure TChooseTerminalWindow.pbShotPaint(Sender: TObject);
+var
+    Area: TRect;
+    Scale: Double;
+    DrawW, DrawH, X, Y: Integer;
+begin
+    if (FMinimizedShot = nil) or (FMinimizedShot.Width <= 0) or
+        (FMinimizedShot.Height <= 0) then
+        Exit;
+    Area := pbShot.ClientRect;
+    Area.Inflate(-4, -4);
+    Scale := Min(Area.Width / FMinimizedShot.Width, Area.Height / FMinimizedShot.Height);
+    DrawW := Round(FMinimizedShot.Width * Scale);
+    DrawH := Round(FMinimizedShot.Height * Scale);
+    X := Area.Left + (Area.Width - DrawW) div 2;
+    Y := Area.Top + (Area.Height - DrawH) div 2;
+    pbShot.Canvas.StretchDraw(TRect.Create(X, Y, X + DrawW, Y + DrawH), FMinimizedShot);
+end;
+
+function TChooseTerminalWindow.TryPrintWindowShot(AHwnd: HWND; W, H: Integer): Boolean;
+const
+    Step = 16; // шаг решётки проверки "кадр не пустой"
+var
+    X, Y: Integer;
+    Row: PByteArray;
+    Got: Boolean;
+begin
+    Result := False;
+    if FMinimizedShot = nil then
+        FMinimizedShot := TBitmap.Create;
+    FMinimizedShot.PixelFormat := pf32bit;
+    FMinimizedShot.SetSize(W, H);
+    // Обнуляем: мусорный фон DIB выдал бы себя за содержимое
+    FMinimizedShot.Canvas.Brush.Color := clBlack;
+    FMinimizedShot.Canvas.FillRect(Rect(0, 0, W, H));
+    if not PrintWindow(AHwnd, FMinimizedShot.Canvas.Handle, PW_RENDERFULLCONTENT) then
+        Exit;
+
+    // Пустой кадр - нули во всех каналах; живой контент оставит ненулевой байт
+    Got := False;
+    Y := 0;
+    while (Y < H) and not Got do
+    begin
+        Row := FMinimizedShot.ScanLine[Y];
+        X := 0;
+        while (X < W) and not Got do
+        begin
+            Got := (Row[X * 4] <> 0) or (Row[X * 4 + 1] <> 0) or
+                (Row[X * 4 + 2] <> 0) or (Row[X * 4 + 3] <> 0);
+            Inc(X, Step);
+        end;
+        Inc(Y, Step);
+    end;
+    if not Got then
+        Exit;
+
+    FMinimizedShotHwnd := AHwnd;
+    Result := True;
+end;
+
+function TChooseTerminalWindow.CaptureWindowShot(AHwnd: HWND): Boolean;
+const
+    MinPaintWaitMs = 80; // минимум ожидания до проверки очереди перерисовки
+    RestoreWaitMs = 250; // потолок ожидания перерисовки после разворота
+var
+    P: TWindowPlacement;
+    W, H, I: Integer;
+    UR: TRect;
+    WasIconic, Restored, Cloaked: Boolean;
+    AttrVal: DWORD;
+begin
+    Result := False;
+    if not IsWindow(AHwnd) then
+        Exit;
+    FillChar(P, SizeOf(P), 0);
+    P.length := SizeOf(P);
+    if not GetWindowPlacement(AHwnd, @P) then
+        Exit;
+    // Размер развёрнутого окна: свёрнутое сидит в -32000
+    W := P.rcNormalPosition.Right - P.rcNormalPosition.Left;
+    H := P.rcNormalPosition.Bottom - P.rcNormalPosition.Top;
+    if (W <= 0) or (H <= 0) or (W > 8000) or (H > 8000) then
+        Exit;
+
+    // Свёрнутому окну нечего рендерить: PrintWindow вернёт только рамку с
+    // заголовком. Разворачиваем окно на мгновение и снимаем настоящий кадр
+    WasIconic := IsIconic(AHwnd);
+    if WasIconic and not IsWindowVisible(AHwnd) then
+        Exit; // скрытое окно разворачивать нельзя, кадра не будет
+    Restored := False;
+    Cloaked := False;
+    if WasIconic then
+    begin
+        // Разворот без DWM-анимации: иначе кадр снимается посреди
+        // проигрывания анимации и выходит обрезанным
+        AttrVal := 1;
+        DwmSetWindowAttribute(AHwnd, DWMWA_TRANSITIONS_FORCEDISABLED,
+            @AttrVal, SizeOf(AttrVal));
+        // Клоак прячет окно с экрана, но DWM продолжает его компоновать:
+        // разворот и обратное сворачивание проходят незаметно и без
+        // кражи фокуса у нашего окна
+        Cloaked := DwmSetWindowAttribute(AHwnd, DWMWA_CLOAK,
+            @AttrVal, SizeOf(AttrVal)) = 0;
+    end;
+    try
+        if WasIconic then
+        begin
+            ShowWindow(AHwnd, SW_SHOWNOACTIVATE);
+            if IsIconic(AHwnd) then
+                Exit; // развернуть не дали (elevated и т.п.) - кадра нет
+            Restored := True;
+            // Ждём, пока приложение дорисуется: пустая очередь
+            // перерисовки означает, что содержимое готово к снимку
+            for I := 1 to RestoreWaitMs div 10 do
+            begin
+                Sleep(10);
+                if (I * 10 >= MinPaintWaitMs) and not GetUpdateRect(AHwnd, UR, False) then
+                    Break;
+            end;
+            Sleep(30); // ещё пара кадров на композитинг
+        end;
+        Result := TryPrintWindowShot(AHwnd, W, H);
+        // Отдельные приложения не рисуют под клоаком: если снимок вслепую
+        // не вышел, пробуем ещё раз с видимым мгновенным разворотом
+        if not Result and Restored and Cloaked then
+        begin
+            AttrVal := 0;
+            DwmSetWindowAttribute(AHwnd, DWMWA_CLOAK, @AttrVal, SizeOf(AttrVal));
+            Cloaked := False;
+            Sleep(50);
+            Result := TryPrintWindowShot(AHwnd, W, H);
+        end;
+    finally
+        if Restored then
+            // SW_SHOWMINNOACTIVE: сворачиваем, не активируя соседей,
+            // иначе фокус уплывает с нашего окна
+            ShowWindow(AHwnd, SW_SHOWMINNOACTIVE);
+        if Cloaked then
+        begin
+            AttrVal := 0;
+            DwmSetWindowAttribute(AHwnd, DWMWA_CLOAK, @AttrVal, SizeOf(AttrVal));
+        end;
+        if WasIconic then
+        begin
+            AttrVal := 0;
+            DwmSetWindowAttribute(AHwnd, DWMWA_TRANSITIONS_FORCEDISABLED,
+                @AttrVal, SizeOf(AttrVal));
+        end;
+    end;
 end;
 
 procedure TChooseTerminalWindow.ApplyPreviewState;
@@ -458,6 +685,7 @@ begin
         splPreview.Top := pPreview.Top + pPreview.Height;
         pPreview.Visible := True;
         splPreview.Visible := True;
+        FitPreviewToForm;
     end
     else
     begin
@@ -506,32 +734,159 @@ begin
             ClientHeight := Min(MinNeeded, Screen.WorkAreaHeight);
     end;
     AdjustFormHeight;
+    FitPreviewToForm;
+end;
+
+function TChooseTerminalWindow.MaxPreviewHeight: Integer;
+const
+    MinListHeight = 120; // список не сжимаем ниже: он должен оставаться видимым
+begin
+    Result := ClientHeight - pTop.Height - splPreview.Height - sbBottom.Height - MinListHeight;
+    if Result < splPreview.MinSize then
+        Result := splPreview.MinSize;
+end;
+
+procedure TChooseTerminalWindow.FitPreviewToForm;
+begin
+    if not pPreview.Visible then
+        Exit;
+    if pPreview.Height > MaxPreviewHeight then
+    begin
+        pPreview.Height := MaxPreviewHeight;
+        FPreviewSavedHeight := pPreview.Height;
+    end;
 end;
 
 procedure TChooseTerminalWindow.splPreviewMoved(Sender: TObject);
 begin
+    FitPreviewToForm;
     if pPreview.Height >= splPreview.MinSize then
         FPreviewSavedHeight := pPreview.Height;
     SaveGeometry;
 end;
 
-procedure TChooseTerminalWindow.FormResize(Sender: TObject);
+procedure TChooseTerminalWindow.splPreviewCanResize(Sender: TObject; var NewSize: Integer; var Accept: Boolean);
 begin
-    FillLastColumn;
+    // Живой предел при перетаскивании: список не схлопывается
+    if NewSize > MaxPreviewHeight then
+        NewSize := MaxPreviewHeight;
 end;
 
-procedure TChooseTerminalWindow.FillLastColumn;
-var
-    I, Fill: Integer;
+procedure TChooseTerminalWindow.FormResize(Sender: TObject);
 begin
-    if (lvTerminalList.ViewStyle = vsReport) and lvTerminalList.HandleAllocated then
+    FitPreviewToForm;
+    ApplyColumnLayout;
+end;
+
+procedure TChooseTerminalWindow.EnableAntiFlicker;
+var
+    ExStyle: NativeInt;
+begin
+    if not lvTerminalList.HandleAllocated then
+        Exit;
+    // LVS_EX_DOUBLEBUFFER: на vista+ ListView без него мерцает при ресайзе
+    ListView_SetExtendedListViewStyle(lvTerminalList.Handle,
+        ListView_GetExtendedListViewStyle(lvTerminalList.Handle) or LVS_EX_DOUBLEBUFFER);
+    // Нативный ListView при BKCOLOR=CLR_NONE красит фон светлой темой в
+    // собственном буфере WM_PAINT - erase мы уже закрыли, а эту заливку
+    // глушим через BKCOLOR: VCL-хук подменит цвет на стилевой (тёмный)
+    if IsDarkStyleActive then
+        ListView_SetBkColor(lvTerminalList.Handle,
+            TStyleManager.ActiveStyle.GetStyleColor(scListView));
+    // WS_EX_COMPOSITED на списке: хедер, клиент и скроллбары (неклиентская
+    // область, которую LVS_EX_DOUBLEBUFFER не покрывает) блитятся одним
+    // проходом. На самой форме COMPOSITED не ставим: поверхность окна
+    // верхнего уровня пересоздаётся белой и даёт вспышки
+    ExStyle := GetWindowLongPtr(lvTerminalList.Handle, GWL_EXSTYLE);
+    SetWindowLongPtr(lvTerminalList.Handle, GWL_EXSTYLE, ExStyle or WS_EX_COMPOSITED);
+    SetWindowPos(lvTerminalList.Handle, 0, 0, 0, 0, 0, SWP_NOMOVE or SWP_NOSIZE or
+        SWP_NOZORDER or SWP_NOACTIVATE or SWP_FRAMECHANGED);
+    // Верхняя панель с кнопками и полем фильтра - тоже одним блитом
+    ExStyle := GetWindowLongPtr(pTop.Handle, GWL_EXSTYLE);
+    SetWindowLongPtr(pTop.Handle, GWL_EXSTYLE, ExStyle or WS_EX_COMPOSITED);
+    SetWindowPos(pTop.Handle, 0, 0, 0, 0, 0, SWP_NOMOVE or SWP_NOSIZE or
+        SWP_NOZORDER or SWP_NOACTIVATE or SWP_FRAMECHANGED);
+end;
+
+procedure TChooseTerminalWindow.MeasureColumns;
+var
+    I, N: Integer;
+    Col: TLVColumn;
+begin
+    if (lvTerminalList.ViewStyle <> vsReport) or not lvTerminalList.HandleAllocated then
+        Exit;
+    N := lvTerminalList.Columns.Count;
+    if N < 2 then
+        Exit;
+
+    // Меряем один раз: max(текст строк, заголовок); раскладку на тиках
+    // ресайза считаем по кэшу, чтобы не пересканировать содержимое
+    SetLength(FColDesired, N - 1);
+    for I := 0 to N - 2 do
     begin
-        Fill := lvTerminalList.ClientWidth;
-        for I := 0 to lvTerminalList.Columns.Count - 2 do
-            Dec(Fill, ListView_GetColumnWidth(lvTerminalList.Handle, I));
-        if Fill > 0 then
-            ListView_SetColumnWidth(lvTerminalList.Handle, lvTerminalList.Columns.Count - 1, Fill);
+        ListView_SetColumnWidth(lvTerminalList.Handle, I, LVSCW_AUTOSIZE_USEHEADER);
+        FillChar(Col, SizeOf(Col), 0);
+        Col.mask := LVCF_WIDTH;
+        if not ListView_GetColumn(lvTerminalList.Handle, I, Col) then
+            Col.cx := ListView_GetColumnWidth(lvTerminalList.Handle, I);
+        FColDesired[I] := Col.cx;
     end;
+end;
+
+procedure TChooseTerminalWindow.ApplyColumnLayout;
+const
+    MinLastCol = 100; // последняя колонка не сжимаем меньше этого
+    MinColW = 48;     // пол сжатия первых колонок в узком окне
+var
+    I, N, Avail, Sum, W, Rest: Integer;
+    K: Double;
+begin
+    if (lvTerminalList.ViewStyle <> vsReport) or not lvTerminalList.HandleAllocated then
+        Exit;
+    N := lvTerminalList.Columns.Count;
+    if (N < 2) or (Length(FColDesired) < N - 1) then
+        Exit;
+
+    Sum := 0;
+    for I := 0 to N - 2 do
+        Inc(Sum, FColDesired[I]);
+    if Sum <= 0 then
+        Sum := 1;
+
+    Avail := lvTerminalList.ClientWidth;
+    if Sum + MinLastCol <= Avail then
+    begin
+        // Места хватает: первые колонки по содержимому,
+        // последняя забирает весь остаток
+        for I := 0 to N - 2 do
+            ListView_SetColumnWidth(lvTerminalList.Handle, I, FColDesired[I]);
+        ListView_SetColumnWidth(lvTerminalList.Handle, N - 1, Avail - Sum)
+    end
+    else
+    begin
+        // Узкое окно: сжимаем первые колонки пропорционально, оставляя
+        // последней минимум; если и он не помещается - допустим скролл
+        K := (Avail - MinLastCol) / Sum;
+        Rest := 0;
+        for I := 0 to N - 2 do
+        begin
+            W := Round(FColDesired[I] * K);
+            if W < MinColW then
+                W := MinColW;
+            ListView_SetColumnWidth(lvTerminalList.Handle, I, W);
+            Inc(Rest, W);
+        end;
+        W := Avail - Rest;
+        if W < MinLastCol then
+            W := MinLastCol;
+        ListView_SetColumnWidth(lvTerminalList.Handle, N - 1, W);
+    end;
+end;
+
+procedure TChooseTerminalWindow.AutoSizeColumns;
+begin
+    MeasureColumns;
+    ApplyColumnLayout;
 end;
 
 procedure TChooseTerminalWindow.ttPreviewWatchTimer(Sender: TObject);
@@ -569,7 +924,30 @@ var
     HeaderText: string;
     OldFont: HFONT;
     R: TRect;
+    BgColor: TColor;
 begin
+    if Message.Msg = WM_ERASEBKGND then
+    begin
+        // Штатная очистка фона красит белой класс-кистью и даёт вспышку.
+        // В тёмной теме заливаем стилевым цветом фона списка (тот же, что
+        // хук ставит через LVM_SETBKCOLOR); кисть кэшируем - на ресайзе
+        // erase приходит десятками раз в секунду
+        if IsDarkStyleActive then
+        begin
+            BgColor := TStyleManager.ActiveStyle.GetStyleColor(scListView);
+            if (FListEraseBrush = 0) or (FListEraseBrushColor <> BgColor) then
+            begin
+                if FListEraseBrush <> 0 then
+                    DeleteObject(FListEraseBrush);
+                FListEraseBrushColor := BgColor;
+                FListEraseBrush := CreateSolidBrush(ColorToRGB(BgColor));
+            end;
+            Winapi.Windows.FillRect(HDC(Message.WParam), lvTerminalList.ClientRect,
+                FListEraseBrush);
+        end;
+        Message.Result := 1;
+        Exit;
+    end;
     Hdr := PNMHdr(Pointer(Message.LParam));
     if (Message.Msg = CN_NOTIFY) and (Hdr^.code = NM_CUSTOMDRAW) and
         (Hdr^.hwndFrom = lvTerminalList.Handle) and IsDarkStyleActive then
@@ -706,6 +1084,7 @@ begin
         if pPreview.Visible then
             pPreview.Height := FPreviewSavedHeight;
     end;
+    FitPreviewToForm;
 end;
 
 procedure TChooseTerminalWindow.SaveGeometry;
@@ -748,6 +1127,7 @@ end;
 procedure TChooseTerminalWindow.WMExitSizeMove(var Message: TMessage);
 begin
     inherited;
+    AutoSizeColumns;
     SaveGeometry;
 end;
 
@@ -941,9 +1321,16 @@ begin
                 Item.Caption := Format('%d. %s', [K + 1, WindowInfo.WindowTitle])
             else
                 Item.Caption := WindowInfo.WindowTitle;
-            // Подпись плитки: процесс и время последней активации
-            Item.SubItems.Add(Format('%s  ·  %s',
-                [WindowInfo.ExeName, FormatDateTime('hh:nn:ss', WindowInfo.ActivatedAt)]));
+            // В таблице процесс и время в отдельных колонках,
+            // в плитках - одной подстрокой
+            if lvTerminalList.ViewStyle = vsReport then
+            begin
+                Item.SubItems.Add(WindowInfo.ExeName);
+                Item.SubItems.Add(FormatDateTime('hh:nn:ss', WindowInfo.ActivatedAt));
+            end
+            else
+                Item.SubItems.Add(Format('%s  ·  %s',
+                    [WindowInfo.ExeName, FormatDateTime('hh:nn:ss', WindowInfo.ActivatedAt)]));
             // В таблице - мелкие иконки, в плитках - крупные
             if lvTerminalList.ViewStyle = vsReport then
                 Item.ImageIndex := ResolveIconIndex(WindowInfo.ExePath, True)
@@ -972,9 +1359,17 @@ begin
                 SendMessage(lvTerminalList.Handle, LVM_SETITEM, 0, LPARAM(@RawIt));
             end;
 
+            // Метка последнего окна: в таблице - в колонке времени,
+            // в плитках - в подстроке
             if Index = High(FWindows) then
-                Item.SubItems[0] := Item.SubItems[0] + '  ·  ' +
-                    TUIStateLoader.GetMessage('Terminal.LastUsed');
+            begin
+                if lvTerminalList.ViewStyle = vsReport then
+                    Item.SubItems[1] := Item.SubItems[1] + '  ·  ' +
+                        TUIStateLoader.GetMessage('Terminal.LastUsed')
+                else
+                    Item.SubItems[0] := Item.SubItems[0] + '  ·  ' +
+                        TUIStateLoader.GetMessage('Terminal.LastUsed');
+            end;
         end;
 
         if Count > 0 then
@@ -985,7 +1380,8 @@ begin
         lvTerminalList.Items.EndUpdate;
     end;
 
-    FillLastColumn;
+    AutoSizeColumns;
+    EnableAntiFlicker;
 end;
 
 end.

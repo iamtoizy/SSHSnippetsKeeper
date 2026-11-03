@@ -152,6 +152,7 @@ object ChooseTerminalWindow: TChooseTerminalWindow
     MinSize = 90
     ResizeStyle = rsUpdate
     Visible = False
+    OnCanResize = splPreviewCanResize
     OnMoved = splPreviewMoved
     ExplicitTop = 334
     ExplicitWidth = 780
