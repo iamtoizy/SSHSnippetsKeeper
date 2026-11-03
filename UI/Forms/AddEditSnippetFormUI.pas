@@ -167,6 +167,7 @@ type
         FLangLocked: Boolean;
         FLangSyncing: Boolean;
         FSuppressDetect: Boolean;
+        FSuppressSecurityConfirm: Boolean;
         FDetectBaselineText: string;
         FCompletionEngine: TBashCompletionEngine;
         FAIService: IAIService;
@@ -681,6 +682,9 @@ end;
 
 procedure TAddEditSnippetForm.cbIgnoreSecurityChecksClick(Sender: TObject);
 begin
+    if FSuppressSecurityConfirm then
+        Exit;
+
     // Если пользователь снимает галочку, нам подтверждение не нужно — просто выходим
     if not cbIgnoreSecurityChecks.Checked then
         Exit;
@@ -1833,7 +1837,12 @@ begin
             ebTitle.Text := FSnippet.Title;
             mContent.Text := FSnippet.Content;
             mComment.Text := FSnippet.Comment;
-            cbIgnoreSecurityChecks.Checked := FSnippet.IsSecurityCheckIgnored;
+            FSuppressSecurityConfirm := True;
+            try
+                cbIgnoreSecurityChecks.Checked := FSnippet.IsSecurityCheckIgnored;
+            finally
+                FSuppressSecurityConfirm := False;
+            end;
 
             // Автодетект при открытии не запускаем: сохранённый язык всегда
             // приоритетнее, иначе ручной выбор пользователя теряется
@@ -1877,7 +1886,12 @@ begin
             ebTitle.Text := '';
             mContent.Text := '';
             mComment.Text := '';
-            cbIgnoreSecurityChecks.Checked := False;
+            FSuppressSecurityConfirm := True;
+            try
+                cbIgnoreSecurityChecks.Checked := False;
+            finally
+                FSuppressSecurityConfirm := False;
+            end;
 
             FLangLocked := False;
             FCurrentLanguage := SNIPPET_LANG_BASH;
