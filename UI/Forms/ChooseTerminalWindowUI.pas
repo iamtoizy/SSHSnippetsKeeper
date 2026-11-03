@@ -447,10 +447,25 @@ end;
 
 procedure TChooseTerminalWindow.ApplyPreviewState;
 begin
-    if sbPreview.Down and (FPreviewSavedHeight > 0) then
-        pPreview.Height := FPreviewSavedHeight;
-    pPreview.Visible := sbPreview.Down;
-    splPreview.Visible := sbPreview.Down;
+    if sbPreview.Down then
+    begin
+        if FPreviewSavedHeight > 0 then
+            pPreview.Height := FPreviewSavedHeight;
+        // VCL стекирует alTop-панели по текущему Top, а невидимые контролы
+        // хранят Top с прошлого выравнивания: без явных ключей после
+        // hide/show сплиттер встаёт над превью и растягивает pTop
+        pPreview.Top := pTop.Top + pTop.Height;
+        splPreview.Top := pPreview.Top + pPreview.Height;
+        pPreview.Visible := True;
+        splPreview.Visible := True;
+    end
+    else
+    begin
+        // Сплиттер скрываем первым: иначе ре-выравнивание после скрытия
+        // превью подтянет ещё видимый сплиттер вплотную к pTop
+        splPreview.Visible := False;
+        pPreview.Visible := False;
+    end;
     if sbPreview.Down then
         sbPreview.Caption := #9660 + ' ' + TUIStateLoader.GetMessage('Terminal.PreviewHeader')
     else
@@ -710,7 +725,11 @@ begin
         Settings.TerminalChooserHeight := 0;
     end;
 
-    if pPreview.Visible and PreviewHeightValid(pPreview.Height) then
+    // Высоту храним и при скрытом превью: это последний размер,
+    // выбранный пользователем (0 = размер не задан)
+    if PreviewHeightValid(FPreviewSavedHeight) then
+        Settings.TerminalChooserPreviewHeight := FPreviewSavedHeight
+    else if pPreview.Visible and PreviewHeightValid(pPreview.Height) then
         Settings.TerminalChooserPreviewHeight := pPreview.Height
     else
         Settings.TerminalChooserPreviewHeight := 0;
