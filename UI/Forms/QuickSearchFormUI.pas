@@ -751,7 +751,10 @@ begin
 
     Runner := TSnippetRunner.Create(FUserID, AppContext);
     try
-        Runner.ExecuteSnippet(Snippet);
+        if IsWindow(FTargetHWND) then
+            Runner.ExecuteSnippetInWindow(Snippet, FTargetHWND)
+        else
+            Runner.ExecuteSnippet(Snippet);
     finally
         Runner.Free;
     end;
