@@ -134,7 +134,6 @@ uses
   EditEx in 'UI\Controls\EditEx.pas',
   UI.Services.AIService in 'UI\Services\UI.Services.AIService.pas',
   UI.Services.AITextCleaner in 'UI\Services\UI.Services.AITextCleaner.pas',
-  UI.Services.LocalAISmokeTest in 'UI\Services\UI.Services.LocalAISmokeTest.pas',
   AISettingsFormUI in 'UI\Forms\AISettingsFormUI.pas' {AISettingsForm},
   SecurityScanner in 'Core\Services\SecurityScanner.pas',
   PasswordService in 'Core\Services\PasswordService.pas',

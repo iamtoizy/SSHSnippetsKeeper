@@ -2614,7 +2614,7 @@ end;
 
 procedure TMainForm.nTerminalsClick(Sender: TObject);
 begin
-    // Тело (тест локального ИИ) перенесено в UI\Services\UI.Services.LocalAISmokeTest.pas
+    // Тело (тест локального ИИ) удалено как мёртвый код
 end;
 
 procedure TMainForm.PerformSearchAsync(const Mask: string);

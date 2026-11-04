@@ -278,7 +278,6 @@
         <DCCReference Include="UI\Controls\TrackBarEx.pas"/>
         <DCCReference Include="UI\Services\UI.Services.AIService.pas"/>
         <DCCReference Include="UI\Services\UI.Services.AITextCleaner.pas"/>
-        <DCCReference Include="UI\Services\UI.Services.LocalAISmokeTest.pas"/>
         <DCCReference Include="UI\Forms\AISettingsFormUI.pas">
             <Form>AISettingsForm</Form>
         </DCCReference>
