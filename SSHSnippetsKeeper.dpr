@@ -128,6 +128,7 @@ uses
   SequenceOrderDialogUI in 'UI\Forms\SequenceOrderDialogUI.pas' {SequenceOrderForm},
   GlobalHotkeyManager in 'UI\Controllers\GlobalHotkeyManager.pas',
   TrackBarEx in 'UI\Controls\TrackBarEx.pas',
+  ListViewEx in 'UI\Controls\ListViewEx.pas',
   UI.Services.AIService in 'UI\Services\UI.Services.AIService.pas',
   UI.Services.AITextCleaner in 'UI\Services\UI.Services.AITextCleaner.pas',
   UI.Services.LocalAISmokeTest in 'UI\Services\UI.Services.LocalAISmokeTest.pas',
@@ -194,9 +195,31 @@ begin
     end;
 end;
 
+{$IFDEF DEBUG}
+function CaptureStackBackTrace(FramesToSkip, FramesToCapture: DWORD;
+  BackTrace: Pointer; BackTraceHash: PDWORD): Word; external kernel32 name 'RtlCaptureStackBackTrace';
+
+procedure AppStackTraceCapture(AReturnAddresses: PNativeUInt; AMaxDepth, ASkipFrames: Cardinal);
+var
+  LCount, I: Cardinal;
+  PZero: PNativeUInt;
+begin
+  LCount := CaptureStackBackTrace(ASkipFrames, AMaxDepth, AReturnAddresses, nil);
+  PZero := AReturnAddresses;
+  Inc(PZero, LCount);
+  for I := LCount to AMaxDepth - 1 do
+  begin
+    PZero^ := 0;
+    Inc(PZero);
+  end;
+end;
+{$ENDIF}
+
 begin
 {$IFDEF DEBUG}
 ReportMemoryLeaksOnShutdown := True;
+FastMM_GetStackTrace := AppStackTraceCapture;
+FastMM_EnterDebugMode;
 {$ENDIF}
 
     // Создаем мьютекс

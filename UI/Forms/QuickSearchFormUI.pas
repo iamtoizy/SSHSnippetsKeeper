@@ -16,7 +16,9 @@ uses
     Vcl.Forms,
     Vcl.StdCtrls,
     Winapi.Messages,
-    Winapi.Windows
+    Winapi.Windows,
+    // Подцепляем последним:
+    ListViewEx
     ;
 
 type
@@ -134,6 +136,8 @@ begin
     Self.ShowHint := True;
     lvQuickResults.ShowHint := True; // Обязательно включаем VCL-подсказки для списка
     lvQuickResults.HideSelection := False;
+    // Item.Data строк - TSnippetViewData: освобождаются при разрушении окна
+    lvQuickResults.OwnsItemData := True;
 
     FDeactivateTimer := TTimer.Create(Self);
     FDeactivateTimer.Interval := 30;

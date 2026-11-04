@@ -48,7 +48,9 @@ uses
     Vcl.Themes,
     Vcl.VirtualImageList,
     Winapi.Messages,
-    Winapi.Windows
+    Winapi.Windows,
+    // Подцепляем последним:
+    ListViewEx
     ;
 
 type
@@ -620,6 +622,8 @@ begin
 
     lvTags.OwnerData := False;
     lvSnippets.OwnerData := False;
+    // Item.Data у lvSnippets - объекты TSnippetViewData, у lvTags - Integer-ID
+    lvSnippets.OwnsItemData := True;
 end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
