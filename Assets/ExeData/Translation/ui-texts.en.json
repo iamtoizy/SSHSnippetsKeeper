@@ -1070,17 +1070,17 @@
         "lvSnippets": {
           "Title": "Snippet List",
           "Main": "Flat list of snippets in the selected workspace. Multi-selection is supported (CTRL+click / SHIFT+click): the context menu offers bulk actions - Run in order, Export, Add tag, Move to category.",
-          "Expanded": "<code>CTRL+A</code> - Add snippet<br><code>CTRL+E</code> - Edit snippet<br><code>CTRL+D</code> - Delete snippet"
+          "Expanded": "<code>CTRL+ALT+A</code> - Add snippet<br><code>CTRL+ALT+E</code> - Edit snippet<br><code>CTRL+ALT+D</code> - Delete snippet"
         },
         "lvTags": {
           "Title": "Tag List",
           "Main": "Displays a complete list of all tags in the database. For convenience, tags already assigned to the selected snippet are automatically pinned at the top of the list and highlighted in green.",
-          "Expanded": "💡 <b>Navigation and Hotkeys:</b><br><b>Click a tag</b> — filter snippets by the selected tag.<br><b>CTRL+click / SHIFT+click</b> — select several tags: snippets are shown for all checked ones.<br>The match mode — all tags or any of them — is switched on the General tab in Settings.<br><b>Click on empty space or ESC</b> — reset the filter.<br><br><code>CTRL+ALT+A</code> — add a new tag.<br><code>CTRL+ALT+E</code> — edit tag name.<br><code>CTRL+ALT+D</code> — delete the selected tag from the database."
+          "Expanded": "💡 <b>Navigation and Hotkeys:</b><br><b>Click a tag</b> — filter snippets by the selected tag.<br><b>CTRL+click / SHIFT+click</b> — select several tags: snippets are shown for all checked ones.<br>The match mode — all tags or any of them — is switched on the General tab in Settings.<br><b>Click on empty space or ESC</b> — reset the filter.<br><br><code>CTRL+SHIFT+A</code> — add a new tag.<br><code>CTRL+SHIFT+E</code> — edit tag name.<br><code>CTRL+SHIFT+D</code> — delete the selected tag from the database."
         },
         "ebSearch": {
           "Title": "Search Bar",
           "Main": "Search covers title, code, comments, and tags; the engine also matches parts of words (query <code>List</code> finds <code>TList</code>), results are sorted by relevance.<br><blockquote><b>Query language:</b><ul><li><code>word</code> - full-text search; several words in a row are searched as a phrase;</li><li><code>tag:word</code> - filter by tag name; multiple tag: - all must match;</li><li><code>cat:name</code> - the snippet's direct category; multiple cat: - any of them;</li><li><code>title:word</code> - substring in the title;</li><li><code>comment:word</code> - substring in the comment;</li><li><code>fav</code> - favorites only;</li><li><code>-word</code> - exclude snippets containing the word in title or code.</li></ul>Tokens combine: <code>fav tag:docker title:logs -prod</code>. Search is case-insensitive.</blockquote>",
-          "Expanded": "Type a query while the search bar is focused, and it will be applied automatically.<br><br>Tag Management (Global):<br><code>CTRL+ALT+A</code> - Add tag<br><code>CTRL+ALT+E</code> - Edit tag<br><code>CTRL+ALT+D</code> - Delete tag"
+          "Expanded": "Type a query while the search bar is focused, and it will be applied automatically.<br><br>Tag Management (Global):<br><code>CTRL+SHIFT+A</code> - Add tag<br><code>CTRL+SHIFT+E</code> - Edit tag<br><code>CTRL+SHIFT+D</code> - Delete tag"
         },
         "FrequentlyUsed": "Frequently Used",
         "Recent": "Recent",
@@ -1134,7 +1134,7 @@
         "mContent": {
           "Title": "Snippet Text",
           "Main": "Main input field for snippet code. Supports syntax highlighting and auto-completion for Linux Shell/Bash. <blockquote><ul><li><b>Macros:</b> The built-in engine allows prompting the user for arguments, inserting pauses, awaiting confirmation, and more. Full syntax is available on the «Macros» tab.</li><li><b>Execution (Line breaks):</b> Each new line is interpreted by the terminal as an <code>ENTER</code> key press (sending a command). Keep this in mind when writing multi-line scripts.</li><li><b>AI Assistant:</b> Built-in integration with Yandex AI Studio for code generation and refactoring. It is recommended to set up and use «Agents» — they return concise, ready-to-use code without unnecessary reasoning. You can configure AI via the main menu.</li><li><b>Data Protection:</b> Snippets are automatically checked for sensitive information (passwords, API keys, SSH tokens, DB connection strings). If threats are detected, saving will be blocked until you explicitly check the «Ignore checks» checkbox.</li></ul></blockquote>",
-          "Expanded": "<code>CTRL+I</code> - Open AI Assistant prompt window.<br><code>CTRL+ALT+I</code> - Open AI Settings window."
+          "Expanded": "<code>CTRL+I</code> - Open AI Assistant prompt window.<br><code>CTRL+ALT+P</code> - Open AI Settings window."
         },
         "mComment": {
           "Title": "Snippet Comment",
@@ -1151,7 +1151,7 @@
         "lvHistory": {
           "Title": "Generation History",
           "Main": "All passwords created during the current session are saved here. <blockquote><ul><li><b>Preview:</b> A single click will return the selected password to the main input field.</li><li><b>Quick Apply:</b> A double click will apply the password and immediately close the window. If the generator was called via a global hotkey, the password will be <b>automatically typed</b> into your active window (e.g., terminal). Otherwise, it will simply be copied to the clipboard.</li></ul></blockquote>",
-          "Expanded": "💡 <b>Generator Hotkeys:</b><br><code>CTRL+G</code> — launch from the main program window.<br><code>CTRL+ALT+G</code> — global launch from anywhere in the system on top of other windows."
+          "Expanded": "💡 <b>Generator Hotkeys:</b><br><code>CTRL+SHIFT+G</code> — launch from the main program window.<br><code>CTRL+ALT+G</code> — global launch from anywhere in the system on top of other windows."
         }
       },
       "CronGenForm": {
@@ -1165,7 +1165,7 @@
         "mEpoch": {
           "Title": "Log and Text Analyzer",
           "Main": "Paste any text, JSON, or system log here. The program will automatically find all timestamps (Unix Epoch) and standard dates.",
-          "Expanded": "💡 <b>Smart recognition of Unix Time (seconds, milliseconds, and microseconds) is supported</b>, as well as dates in ISO 8601, Apache/Nginx, Syslog, and local time formats.<br><br>All found matches are highlighted: light blue markers indicate background timestamps, bright yellow marks the active timestamp selected in the list.<br><br><b>Bookmark system for navigation:</b><ul><li><code>Ctrl+B</code> (or context menu item) — create or delete a bookmark on the current line.</li><li><code>CTRL+Alt+0..9</code> — hotkeys to set numbered bookmarks.</li><li><code>Ctrl+0..9</code> — instantly jump to the corresponding bookmark.</li></ul>Right-click brings up a context menu with a 'Go to Bookmark' submenu, showing a dynamic list of all active bookmarks with line numbers and text previews."
+          "Expanded": "💡 <b>Smart recognition of Unix Time (seconds, milliseconds, and microseconds) is supported</b>, as well as dates in ISO 8601, Apache/Nginx, Syslog, and local time formats.<br><br>All found matches are highlighted: light blue markers indicate background timestamps, bright yellow marks the active timestamp selected in the list.<br><br><b>Bookmark system for navigation:</b><ul><li><code>Ctrl+B</code> (or context menu item) — create or delete a bookmark on the current line.</li><li><code>CTRL+SHIFT+0..9</code> — hotkeys to set numbered bookmarks.</li><li><code>Alt+0..9</code> — instantly jump to the corresponding bookmark.</li></ul>Right-click brings up a context menu with a 'Go to Bookmark' submenu, showing a dynamic list of all active bookmarks with line numbers and text previews."
         },
         "lvParsed": {
           "Title": "List of Found Dates",
