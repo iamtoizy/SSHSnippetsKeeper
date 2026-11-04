@@ -13,6 +13,7 @@ uses
     Vcl.Controls,
     Vcl.Forms,
     Vcl.StdCtrls,
+    EditEx,
     Winapi.Messages,
     Winapi.Windows
     ;

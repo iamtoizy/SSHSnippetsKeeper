@@ -14,6 +14,7 @@ uses
     Vcl.Forms,
     System.SysUtils,
     Vcl.StdCtrls,
+    EditEx,
     Winapi.Messages
     ;
 

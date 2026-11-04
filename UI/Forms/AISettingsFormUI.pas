@@ -16,6 +16,7 @@ uses
     Vcl.Forms,
     Vcl.Menus,
     Vcl.StdCtrls,
+    EditEx,
     Winapi.Windows
     ;
 

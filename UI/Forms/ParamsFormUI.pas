@@ -12,7 +12,8 @@ uses
     Vcl.Controls,
     Vcl.ExtCtrls,
     Vcl.Forms,
-    Vcl.StdCtrls
+    Vcl.StdCtrls,
+    EditEx
     ;
 
 type

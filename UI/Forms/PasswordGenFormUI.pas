@@ -18,6 +18,7 @@ uses
     Vcl.Menus,
     Vcl.Samples.Spin,
     Vcl.StdCtrls,
+    EditEx,
     Winapi.Messages,
     Winapi.Windows
     ;

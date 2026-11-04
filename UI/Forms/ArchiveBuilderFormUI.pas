@@ -17,7 +17,8 @@ uses
     Vcl.Forms,
     Vcl.Mask,
     Vcl.Samples.Spin,
-    Vcl.StdCtrls
+    Vcl.StdCtrls,
+    EditEx
     ;
 
 type

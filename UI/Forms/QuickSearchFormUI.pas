@@ -15,6 +15,7 @@ uses
     Vcl.ExtCtrls,
     Vcl.Forms,
     Vcl.StdCtrls,
+    EditEx,
     Winapi.Messages,
     Winapi.Windows,
     // Подцепляем последним:

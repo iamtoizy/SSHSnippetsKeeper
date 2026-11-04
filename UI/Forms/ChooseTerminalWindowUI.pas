@@ -12,6 +12,7 @@ uses
     Vcl.ExtCtrls,
     Vcl.ImgList,
     Vcl.StdCtrls,
+    EditEx,
     Winapi.Messages,
     Winapi.Windows,
     Vcl.Graphics,

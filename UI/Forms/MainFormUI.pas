@@ -45,6 +45,7 @@ uses
     Vcl.ImgList,
     Vcl.Menus,
     Vcl.StdCtrls,
+    EditEx,
     Vcl.Themes,
     Vcl.VirtualImageList,
     Winapi.Messages,

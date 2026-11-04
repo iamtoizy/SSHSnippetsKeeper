@@ -14,7 +14,8 @@ uses
     Vcl.Forms,
     Vcl.Graphics,
     Vcl.Menus,
-    Vcl.StdCtrls
+    Vcl.StdCtrls,
+    EditEx
     ;
 
 type

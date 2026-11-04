@@ -20,6 +20,7 @@ uses
     Vcl.Graphics,
     Vcl.Mask,
     Vcl.StdCtrls,
+    EditEx,
     Winapi.Messages,
     Winapi.Windows
     ;

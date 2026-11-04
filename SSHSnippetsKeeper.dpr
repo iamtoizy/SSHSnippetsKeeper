@@ -129,6 +129,7 @@ uses
   GlobalHotkeyManager in 'UI\Controllers\GlobalHotkeyManager.pas',
   TrackBarEx in 'UI\Controls\TrackBarEx.pas',
   ListViewEx in 'UI\Controls\ListViewEx.pas',
+  EditEx in 'UI\Controls\EditEx.pas',
   UI.Services.AIService in 'UI\Services\UI.Services.AIService.pas',
   UI.Services.AITextCleaner in 'UI\Services\UI.Services.AITextCleaner.pas',
   UI.Services.LocalAISmokeTest in 'UI\Services\UI.Services.LocalAISmokeTest.pas',

@@ -4,11 +4,12 @@ interface
 
 uses
     System.Classes,
-    Vcl.StdCtrls
+    Vcl.StdCtrls,
+    EditEx
     ;
 
 type
-    TEdit = class(Vcl.StdCtrls.TEdit)
+    TEdit = class(EditEx.TEdit)
     private
         FEnableHintText: Boolean;
         FMaskedStr: string;
