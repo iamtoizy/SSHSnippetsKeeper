@@ -15,6 +15,8 @@ type
     // символ #127, а Ctrl+A перехватывается хоткеями формы.
     // Перехватывается только Ctrl+BS/Ctrl+Del/Ctrl+A (Key := 0, без inherited),
     // остальной ввод и OnKeyDown форм работают как раньше.
+    // WM_CHAR(#127), который Windows шлёт на Ctrl+Backspace независимо от
+    // WM_KEYDOWN, глушится в KeyPress.
     // Подключать в uses форм сразу после Vcl.StdCtrls ("подцепляем последним").
     // =========================================================================
     TEdit = class(Vcl.StdCtrls.TEdit)
@@ -23,6 +25,7 @@ type
         procedure DeleteWordByCursor(ToRight: Boolean);
     protected
         procedure KeyDown(var Key: Word; Shift: TShiftState); override;
+        procedure KeyPress(var Key: Char); override;
     end;
 
 implementation
@@ -105,6 +108,17 @@ begin
         end
     else
         inherited KeyDown(Key, Shift);
+end;
+
+procedure TEdit.KeyPress(var Key: Char);
+begin
+    // Ctrl+Backspace: KeyDown уже удалил слово, а WM_CHAR(#127) всё равно
+    // приходит; Key := #0 заставит DoKeyPress проглотить символ (вставки DEL
+    // не будет). Для #127 inherited не нужен - OnKeyPress его не должен видеть
+    if Key = #127 then
+        Key := #0
+    else
+        inherited KeyPress(Key);
 end;
 
 end.
