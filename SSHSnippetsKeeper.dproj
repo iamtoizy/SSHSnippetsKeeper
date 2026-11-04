@@ -150,10 +150,14 @@
         <RcCompile Include="Database\Schema\000_schema_init.rc">
             <Form>000_schema_init.res</Form>
         </RcCompile>
+        <RcCompile Include="Database\Migrations\Migrations.rc">
+            <Form>Migrations.res</Form>
+        </RcCompile>
         <RcCompile Include="Resources\SSHSnippetsKeeperVersion.rc">
             <Form>SSHSnippetsKeeperVersion.res</Form>
         </RcCompile>
         <DCCReference Include="Core\Core.Shutdown.pas"/>
+        <DCCReference Include="Data\Data.Database.Migrations.pas"/>
         <DCCReference Include="UI\Forms\MainFormUI.pas">
             <Form>MainForm</Form>
         </DCCReference>

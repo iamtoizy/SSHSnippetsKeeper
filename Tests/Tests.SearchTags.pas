@@ -114,7 +114,7 @@ begin
     FConn.Params.Add('Database=:memory:');
     FConn.Connected := True;
     FConn.ExecSQL('PRAGMA foreign_keys = ON');
-    ExecScript(['000_schema_init.sql', '100_migrations.sql']);
+    ExecScript(['000_schema_init.sql']);
     if FConn.ExecSQLScalar('SELECT COUNT(*) FROM sqlite_master WHERE name = ''snippet_fts''') < 1 then
         raise Exception.Create('snippet_fts missing after schema');
     FConn.ExecSQL('INSERT OR IGNORE INTO users (id, name) VALUES (1, ''Local User'')');

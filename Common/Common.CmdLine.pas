@@ -8,6 +8,7 @@ type
         UserName: string;
         NoSync: Boolean;
         Minimized: Boolean;
+        Migrate: Boolean;
         Help: Boolean;
 
         class function Parse: TCmdLineParams; static;
@@ -85,6 +86,8 @@ begin
                 Result.NoSync := True
             else if (Name = 'minimized') or (Name = 'min') then
                 Result.Minimized := True
+            else if Name = 'migrate' then
+                Result.Migrate := True
             else if (Name = 'help') or (Name = 'h') or (Name = '?') then
                 Result.Help := True;
         end;

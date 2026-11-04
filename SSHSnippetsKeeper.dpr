@@ -1,6 +1,7 @@
 ﻿program SSHSnippetsKeeper;
 
 {$R '000_schema_init.res' 'Database\Schema\000_schema_init.rc'}
+{$R 'Migrations.res' 'Database\Migrations\Migrations.rc'}
 {$R 'SSHSnippetsKeeperVersion.res' 'Resources\SSHSnippetsKeeperVersion.rc'}
 {$R *.dres}
 
@@ -49,7 +50,8 @@ uses
   System.SysUtils,
   MainFormUI in 'UI\Forms\MainFormUI.pas' {MainForm},
   JSONSerializer in 'ThirdParty\JSONSerializer.pas',
-  Data.Database in 'Data\Data.Database.pas' {AppDatabase: TDataModule},
+   Data.Database in 'Data\Data.Database.pas' {AppDatabase: TDataModule},
+   Data.Database.Migrations in 'Data\Data.Database.Migrations.pas',
   Core.Entities.Snippet in 'Core\Entities\Core.Entities.Snippet.pas',
   SnippetRepository in 'Data\Repositories\SnippetRepository.pas',
   SnippetHistoryRepository in 'Data\Repositories\SnippetHistoryRepository.pas',
@@ -181,6 +183,7 @@ var
     WindowHelper: TWindowHelper;
     AppContext: IAppContext;
     ErrorHandler: IUIMessagesHandler;
+    CmdParams: TCmdLineParams;
 
 // Callback-функция, которая перебирает все окна в системе
 function EnumWindowsProc(Wnd: HWND; lParam: LParam): BOOL; stdcall;
@@ -258,6 +261,15 @@ FastMM_EnterDebugMode;
 
     TUIStateLoader.LoadLanguageFile(ResolvePath('Translation\ui-texts.' + GlobalLang + '.json'));
     // ---------------------------------------------------------
+
+    // Ключ /migrate: консольный режим миграции схемы БД без запуска GUI.
+    // Выполняется до мьютекса и создания окон, завершает процесс с кодом возврата
+    CmdParams := TCmdLineParams.Parse;
+    if CmdParams.Migrate then
+    begin
+        ExitCode := ExecuteMigrateCommand(CmdParams);
+        Exit;
+    end;
 
     // Предзагрузка весов NB-детектора языков: чтение файла и парсинг
     // выполняются один раз за сессию, окно редактора сниппета их не платит

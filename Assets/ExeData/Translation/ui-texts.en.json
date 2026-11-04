@@ -1392,7 +1392,14 @@
       "CreateError": "Error creating database: %s",
       "OpenedSuccess": "SQLite database opened.",
       "CreatedSuccess": "SQLite database created.",
-      "NoConnectionError": "Error: No connection to the database."
+      "NoConnectionError": "Error: No connection to the database.",
+      "NewerVersion": "The database was created by a newer application version (schema v%s, application supports up to v%s). Please update SSH Snippets Keeper.",
+      "MigrateFailed": "Database schema migration failed at step v%s: %s",
+      "BackupCreated": "Database backup created: %s",
+      "BackupFailed": "Failed to create database backup (%s): %s",
+      "MigratedSuccess": "Database schema updated to version %s.",
+      "MigrateUpToDate": "Database schema is up to date (v%s), no migration required.",
+      "MigrateNoDbParam": "Database path is not specified. Use: SSHSnippetsKeeper.exe /migrate /db <database file>"
     },
     "Settings": {
       "ResetAllHotkeysConfirm": "Reset all hotkeys to their default values?",

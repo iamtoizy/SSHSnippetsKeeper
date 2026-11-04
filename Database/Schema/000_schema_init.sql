@@ -3,6 +3,7 @@ PRAGMA journal_mode = WAL;
 PRAGMA synchronous = NORMAL;
 PRAGMA temp_store = MEMORY;
 PRAGMA user_version = 12; -- v12: язык сниппета (language) и признак ручного выбора (language_locked)
+                          -- Должно совпадать с APP_DB_VERSION в Data\Database.Migrations.pas
 PRAGMA recursive_triggers = OFF;
 PRAGMA busy_timeout = 5000;
 PRAGMA cache_size = -20000;

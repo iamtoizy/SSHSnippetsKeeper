@@ -18,6 +18,7 @@ uses
     Tests.TextDiff in 'Tests.TextDiff.pas',
     Tests.QueryLanguage in 'Tests.QueryLanguage.pas',
     Tests.SearchTags in 'Tests.SearchTags.pas',
+    Tests.DbMigrations in 'Tests.DbMigrations.pas',
     Tests.Chains in 'Tests.Chains.pas',
     Tests.MultiSelect in 'Tests.MultiSelect.pas',
     Tests.CustomBashSyn in 'Tests.CustomBashSyn.pas',
@@ -46,6 +47,7 @@ begin
         TDUnitX.RegisterTestFixture(TTextDiffTests);
         TDUnitX.RegisterTestFixture(TQueryLanguageTests);
         TDUnitX.RegisterTestFixture(TSearchTagsTests);
+        TDUnitX.RegisterTestFixture(TDbMigrationTests);
         TDUnitX.RegisterTestFixture(TChainsTests);
         TDUnitX.RegisterTestFixture(TMultiSelectTests);
         TDUnitX.RegisterTestFixture(TCustomBashSynTests);

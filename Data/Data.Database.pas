@@ -30,8 +30,7 @@ uses
     FireDAC.UI.Intf,
     FireDAC.VCLUI.Wait,
     System.Classes,
-    System.SysUtils,
-    Winapi.Windows
+    System.SysUtils
     ;
 
 type
@@ -43,11 +42,11 @@ type
         FDPhysSQLiteDriverLink: TFDPhysSQLiteDriverLink;
         FDScript: TFDScript;
     private
+        procedure Connect(const Filename: string);
         procedure InitializeDatabase(Filename: string);
         procedure ApplyPRAGMA;
         procedure ApplySchemaMigrations;
         procedure FlushToDisk;
-        function LoadSQLFromResource(const ResourceName: string): string;
     public
         procedure CreateDatabase(const Filename: string);
         procedure OpenDatabase(const Filename: string);
@@ -62,7 +61,8 @@ var
 implementation
 
 uses
-    Common.Localization
+    Common.Localization,
+    Data.Database.Migrations
     ;
 
 {$R *.dfm}
@@ -74,6 +74,12 @@ end;
 
 procedure TAppDatabase.OpenDatabase(const Filename: string);
 begin
+    Connect(Filename);
+    ApplySchemaMigrations;
+end;
+
+procedure TAppDatabase.Connect(const Filename: string);
+begin
     CloseDatabase;
 
     FDConnection.Params.Database := Filename;
@@ -82,20 +88,19 @@ begin
     FDConnection.Connected := True;
 
     ApplyPRAGMA;
-    ApplySchemaMigrations;
 end;
 
 procedure TAppDatabase.InitializeDatabase(Filename: string);
 begin
-    OpenDatabase(Filename);
+    Connect(Filename);
 
     FDScript.Connection := FDConnection;
     FDScript.SQLScripts.Clear;
 
     with FDScript.SQLScripts.Add do
         SQL.Text :=
-            LoadSQLFromResource('SCHEMA_INIT_SQL') +
-            LoadSQLFromResource('SCHEMA_SEED_SQL');
+            LoadSQLResource('SCHEMA_INIT_SQL') +
+            LoadSQLResource('SCHEMA_SEED_SQL');
 
     try
         FDScript.ExecuteAll;
@@ -106,31 +111,14 @@ begin
             );
     end;
 
+    // Базовый скрипт завершается PRAGMA user_version = APP_DB_VERSION,
+    // поэтому раннер миграций после создания БД ничего не применяет
     FDConnection.ExecSQL('INSERT OR IGNORE INTO users (id, name) VALUES (1, ''Local User'');');
 end;
 
 function TAppDatabase.IsConnected: Boolean;
 begin
     Result := FDConnection.Connected;
-end;
-
-function TAppDatabase.LoadSQLFromResource(const ResourceName: string): string;
-var
-    ResStream: TResourceStream;
-    SL: TStringList;
-begin
-    ResStream := TResourceStream.Create(HInstance, ResourceName, RT_RCDATA);
-    try
-        SL := TStringList.Create;
-        try
-            SL.LoadFromStream(ResStream, TEncoding.UTF8);
-            Result := SL.Text;
-        finally
-            SL.Free;
-        end;
-    finally
-        ResStream.Free;
-    end;
 end;
 
 procedure TAppDatabase.ApplyPRAGMA;
@@ -145,35 +133,14 @@ begin
 end;
 
 procedure TAppDatabase.ApplySchemaMigrations;
+var
+    Migrator: TDatabaseMigrator;
 begin
-    FDScript.Connection := FDConnection;
-    FDScript.SQLScripts.Clear;
-
-    with FDScript.SQLScripts.Add do
-        SQL.Text := LoadSQLFromResource('SCHEMA_MIGRATE_SQL');
-
+    Migrator := TDatabaseMigrator.Create(FDConnection, FDConnection.Params.Database);
     try
-        FDScript.ExecuteAll;
-    except
-        on E: Exception do
-            raise Exception.Create(
-                TUIStateLoader.GetMessage('DB.SQLExecutionError', [E.Message])
-            );
-    end;
-
-    // v11: язык сниппета. ALTER TABLE ADD COLUMN не поддерживает IF NOT EXISTS,
-    // а миграции выполняются при каждом открытии БД, поэтому колонку добавляем по условию.
-    // На новой БД таблицы snippets ещё нет (InitializeDatabase накатывает базовую схему
-    // после миграций) — там колонку задаёт 000_schema_init.sql.
-    if FDConnection.ExecSQLScalar('SELECT COUNT(*) FROM sqlite_master WHERE type = ''table'' AND name = ''snippets''') > 0 then
-    begin
-        if FDConnection.ExecSQLScalar('SELECT COUNT(*) FROM pragma_table_info(''snippets'') WHERE name = ''language''') = 0 then
-            FDConnection.ExecSQL('ALTER TABLE snippets ADD COLUMN language TEXT NOT NULL DEFAULT ''bash''');
-
-        // v12: флаг ручного выбора языка. Пока его нет, автодетект считает язык
-        // автоматическим и может переопределить выбор пользователя.
-        if FDConnection.ExecSQLScalar('SELECT COUNT(*) FROM pragma_table_info(''snippets'') WHERE name = ''language_locked''') = 0 then
-            FDConnection.ExecSQL('ALTER TABLE snippets ADD COLUMN language_locked INTEGER NOT NULL DEFAULT 0');
+        Migrator.Run;
+    finally
+        Migrator.Free;
     end;
 end;
 

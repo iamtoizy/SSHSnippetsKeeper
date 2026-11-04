@@ -117,7 +117,7 @@ begin
     FConn.Params.Add('Database=:memory:');
     FConn.Connected := True;
     FConn.ExecSQL('PRAGMA foreign_keys = ON');
-    ExecScript(['000_schema_init.sql', '100_migrations.sql']);
+    ExecScript(['000_schema_init.sql']);
     FConn.ExecSQL('INSERT OR IGNORE INTO users (id, name) VALUES (1, ''Local User'')');
     FConn.ExecSQL('INSERT OR IGNORE INTO users (id, name) VALUES (2, ''Second User'')');
     FTempDir := '';

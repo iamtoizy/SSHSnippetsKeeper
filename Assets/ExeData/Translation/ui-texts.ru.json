@@ -1392,7 +1392,14 @@
       "CreateError": "Ошибка создания базы данных: %s",
       "OpenedSuccess": "База данных SQLite открыта.",
       "CreatedSuccess": "База данных SQLite создана.",
-      "NoConnectionError": "Ошибка: нет подключения к базе данных."
+      "NoConnectionError": "Ошибка: нет подключения к базе данных.",
+      "NewerVersion": "База данных создана более новой версией приложения (схема v%s, приложение поддерживает до v%s). Обнови SSH Snippets Keeper.",
+      "MigrateFailed": "Ошибка миграции схемы базы данных на шаге v%s: %s",
+      "BackupCreated": "Создана резервная копия базы данных: %s",
+      "BackupFailed": "Не удалось создать резервную копию базы данных (%s): %s",
+      "MigratedSuccess": "Схема базы данных обновлена до версии %s.",
+      "MigrateUpToDate": "Схема базы данных актуальна (v%s), миграция не требуется.",
+      "MigrateNoDbParam": "Не указан путь к базе данных. Используй: SSHSnippetsKeeper.exe /migrate /db <файл базы данных>"
     },
     "Settings": {
       "ResetAllHotkeysConfirm": "Сбросить все горячие клавиши к значениям по умолчанию?",
