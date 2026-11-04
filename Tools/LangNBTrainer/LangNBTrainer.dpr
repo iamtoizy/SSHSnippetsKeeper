@@ -20,9 +20,9 @@ uses
     System.IOUtils,
     System.SysUtils,
     Winapi.Windows,
-    Common.Consts in '..\Common\Common.Consts.pas',
-    Common.SnippetLanguages in '..\Common\Common.SnippetLanguages.pas',
-    Common.SnippetLanguageNB in '..\Common\Common.SnippetLanguageNB.pas'
+    Common.Consts in '..\..\Common\Common.Consts.pas',
+    Common.SnippetLanguages in '..\..\Common\Common.SnippetLanguages.pas',
+    Common.SnippetLanguageNB in '..\..\Common\Common.SnippetLanguageNB.pas'
     ;
 
 const

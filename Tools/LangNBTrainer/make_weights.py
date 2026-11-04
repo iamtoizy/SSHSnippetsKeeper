@@ -4,7 +4,7 @@
 make_weights.py - сборка файла весов scripts_weights.bin для автоопределения
 языка сниппетов в SSH Snippets Keeper (наивный Байес: bash / bat / powershell).
 
-Полный аналог Delphi-тренера Tools\\LangNBTrainer.exe: формат файла весов
+Полный аналог Delphi-тренера Tools\\LangNBTrainer\\LangNBTrainer.exe: формат файла весов
 байт-в-байт совместим с приложением (магия SSKNBW01, 7-битная длина строк +
 UTF-8 - как пишет Delphi TBinaryWriter).
 
