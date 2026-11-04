@@ -20,6 +20,9 @@ const
     // Сколько последних резервных копий хранится рядом с файлом БД
     MIGRATION_BACKUP_KEEP = 3;
 
+    // Сколько последних pre_import_-снапшотов хранится рядом с файлом БД
+    IMPORT_SNAPSHOT_KEEP = 3;
+
     // Коды возврата консольных команд (/migrate, /backup, /checkdb, /newdb)
     MIGRATE_EXIT_OK           = 0;
     MIGRATE_EXIT_NEWER_SCHEMA = 2;
@@ -67,6 +70,13 @@ type
         property AppliedCount: Integer read FAppliedCount;
         property BackupPath: string read FBackupPath;
     end;
+
+// Снапшот файла БД перед массовым импортом markdown: VACUUM INTO в
+// <имя БД>.pre_import_<метка времени>.bak рядом с БД + ротация,
+// хранящая IMPORT_SNAPSHOT_KEEP последних копий.
+// Для :memory:/отсутствующего файла БД возвращает '' (снапшотить нечего).
+function CreateImportSnapshot(AConnection: TFDConnection;
+    const ADatabaseFile: string): string;
 
 // Консольный режим ключа /migrate: накатывает схему и завершает процесс
 // с кодом возврата (без GUI и мьютекса единственного экземпляра).
@@ -335,6 +345,51 @@ begin
             end));
 
     for I := MIGRATION_BACKUP_KEEP to High(Files) do
+        TFile.Delete(Files[I]);
+end;
+
+function CreateImportSnapshot(AConnection: TFDConnection;
+    const ADatabaseFile: string): string;
+var
+    BackupFile: string;
+    Files: TArray<string>;
+    I: Integer;
+    Migrator: TDatabaseMigrator;
+begin
+    Result := '';
+    BackupFile := ADatabaseFile + '.pre_import_' +
+        FormatDateTime('yyyymmdd_hhnnsszzz', Now) + '.bak';
+
+    // Снапшот выполняется ДО открытия транзакции импорта: VACUUM INTO
+    // нельзя выполнять в активной транзакции на том же соединении
+    Migrator := TDatabaseMigrator.Create(AConnection, ADatabaseFile);
+    try
+        Migrator.CreateBackup(BackupFile);
+        Result := Migrator.BackupPath;
+    finally
+        Migrator.Free;
+    end;
+
+    if Result = '' then
+        Exit;
+
+    // Ротация: храним только IMPORT_SNAPSHOT_KEEP последних снапшотов.
+    // Метка времени в имени гарантирует, что лексикографический порядок
+    // совпадает с хронологией
+    Files := TDirectory.GetFiles(TPath.GetDirectoryName(ADatabaseFile),
+        TPath.GetFileName(ADatabaseFile) + '.pre_import_*.bak');
+
+    if Length(Files) <= IMPORT_SNAPSHOT_KEEP then
+        Exit;
+
+    TArray.Sort<string>(Files,
+        TComparer<string>.Construct(
+            function(const ALeft, ARight: string): Integer
+            begin
+                Result := CompareText(ARight, ALeft);
+            end));
+
+    for I := IMPORT_SNAPSHOT_KEEP to High(Files) do
         TFile.Delete(Files[I]);
 end;
 

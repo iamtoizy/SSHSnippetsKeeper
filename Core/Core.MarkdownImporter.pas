@@ -4,6 +4,7 @@ interface
 
 uses
     Common.Consts,
+    Common.Localization,
     Common.SnippetLanguages,
     Core.Entities.Category,
     Core.Entities.Snippet,
@@ -23,7 +24,14 @@ const
     MIN_IMPORT_UNIX_TS = 946684800;
     MAX_IMPORT_UNIX_TS = 4102444800;
 
+    // Порог по абсолютному числу новых сниппетов для снапшота БД
+    IMPORT_SNAPSHOT_NEW_LIMIT = 50;
+
 type
+    // Авария импорта: БД недоступна или транзакцию открыть не удалось.
+    // Отсутствие исключения = импорт прошел успешно
+    EMarkdownImportError = class(Exception);
+
     // Временная структура парсинга одного .md файла
     TParsedMarkdown = record
         ID: Integer;
@@ -37,10 +45,38 @@ type
         HasKeeperMarker: Boolean;
     end;
 
+    // Действие плана импорта для одного .md файла
+    TMarkdownImportAction = (iaCreate, iaUpdate, iaSkipStale, iaSkipNoMarker);
+
+    // Элемент плана, построенного в фазе A (только чтение БД)
+    TMarkdownImportPlanItem = record
+        FilePath: string;
+        Parsed: TParsedMarkdown;
+        Action: TMarkdownImportAction;
+        ExistingID: Integer;
+    end;
+
+    // Итог импорта. Created/Updated инкрементируются в фазе B по факту
+    // успешных записей; скип-счетчики заполняются в фазе A
+    TMarkdownImportResult = record
+        TotalFiles: Integer;
+        Created: Integer;
+        Updated: Integer;
+        SkippedStale: Integer;
+        SkippedNoMarker: Integer;
+        SkippedOther: Integer;
+        SnapshotFile: string;
+    end;
+
     TMarkdownImporter = class
     private
         class function ParseMarkdownFile(const FilePath: string; out Parsed: TParsedMarkdown): Boolean;
         class function ExtractTagsFromYaml(const TagsStr: string): TArray<string>;
+
+        // Дата обновления файла: из YAML, а при ее отсутствии - mtime файла (UTC)
+        class function EffectiveUpdatedAt(const Parsed: TParsedMarkdown; const FilePath: string): Int64;
+        // Снапшот БД нужен: много новых записей, >20% базы или первый синк
+        class function SnapshotRequired(ANewCount, ATotalSnippets: Integer): Boolean;
 
         // Разрешает путь к категории: создает юзера и дерево категорий на основе папок на диске
         class function ResolveCategoryAndUserFromPath(
@@ -50,8 +86,11 @@ type
             CatCache: TDictionary<string, Integer>;
             out OutUserID, OutCategoryID: Integer): Boolean;
     public
-        // Главный метод: сканирует папку и импортирует/обновляет все .md файлы в БД
-        class procedure ImportFromDirectory(const AppContext: IAppContext; const BaseDir: string);
+        // Главный метод: сканирует папку и импортирует/обновляет все .md файлы в БД.
+        // Фаза A строит план (чтение), затем по порогу риска берется снапшот БД,
+        // фаза B применяет план в одной транзакции. Сбой транзакции/подключения -
+        // исключение EMarkdownImportError, частичной записи не остается
+        class function ImportFromDirectory(const AppContext: IAppContext; const BaseDir: string): TMarkdownImportResult;
     end;
 
 implementation
@@ -298,7 +337,29 @@ begin
     Result := (OutUserID > 0) and (OutCategoryID > 0);
 end;
 
-class procedure TMarkdownImporter.ImportFromDirectory(const AppContext: IAppContext; const BaseDir: string);
+class function TMarkdownImporter.EffectiveUpdatedAt(const Parsed: TParsedMarkdown; const FilePath: string): Int64;
+var
+    Stamp: Int64;
+begin
+    if Parsed.UpdatedAt <> 0 then
+        Exit(Parsed.UpdatedAt);
+
+    // Ключа updated_at в YAML нет - ориентируемся на mtime файла (UTC)
+    Stamp := DateTimeToUnix(TFile.GetLastWriteTimeUtc(FilePath));
+    if (Stamp < MIN_IMPORT_UNIX_TS) or (Stamp > MAX_IMPORT_UNIX_TS) then
+        Stamp := DateTimeToUnix(Now);
+    Result := Stamp;
+end;
+
+class function TMarkdownImporter.SnapshotRequired(ANewCount, ATotalSnippets: Integer): Boolean;
+begin
+    // Риск массовой порчи: более 50 новых записей, более 20% базы
+    // (5 * New > Total) или первый синк в пустую базу
+    Result := (ANewCount > 0) and
+        ((ANewCount > IMPORT_SNAPSHOT_NEW_LIMIT) or (5 * ANewCount > ATotalSnippets));
+end;
+
+class function TMarkdownImporter.ImportFromDirectory(const AppContext: IAppContext; const BaseDir: string): TMarkdownImportResult;
 var
     FilePath: string;
     Parsed: TParsedMarkdown;
@@ -308,7 +369,9 @@ var
     TagName: string;
     TagID: Integer;
     DBConn: TFDConnection;
-    InTransaction: Boolean;
+    Item: TMarkdownImportPlanItem;
+    Plan: TList<TMarkdownImportPlanItem>;
+    NewCount: Integer;
 
     UserCache: TDictionary<string, Integer>;
     CatCache: TDictionary<string, Integer>;
@@ -332,8 +395,10 @@ var
             if DirName.StartsWith('.') or SameText(DirName, 'SSHSnippetsKeeper_Trash') then
                 Continue;
 
+            // TFile.GetAttributes для каталогов всегда падает (FileExists
+            // игнорирует директории) - нужен именно TDirectory.GetAttributes
             try
-                Attrs := TFile.GetAttributes(D);
+                Attrs := TDirectory.GetAttributes(D);
             except
                 Continue;
             end;
@@ -353,93 +418,154 @@ var
     {$WARN SYMBOL_PLATFORM ON}
 
 begin
+    Result := Default(TMarkdownImportResult);
+
     if not TDirectory.Exists(BaseDir) then Exit;
 
     DBConn := AppContext.DBConnection;
-    InTransaction := False;
 
+    // СЛОЙ 1: без рабочего подключения импорт невозможен - аварийное
+    // завершение вместо тихого пропуска всего хранилища
+    if not Assigned(DBConn) then
+        raise EMarkdownImportError.Create(TUIStateLoader.GetMessage('Common.ImportNoConnection'));
+
+    Plan := TList<TMarkdownImportPlanItem>.Create;
     UserCache := TDictionary<string, Integer>.Create;
     CatCache := TDictionary<string, Integer>.Create;
     FileList := TList<string>.Create;
     try
+        AppContext.HistoryService.SetSuppressed(True);
         try
-            if Assigned(DBConn) then
-            begin
-                try
-                    DBConn.StartTransaction;
-                    InTransaction := True;
-                except
-                    on E: Exception do
-                        InTransaction := False;
-                end;
-            end;
-
-            AppContext.HistoryService.SetSuppressed(True);
-
-            // === ПРЕДЗАГРУЗКА КЭША ===
+            // ================= ФАЗА A: скан и классификация (только чтение БД) =================
             for User in AppContext.UserService.GetAllUsers do
                 UserCache.Add(User.Name.ToLower, User.ID);
 
             for Cat in AppContext.CategoryService.GetAllCategories(0) do
                 CatCache.Add(Format('%d_%d_%s', [Cat.UserID, Cat.ParentID, Cat.Name.ToLower]), Cat.ID);
-            // =========================
 
             CollectFiles(TPath.GetFullPath(BaseDir));
+            Result.TotalFiles := FileList.Count;
 
             for FilePath in FileList do
             begin
-                if not ParseMarkdownFile(FilePath, Parsed) then Continue;
-
-                // Передаем кэш внутрь
-                if not ResolveCategoryAndUserFromPath(AppContext, BaseDir, FilePath, UserCache, CatCache, UserID, CategoryID) then Continue;
-
-                TagIDs := TList<Integer>.Create;
-                try
-                    for TagName in Parsed.Tags do
-                    begin
-                        TagID := AppContext.TagService.GetOrCreateTag(TagName);
-                        if (TagID > 0) and not TagIDs.Contains(TagID) then TagIDs.Add(TagID);
-                    end;
-
-                    Snippet := Default(TSnippetDTO);
-                    Snippet.UserID := UserID;
-                    Snippet.CategoryID := CategoryID;
-                    Snippet.Title := Parsed.Title;
-                    Snippet.Comment := Parsed.Comment;
-                    Snippet.Content := Parsed.Content;
-                    Snippet.Language := Parsed.Language;
-                    Snippet.CreatedAt := Parsed.CreatedAt;
-                    Snippet.UpdatedAt := Parsed.UpdatedAt;
-
-                    ExistingSnippet := Default(TSnippetDTO);
-                    if Parsed.ID > 0 then
-                        ExistingSnippet := AppContext.SnippetService.GetSnippetByID(Parsed.ID);
-
-                    // Файл без нашего маркера не имеет права перетирать существующий сниппет
-                    if (ExistingSnippet.ID > 0) and (not Parsed.HasKeeperMarker) then
-                        Continue;
-
-                    if ExistingSnippet.ID > 0 then
-                    begin
-                        Snippet.ID := ExistingSnippet.ID;
-                        AppContext.SnippetService.UpdateSnippet(Snippet, TagIDs.ToArray);
-                    end
-                    else
-                        AppContext.SnippetService.CreateSnippet(Snippet, TagIDs.ToArray);
-                finally
-                    TagIDs.Free;
+                if not ParseMarkdownFile(FilePath, Parsed) then
+                begin
+                    Inc(Result.SkippedOther);
+                    Continue;
                 end;
+
+                // Единая дата файла для сравнения и записи (mtime-фоллбэк)
+                Parsed.UpdatedAt := EffectiveUpdatedAt(Parsed, FilePath);
+
+                ExistingSnippet := Default(TSnippetDTO);
+                if Parsed.ID > 0 then
+                    ExistingSnippet := AppContext.SnippetService.GetSnippetByID(Parsed.ID);
+
+                Item.FilePath := FilePath;
+                Item.Parsed := Parsed;
+                Item.ExistingID := ExistingSnippet.ID;
+
+                if (ExistingSnippet.ID > 0) and (not Parsed.HasKeeperMarker) then
+                begin
+                    // Файл без нашего маркера не имеет права перетирать существующий сниппет
+                    Item.Action := iaSkipNoMarker;
+                    Inc(Result.SkippedNoMarker);
+                end
+                else if ExistingSnippet.ID > 0 then
+                begin
+                    // СЛОЙ 2: обновляем только если файл новее записи в БД
+                    if Parsed.UpdatedAt > ExistingSnippet.UpdatedAt then
+                        Item.Action := iaUpdate
+                    else
+                    begin
+                        Item.Action := iaSkipStale;
+                        Inc(Result.SkippedStale);
+                    end;
+                end
+                else
+                    Item.Action := iaCreate;
+
+                Plan.Add(Item);
             end;
 
-            if InTransaction then
+            // ================= СЛОЙ 3: снапшот БД по порогу риска =================
+            NewCount := 0;
+            for Item in Plan do
+                if Item.Action = iaCreate then
+                    Inc(NewCount);
+
+            if SnapshotRequired(NewCount, Integer(DBConn.ExecSQLScalar('SELECT COUNT(*) FROM snippets'))) then
+                Result.SnapshotFile := AppContext.DatabaseManager.CreateImportSnapshot;
+
+            // ================= ФАЗА B: применение плана в одной транзакции =================
+            // СЛОЙ 1: неудача открытия транзакции - аварийное завершение,
+            // а не тихая запись мимо транзакции
+            try
+                DBConn.StartTransaction;
+            except
+                on E: Exception do
+                    raise EMarkdownImportError.Create(
+                        TUIStateLoader.GetMessage('Common.ImportTransactionStartError', [E.Message]));
+            end;
+
+            try
+                for Item in Plan do
+                begin
+                    if Item.Action in [iaSkipStale, iaSkipNoMarker] then
+                        Continue;
+
+                    // Создание юзеров/категорий отложено сюда: фаза A не пишет в БД
+                    if not ResolveCategoryAndUserFromPath(AppContext, BaseDir, Item.FilePath, UserCache, CatCache, UserID, CategoryID) then
+                    begin
+                        Inc(Result.SkippedOther);
+                        Continue;
+                    end;
+
+                    TagIDs := TList<Integer>.Create;
+                    try
+                        for TagName in Item.Parsed.Tags do
+                        begin
+                            TagID := AppContext.TagService.GetOrCreateTag(TagName);
+                            if (TagID > 0) and not TagIDs.Contains(TagID) then TagIDs.Add(TagID);
+                        end;
+
+                        Snippet := Default(TSnippetDTO);
+                        Snippet.UserID := UserID;
+                        Snippet.CategoryID := CategoryID;
+                        Snippet.Title := Item.Parsed.Title;
+                        Snippet.Comment := Item.Parsed.Comment;
+                        Snippet.Content := Item.Parsed.Content;
+                        Snippet.Language := Item.Parsed.Language;
+                        Snippet.CreatedAt := Item.Parsed.CreatedAt;
+                        Snippet.UpdatedAt := Item.Parsed.UpdatedAt;
+
+                        if Item.Action = iaUpdate then
+                        begin
+                            Snippet.ID := Item.ExistingID;
+                            AppContext.SnippetService.UpdateSnippet(Snippet, TagIDs.ToArray);
+                            Inc(Result.Updated);
+                        end
+                        else
+                        begin
+                            AppContext.SnippetService.CreateSnippet(Snippet, TagIDs.ToArray);
+                            Inc(Result.Created);
+                        end;
+                    finally
+                        TagIDs.Free;
+                    end;
+                end;
+
                 DBConn.Commit;
-        except
-            if InTransaction then
-                DBConn.Rollback;
-            raise;
+            except
+                if DBConn.InTransaction then
+                    DBConn.Rollback;
+                raise;
+            end;
+        finally
+            AppContext.HistoryService.SetSuppressed(False);
         end;
     finally
-        AppContext.HistoryService.SetSuppressed(False);
+        Plan.Free;
         FileList.Free;
         UserCache.Free;
         CatCache.Free;

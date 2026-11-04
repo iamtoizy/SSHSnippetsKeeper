@@ -19,6 +19,9 @@ type
         procedure CloseDatabase;
         function IsConnected: Boolean;
         function GetConnectionString: string;
+        // Снапшот файла БД перед массовым импортом markdown (pre_import_*.bak).
+        // Возвращает путь к копии или '' (in-memory, файл БД отсутствует)
+        function CreateImportSnapshot: string;
     end;
 
     // Репозитории

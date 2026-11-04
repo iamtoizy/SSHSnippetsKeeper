@@ -20,6 +20,7 @@ uses
     Tests.SearchTags in 'Tests.SearchTags.pas',
     Tests.DbMigrations in 'Tests.DbMigrations.pas',
     Tests.Chains in 'Tests.Chains.pas',
+    Tests.MarkdownImporter in 'Tests.MarkdownImporter.pas',
     Tests.MultiSelect in 'Tests.MultiSelect.pas',
     Tests.CustomBashSyn in 'Tests.CustomBashSyn.pas',
     Tests.MacroInputTypes in 'Tests.MacroInputTypes.pas',
@@ -49,6 +50,7 @@ begin
         TDUnitX.RegisterTestFixture(TSearchTagsTests);
         TDUnitX.RegisterTestFixture(TDbMigrationTests);
         TDUnitX.RegisterTestFixture(TChainsTests);
+        TDUnitX.RegisterTestFixture(TMarkdownImporterTests);
         TDUnitX.RegisterTestFixture(TMultiSelectTests);
         TDUnitX.RegisterTestFixture(TCustomBashSynTests);
         TDUnitX.RegisterTestFixture(TMacroInputTypesTests);

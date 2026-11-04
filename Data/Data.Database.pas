@@ -53,6 +53,7 @@ type
         procedure CloseDatabase;
         function IsConnected: Boolean;
         function GetConnectionString: string;
+        function CreateImportSnapshot: string;
     end;
 
 var
@@ -172,6 +173,12 @@ end;
 function TAppDatabase.GetConnectionString: string;
 begin
     Result := FDConnection.Params.Text;
+end;
+
+function TAppDatabase.CreateImportSnapshot: string;
+begin
+    Result := Data.Database.Migrations.CreateImportSnapshot(
+        FDConnection, FDConnection.Params.Database);
 end;
 
 end.

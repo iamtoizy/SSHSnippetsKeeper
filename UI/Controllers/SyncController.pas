@@ -205,6 +205,8 @@ begin
     var
         BgConnection: TComponent;
         BgContext: IAppContext;
+        ImportRes: TMarkdownImportResult;
+        DoneMsg: string;
     begin
         try
             // ВАЖНО: Если мы в фоне, создаем изолированное подключение!
@@ -217,8 +219,14 @@ begin
             try
                 // Передаем BgContext вместо AppContext.
                 // Теперь чтение/запись в БД идет в параллельном потоке SQLite и не трогает UI!
-                TMarkdownImporter.ImportFromDirectory(BgContext, SyncDir);
+                ImportRes := TMarkdownImporter.ImportFromDirectory(BgContext, SyncDir);
                 TMarkdownExporter.ExportDatabase(BgContext, SyncDir);
+
+                if (ImportRes.Created > 0) or (ImportRes.Updated > 0) then
+                    DoneMsg := TUIStateLoader.GetMessage('Common.SyncCompletedStats',
+                        [ImportRes.Created, ImportRes.Updated])
+                else
+                    DoneMsg := '';
 
                 QueueToUI(procedure
                 begin
@@ -227,7 +235,12 @@ begin
                     FChangesDuringSync := False;
                     FStatusBar.SetDirty(FIsDbDirty);
                     if FShowToastOnDone then
-                        FStatusBar.Flash(TUIStateLoader.GetMessage('Common.SyncCompleted'))
+                    begin
+                        if DoneMsg <> '' then
+                            FStatusBar.Flash(DoneMsg)
+                        else
+                            FStatusBar.Flash(TUIStateLoader.GetMessage('Common.SyncCompleted'));
+                    end
                     else
                         FStatusBar.SetEvent('');
                 end);
