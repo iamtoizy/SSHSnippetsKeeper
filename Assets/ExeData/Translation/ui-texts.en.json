@@ -1345,9 +1345,18 @@
     },
     "CmdLine": {
       "HelpTitle": "Command Line Parameters",
-      "HelpText": "SSHSnippetsKeeper.exe [-db=<file>] [-user=<name>] [-nosync] [-minimized] [-help]\n\n  -db=<path>    Open the specified SQLite database on startup.\n  -user=<name>  Select a workspace by name (use after -db).\n  -nosync       Disable automatic sync with the Markdown vault.\n  -minimized    Start minimized.\n  -help         Show this help.",
+      "HelpText": "SSHSnippetsKeeper.exe [keys]\n\nDatabase maintenance (works while the app is already running):\n  -migrate -db=<file>          Apply schema migrations to the database.\n  -backup [path] -db=<file>    Database snapshot (VACUUM INTO). The path comes\n                               right after -backup: a folder or a file; without\n                               it the copy is stored next to the DB.\n  -checkdb -db=<file>          Integrity check (integrity_check,\n                               foreign_key_check).\n  -newdb <file>                Create a new database with the baseline schema.\n\nInformation:\n  -version                     Print the application version.\n  -help                        Show this help.\n\nGUI keys:\n  -db=<path>    Open the specified SQLite database on startup.\n  -user=<name>  Select a workspace by name (use after -db).\n  -nosync       Disable automatic sync with the Markdown vault.\n  -minimized    Start minimized.\n\nThe /, - and -- prefixes are equivalent, case-insensitive.\nExit codes: 0 - success, 2 - database schema is newer than the app, 3 - error,\n4 - database file not found or not specified, 5 - integrity problems.",
+      "Version": "SSH Snippets Keeper, version %s",
+      "NoDbParam": "Database path is not specified. Add the /db <database file> key.",
       "DbFileNotFound": "Database file not found: %s",
-      "UserNotFound": "Workspace \"%s\" not found."
+      "UserNotFound": "Workspace \"%s\" not found.",
+      "BackupTargetExists": "Backup file already exists: %s. Choose another name or delete the file.",
+      "NewDbNoParam": "Path for the new database is not specified. Use: SSHSnippetsKeeper.exe /newdb <database file>",
+      "NewDbAlreadyExists": "Database file already exists: %s. /newdb does not overwrite existing databases.",
+      "NewDbDirNotFound": "Folder for the new database not found: %s",
+      "NewDbCreated": "New database created: %s (schema v%s)",
+      "CheckOk": "Database integrity check passed.",
+      "CheckFailed": "Integrity check found problems:\n%s"
     },
     "Common": {
       "GeneralError": "Error: %s",
@@ -1398,8 +1407,7 @@
       "BackupCreated": "Database backup created: %s",
       "BackupFailed": "Failed to create database backup (%s): %s",
       "MigratedSuccess": "Database schema updated to version %s.",
-      "MigrateUpToDate": "Database schema is up to date (v%s), no migration required.",
-      "MigrateNoDbParam": "Database path is not specified. Use: SSHSnippetsKeeper.exe /migrate /db <database file>"
+      "MigrateUpToDate": "Database schema is up to date (v%s), no migration needed."
     },
     "Settings": {
       "ResetAllHotkeysConfirm": "Reset all hotkeys to their default values?",

@@ -84,6 +84,13 @@ begin
 
     FDConnection.Params.Database := Filename;
     FDConnection.Params.Add('DriverID=SQLite');
+    // Параметры задаются вместо PRAGMA после открытия: FireDAC на этапе
+    // открытия сам выполняет "PRAGMA journal_mode = DELETE" (выкидывает БД
+    // из WAL) и "PRAGMA locking_mode = Exclusive" (монопольный лок всей БД).
+    // WAL + обычная блокировка обязательны для консольных команд (/backup,
+    // /checkdb, /migrate), работающих параллельно с запущенным приложением
+    FDConnection.Params.Add('JournalMode=WAL');
+    FDConnection.Params.Add('LockingMode=Normal');
     FDConnection.Params.Add('CharacterSet=utf8');
     FDConnection.Connected := True;
 

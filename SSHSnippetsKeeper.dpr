@@ -226,6 +226,25 @@ FastMM_GetStackTrace := AppStackTraceCapture;
 FastMM_EnterDebugMode;
 {$ENDIF}
 
+    // Разбор ключей командной строки. Консольные команды (/help, /version,
+    // /newdb, /migrate, /backup, /checkdb) выполняются ДО мьютекса, чтобы
+    // обслуживать БД и скрипты даже при уже запущенном GUI
+    CmdParams := TCmdLineParams.Parse;
+    if CmdParams.HasConsoleCommand then
+    begin
+        // Локализация текста консольных команд
+        SettingsManager := TSettingsManager.Create;
+        SettingsManager.Load;
+
+        var Lang: string := SettingsManager.Data.CurrentLanguage;
+        if Lang = '' then
+            Lang := 'ru';
+        TUIStateLoader.LoadLanguageFile(ResolvePath('Translation\ui-texts.' + Lang + '.json'));
+
+        ExitCode := ExecuteMaintenanceCommand(CmdParams);
+        Exit;
+    end;
+
     // Создаем мьютекс
     hMutex := CreateMutex(nil, False, PChar(UNIQUE_APP_STR + '_Mutex'));
 
@@ -261,15 +280,6 @@ FastMM_EnterDebugMode;
 
     TUIStateLoader.LoadLanguageFile(ResolvePath('Translation\ui-texts.' + GlobalLang + '.json'));
     // ---------------------------------------------------------
-
-    // Ключ /migrate: консольный режим миграции схемы БД без запуска GUI.
-    // Выполняется до мьютекса и создания окон, завершает процесс с кодом возврата
-    CmdParams := TCmdLineParams.Parse;
-    if CmdParams.Migrate then
-    begin
-        ExitCode := ExecuteMigrateCommand(CmdParams);
-        Exit;
-    end;
 
     // Предзагрузка весов NB-детектора языков: чтение файла и парсинг
     // выполняются один раз за сессию, окно редактора сниппета их не платит

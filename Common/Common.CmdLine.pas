@@ -9,10 +9,21 @@ type
         NoSync: Boolean;
         Minimized: Boolean;
         Migrate: Boolean;
+        // Снапшот БД; BackupPath - необязательный аргумент (папка или файл)
+        Backup: Boolean;
+        BackupPath: string;
+        // Проверка целостности (integrity_check + foreign_key_check)
+        CheckDB: Boolean;
+        // Путь для создания новой БД с базовой схемой
+        NewDB: string;
+        Version: Boolean;
         Help: Boolean;
 
         class function Parse: TCmdLineParams; static;
         class function ParseFrom(const Args: TArray<string>): TCmdLineParams; static;
+
+        // Есть ли ключ, обрабатываемый консольным режимом до запуска GUI
+        function HasConsoleCommand: Boolean;
     end;
 
 implementation
@@ -70,7 +81,10 @@ begin
             begin
                 Name := NormalizeSwitch(S);
 
-                if (Name = 'db') or (Name = 'user') then
+                // db, user, newdb, backup - потребляют следующий токен,
+                // если он не является ключом (для backup значение опционально)
+                if (Name = 'db') or (Name = 'user') or (Name = 'newdb') or
+                    (Name = 'backup') then
                     if (I + 1 < Length(Args)) and (not IsSwitchToken(Args[I + 1].Trim)) then
                     begin
                         Inc(I);
@@ -88,12 +102,28 @@ begin
                 Result.Minimized := True
             else if Name = 'migrate' then
                 Result.Migrate := True
+            else if Name = 'backup' then
+            begin
+                Result.Backup := True;
+                Result.BackupPath := Value;
+            end
+            else if Name = 'checkdb' then
+                Result.CheckDB := True
+            else if Name = 'newdb' then
+                Result.NewDB := Value
+            else if Name = 'version' then
+                Result.Version := True
             else if (Name = 'help') or (Name = 'h') or (Name = '?') then
                 Result.Help := True;
         end;
 
         Inc(I);
     end;
+end;
+
+function TCmdLineParams.HasConsoleCommand: Boolean;
+begin
+    Result := Migrate or Backup or CheckDB or Version or Help or (NewDB <> '');
 end;
 
 end.

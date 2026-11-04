@@ -38,6 +38,12 @@ type
 
         [Test]
         procedure RealFile_CreatesBackup_AndPrunesOld;
+
+        [Test]
+        procedure Backup_ToCustomTarget;
+
+        [Test]
+        procedure Backup_WhileAnotherConnectionWrites;
     end;
 
 implementation
@@ -285,6 +291,133 @@ begin
         Assert.AreEqual(Integer(APP_DB_VERSION), Integer(Conn.ExecSQLScalar('PRAGMA user_version')));
     finally
         Conn.Free;
+        TDirectory.Delete(TempDir, True);
+    end;
+end;
+
+procedure TDbMigrationTests.Backup_ToCustomTarget;
+var
+    Conn, SnapshotConn: TFDConnection;
+    DbFile, TempDir, Target: string;
+    Migrator: TDatabaseMigrator;
+begin
+    TempDir := TPath.Combine(TPath.GetTempPath, 'ssk_mig_' + TGuid.NewGuid.ToString);
+    TDirectory.CreateDirectory(TempDir);
+    DbFile := TPath.Combine(TempDir, 'test.sqlite');
+    Target := TPath.Combine(TempDir, 'custom_name.db');
+
+    Conn := TFDConnection.Create(nil);
+    try
+        Conn.Params.Add('DriverID=SQLite');
+        Conn.Params.Add('Database=' + DbFile);
+        Conn.Connected := True;
+        Conn.ExecSQL('PRAGMA journal_mode = WAL');
+        Conn.ExecSQL('CREATE TABLE t (v TEXT)');
+        Conn.ExecSQL('INSERT INTO t VALUES (''data'')');
+
+        Migrator := TDatabaseMigrator.Create(Conn, DbFile, LoadMigrationSQL);
+        try
+            Migrator.CreateBackup(Target);
+            Assert.AreEqual(Target, Migrator.BackupPath);
+        finally
+            Migrator.Free;
+        end;
+
+        // Кастомная копия не участвует в ротации stamped-копий
+        Assert.AreEqual(0, Integer(Length(TDirectory.GetFiles(TempDir, 'test.sqlite.backup-*.bak'))));
+
+        SnapshotConn := TFDConnection.Create(nil);
+        try
+            SnapshotConn.Params.Add('DriverID=SQLite');
+            SnapshotConn.Params.Add('Database=' + Target);
+            SnapshotConn.Connected := True;
+
+            Assert.AreEqual('ok', string(SnapshotConn.ExecSQLScalar('PRAGMA integrity_check')));
+            Assert.AreEqual(1, Integer(SnapshotConn.ExecSQLScalar('SELECT COUNT(*) FROM t')));
+        finally
+            SnapshotConn.Free;
+        end;
+    finally
+        Conn.Free;
+        TDirectory.Delete(TempDir, True);
+    end;
+end;
+
+procedure TDbMigrationTests.Backup_WhileAnotherConnectionWrites;
+var
+    ConnA, ConnB, SnapshotConn: TFDConnection;
+    DbFile, SnapshotFile, TempDir: string;
+    Migrator: TDatabaseMigrator;
+
+    // Параметры соединения, обязательные для работы WAL-снапшота рядом
+    // с другим соединением: SharedCache=False убирает табличные блокировки
+    // внутри процесса; JournalMode/LockingMode перекрывают дефолты FireDAC
+    // (journal_mode=DELETE, locking_mode=Exclusive), из-за которых открытие
+    // и чтение падают с busy
+    procedure ApplySharedParams(AConn: TFDConnection);
+    begin
+        AConn.Params.Add('SharedCache=False');
+        AConn.Params.Add('JournalMode=WAL');
+        AConn.Params.Add('LockingMode=Normal');
+    end;
+
+begin
+    // Ключ /backup при запущенном GUI: активная write-транзакция в другом
+    // соединении не должна ломать снапшот (WAL-читатели не блокируются)
+    TempDir := TPath.Combine(TPath.GetTempPath, 'ssk_mig_' + TGuid.NewGuid.ToString);
+    TDirectory.CreateDirectory(TempDir);
+    DbFile := TPath.Combine(TempDir, 'test.sqlite');
+
+    ConnA := TFDConnection.Create(nil);
+    ConnB := nil;
+    SnapshotConn := nil;
+    try
+        ConnA.Params.Add('DriverID=SQLite');
+        ConnA.Params.Add('Database=' + DbFile);
+        ApplySharedParams(ConnA);
+        ConnA.Connected := True;
+        ConnA.ExecSQL('CREATE TABLE t (v TEXT)');
+
+        // Незакоммиченная запись писателя: её не должно быть в снапшоте
+        ConnA.StartTransaction;
+        ConnA.ExecSQL('INSERT INTO t VALUES (''uncommitted'')');
+
+        ConnB := TFDConnection.Create(nil);
+        ConnB.Params.Add('DriverID=SQLite');
+        ConnB.Params.Add('Database=' + DbFile);
+        ApplySharedParams(ConnB);
+        // FireDAC сбрасывает busy_timeout перед каждым оператором
+        // при LockWait=False (дефолт)
+        ConnB.Params.Add('BusyTimeout=5000');
+        ConnB.UpdateOptions.LockWait := True;
+        ConnB.Connected := True;
+
+        Migrator := TDatabaseMigrator.Create(ConnB, DbFile, LoadMigrationSQL);
+        try
+            Migrator.CreateBackup;
+            SnapshotFile := Migrator.BackupPath;
+        finally
+            Migrator.Free;
+        end;
+
+        Assert.IsTrue(SnapshotFile <> '');
+        Assert.IsTrue(TFile.Exists(SnapshotFile));
+
+        SnapshotConn := TFDConnection.Create(nil);
+        SnapshotConn.Params.Add('DriverID=SQLite');
+        SnapshotConn.Params.Add('Database=' + SnapshotFile);
+        SnapshotConn.Connected := True;
+
+        Assert.AreEqual('ok', string(SnapshotConn.ExecSQLScalar('PRAGMA integrity_check')));
+        Assert.AreEqual(1, Integer(SnapshotConn.ExecSQLScalar(
+            'SELECT COUNT(*) FROM sqlite_master WHERE type = ''table'' AND name = ''t''')));
+        Assert.AreEqual(0, Integer(SnapshotConn.ExecSQLScalar('SELECT COUNT(*) FROM t')));
+    finally
+        if ConnA.InTransaction then
+            ConnA.Rollback;
+        SnapshotConn.Free;
+        ConnB.Free;
+        ConnA.Free;
         TDirectory.Delete(TempDir, True);
     end;
 end;
