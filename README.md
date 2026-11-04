@@ -2,7 +2,7 @@
 
 Менеджер сниппетов SSH-команд для Windows с автоматизацией ввода в терминале, макросами, генератором паролей и набором сетевых утилит. Приложение хранит библиотеку команд в локальной базе SQLite, подставляет их в любое подключённое окно терминала (MobaXterm, Xshell, PuTTY, Tabby, KiTTY, SecureCRT) посимвольным вводом и умеет запрашивать недостающие параметры прямо перед выполнением.
 
-Написан на Delphi (Win32, VCL). Интерфейс — русский и английский (переключается на лету), горячие клавиши полностью переназначаемые.
+Написан на Delphi (Win32/Win64, VCL). Интерфейс — русский и английский (переключается на лету), горячие клавиши полностью переназначаемые.
 
 ---
 
@@ -81,6 +81,7 @@
 
 - Полностью переназначаемые горячие клавиши с валидацией конфликтов;
 - Локализация ru/en на лету (JSON-словари);
+- Ключи командной строки: выбор базы/пространства при старте и консольное обслуживание БД — миграции схемы, снапшот, проверка целостности, создание новой базы — с кодами возврата для скриптов и автодеплоя; работают даже при запущенном приложении (см. [Ключи запуска](#ключи-запуска));
 - Защита от повторного запуска (один экземпляр приложения);
 - FastMM5 и отчёт об утечках памяти в Debug-сборке.
 
@@ -90,7 +91,7 @@
 
 | Компонент | Назначение |
 |---|---|
-| Delphi 12 Athens (RAD Studio 23.0), VCL, Win32 | Язык и фреймворк |
+| Delphi 12 Athens (RAD Studio 23.0), VCL, Win32/Win64 | Язык и фреймворк (цель по умолчанию — Win64) |
 | FireDAC + SQLite | Локальная база данных |
 | SynEdit | Редактор кода с подсветкой и автодополнением |
 | Python4Delphi | Встраивание Python для локальной LLM (llama-cpp-python) |
@@ -119,15 +120,18 @@ SSHSnippetsKeeper/
 │   ├── Interfaces/…       # Контракты (Core.Interfaces.*)
 │   └── …                  # AppContext, LocalAIService, Markdown-импорт/экспорт
 ├── Database/
-│   ├── Schema/            # SQL-схема и seed-данные (компилируются в ресурс)
-│   └── Tests/             # SQL-скрипты проверки данных
+│   ├── Migrations/          # Версионные миграции схемы V001–V012 (RCDATA-ресурсы)
+│   ├── Schema/              # Baseline-схема (v12) и seed-данные (компилируются в ресурс)
+│   └── Tests/               # SQL-скрипты проверки данных
 ├── Data/
-│   ├── Repositories/      # Репозитории поверх FireDAC
-│   └── Data.Database.pas  # TDataModule: подключение, PRAGMA, накат схемы
+│   ├── Repositories/                  # Репозитории поверх FireDAC
+│   ├── Data.Database.pas              # TDataModule: подключение, PRAGMA, схема
+│   └── Data.Database.Migrations.pas   # Раннер версионных миграций и консольные команды
 ├── MacroEngine/           # Разбор и выполнение макросов, типы ввода
 ├── Resources/             # Ресурсы приложения (иконка)
 ├── Tests/                 # DUnitX-тесты (консольный раннер)
 ├── ThirdParty/            # Bcrypt, JSONSerializer, ArrayHelper
+├── vendor/                # Вендоренные библиотеки: SynEdit, HtmlViewer, FastMM5, python4delphi
 └── UI/
     ├── Controls/          # Кастомные контролы (адаптер темы SynEdit и др.)
     ├── Controllers/       # Контроллеры: поиск, дерево категорий, синхронизация, запуск сниппетов и цепочек
@@ -149,18 +153,8 @@ SSHSnippetsKeeper/
 
 ### Требования
 
-- RAD Studio / Delphi 12 Athens (компиляция под **Win32**);
-- Сторонние библиотеки (в примерах — `C:\DC`, пути можно менять):
-
-| Библиотека | Расположение в примерах |
-|---|---|
-| SynEdit (+ Highlighters) | `C:\DC\SynEdit` |
-| HtmlViewer | `C:\DC\HtmlViewer` |
-| FastMM5 | `C:\DC\FastMM5` |
-| Python4Delphi | `C:\DC\python4delphi` |
-| DUnitX (для тестов) | `C:\DC\DUnitX` |
-
-- `brcc32.exe` из поставки RAD Studio (для сборки ресурса схемы БД).
+- RAD Studio / Delphi 12 Athens (цель **Win64**, поддерживается и Win32);
+- Внешних библиотек не требуется: SynEdit, HtmlViewer, FastMM5 и python4delphi вендорены в `vendor\`; DUnitX входит в поставку RAD Studio.
 
 ### Шаги
 
@@ -170,40 +164,19 @@ SSHSnippetsKeeper/
    git clone https://github.com/iamtoizy/SSHSnippetsKeeper.git
    ```
 
-2. Соберите ресурс SQL-схемы (из корня репозитория):
+2. Соберите проект в IDE (`SSHSnippetsKeeper.dproj`, цель **Win64**) или из командной строки — проверенная команда (из корня репозитория):
 
    ```
-   brcc32 -fo000_schema_init.res "Database\Schema\000_schema_init.rc"
+   cmd /c ""C:\Program Files (x86)\Embarcadero\Studio\23.0\Bin\rsvars.bat" && msbuild SSHSnippetsKeeper.dproj /t:Build /p:Config=Release /p:Platform=Win64 /nologo /v:m"
    ```
 
-3. Добавьте пути к библиотекам в IDE: *Tools → Options → Language → Delphi → Library → Library path* (SynEdit, HtmlViewer, FastMM5, `python4delphi\lib\Win32\Release`).
-
-4. Откройте `SSHSnippetsKeeper.dproj`, выберите цель **Win32**, соберите проект. Debug-сборка подключает FastMM5 (`DEBUG;FastMM_FullDebugMode;FastMM_EnableMemoryLeakReporting`), Release-сборка отключает RTTI и отладочную информацию.
-
-Альтернативно — сборка компилятором из командной строки (проверенная команда, пути подставьте свои):
-
-<details>
-<summary>Команда dcc32 для основного проекта</summary>
-
-```
-brcc32 -fo000_schema_init.res "Database\Schema\000_schema_init.rc"
-
-"C:\Program Files (x86)\Embarcadero\Studio\23.0\bin\dcc32.exe" -Q -B -DDEBUG;FastMM_FullDebugMode;FastMM_EnableMemoryLeakReporting -GD ^
-  "-IC:\DC\SynEdit\Source" ^
-  "-NSWinapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Soap.Win" ^
-  "-UC:\DC\SynEdit\Source;C:\DC\SynEdit\Source\Highlighters;C:\DC\SynEdit\Source\Highlighters\Omni Highlighters;C:\DC\HtmlViewer\source;C:\DC\FastMM5;C:\DC\python4delphi\Source;C:\DC\python4delphi\lib\Win32\Release;C:\Program Files (x86)\Embarcadero\Studio\23.0\lib\win32\release;Automation;Common;Core;Core\Entities;Core\Services;Data;Data\Repositories;MacroEngine;Tests;UI\Controllers;UI\Controls;UI\Forms;UI\Helpers;UI\Services;UI\ViewModels;ThirdParty" ^
-  "-N0%TEMP%\rufp" SSHSnippetsKeeper.dpr
-```
-
-В DEBUG-сборке FastMM5 работает в FullDebugMode: в IDE defines уже заданы в Debug-конфиге `.dproj`, в CLI-команде выше они переданы через `-D`. Рядом с exe обязаны лежать `FastMM_FullDebugMode.dll` (в IDE-сборке уже в `Binary\Win32\Debug`; для CLI-сборки скопировать в корень) и `.map`-файл — `-GD` строит подробную карту для символьных стеков в логах FastMM.
-
-</details>
+   Готовый exe — `Binary\Win64\Release\SSHSnippetsKeeper.exe` (Debug — `Binary\Win64\Debug`). Ресурсы SQL-схемы, миграций и версии компилируются автоматически (`RcCompile` в `.dproj`). Debug-сборка включает FastMM5 с отчётом об утечках памяти, `FastMM_FullDebugMode.dll` попадает в папку вывода при сборке.
 
 ### Встраиваемый Python (опционально, для локального AI)
 
 Основное приложение собирается и работает без Python. Локальная LLM требует:
 
-1. Скачайте **Windows embeddable package** Python 3.13 (32-bit) с [python.org](https://www.python.org/downloads/windows/) и распакуйте в `Assets\ExeData\Python\` (папка исключена из git через `.gitignore`);
+1. Скачайте **Windows embeddable package** Python 3.13 с [python.org](https://www.python.org/downloads/windows/) — разрядность должна совпадать с разрядностью сборки приложения (для Win64 — 64-bit) — и распакуйте в `Assets\ExeData\Python\` (папка исключена из git через `.gitignore`);
 2. Модуль `llama-cpp-python` устанавливается из интерфейса настроек AI (кнопка установки модуля), GGUF-модель указывается там же.
 
 Без встроенного Python приложение попробует найти системный Python через реестр (Python4Delphi).
@@ -383,10 +356,11 @@ sudo systemctl restart nginx
 ## База данных
 
 - Движок: SQLite через FireDAC, файл базы выбирает пользователь;
-- Схема хранится в `Database/Schema/000_schema_init.sql`, при сборке компилируется в ресурс `000_schema_init.res` и применяется при создании новой базы (`{$R}`-директива в `.dpr`);
-- Seed-данные: `000_seed_data.sql`, `000_seed_data_full.sql`; проверка целостности: `Database/Tests/verify_data.sql`;
-- Сущности: сниппеты, категории, теги, пользователи; связи многие-ко-многим;
-- После открытия базы применяются PRAGMA (WAL и т. п.), при закрытии — принудительный сброс на диск.
+- Baseline — `Database/Schema/000_schema_init.sql` + seed-данные (`000_seed_data.sql`, `000_seed_data_full.sql`; проверка данных — `Database/Tests/verify_data.sql`); компилируется в ресурс и применяется при создании новой базы (**Ctrl+N** или ключ `/newdb`);
+- Версионные миграции — `Database/Migrations/V*.sql` (идемпотентные, реестр ресурсов в `Migrations.rc`), раннер `Data/Data.Database.Migrations.pas` с гейтом по `PRAGMA user_version`: при открытии базы отстающая схема автоматически догоняет до текущей версии; перед первым шагом создаётся резервная копия файла (`VACUUM INTO`), хранятся три последние; каждая миграция — одна транзакция. Базу, созданную более новой версией приложения, открыть нельзя;
+- Сущности: сниппеты, категории, теги, пользователи, история изменений, избранное, цепочки сниппетов; связи многие-ко-многим;
+- После открытия базы применяются PRAGMA (WAL и т. п.), при закрытии — принудительный сброс на диск;
+- Консольные команды обслуживания (`/migrate`, `/backup`, `/checkdb`, `/newdb`) с кодами возврата — см. [Ключи запуска](#ключи-запуска).
 
 ## Синхронизация с Markdown-папкой
 
@@ -401,39 +375,20 @@ sudo systemctl restart nginx
 
 ## Тесты
 
-Юнит-тесты на DUnitX: 9 групп - сервис эпох (`Tests.EpochService`), хоткеев (`Tests.HotkeyService`), макро-движка (`Tests.MacroEngine`), генератора паролей (`Tests.PasswordService`), текстовых диффов (`Tests.TextDiff`), языка запросов (`Tests.QueryLanguage`), поиска по тегам (`Tests.SearchTags`), а также DB-тесты репозиториев и сервисов на in-memory SQLite через FireDAC (`Tests.Chains`, `Tests.MultiSelect`).
+Юнит-тесты на DUnitX (консольный раннер): 21 группа / 282 теста — консольные ключи (`Tests.CmdLine`), миграции БД и резервные копии (`Tests.DbMigrations`), репозитории и сервисы на in-memory SQLite через FireDAC (`Tests.Chains`, `Tests.MultiSelect`, `Tests.SearchTags`), язык запросов (`Tests.QueryLanguage`), макро-движок (`Tests.MacroEngine`, `Tests.MacroInputTypes`, `Tests.MacroCounters`, `Tests.MacroBuilder`, `Tests.MacroCardController`), подсветка синтаксиса (`Tests.MacroSyn`, `Tests.CustomBashSyn`, `Tests.SynHighlighterFactory`), определение языка сниппета (`Tests.SnippetLanguages`, `Tests.SnippetLanguageDetect`, `Tests.SnippetLanguageNB`), утилиты (`Tests.EpochService`, `Tests.HotkeyService`, `Tests.PasswordService`, `Tests.TextDiff`).
 
-1. Склонируйте DUnitX:
-
-   ```
-   git clone --depth 1 https://github.com/VSoftTechnologies/DUnitX.git C:\DC\DUnitX
-   ```
-
-2. Соберите и запустите тестовый проект:
-
-<details>
-<summary>Команды сборки и запуска тестов</summary>
+Сборка и запуск — проверенная команда (из корня репозитория):
 
 ```
-cd Tests
-
-"C:\Program Files (x86)\Embarcadero\Studio\23.0\bin\dcc32.exe" -Q -B -DDEBUG ^
-  "-NSWinapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Soap.Win;DUnitX" ^
-  "-U..;..\Core;..\Core\Services;..\Core\Entities;..\Data;..\Data\Repositories;..\Common;..\UI\Helpers;..\MacroEngine;..\Automation;..\ThirdParty;..\UI\ViewModels;..\UI\Controllers;C:\DC\DUnitX\Source;C:\DC\SynEdit\Source;C:\DC\HtmlViewer\source;C:\DC\FastMM5;C:\DC\python4delphi\Source" ^
-  "-N0%TEMP%\rufp" SSHSnippetsKeeperTests.dpr
-
-.\SSHSnippetsKeeperTests.exe
+cmd /c ""C:\Program Files (x86)\Embarcadero\Studio\23.0\Bin\rsvars.bat" && msbuild Tests\SSHSnippetsKeeperTests.dproj /t:Build /p:Config=Debug /p:Platform=Win64 /nologo /v:q"
+Tests\bin\Win64\Debug\SSHSnippetsKeeperTests.exe
 ```
-
-Пути к модулям проекта указываются только относительными (`..`, `..\Core`, …): dcc32 не ищет юниты по абсолютным путям, содержащим кириллицу (например, `C:\Users\<user>\Документы\...`).
-
-</details>
 
 Код выхода: `0` — все тесты прошли, `1` — есть упавшие, `2` — ошибка запуска. Ожидаемый итог:
 
 ```
-Tests Found   : 86
-Tests Passed  : 86
+Tests Found   : 282
+Tests Passed  : 282
 Tests Failed  : 0
 Tests Errored : 0
 ```
