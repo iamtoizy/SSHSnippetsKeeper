@@ -34,6 +34,7 @@ type
         function GetSecurityScanner: ISecurityScanner;
         function GetHistoryService: ISnippetHistoryService;
         function GetChainService: IChainService;
+        function GetSavedQueryService: ISavedQueryService;
         function GetDBConnection: TFDConnection;
 
         // Фабрика для фоновых потоков. Возвращает готовый сервис и ссылку на коннект для его очистки.
@@ -56,6 +57,7 @@ type
         property SecurityScanner: ISecurityScanner read GetSecurityScanner;
         property HistoryService: ISnippetHistoryService read GetHistoryService;
         property ChainService: IChainService read GetChainService;
+        property SavedQueryService: ISavedQueryService read GetSavedQueryService;
         property DBConnection: TFDConnection read GetDBConnection;
     end;
 

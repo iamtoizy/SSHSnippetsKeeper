@@ -6,6 +6,7 @@ uses
     Common.QueryLanguage,
     Core.Entities.Category,
     Core.Entities.Chain,
+    Core.Entities.SavedQuery,
     Core.Entities.Snippet,
     Core.Entities.Tag,
     Core.Entities.User,
@@ -125,6 +126,17 @@ type
         function GetSteps(ChainID: Integer): TArray<TChainStepDTO>;
         procedure ReplaceSteps(ChainID: Integer; const Steps: TArray<TChainStepDTO>);
         function NameExists(const Name: string; UserID, ExcludeChainID: Integer): Boolean;
+    end;
+
+    ISavedQueryRepository = interface
+        ['{3F8A21C7-9B4E-4D1A-A7C6-52E90B8D4F17}']
+        function GetAll(UserID: Integer = 0): TArray<TSavedQueryDTO>;
+        function GetByID(ID: Integer): TSavedQueryDTO;
+        function Add(const SavedQuery: TSavedQueryDTO): Integer;
+        procedure UpdateName(ID: Integer; const NewName: string);
+        procedure UpdateQueryText(ID: Integer; const NewQueryText: string);
+        procedure Delete(ID: Integer);
+        function NameExists(const Name: string; UserID, ExcludeID: Integer): Boolean;
     end;
 
 implementation

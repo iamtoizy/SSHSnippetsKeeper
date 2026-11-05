@@ -235,7 +235,7 @@ procedure TDbMigrationTests.NewerSchema_RaisesVersionError;
 var
     Migrator: TDatabaseMigrator;
 begin
-    FConn.ExecSQL('PRAGMA user_version = 13');
+    FConn.ExecSQL('PRAGMA user_version = ' + IntToStr(APP_DB_VERSION + 1));
 
     Migrator := TDatabaseMigrator.Create(FConn, ':memory:', LoadMigrationSQL);
     try

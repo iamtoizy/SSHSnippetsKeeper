@@ -21,6 +21,7 @@ uses
     Tests.DbMigrations in 'Tests.DbMigrations.pas',
     Tests.WindowMonitor in 'Tests.WindowMonitor.pas',
     Tests.Chains in 'Tests.Chains.pas',
+    Tests.SavedQueries in 'Tests.SavedQueries.pas',
     Tests.MarkdownImporter in 'Tests.MarkdownImporter.pas',
     Tests.MultiSelect in 'Tests.MultiSelect.pas',
     Tests.SnippetDuplicate in 'Tests.SnippetDuplicate.pas',
@@ -58,6 +59,7 @@ begin
         TDUnitX.RegisterTestFixture(TDbMigrationTests);
         TDUnitX.RegisterTestFixture(TWindowMonitorTests);
         TDUnitX.RegisterTestFixture(TChainsTests);
+        TDUnitX.RegisterTestFixture(TSavedQueriesTests);
         TDUnitX.RegisterTestFixture(TMarkdownImporterTests);
         TDUnitX.RegisterTestFixture(TMultiSelectTests);
         TDUnitX.RegisterTestFixture(TSnippetDuplicateTests);

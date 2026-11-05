@@ -5,6 +5,7 @@ interface
 uses
     Core.Entities.Category,
     Core.Entities.Chain,
+    Core.Entities.SavedQuery,
     Core.Entities.Snippet,
     Core.Entities.Tag,
     Core.Entities.User,
@@ -100,6 +101,15 @@ type
         procedure DeleteChain(ID: Integer);
         function GetSteps(ChainID: Integer): TArray<TChainStepDTO>;
         procedure SaveSteps(ChainID: Integer; const Steps: TArray<TChainStepDTO>);
+    end;
+
+    ISavedQueryService = interface
+        ['{6D2B9E45-1F83-4C0A-9E27-B34A8C51D6F0}']
+        function GetAllSavedQueries(UserID: Integer): TArray<TSavedQueryDTO>;
+        function GetSavedQueryByID(ID: Integer): TSavedQueryDTO;
+        function CreateSavedQuery(UserID: Integer; const Name, QueryText: string): Integer;
+        procedure RenameSavedQuery(ID: Integer; const NewName: string);
+        procedure DeleteSavedQuery(ID: Integer);
     end;
 
     // Описывает одно настраиваемое действие

@@ -2,7 +2,7 @@ PRAGMA foreign_keys = ON;
 PRAGMA journal_mode = WAL;
 PRAGMA synchronous = NORMAL;
 PRAGMA temp_store = MEMORY;
-PRAGMA user_version = 12; -- v12: язык сниппета (language) и признак ручного выбора (language_locked)
+PRAGMA user_version = 13; -- v13: умные папки - сохранённые запросы (saved_queries)
                           -- Должно совпадать с APP_DB_VERSION в Data\Database.Migrations.pas
 PRAGMA recursive_triggers = OFF;
 PRAGMA busy_timeout = 5000;
@@ -197,6 +197,21 @@ CREATE TABLE IF NOT EXISTS snippet_chain_steps (
 
 CREATE INDEX IF NOT EXISTS ix_chain_steps_chain   ON snippet_chain_steps(chain_id, position);
 CREATE INDEX IF NOT EXISTS ix_chain_steps_snippet ON snippet_chain_steps(snippet_id);
+
+---------------------------------------------------------
+-- 12.2. SAVED QUERIES (Умные папки: именованные сохранённые запросы)
+---------------------------------------------------------
+CREATE TABLE IF NOT EXISTS saved_queries (
+  id         INTEGER PRIMARY KEY,
+  user_id    INTEGER NOT NULL,
+  name       TEXT NOT NULL COLLATE NOCASE,
+  query_text TEXT NOT NULL,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ix_saved_queries_name_user ON saved_queries(name COLLATE NOCASE, user_id);
+CREATE INDEX IF NOT EXISTS ix_saved_queries_user ON saved_queries(user_id);
 
 ---------------------------------------------------------
 -- 13. TRIGGERS (Бизнес-правила БД и синхронизация FTS)

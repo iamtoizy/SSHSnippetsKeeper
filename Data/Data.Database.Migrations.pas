@@ -15,7 +15,7 @@ const
     //   3) добавить шаг в реестр MIGRATIONS (implementation)
     //   4) увеличить APP_DB_VERSION
     //   5) синхронизировать "PRAGMA user_version" в Database\Schema\000_schema_init.sql
-    APP_DB_VERSION = 12;
+    APP_DB_VERSION = 13;
 
     // Сколько последних резервных копий хранится рядом с файлом БД
     MIGRATION_BACKUP_KEEP = 3;
@@ -128,14 +128,15 @@ const
     // Реестр применяемых миграций, по возрастанию версии.
     // v2..v6 в истории не выделялись отдельными шагами - их изменения
     // включены в базовый скрипт V001 (все шаги идемпотентны).
-    MIGRATIONS: array [0..6] of TMigrationStep = (
+    MIGRATIONS: array [0..7] of TMigrationStep = (
         (Version: 1;  ResourceName: 'SCHEMA_MIGRATION_001'),
         (Version: 7;  ResourceName: 'SCHEMA_MIGRATION_007'),
         (Version: 8;  ResourceName: 'SCHEMA_MIGRATION_008'),
         (Version: 9;  ResourceName: 'SCHEMA_MIGRATION_009'),
         (Version: 10; ResourceName: 'SCHEMA_MIGRATION_010'),
         (Version: 11; ResourceName: 'SCHEMA_MIGRATION_011'),
-        (Version: 12; ResourceName: 'SCHEMA_MIGRATION_012')
+        (Version: 12; ResourceName: 'SCHEMA_MIGRATION_012'),
+        (Version: 13; ResourceName: 'SCHEMA_MIGRATION_013')
     );
 
 function LoadSQLResource(const ResourceName: string): string;

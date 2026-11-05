@@ -92,6 +92,7 @@ implementation
 uses
     ChainRunnerController,
     Common.Localization,
+    Core.Entities.SavedQuery,
     System.Generics.Collections,
     System.Math
     ;
@@ -129,12 +130,13 @@ end;
 
 function TCategoryTreeController.CanEditNode(Node: TTreeNode): Boolean;
 var
-    ChainID: Integer;
+    ChainID, SavedQueryID: Integer;
 begin
     if (Node = nil) or IsWorkspaceNode(Node) then
         Exit(False);
     if IsVirtualCategory(Node) then
-        Exit(TChainRunner.TryGetChainID(Integer(IntPtr(Node.Data)), ChainID));
+        Exit(TChainRunner.TryGetChainID(Integer(IntPtr(Node.Data)), ChainID) or
+             TryGetSavedQueryID(Integer(IntPtr(Node.Data)), SavedQueryID));
     Result := True;
 end;
 
@@ -308,11 +310,40 @@ procedure TCategoryTreeController.HandleEdited(Node: TTreeNode; var S: string);
 var
     Cat: TCategoryDTO;
     OldName: string;
-    ChainID: Integer;
+    ChainID, SavedQueryID: Integer;
     Twin: TTreeNode;
     NodeValue: Integer;
 begin
     NodeValue := Integer(IntPtr(Node.Data));
+
+    if TryGetSavedQueryID(NodeValue, SavedQueryID) then
+    begin
+        OldName := Node.Text;
+        S := Trim(S);
+        if (S = '') or (S = OldName) then
+        begin
+            S := OldName;
+            Exit;
+        end;
+
+        try
+            FContext.SavedQueryService.RenameSavedQuery(SavedQueryID, S);
+            for Twin in FTree.Items do
+                if (Twin <> Node) and (Integer(IntPtr(Twin.Data)) = NodeValue) then
+                    Twin.Text := S;
+            if Assigned(FOnDataChanged) then
+                FOnDataChanged();
+        except
+            on E: Exception do
+            begin
+                FContext.MessagesHandler.ShowError(
+                    TUIStateLoader.GetMessage('SavedQueries.RenameError', [E.Message])
+                );
+                S := OldName;
+            end;
+        end;
+        Exit;
+    end;
 
     if TChainRunner.TryGetChainID(NodeValue, ChainID) then
     begin

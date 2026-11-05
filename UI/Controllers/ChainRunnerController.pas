@@ -4,6 +4,7 @@ interface
 
 uses
     Core.Entities.Chain,
+    Core.Entities.SavedQuery,
     Core.Entities.Snippet,
     Core.Interfaces.App,
     System.SysUtils,
@@ -64,7 +65,9 @@ end;
 
 class function TChainRunner.TryGetChainID(NodeValue: Integer; out ChainID: Integer): Boolean;
 begin
-    Result := NodeValue <= CHAIN_NODE_ID_BASE * -1;
+    // Диапазон умных папок (SAVED_QUERY_NODE_ID_BASE) в цепочки не попадает
+    Result := (NodeValue <= CHAIN_NODE_ID_BASE * -1) and
+              (NodeValue > SAVED_QUERY_NODE_ID_BASE * -1);
     if Result then
         ChainID := (NodeValue * -1) - CHAIN_NODE_ID_BASE;
 end;

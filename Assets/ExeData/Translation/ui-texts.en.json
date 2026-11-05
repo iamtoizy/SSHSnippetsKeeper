@@ -1169,7 +1169,8 @@
         "FrequentlyUsed": "Frequently Used",
         "Recent": "Recent",
         "Favorites": "Favorites",
-        "Chains": "Chains"
+        "Chains": "Chains",
+        "SavedQueries": "Smart folders"
       },
       "ChainEditorForm": {
         "lvSteps": {
@@ -1690,6 +1691,25 @@
         "DuplicateName": "Chain \"%s\" already exists.",
         "NotFound": "Chain not found.",
         "SnippetNotFound": "Step %d: snippet not found."
+      }
+    },
+    "SavedQueries": {
+      "Menu": {
+        "Create": "Save search as smart folder",
+        "CreateFromSearch": "Save search as smart folder",
+        "Delete": "Delete smart folder"
+      },
+      "SaveTitle": "Smart folder",
+      "NamePrompt": "Smart folder name:",
+      "DeleteConfirm": "Delete smart folder \"%s\"?",
+      "CreatedMsg": "Smart folder \"%s\" created.",
+      "DeletedMsg": "Smart folder \"%s\" deleted.",
+      "RenameError": "Failed to rename smart folder: %s",
+      "Error": {
+        "EmptyName": "Enter the smart folder name.",
+        "EmptyQuery": "The search box is empty - nothing to save.",
+        "DuplicateName": "Smart folder \"%s\" already exists.",
+        "NotFound": "Smart folder not found."
       }
     },
     "MultiSelect": {

@@ -1169,7 +1169,8 @@
         "FrequentlyUsed": "Часто используемые",
         "Recent": "Недавние",
         "Favorites": "Избранное",
-        "Chains": "Цепочки"
+        "Chains": "Цепочки",
+        "SavedQueries": "Умные папки"
       },
       "ChainEditorForm": {
         "lvSteps": {
@@ -1690,6 +1691,25 @@
         "DuplicateName": "Цепочка «%s» уже существует.",
         "NotFound": "Цепочка не найдена.",
         "SnippetNotFound": "Шаг %d: сниппет не найден."
+      }
+    },
+    "SavedQueries": {
+      "Menu": {
+        "Create": "Сохранить поиск как умную папку",
+        "CreateFromSearch": "Сохранить поиск как умную папку",
+        "Delete": "Удалить умную папку"
+      },
+      "SaveTitle": "Умная папка",
+      "NamePrompt": "Название умной папки:",
+      "DeleteConfirm": "Удалить умную папку «%s»?",
+      "CreatedMsg": "Умная папка «%s» создана.",
+      "DeletedMsg": "Умная папка «%s» удалена.",
+      "RenameError": "Не удалось переименовать умную папку: %s",
+      "Error": {
+        "EmptyName": "Введите название умной папки.",
+        "EmptyQuery": "Строка поиска пуста - сохранять нечего.",
+        "DuplicateName": "Умная папка «%s» уже существует.",
+        "NotFound": "Умная папка не найдена."
       }
     },
     "MultiSelect": {

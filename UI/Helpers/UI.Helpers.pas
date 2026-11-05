@@ -5,6 +5,7 @@ interface
 uses
     Core.Entities.Category,
     Core.Entities.Chain,
+    Core.Entities.SavedQuery,
     Core.Entities.Tag,
     Core.Entities.User,
     Vcl.ComCtrls
@@ -26,6 +27,7 @@ type
             const Categories: TArray<TCategoryDTO>;
             const Users: TArray<TUserDTO>;
             const Chains: TArray<TChainDTO>;
+            const SavedQueries: TArray<TSavedQueryDTO>;
             FilterUserID: Integer;
             SelectID: Integer = -1); static;
     end;
@@ -107,7 +109,7 @@ begin
     end;
 end;
 
-class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categories: TArray<TCategoryDTO>; const Users: TArray<TUserDTO>; const Chains: TArray<TChainDTO>; FilterUserID: Integer; SelectID: Integer = -1);
+class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categories: TArray<TCategoryDTO>; const Users: TArray<TUserDTO>; const Chains: TArray<TChainDTO>; const SavedQueries: TArray<TSavedQueryDTO>; FilterUserID: Integer; SelectID: Integer = -1);
 
     // Вспомогательная рекурсивная процедура для добавления узлов
     procedure AddNodesRecursive(ParentNode: TTreeNode; ParentCatID: Integer; const CatMap: TDictionary<Integer, TList<TCategoryDTO>>);
@@ -225,6 +227,49 @@ class procedure TUIHelpers.BuildCategoryTree(TreeView: TTreeView; const Categori
         end;
     end;
 
+    // Отрисовка ветки умных папок (сохранённых запросов); WorkspaceScoped -
+    // ветка внутри пространства (скрывается без папок)
+    procedure RenderSavedQueries(ParentNode: TTreeNode; OnlyUserID: Integer; WorkspaceScoped: Boolean);
+    var
+        QueryRoot, QueryNode: TTreeNode;
+        SavedQuery: TSavedQueryDTO;
+        HasQueries: Boolean;
+    begin
+        if WorkspaceScoped then
+        begin
+            HasQueries := False;
+            for SavedQuery in SavedQueries do
+                if SavedQuery.UserID = OnlyUserID then
+                begin
+                    HasQueries := True;
+                    Break;
+                end;
+            if not HasQueries then
+                Exit;
+        end;
+
+        QueryRoot := TreeView.Items.AddChild(ParentNode,
+            TUIStateLoader.GetMessage('Help.MainForm.SavedQueries'));
+        QueryRoot.Data := Pointer(IntPtr(SAVED_QUERIES_ROOT_NODE_ID));
+        QueryRoot.ImageIndex := 7;
+        QueryRoot.SelectedIndex := 7;
+        if (not WorkspaceScoped) and (SelectID = SAVED_QUERIES_ROOT_NODE_ID) then
+            QueryRoot.Selected := True;
+
+        for SavedQuery in SavedQueries do
+        begin
+            if (OnlyUserID > 0) and (SavedQuery.UserID <> OnlyUserID) then
+                Continue;
+
+            QueryNode := TreeView.Items.AddChild(QueryRoot, SavedQuery.Name);
+            QueryNode.Data := Pointer(IntPtr(EncodeSavedQueryNodeID(SavedQuery.ID)));
+            QueryNode.ImageIndex := 7;
+            QueryNode.SelectedIndex := 7;
+            if SelectID = EncodeSavedQueryNodeID(SavedQuery.ID) then
+                QueryNode.Selected := True;
+        end;
+    end;
+
 var
     Node: TTreeNode;
     User: TUserDTO;
@@ -273,6 +318,7 @@ begin
         begin
             // === РЕЖИМ "ВСЕ ПРОСТРАНСТВА" ===
             RenderChains(nil, 0, False);
+            RenderSavedQueries(nil, 0, False);
             for User in Users do
             begin
                 Node := TreeView.Items.Add(nil, User.Name);
@@ -286,6 +332,7 @@ begin
 
                 RenderCategories(Node, UserCats);
                 RenderChains(Node, User.ID, True);
+                RenderSavedQueries(Node, User.ID, True);
             end;
         end
         else
@@ -298,6 +345,7 @@ begin
 
             RenderCategories(nil, UserCats);
             RenderChains(nil, FilterUserID, False);
+            RenderSavedQueries(nil, FilterUserID, False);
         end;
     finally
         UserCats.Free;

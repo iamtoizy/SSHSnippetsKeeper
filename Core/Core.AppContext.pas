@@ -19,6 +19,8 @@ uses
     FireDAC.Comp.Client,
     HotkeyService,
     PasswordService,
+    SavedQueryRepository,
+    SavedQueryService,
     SecurityScanner,
     SnippetHistoryRepository,
     SnippetHistoryService,
@@ -50,6 +52,7 @@ type
         FSecurityScanner: ISecurityScanner;
         FHistoryService: ISnippetHistoryService;
         FChainService: IChainService;
+        FSavedQueryService: ISavedQueryService;
         FDBConnection: TFDConnection;
 
         function GetDatabaseManager: IDatabaseManager;
@@ -67,6 +70,7 @@ type
         function GetSecurityScanner: ISecurityScanner;
         function GetHistoryService: ISnippetHistoryService;
         function GetChainService: IChainService;
+        function GetSavedQueryService: ISavedQueryService;
         function GetDBConnection: TFDConnection;
     public
         // Основной конструктор (для UI-потока)
@@ -97,6 +101,7 @@ type
         property SecurityScanner: ISecurityScanner read GetSecurityScanner;
         property HistoryService: ISnippetHistoryService read GetHistoryService;
         property ChainService: IChainService read GetChainService;
+        property SavedQueryService: ISavedQueryService read GetSavedQueryService;
         property DBConnection: TFDConnection read GetDBConnection;
 
         function CreateIsolatedSnippetService(out BackgroundConnection: TComponent): ISnippetService;
@@ -156,6 +161,7 @@ begin
     FHistoryService := TSnippetHistoryService.Create(HistoryRepo, FSnippetService);
 
     FChainService := TChainService.Create(TChainRepository.Create(DBConnection), FSnippetService);
+    FSavedQueryService := TSavedQueryService.Create(TSavedQueryRepository.Create(DBConnection));
 
     // Локальные сервисы, создающиеся в AppContext
     FPasswordService := TPasswordService.Create;
@@ -209,6 +215,7 @@ begin
     FHistoryService := TSnippetHistoryService.Create(HistoryRepo, FSnippetService);
 
     FChainService := TChainService.Create(TChainRepository.Create(DBConnection), FSnippetService);
+    FSavedQueryService := TSavedQueryService.Create(TSavedQueryRepository.Create(DBConnection));
 
     FPasswordService := TPasswordService.Create;
     FEpochService := TEpochService.Create;
@@ -336,6 +343,11 @@ end;
 function TAppContext.GetChainService: IChainService;
 begin
     Result := FChainService;
+end;
+
+function TAppContext.GetSavedQueryService: ISavedQueryService;
+begin
+    Result := FSavedQueryService;
 end;
 
 function TAppContext.GetDBConnection: TFDConnection;

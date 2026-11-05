@@ -90,6 +90,7 @@ type
         function GetSecurityScanner: ISecurityScanner;
         function GetHistoryService: ISnippetHistoryService;
         function GetChainService: IChainService;
+        function GetSavedQueryService: ISavedQueryService;
         function GetDBConnection: TFDConnection;
     public
         constructor Create(AConn: TFDConnection; ADatabaseManager: IDatabaseManager);
@@ -422,6 +423,11 @@ begin
 end;
 
 function TTestAppContext.GetChainService: IChainService;
+begin
+    Result := nil;
+end;
+
+function TTestAppContext.GetSavedQueryService: ISavedQueryService;
 begin
     Result := nil;
 end;

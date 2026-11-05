@@ -172,11 +172,13 @@
         <DCCReference Include="Core\Entities\Core.Entities.Tag.pas"/>
         <DCCReference Include="Core\Entities\Core.Entities.Category.pas"/>
         <DCCReference Include="Core\Entities\Core.Entities.Chain.pas"/>
+        <DCCReference Include="Core\Entities\Core.Entities.SavedQuery.pas"/>
         <DCCReference Include="Data\Repositories\CategoryRepository.pas"/>
         <DCCReference Include="Data\Repositories\UserRepository.pas"/>
         <DCCReference Include="Core\Entities\Core.Entities.User.pas"/>
         <DCCReference Include="Data\Repositories\TagRepository.pas"/>
         <DCCReference Include="Data\Repositories\ChainRepository.pas"/>
+        <DCCReference Include="Data\Repositories\SavedQueryRepository.pas"/>
         <DCCReference Include="Data\RepositoryBase.pas"/>
         <DCCReference Include="ThirdParty\ArrayHelper.pas"/>
         <DCCReference Include="Automation\WindowHelper.pas"/>
@@ -238,6 +240,7 @@
         <DCCReference Include="Core\Services\CategoryService.pas"/>
         <DCCReference Include="Core\Services\UserService.pas"/>
         <DCCReference Include="Core\Services\ChainService.pas"/>
+        <DCCReference Include="Core\Services\SavedQueryService.pas"/>
         <DCCReference Include="Core\Core.Interfaces.Settings.pas"/>
         <DCCReference Include="Core\Core.Interfaces.Data.pas"/>
         <DCCReference Include="Core\Core.Interfaces.Services.pas"/>

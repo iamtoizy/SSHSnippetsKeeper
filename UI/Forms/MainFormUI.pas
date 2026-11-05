@@ -8,6 +8,7 @@ uses
     Common.AppVersion,
     Common.CmdLine,
     Core.Entities.Chain,
+    Core.Entities.SavedQuery,
     Core.Entities.Snippet,
     Core.Entities.Tag,
     Core.Entities.User,
@@ -177,6 +178,9 @@ type
         actChainEdit: TAction;
         actChainDelete: TAction;
         actChainCreateFromSnippet: TAction;
+        actSavedQueryCreate: TAction;
+        actSavedQueryCreateFromSearch: TAction;
+        actSavedQueryDelete: TAction;
         puFavMove: TMenuItem;
         actSnippetHistory: TAction;
         tmrAutoSync: TTimer;
@@ -210,6 +214,9 @@ type
         procedure actRunSnippetExecute(Sender: TObject);
         procedure actDryRunSnippetExecute(Sender: TObject);
         procedure actRunSequenceExecute(Sender: TObject);
+        procedure actSavedQueryCreateExecute(Sender: TObject);
+        procedure actSavedQueryCreateFromSearchExecute(Sender: TObject);
+        procedure actSavedQueryDeleteExecute(Sender: TObject);
         procedure actSecurityReportExecute(Sender: TObject);
         procedure actExportSnippetsExecute(Sender: TObject);
         procedure actAddTagToSnippetsExecute(Sender: TObject);
@@ -333,8 +340,10 @@ type
         procedure UpdateMenuState;
         procedure UpdateFavoriteMenuState;
         procedure UpdateChainMenuState;
+        procedure UpdateSavedQueryMenuState;
         function GetSelectedChainID: Integer;
         function ShowChainEditor(ChainID: Integer; InitialSnippetID: Integer = 0): Integer;
+        procedure SaveCurrentSearchAsSavedQuery;
         procedure RefreshCurrentSnippetList;
         procedure ChainStarted;
         procedure ChainFinished;
@@ -884,6 +893,9 @@ begin
     // --- ЦЕПОЧКИ ---
     UpdateChainMenuState;
 
+    // --- УМНЫЕ ПАПКИ ---
+    UpdateSavedQueryMenuState;
+
     // --- ТЕГИ ---
     actAddTag.Enabled := True; // Создать новый тег можно всегда
     actDeleteTag.Enabled := (lvTags.Selected <> nil);
@@ -961,6 +973,26 @@ begin
         lblChainName.Caption := TUIStateLoader.GetMessage('Chains.Panel.Caption',
             [AppContext.ChainService.GetChainByID(ChainID).Name,
             Length(AppContext.ChainService.GetSteps(ChainID))]);
+end;
+
+procedure TMainForm.UpdateSavedQueryMenuState;
+var
+    Node: TTreeNode;
+    NodeValue, SavedQueryID: Integer;
+begin
+    Node := tvCategories.Selected;
+    NodeValue := 0;
+    if Node <> nil then
+        NodeValue := Integer(IntPtr(Node.Data));
+
+    // «Создать умную папку» доступна только на корневом узле умных папок
+    actSavedQueryCreate.Visible := (Node <> nil) and
+        (NodeValue = SAVED_QUERIES_ROOT_NODE_ID);
+    actSavedQueryDelete.Visible := TryGetSavedQueryID(NodeValue, SavedQueryID);
+
+    // «Сохранить поиск» активна, пока в строке поиска есть текст
+    actSavedQueryCreateFromSearch.Enabled :=
+        AppContext.DatabaseManager.IsConnected and (Trim(ebSearch.Text) <> '');
 end;
 
 function TMainForm.GetSelectedChainID: Integer;
@@ -1086,6 +1118,79 @@ begin
     end;
 end;
 
+procedure TMainForm.SaveCurrentSearchAsSavedQuery;
+var
+    NewID: Integer;
+    QueryName: string;
+begin
+    if Trim(ebSearch.Text) = '' then
+    begin
+        AppContext.MessagesHandler.ShowError(
+            TUIStateLoader.GetMessage('SavedQueries.Error.EmptyQuery'));
+        Exit;
+    end;
+
+    QueryName := '';
+    if not AppContext.MessagesHandler.AskInput(
+        TUIStateLoader.GetMessage('SavedQueries.SaveTitle'),
+        TUIStateLoader.GetMessage('SavedQueries.NamePrompt'),
+        QueryName
+    ) then Exit;
+
+    try
+        NewID := AppContext.SavedQueryService.CreateSavedQuery(
+            FCategoryTree.GetSelectedCategoryUserID, QueryName, ebSearch.Text);
+        ReloadUI(EncodeSavedQueryNodeID(NewID));
+        FStatus.Flash(TUIStateLoader.GetMessage('SavedQueries.CreatedMsg', [
+            AppContext.SavedQueryService.GetSavedQueryByID(NewID).Name]));
+        MarkDataChanged;
+    except
+        on E: Exception do
+            AppContext.MessagesHandler.ShowError(E.Message);
+    end;
+end;
+
+procedure TMainForm.actSavedQueryCreateExecute(Sender: TObject);
+begin
+    SaveCurrentSearchAsSavedQuery;
+end;
+
+procedure TMainForm.actSavedQueryCreateFromSearchExecute(Sender: TObject);
+begin
+    SaveCurrentSearchAsSavedQuery;
+end;
+
+procedure TMainForm.actSavedQueryDeleteExecute(Sender: TObject);
+var
+    Node: TTreeNode;
+    SavedQueryID: Integer;
+    SavedQuery: TSavedQueryDTO;
+begin
+    Node := tvCategories.Selected;
+    if (Node = nil) or not TryGetSavedQueryID(Integer(IntPtr(Node.Data)), SavedQueryID) then
+        Exit;
+
+    SavedQuery := AppContext.SavedQueryService.GetSavedQueryByID(SavedQueryID);
+    if SavedQuery.ID = 0 then
+        Exit;
+
+    if AppContext.MessagesHandler.AskConfirmation(
+        TUIStateLoader.GetMessage('SavedQueries.DeleteConfirm', [SavedQuery.Name]),
+        TUIStateLoader.GetMessage('Common.Confirmation'),
+        MB_YESNO or MB_ICONQUESTION
+    ) then begin
+        try
+            AppContext.SavedQueryService.DeleteSavedQuery(SavedQueryID);
+            ReloadUI(SAVED_QUERIES_ROOT_NODE_ID);
+            FStatus.Flash(TUIStateLoader.GetMessage('SavedQueries.DeletedMsg', [SavedQuery.Name]));
+            MarkDataChanged;
+        except
+            on E: Exception do
+                AppContext.MessagesHandler.ShowError(E.Message);
+        end;
+    end;
+end;
+
 procedure TMainForm.tvCategoriesDblClick(Sender: TObject);
 begin
     if GetSelectedChainID > 0 then
@@ -1131,7 +1236,9 @@ begin
         FCategoryTree.BeforeRebuild;
         try
             TUIHelpers.BuildCategoryTree(tvCategories, Cats, FUsersCache,
-                AppContext.ChainService.GetAllChains(FFilterUserID), FFilterUserID,
+                AppContext.ChainService.GetAllChains(FFilterUserID),
+                AppContext.SavedQueryService.GetAllSavedQueries(FFilterUserID),
+                FFilterUserID,
                 PreserveCategoryID);
         finally
             FCategoryTree.AfterRebuild;
@@ -1164,7 +1271,7 @@ end;
 procedure TMainForm.RefreshCurrentSnippetList;
 var
     Node: TTreeNode;
-    CatID, ChainID, I, ActiveSnippetID: Integer;
+    CatID, ChainID, I, ActiveSnippetID, SavedQueryID: Integer;
     Snippets: TArray<TSnippetDTO>;
     Steps: TArray<TChainStepDTO>;
 begin
@@ -1188,6 +1295,17 @@ begin
         FillSnippetListView(AppContext.SnippetService.GetSnippetsByTags(
             FTags.FilterTagIDs, AppContext.SettingsManager.Data.TagsMatchAll));
         SelectSnippetByID(ActiveSnippetID);
+        Exit;
+    end;
+
+    // Умная папка: выполняем сохранённый запрос (до ветки цепочек -
+    // диапазоны ID узлов не пересекаются, но порядок проверок явный)
+    if TryGetSavedQueryID(Integer(IntPtr(Node.Data)), SavedQueryID) then
+    begin
+        Snippets := AppContext.SnippetService.SearchSnippets(
+            AppContext.SavedQueryService.GetSavedQueryByID(SavedQueryID).QueryText,
+            rbFTS.Checked, FFilterUserID);
+        FillSnippetListView(Snippets);
         Exit;
     end;
 
@@ -1438,6 +1556,9 @@ begin
     actChainRun.Caption := TUIStateLoader.GetMessage('Chains.Menu.Run');
     actChainEdit.Caption := TUIStateLoader.GetMessage('Chains.Menu.Edit');
     actChainDelete.Caption := TUIStateLoader.GetMessage('Chains.Menu.Delete');
+    actSavedQueryCreate.Caption := TUIStateLoader.GetMessage('SavedQueries.Menu.Create');
+    actSavedQueryCreateFromSearch.Caption := TUIStateLoader.GetMessage('SavedQueries.Menu.CreateFromSearch');
+    actSavedQueryDelete.Caption := TUIStateLoader.GetMessage('SavedQueries.Menu.Delete');
     actRunSequence.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.RunSequence');
     actExportSnippets.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.Export');
     actAddTagToSnippets.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.AddTag');
@@ -2062,30 +2183,52 @@ var
     Images: TCustomImageList;
     I, X: Integer;
 begin
-    // Тёмные стили рисуют выделение в списке без фокуса почти тем же цветом,
-    // что и фон. Из-за этого выбранный сниппет визуально "пропадает", когда
-    // фокус уходит в поиск, теги или в другое приложение. В таких случаях
-    // выбранные строки рисуем сами (как это уже сделано для lvTags).
-    if (Stage <> cdPrePaint) or not Item.Selected then
-        Exit;
-    if Sender.Focused and Application.Active and IsWindowEnabled(Sender.Handle) then
+    // Единый рендерер для всех строк, не только выделенных. Штатная ветка
+    // comctl в этом окружении рисует текст без заливки фона и со своим
+    // отступом (~+2px против наших +4px), поэтому любой проход дефолтной
+    // ветки поверх пикселей ручной ветки дает наложение текста ("кашу").
+    // Триггером была смена выделения: правый клик, popup-меню, hover
+    // TRACKSELECT, модальные диалоги. DefaultDraw всегда False - дефолтная
+    // ветка больше не участвует вообще, каждый проход заливает строку целиком.
+    if Stage <> cdPrePaint then
         Exit;
 
     R := Item.DisplayRect(drBounds);
     if (R.Right <= R.Left) or (R.Bottom <= R.Top) then
+    begin
+        DefaultDraw := False;
         Exit;
+    end;
 
     DefaultDraw := False;
 
-    if TStyleManager.IsCustomStyleActive then
+    if Item.Selected then
     begin
-        BgColor := TStyleManager.ActiveStyle.GetSystemColor(clHighlight);
-        FgColor := TStyleManager.ActiveStyle.GetSystemColor(clHighlightText);
+        if TStyleManager.IsCustomStyleActive then
+        begin
+            BgColor := TStyleManager.ActiveStyle.GetSystemColor(clHighlight);
+            FgColor := TStyleManager.ActiveStyle.GetSystemColor(clHighlightText);
+        end
+        else
+        begin
+            BgColor := clHighlight;
+            FgColor := clHighlightText;
+        end;
     end
     else
     begin
-        BgColor := clHighlight;
-        FgColor := clHighlightText;
+        // Фон и текст невыделенных строк - как их рисует VCL-хук ListView
+        // (TListViewStyleHook.UpdateBrushColor: клиент = scListView)
+        if TStyleManager.IsCustomStyleActive then
+        begin
+            BgColor := TStyleManager.ActiveStyle.GetStyleColor(scListView);
+            FgColor := TStyleManager.ActiveStyle.GetSystemColor(clWindowText);
+        end
+        else
+        begin
+            BgColor := clWindow;
+            FgColor := clWindowText;
+        end;
     end;
 
     Sender.Canvas.Brush.Color := BgColor;
@@ -2120,11 +2263,13 @@ begin
     DrawText(Sender.Canvas.Handle, PChar(Item.Caption), Length(Item.Caption), SubR,
         DT_LEFT or DT_VCENTER or DT_SINGLELINE or DT_END_ELLIPSIS or DT_NOPREFIX);
 
+    // Смещение субитема I в report-mode - сумма ширин колонок 0..I
+    // (левая граница его собственной колонки), накапливаем по циклу
+    X := R.Left;
     for I := 0 to Item.SubItems.Count - 1 do
     begin
         if I + 1 >= TListView(Sender).Columns.Count then
             Break;
-        X := R.Left;
         Inc(X, TListView(Sender).Columns[I].Width);
         SubR := R;
         SubR.Left := X + 4;
@@ -2896,31 +3041,47 @@ var
     BgColor, FgColor: TColor;
     StateImages: TCustomImageList;
 begin
-    // Тёмные стили (например, Carbon) рисуют выделение в списке без фокуса
-    // почти тем же цветом, что и фон, из-за чего активный фильтр по тегам
-    // становится не виден. Выбранные элементы рисуем сами везде, где штатная
-    // отрисовка дала бы неразличимый фон: список без фокуса, неактивное
-    // приложение или заблокированная модальным диалогом форма.
-    if (Stage <> cdPrePaint) or not Item.Selected then
-        Exit;
-    if Sender.Focused and Application.Active and IsWindowEnabled(Sender.Handle) then
+    // Единый рендерер для всех строк (тот же артефакт "каши", что и в
+    // lvSnippets): дефолтная ветка comctl рисует текст без заливки фона
+    // поверх пикселей ручной ветки при любой смене выделения. DefaultDraw
+    // всегда False - каждый проход заливает строку целиком.
+    if Stage <> cdPrePaint then
         Exit;
 
     R := Item.DisplayRect(drBounds);
     if (R.Right <= R.Left) or (R.Bottom <= R.Top) then
+    begin
+        DefaultDraw := False;
         Exit;
+    end;
 
     DefaultDraw := False;
 
-    if TStyleManager.IsCustomStyleActive then
+    if Item.Selected then
     begin
-        BgColor := TStyleManager.ActiveStyle.GetSystemColor(clHighlight);
-        FgColor := TStyleManager.ActiveStyle.GetSystemColor(clHighlightText);
+        if TStyleManager.IsCustomStyleActive then
+        begin
+            BgColor := TStyleManager.ActiveStyle.GetSystemColor(clHighlight);
+            FgColor := TStyleManager.ActiveStyle.GetSystemColor(clHighlightText);
+        end
+        else
+        begin
+            BgColor := clHighlight;
+            FgColor := clHighlightText;
+        end;
     end
     else
     begin
-        BgColor := clHighlight;
-        FgColor := clHighlightText;
+        if TStyleManager.IsCustomStyleActive then
+        begin
+            BgColor := TStyleManager.ActiveStyle.GetStyleColor(scListView);
+            FgColor := TStyleManager.ActiveStyle.GetSystemColor(clWindowText);
+        end
+        else
+        begin
+            BgColor := clWindow;
+            FgColor := clWindowText;
+        end;
     end;
 
     Sender.Canvas.Brush.Color := BgColor;
