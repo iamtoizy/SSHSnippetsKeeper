@@ -159,6 +159,7 @@ uses
   Core.MarkdownImporter in 'Core\Core.MarkdownImporter.pas',
   Core.TextDiff in 'Core\Core.TextDiff.pas',
   HistoryFormUI in 'UI\Forms\HistoryFormUI.pas' {HistoryForm},
+  SnippetDiffFormUI in 'UI\Forms\SnippetDiffFormUI.pas' {SnippetDiffForm},
   Core.LocalAIService in 'Core\Core.LocalAIService.pas',
   Common.AppState in 'Common\Common.AppState.pas',
   Common.AppVersion in 'Common\Common.AppVersion.pas',

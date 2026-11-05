@@ -18,7 +18,15 @@ type
     public
         class function SplitLines(const Text: string): TArray<string>; static;
         class function Compute(const OldText, NewText: string): TArray<TDiffLine>; static;
-        class function ToUnified(const OldText, NewText: string; ContextLines: Integer = 3): TArray<TDiffLine>; static;
+        class function ToUnified(const OldText, NewText: string;
+            ContextLines: Integer = 3): TArray<TDiffLine>; static;
+        // Дописывает к диффу именованную секцию (заголовок + unified-строки).
+        // Если тексты совпадают, секция не добавляется вовсе; между секциями
+        // вставляется пустая строка-разделитель. Служит для диффа нескольких
+        // полей одним массивом (контент + комментарий перед сохранением)
+        class function AppendSection(const ADiff: TArray<TDiffLine>;
+            const ASectionTitle, AOldText, ANewText: string;
+            ContextLines: Integer = 3): TArray<TDiffLine>; static;
     end;
 
 implementation
@@ -175,6 +183,48 @@ begin
                 if Keep[I] then
                     List.Add(Full[I]);
         end;
+
+        Result := List.ToArray;
+    finally
+        List.Free;
+    end;
+end;
+
+class function TTextDiff.AppendSection(const ADiff: TArray<TDiffLine>;
+    const ASectionTitle, AOldText, ANewText: string;
+    ContextLines: Integer): TArray<TDiffLine>;
+var
+    List: TList<TDiffLine>;
+    Line: TDiffLine;
+    Section: TArray<TDiffLine>;
+    I: Integer;
+begin
+    if AOldText = ANewText then
+        Exit(ADiff);
+
+    List := TList<TDiffLine>.Create;
+    try
+        List.AddRange(ADiff);
+
+        if Length(ADiff) > 0 then
+        begin
+            Line.Kind := dlEqual;
+            Line.Text := '';
+            Line.OldNo := 0;
+            Line.NewNo := 0;
+            List.Add(Line);
+        end;
+
+        // Заголовок секции - нейтральная строка, подсветкой не выделяется
+        Line.Kind := dlEqual;
+        Line.Text := ASectionTitle;
+        Line.OldNo := 0;
+        Line.NewNo := 0;
+        List.Add(Line);
+
+        Section := ToUnified(AOldText, ANewText, ContextLines);
+        for I := 0 to High(Section) do
+            List.Add(Section[I]);
 
         Result := List.ToArray;
     finally

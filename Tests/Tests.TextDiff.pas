@@ -30,6 +30,12 @@ type
         procedure ToUnified_TrimsEqualContext;
         [Test]
         procedure LargeDisjointTexts_FullReplace;
+        [Test]
+        procedure AppendSection_UnchangedText_AddsNothing;
+        [Test]
+        procedure AppendSection_ChangedText_AddsTitleAndUnified;
+        [Test]
+        procedure AppendSection_TwoChangedSections_SeparatedByBlankLine;
     end;
 
 implementation
@@ -177,6 +183,46 @@ begin
     Assert.AreEqual(3000, Integer(Length(Diff)));
     Assert.AreEqual(1500, CountKind(Diff, dlDelete));
     Assert.AreEqual(1500, CountKind(Diff, dlInsert));
+end;
+
+procedure TTextDiffTests.AppendSection_UnchangedText_AddsNothing;
+var
+    Diff: TArray<TDiffLine>;
+begin
+    Diff := [];
+    Diff := TTextDiff.AppendSection(Diff, 'Content:', 'a'#10'b', 'a'#10'b');
+    Assert.AreEqual(0, Integer(Length(Diff)));
+end;
+
+procedure TTextDiffTests.AppendSection_ChangedText_AddsTitleAndUnified;
+var
+    Diff: TArray<TDiffLine>;
+begin
+    Diff := [];
+    Diff := TTextDiff.AppendSection(Diff, 'Content:', 'a'#10'b', 'a'#10'x');
+
+    // Заголовок нейтрален, дальше unified старой->новой строки
+    Assert.AreEqual('Content:', Diff[0].Text);
+    Assert.AreEqual(dlEqual, Diff[0].Kind);
+    Assert.AreEqual('=,-,+', Kinds(Copy(Diff, 1)));
+    Assert.AreEqual('a', Diff[1].Text);
+    Assert.AreEqual('b', Diff[2].Text);
+    Assert.AreEqual('x', Diff[3].Text);
+end;
+
+procedure TTextDiffTests.AppendSection_TwoChangedSections_SeparatedByBlankLine;
+var
+    Diff: TArray<TDiffLine>;
+begin
+    Diff := [];
+    Diff := TTextDiff.AppendSection(Diff, 'Content:', 'a', 'x');
+    Diff := TTextDiff.AppendSection(Diff, 'Comment:', 'c1', 'c2');
+
+    // Пустая строка-разделитель между секциями
+    Assert.AreEqual('', Diff[3].Text);
+    Assert.AreEqual(dlEqual, Diff[3].Kind);
+    Assert.AreEqual('Comment:', Diff[4].Text);
+    Assert.AreEqual('-,+', Kinds(Copy(Diff, 5)));
 end;
 
 end.

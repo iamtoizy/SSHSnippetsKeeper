@@ -11,6 +11,7 @@ uses
     Core.Interfaces.Services,
     Core.Interfaces.Settings,
     Core.Interfaces.UI,
+    Core.TextDiff,
     CustomBashSyn,
     MacroCardController,
     MacroCardPlugin,
@@ -60,6 +61,7 @@ type
         bOK: TButton;
         bCancel: TButton;
         bHistory: TButton;
+        bDiff: TButton;
         lvAllTags: TListView;
         SynUNIXShellScriptSyn: TSynUNIXShellScriptSyn;
         SynEditRegexSearch: TSynEditRegexSearch;
@@ -102,6 +104,7 @@ type
         procedure actShowAIFormExecute(Sender: TObject);
         procedure bAISettingsClick(Sender: TObject);
         procedure bHistoryClick(Sender: TObject);
+        procedure bDiffClick(Sender: TObject);
         procedure FormDestroy(Sender: TObject);
         procedure FormCreate(Sender: TObject);
         procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -209,6 +212,11 @@ type
         procedure EditMacroCard(CardPos: Integer);
         procedure FinishCardDrag;
         procedure InsertMacroTemplate(const Template: string);
+        // Сборка unified-диффа сохраняемых текстов (контент + комментарий);
+        // пустой массив = текстовых правок нет. AOtherChanges - сводка
+        // изменённых нетекстовых полей для шапки окна просмотра
+        function BuildSaveDiff(const ANewContent, ANewComment: string;
+            out AOtherChanges: string): TArray<TDiffLine>;
     public
         // Проверка "есть ли реальные правки" для FormCloseQueryAI; публичная,
         // чтобы регрессия Tests.DirtyDetection вызывала её напрямую
@@ -246,6 +254,7 @@ uses
     MacroCardEditorFormUI,
     MacroEngine,
     SecurityScanner,
+    SnippetDiffFormUI,
     SynEditKeyCmds,
     SynHighlighterFactory,
     SynThemeAdapter,
@@ -436,6 +445,76 @@ end;
 procedure TAddEditSnippetForm.bCancelClick(Sender: TObject);
 begin
     ModalResult := mrCancel;
+end;
+
+function TAddEditSnippetForm.BuildSaveDiff(const ANewContent,
+    ANewComment: string; out AOtherChanges: string): TArray<TDiffLine>;
+var
+    DBContent, DBComment: string;
+    TagsStr: string;
+    Changed: TArray<string>;
+    I: Integer;
+
+    procedure AddChanged(const AKey: string);
+    begin
+        SetLength(Changed, Length(Changed) + 1);
+        Changed[High(Changed)] := TUIStateLoader.GetMessage(AKey);
+    end;
+
+begin
+    // Тексты сравниваются в той же нормализации, что и в IsSnippetChanged
+    DBContent := StringReplace(FOriginalSnippet.Content, #13#10, #10, [rfReplaceAll]);
+    DBComment := StringReplace(FOriginalSnippet.Comment, #13#10, #10, [rfReplaceAll]);
+
+    // AppendSection пропускает неизменённые тексты, поэтому пустой результат
+    // означает, что правок текста нет и окно просмотра можно не показывать
+    Result := [];
+    Result := TTextDiff.AppendSection(Result,
+        TUIStateLoader.GetMessage('Snippet.DiffSectionContent'), DBContent, ANewContent);
+    Result := TTextDiff.AppendSection(Result,
+        TUIStateLoader.GetMessage('Snippet.DiffSectionComment'), DBComment, ANewComment);
+
+    // Нетекстовые поля перечисляем в шапке, чтобы сохраняемое было видно целиком
+    if ebTitle.Text <> FOriginalSnippet.Title then
+        AddChanged('Snippet.DiffTitle');
+
+    TagsStr := '';
+    for I := 0 to lvSelectedTags.Items.Count - 1 do
+        TagsStr := TagsStr + ';' + lvSelectedTags.Items[I].Caption;
+    if TagsStr <> FOriginalSnippet.Tags then
+        AddChanged('Snippet.DiffTags');
+
+    if FCurrentLanguage <> NormalizeSnippetLanguage(FOriginalSnippet.Language) then
+        AddChanged('Snippet.DiffLanguage');
+    if FLangLocked <> FOriginalSnippet.LanguageLocked then
+        AddChanged('Snippet.DiffLocked');
+    if cbIgnoreSecurityChecks.Checked <> FOriginalSnippet.SecurityIgnore then
+        AddChanged('Snippet.DiffSecurity');
+
+    AOtherChanges := '';
+    if Length(Changed) > 0 then
+        AOtherChanges := TUIStateLoader.GetMessage('Snippet.DiffOther', [string.Join(', ', Changed)]);
+end;
+
+procedure TAddEditSnippetForm.bDiffClick(Sender: TObject);
+var
+    Diff: TArray<TDiffLine>;
+    Other: string;
+begin
+    // Просмотр правок по требованию (кнопка видна только в режиме правки);
+    // сравнение с тем же снимком, на котором основан IsSnippetChanged
+    Diff := BuildSaveDiff(
+        StringReplace(mContent.Text, #13#10, #10, [rfReplaceAll]),
+        StringReplace(mComment.Text, #13#10, #10, [rfReplaceAll]),
+        Other);
+
+    if Length(Diff) = 0 then
+    begin
+        ShowSimpleToast(TUIStateLoader.GetMessage('Snippet.DiffNoTextChanges'));
+        Exit;
+    end;
+
+    TSnippetDiffForm.Execute(Self, AppContext, Diff, Other);
 end;
 
 procedure TAddEditSnippetForm.bOKClick(Sender: TObject);
@@ -1808,6 +1887,7 @@ begin
     FCategoryID := CatID;
     FUserID := UserID;
     bHistory.Visible := IsEditMode;
+    bDiff.Visible := IsEditMode;
 
     FIsAICanceled := False;
 

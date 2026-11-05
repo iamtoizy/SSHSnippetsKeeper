@@ -220,6 +220,12 @@
       }
     }
   },
+  "SnippetDiffForm": {
+    "Caption": "Snippet changes",
+    "bClose": {
+      "Caption": "Close"
+    }
+  },
   "InputForm": {
     "Caption": "Input Value",
     "bOK": {
@@ -297,6 +303,10 @@
     },
     "bHistory": {
       "Caption": "History…"
+    },
+    "bDiff": {
+      "Caption": "Diff",
+      "Hint": "Show text changes against the saved version"
     },
     "bMacroInsert": {
       "Caption": "Insert...",
@@ -1510,7 +1520,16 @@
       "CaptionAdd": "Add Snippet",
       "TitleEmptyError": "Enter snippet title.",
       "NoContentError": "Snippet text is empty.",
-      "InvalidIdError": "Invalid identifier for the snippet."
+      "InvalidIdError": "Invalid identifier for the snippet.",
+      "DiffTitle": "title",
+      "DiffTags": "tags",
+      "DiffLanguage": "language",
+      "DiffLocked": "language lock",
+      "DiffSecurity": "security trust",
+      "DiffOther": "Also changing: %s",
+      "DiffSectionContent": "— Content —",
+      "DiffSectionComment": "— Comment —",
+      "DiffNoTextChanges": "No text changes."
     },
     "History": {
       "Caption": "Version History",

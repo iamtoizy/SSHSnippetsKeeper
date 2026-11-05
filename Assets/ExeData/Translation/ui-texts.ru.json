@@ -220,6 +220,12 @@
       }
     }
   },
+  "SnippetDiffForm": {
+    "Caption": "Изменения сниппета",
+    "bClose": {
+      "Caption": "Закрыть"
+    }
+  },
   "InputForm": {
     "Caption": "Ввод значения",
     "bOK": {
@@ -297,6 +303,10 @@
     },
     "bHistory": {
       "Caption": "История…"
+    },
+    "bDiff": {
+      "Caption": "Дифф",
+      "Hint": "Показать изменения текста относительно сохранённой версии"
     },
     "bMacroInsert": {
       "Caption": "Вставить...",
@@ -1510,7 +1520,16 @@
       "CaptionAdd": "Добавление сниппета",
       "TitleEmptyError": "Введи заголовок сниппета.",
       "NoContentError": "Текст сниппета пуст.",
-      "InvalidIdError": "Некорректный идентификатор сниппета."
+      "InvalidIdError": "Некорректный идентификатор сниппета.",
+      "DiffTitle": "заголовок",
+      "DiffTags": "теги",
+      "DiffLanguage": "язык",
+      "DiffLocked": "фиксация языка",
+      "DiffSecurity": "доверие проверке безопасности",
+      "DiffOther": "Также изменятся: %s",
+      "DiffSectionContent": "— Содержимое —",
+      "DiffSectionComment": "— Комментарий —",
+      "DiffNoTextChanges": "Изменений текста нет."
     },
     "History": {
       "Caption": "История версий",

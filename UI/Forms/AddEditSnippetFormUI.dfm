@@ -162,6 +162,18 @@ object AddEditSnippetForm: TAddEditSnippetForm
       TabOrder = 2
       OnClick = bHistoryClick
     end
+    object bDiff: TButton
+      Left = 353
+      Top = 3
+      Width = 90
+      Height = 25
+      Anchors = [akTop, akRight]
+      Caption = 'bDiff'
+      ParentShowHint = False
+      ShowHint = True
+      TabOrder = 3
+      OnClick = bDiffClick
+    end
   end
   object sbBottom: TStatusBar
     Left = 0
