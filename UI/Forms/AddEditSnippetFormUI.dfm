@@ -268,19 +268,20 @@ object AddEditSnippetForm: TAddEditSnippetForm
             521
             26)
           object chkAutoLanguage: TCheckBox
-            Left = 176
-            Top = 3
+            Left = 145
+            Top = 5
             Width = 80
             Height = 17
             Anchors = [akTop, akRight]
             Caption = 'Auto'
+            ParentShowHint = False
             ShowHint = True
             TabOrder = 3
             OnClick = chkAutoLanguageClick
           end
           object bForceDetect: TButton
-            Left = 148
-            Top = 0
+            Left = 113
+            Top = 1
             Width = 26
             Height = 24
             Anchors = [akTop, akRight]
@@ -291,8 +292,8 @@ object AddEditSnippetForm: TAddEditSnippetForm
             OnClick = bForceDetectClick
           end
           object cbLanguage: TComboBox
-            Left = 264
-            Top = 1
+            Left = 2
+            Top = 2
             Width = 108
             Height = 23
             Style = csDropDownList

@@ -74,6 +74,8 @@ var
     FileName: string;
     Handle: TStyleManager.TStyleServicesHandle;
     ExistingName: string;
+    StyleInfo: TStyleInfo;
+    RealName: string;
 begin
     Result := False;
     try
@@ -92,15 +94,22 @@ begin
         if not TFile.Exists(FileName) then
             Exit;
 
+        if not TStyleManager.IsValidStyle(FileName, StyleInfo) then
+            Exit;
+
+        // Реальное имя стиля хранится внутри .vsf и может отличаться от имени
+        // файла (CharcoalDarkSlate.vsf -> 'Charcoal Dark Slate'); TStyleManager
+        // регистрирует стиль под внутренним именем, поэтому сравнивать надо с ним
+        RealName := StyleInfo.Name;
+        if RealName.IsEmpty then
+            RealName := StyleName;
+
         for ExistingName in TStyleManager.StyleNames do
-            if SameText(ExistingName, StyleName) then
+            if SameText(ExistingName, RealName) then
             begin
                 ResetActiveControls;
-                Exit(TStyleManager.TrySetStyle(StyleName, False));
+                Exit(TStyleManager.TrySetStyle(ExistingName, False));
             end;
-
-        if not TStyleManager.IsValidStyle(FileName) then
-            Exit;
 
         Handle := TStyleManager.LoadFromFile(FileName);
         if Handle = nil then
