@@ -26,6 +26,7 @@ uses
     Tests.SnippetDuplicate in 'Tests.SnippetDuplicate.pas',
     Tests.SnippetLastRun in 'Tests.SnippetLastRun.pas',
     Tests.AutoBackup in 'Tests.AutoBackup.pas',
+    Tests.SecurityReport in 'Tests.SecurityReport.pas',
     Tests.CustomBashSyn in 'Tests.CustomBashSyn.pas',
     Tests.MacroInputTypes in 'Tests.MacroInputTypes.pas',
     Tests.SnippetLanguages in 'Tests.SnippetLanguages.pas',
@@ -62,6 +63,7 @@ begin
         TDUnitX.RegisterTestFixture(TSnippetDuplicateTests);
         TDUnitX.RegisterTestFixture(TSnippetLastRunTests);
         TDUnitX.RegisterTestFixture(TAutoBackupTests);
+        TDUnitX.RegisterTestFixture(TSecurityReportTests);
         TDUnitX.RegisterTestFixture(TCustomBashSynTests);
         TDUnitX.RegisterTestFixture(TMacroInputTypesTests);
         TDUnitX.RegisterTestFixture(TSnippetLanguagesTests);

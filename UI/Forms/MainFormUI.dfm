@@ -438,6 +438,9 @@ object MainForm: TMainForm
       object nTerminalManager: TMenuItem
         Action = actTerminalManager
       end
+      object nSecurityReport: TMenuItem
+        Action = actSecurityReport
+      end
     end
   end
   object OpenDialog: TOpenDialog
@@ -5442,6 +5445,11 @@ object MainForm: TMainForm
       Category = 'Tools'
       Caption = 'actTerminalManager'
       OnExecute = actTerminalManagerExecute
+    end
+    object actSecurityReport: TAction
+      Category = 'Tools'
+      Caption = 'actSecurityReport'
+      OnExecute = actSecurityReportExecute
     end
     object actSettings: TAction
       Category = 'Other'

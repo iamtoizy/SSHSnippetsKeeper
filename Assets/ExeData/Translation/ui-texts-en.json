@@ -1,0 +1,2095 @@
+{
+  "MainForm": {
+    "Caption": "SSH Snippets Keeper",
+    "ebSearch": {
+      "TextHint": "Type something to search the database..."
+    },
+    "rbText": {
+      "Caption": "Simple Search"
+    },
+    "rbFTS": {
+      "Caption": "FTS5 Search"
+    },
+    "cbUser": {
+      "Hint": "Current workspace. Click ⚙ to manage workspaces."
+    },
+    "bManageWorkspaces": {
+      "Hint": "Allows you to visually manage workspaces."
+    },
+    "tvCategories": {},
+    "nFile": {
+      "Caption": "File"
+    },
+    "nCreateDatabase": {
+      "Caption": "Create database"
+    },
+    "nOpenDatabase": {
+      "Caption": "Open database"
+    },
+    "nCloseDatabase": {
+      "Caption": "Close database"
+    },
+    "nSettings": {
+      "Caption": "Settings"
+    },
+    "nExit": {
+      "Caption": "Exit"
+    },
+    "nDataManagament": {
+      "Caption": "Data"
+    },
+    "nCategories": {
+      "Caption": "Categories"
+    },
+    "nSnippets": {
+      "Caption": "Snippets"
+    },
+    "nTags": {
+      "Caption": "Tags"
+    },
+    "nAddCategory": {
+      "Caption": "Add"
+    },
+    "nDeleteCategory": {
+      "Caption": "Delete"
+    },
+    "nEditCategory": {
+      "Caption": "Edit"
+    },
+    "nAddSnippet": {
+      "Caption": "Add"
+    },
+    "nEditSnippet": {
+      "Caption": "Edit"
+    },
+    "nDuplicateSnippet": {
+      "Caption": "Duplicate"
+    },
+    "nDeleteSnippet": {
+      "Caption": "Delete"
+    },
+    "nAddTag": {
+      "Caption": "Add"
+    },
+    "nEditTag": {
+      "Caption": "Edit"
+    },
+    "nDeleteTag": {
+      "Caption": "Delete"
+    },
+    "puCatAdd": {
+      "Caption": "Add"
+    },
+    "puCatEdit": {
+      "Caption": "Edit"
+    },
+    "puCatDelete": {
+      "Caption": "Delete"
+    },
+    "puCatWorkspaces": {
+      "Caption": "Manage workspaces…"
+    },
+    "puCatCollapseAll": {
+      "Caption": "Collapse all"
+    },
+    "puCatExpandAll": {
+      "Caption": "Expand all"
+    },
+    "puRunSnippet": {
+      "Caption": "Run"
+    },
+    "puDryRunSnippet": {
+      "Caption": "Dry run"
+    },
+    "puAddSnippet": {
+      "Caption": "Add"
+    },
+    "puEditSnippet": {
+      "Caption": "Edit"
+    },
+    "puSnippetHistory": {
+      "Caption": "Version history…"
+    },
+    "puDuplicateSnippet": {
+      "Caption": "Duplicate"
+    },
+    "puDeleteSnippet": {
+      "Caption": "Delete"
+    },
+    "lvSnippets": {
+      "Columns": {
+        "1": "Title",
+        "2": "Last run"
+      }
+    },
+    "puToggleFavorite": {
+      "Caption": "Add to favorites"
+    },
+    "puFavMove": {
+      "Caption": "Move in favorites"
+    },
+    "puFavMoveTop": {
+      "Caption": "To top"
+    },
+    "puFavMoveUp": {
+      "Caption": "Up"
+    },
+    "puFavMoveDown": {
+      "Caption": "Down"
+    },
+    "puFavMoveEnd": {
+      "Caption": "To end"
+    },
+    "puAddTag": {
+      "Caption": "Add"
+    },
+    "puEditTag": {
+      "Caption": "Edit"
+    },
+    "puDeleteTag": {
+      "Caption": "Delete"
+    },
+    "puClearTagFilter": {
+      "Caption": "Reset filter"
+    },
+    "nTerminals": {
+      "Caption": "Terminals"
+    },
+    "nTools": {
+      "Caption": "Tools"
+    },
+    "nPasswordGenerator": {
+      "Caption": "Password Generator"
+    },
+    "nSearch": {
+      "Caption": "Database Search"
+    },
+    "nCronGenerator": {
+      "Caption": "Cron Generator"
+    },
+    "nEpochConverter": {
+      "Caption": "Epoch converter"
+    },
+    "nNetworkCalculator": {
+      "Caption": "IP/CIDR Calculator"
+    },
+    "nChmodCalculator": {
+      "Caption": "Chmod Calculator"
+    },
+    "nArchiveBuilder": {
+      "Caption": "Archive Commands"
+    },
+    "nTerminalManager": {
+      "Caption": "Terminal Manager"
+    },
+    "nSecurityReport": {
+      "Caption": "Security Scanner Report"
+    },
+    "nSyncDatabase": {
+      "Caption": "Synchronize Database"
+    }
+  },
+  "TagEditorForm": {
+    "Caption": "Tag Editor",
+    "actAddTag": {
+      "Caption": "Add tag"
+    },
+    "actDeleteTag": {
+      "Caption": "Delete tag"
+    },
+    "actEditTag": {
+      "Caption": "Edit tag"
+    },
+    "nActions": {
+      "Caption": "Actions"
+    },
+    "nTagAdd": {
+      "Caption": "Add"
+    },
+    "nTagDelete": {
+      "Caption": "Delete"
+    },
+    "nTagRename": {
+      "Caption": "Rename"
+    },
+    "bOK": {
+      "Caption": "OK"
+    },
+    "bCancel": {
+      "Caption": "Cancel"
+    }
+  },
+  "HistoryForm": {
+    "Caption": "Version History",
+    "bRestore": {
+      "Caption": "Restore"
+    },
+    "bClose": {
+      "Caption": "Close"
+    },
+    "lvVersions": {
+      "Columns": {
+        "0": "Date",
+        "1": "Title",
+        "2": "Chars"
+      }
+    }
+  },
+  "SnippetDiffForm": {
+    "Caption": "Snippet changes",
+    "bClose": {
+      "Caption": "Close"
+    }
+  },
+  "SecurityReportForm": {
+    "Caption": "Security Scanner Report",
+    "lvFindings": {
+      "Columns": {
+        "1": "Snippet",
+        "2": "Category",
+        "3": "Reason",
+        "4": "Trusted"
+      }
+    },
+    "bClose": {
+      "Caption": "Close"
+    }
+  },
+  "InputForm": {
+    "Caption": "Input Value",
+    "bOK": {
+      "Caption": "OK"
+    },
+    "bCancel": {
+      "Caption": "Cancel"
+    },
+    "lbPrompt": {
+      "Caption": "Enter value:"
+    }
+  },
+  "ParamsForm": {
+    "Caption": "Snippet Parameters",
+    "bOK": {
+      "Caption": "OK"
+    },
+    "bCancel": {
+      "Caption": "Cancel"
+    },
+    "lbPrompt": {
+      "Caption": "Parameters:"
+    }
+  },
+  "DryRunForm": {
+    "Caption": "Dry Run",
+    "bRun": {
+      "Caption": "Run"
+    },
+    "bClose": {
+      "Caption": "Close"
+    }
+  },
+  "MacroCardEditorForm": {
+    "Caption": "Macro editor",
+    "lbStepType": {
+      "Caption": "Macro type:"
+    },
+    "bOK": {
+      "Caption": "OK"
+    },
+    "bCancel": {
+      "Caption": "Cancel"
+    }
+  },
+  "AddEditSnippetForm": {
+    "Caption": "SSH Snippets Keeper - Add/Edit Snippet",
+    "actShowAIForm": {
+      "Caption": "Show AI Assistant"
+    },
+    "actConfigureAI": {
+      "Caption": "Configure AI Assistant"
+    },
+    "ebTitle": {
+      "Text": ""
+    },
+    "mContent": {
+      "TextHint": "Enter snippet code here..."
+    },
+    "mComment": {
+      "TextHint": "Enter snippet comment here..."
+    },
+    "chkAutoLanguage": {
+      "Caption": "Auto",
+      "Hint": "Detect language from content on substantial edits"
+    },
+    "bForceDetect": {
+      "Hint": "Detect the language now, ignoring the autodetect lock and edit thresholds"
+    },
+    "bOK": {
+      "Caption": "OK"
+    },
+    "bCancel": {
+      "Caption": "Cancel"
+    },
+    "bHistory": {
+      "Caption": "History…"
+    },
+    "bDiff": {
+      "Caption": "Diff",
+      "Hint": "Show text changes against the saved version"
+    },
+    "bMacroInsert": {
+      "Caption": "Insert...",
+      "Hint": "Insert macro at caret position"
+    },
+    "bMacroHelp": {
+      "Caption": "?",
+      "Hint": "Macro documentation: how it works"
+    },
+    "nAI": {
+      "Caption": "AI Assistant"
+    },
+    "nShowAIPrompt": {
+      "Caption": "Call AI"
+    },
+    "nAISettings": {
+      "Caption": "Configure AI"
+    },
+    "lbCaption": {
+      "Caption": "Snippet name"
+    },
+    "lbAllTags": {
+      "Caption": "Available tags"
+    },
+    "lbSelectedTags": {
+      "Caption": "Selected tags"
+    },
+    "cbIgnoreSecurityChecks": {
+      "Caption": "Trust this snippet (disable security check)"
+    },
+    "tsSnippet": {
+      "Caption": "Snippet content"
+    },
+    "tsMacros": {
+      "Caption": "Macros"
+    },
+    "mInfo": {
+      "Text": "Current test macros:\n{SLEEP N} - Delay execution by N milliseconds.\n{ENTER} - Send ENTER key press.\n{SENDKEY X} - Send character X, a key name (ENTER, TAB, F1-F12) or a VK code to the target window.\n{INPUT[TYPE:DEFAULT_VALUE] NAME} - Show a text input dialog and replace macro with input. Examples:\n  {INPUT Name}\n  {INPUT[STRING:test string] Name}\n  {INPUT[NUMBER:100] Size}\n  {INPUT[FLOAT:3.14] Size}\n  {INPUT[Hex:FF] Color}\n  {INPUT[Password] Password}\n  {INPUT[DATE:2026-01-31] Date}\n  {INPUT[TIME:12:00] Time}\n  {INPUT[DATETIME:2026-01-31 12:00] Date and time}\n  {INPUT[SELECT:prod|stage|dev] Env} - Pick one value from the list (options separated by |).\n  {INPUT[Confirm] Text for user} - Pause execution and wait for user confirmation.\n{DATETIME:FORMAT} - Current date and time (FormatDateTime mask), default yyyy-MM-dd HH:mm:ss.\n{UUID} - New UUID (lowercase).\n{RANDOM:N} - Random string of N letters and digits (default 16).\n{COUNTER} - Snippet run number (1, 2, 3...). Params (semicolon-separated): start=NUM (initial value), step=NUM (increment), pad=N (zero-pad to N digits), current (reuse this run's number without incrementing), volatile (do not persist across runs). Example: {COUNTER:start=100;step=2;pad=3} yields 100, 102, 104...\n{ENV:NAME} - Value of an environment variable.\n{CLIPBOARD} - Clipboard text at run time.\n{SENDKEY CTRL+K} - Key combinations: CTRL, ALT, SHIFT + key (e.g., CTRL+C, ALT+F4, CTRL+SHIFT+T).\n{CLEAR_LINE} - Clear the current terminal line: Ctrl+C, pause, Ctrl+U.\n{KEYDELAY N} - Delay between characters (ms) for the following text.\n\n..."
+    }
+  },
+  "AISettingsForm": {
+    "Caption": "AI Settings",
+    "actSave": {
+      "Caption": "Save settings"
+    },
+    "actCreateProvider": {
+      "Caption": "Create provider"
+    },
+    "actDeleteProvider": {
+      "Caption": "Delete provider"
+    },
+    "actEditProvider": {
+      "Caption": "Edit provider"
+    },
+    "actCreateModel": {
+      "Caption": "Create model"
+    },
+    "actDeleteModel": {
+      "Caption": "Delete model"
+    },
+    "actEditModel": {
+      "Caption": "Edit model"
+    },
+    "nFile": {
+      "Caption": "File"
+    },
+    "nSave": {
+      "Caption": "Save"
+    },
+    "nProvider": {
+      "Caption": "Provider"
+    },
+    "nProviderCreate": {
+      "Caption": "Create"
+    },
+    "nProviderDelete": {
+      "Caption": "Delete"
+    },
+    "nProviderEdit": {
+      "Caption": "Edit"
+    },
+    "nModel": {
+      "Caption": "Model"
+    },
+    "nModelCreate": {
+      "Caption": "Create"
+    },
+    "nModelDelete": {
+      "Caption": "Delete"
+    },
+    "nModelEdit": {
+      "Caption": "Edit"
+    },
+    "lbHubName": {
+      "Text": "Hub Name"
+    },
+    "lbHubURL": {
+      "Text": "Hub URL"
+    },
+    "lbHubComment": {
+      "Text": "Comment"
+    },
+    "lbModelName": {
+      "Text": "Model Name"
+    },
+    "lbAPIKey": {
+      "Text": "API Key"
+    },
+    "lbFolderID": {
+      "Text": "Folder ID"
+    },
+    "lbModelPath": {
+      "Text": "Model Path"
+    },
+    "lbSystemPrompt": {
+      "Text": "System Prompt"
+    },
+    "lbAgentID": {
+      "Text": "Agent ID"
+    },
+    "lbTemperature": {
+      "Text": "Temperature"
+    },
+    "lbMaxTokens": {
+      "Text": "Max Tokens"
+    }
+  },
+  "ChooseTerminalWindow": {
+    "Caption": "Choose Terminal",
+    "sbManager": {
+      "Caption": "Manager"
+    }
+  },
+  "TerminalManagerForm": {
+    "Caption": "Terminal Manager",
+    "ebFilter": {
+      "TextHint": "Filter by title or process..."
+    },
+    "bSelectAll": {
+      "Caption": "Select all"
+    },
+    "bClearHistory": {
+      "Caption": "Clear history"
+    },
+    "bApply": {
+      "Caption": "Apply"
+    },
+    "bCancel": {
+      "Caption": "Cancel"
+    },
+    "lvWindows": {
+      "Columns": {
+        "0": "Title",
+        "1": "Process",
+        "2": "Remembered"
+      }
+    }
+  },
+  "WorkspaceManagerForm": {
+    "Caption": "Workspace Management",
+    "actAddWorkspace": {
+      "Caption": "Add workspace"
+    },
+    "actDeleteWorkspace": {
+      "Caption": "Delete workspace"
+    },
+    "actEditWorkspace": {
+      "Caption": "Edit workspace"
+    },
+    "nWorkspaces": {
+      "Caption": "Workspaces"
+    },
+    "nWorkspaceAdd": {
+      "Caption": "Add"
+    },
+    "nWorkspaceDelete": {
+      "Caption": "Delete"
+    },
+    "nWorkspaceRename": {
+      "Caption": "Rename"
+    },
+    "bOK": {
+      "Caption": "OK"
+    },
+    "bCancel": {
+      "Caption": "Close"
+    },
+    "lvWorkspaces": {
+      "Columns": {
+        "0": "Workspace Name"
+      }
+    }
+  },
+  "PasswordGenForm": {
+    "Caption": "Password Generator",
+    "lbLength": {
+      "Caption": "Length"
+    },
+    "lbEntropy": {
+      "Caption": "Entropy"
+    },
+    "lbPresets": {
+      "Caption": "Presets"
+    },
+    "cbUnique": {
+      "Caption": "Unique Characters"
+    },
+    "bGenerate": {
+      "Caption": "Generate"
+    },
+    "tsHistory": {
+      "Caption": "History"
+    },
+    "tsCustomSettings": {
+      "Caption": "Custom"
+    },
+    "tsBulkMode": {
+      "Caption": "Bulk Generation"
+    },
+    "lbBulkCount": {
+      "Caption": "Count"
+    },
+    "bBulkGenerate": {
+      "Caption": "Generate"
+    },
+    "bExport": {
+      "Caption": "Export"
+    },
+    "nCopyToClipboard": {
+      "Caption": "Copy to Clipboard"
+    },
+    "nSaveToFile": {
+      "Caption": "Save to File"
+    },
+    "nCopyNormal": {
+      "Caption": "Copy Normal Password"
+    },
+    "nCopyBcrypt": {
+      "Caption": "Copy for .htpasswd (Bcrypt)"
+    },
+    "cbLowercase": {
+      "Caption": "Lowercase"
+    },
+    "cbUppercase": {
+      "Caption": "Uppercase"
+    },
+    "cbNumbers": {
+      "Caption": "Numbers"
+    },
+    "cbSymbols": {
+      "Caption": "Symbols"
+    },
+    "lbInclude": {
+      "Caption": "Include Characters"
+    },
+    "ldExclude": {
+      "Caption": "Exclude Characters"
+    },
+    "lvHistory": {
+      "Columns": {
+        "0": "Date",
+        "1": "Time",
+        "2": "Password",
+        "3": "Preset",
+        "4": "Entropy"
+      }
+    }
+  },
+  "QuickSearchForm": {
+    "ebQuickSearch": {
+      "TextHint": "Type something..."
+    },
+    "rbText": {
+      "Caption": "Simple Search"
+    },
+    "rbFTS": {
+      "Caption": "FTS5 Search"
+    },
+    "cbUser": {
+      "Hint": "Current workspace"
+    }
+  },
+  "CronGenForm": {
+    "Caption": "Cron Generator and Parser",
+    "lbTitle": {
+      "Caption": "Cron expression:"
+    },
+    "bCopy": {
+      "Caption": "Copy"
+    },
+    "tsMinutes": {
+      "Caption": "Minutes"
+    },
+    "tsHours": {
+      "Caption": "Hours"
+    },
+    "tsDaysOfMonth": {
+      "Caption": "Days of month"
+    },
+    "tsMonths": {
+      "Caption": "Months"
+    },
+    "tsDaysOfWeek": {
+      "Caption": "Days of week"
+    },
+    "rbMinEvery": {
+      "Caption": "Every minute (*)"
+    },
+    "rbMinStep": {
+      "Caption": "Step (every):"
+    },
+    "rbMinRange": {
+      "Caption": "Range from:"
+    },
+    "rbMinSpec": {
+      "Caption": "Specify exact values:"
+    },
+    "rbHourEvery": {
+      "Caption": "Every hour (*)"
+    },
+    "rbHourStep": {
+      "Caption": "Step (every):"
+    },
+    "rbHourRange": {
+      "Caption": "Range from:"
+    },
+    "rbHourSpec": {
+      "Caption": "Specify exact values:"
+    },
+    "rbDomEvery": {
+      "Caption": "Every day (*)"
+    },
+    "rbDomStep": {
+      "Caption": "Step (every):"
+    },
+    "rbDomRange": {
+      "Caption": "Range from:"
+    },
+    "rbDomSpec": {
+      "Caption": "Specify exact values:"
+    },
+    "rbMonEvery": {
+      "Caption": "Every month (*)"
+    },
+    "rbMonStep": {
+      "Caption": "Step (every):"
+    },
+    "rbMonRange": {
+      "Caption": "Range from:"
+    },
+    "rbMonSpec": {
+      "Caption": "Specify exact values:"
+    },
+    "rbDowEvery": {
+      "Caption": "Any day of week (*)"
+    },
+    "rbDowStep": {
+      "Caption": "Step (every):"
+    },
+    "rbDowRange": {
+      "Caption": "Range from:"
+    },
+    "rbDowSpec": {
+      "Caption": "Specify exact values:"
+    }
+  },
+  "EpochConverterForm": {
+    "Caption": "Epoch Converter",
+    "gbParse": {
+      "Caption": "Source text/log"
+    },
+    "lvParsed": {
+      "Columns": {
+        "0": "Timestamp",
+        "1": "Local time",
+        "2": "Relative"
+      }
+    },
+    "mEpoch": {
+      "Text": ""
+    },
+    "bNow": {
+      "Caption": "Now"
+    },
+    "ebISO": {
+      "Caption": ""
+    },
+    "ebLocal": {
+      "Caption": ""
+    },
+    "ebSourceTime": {
+      "Caption": ""
+    },
+    "ebUTC": {
+      "Caption": ""
+    },
+    "lbISO": {
+      "Caption": "ISO"
+    },
+    "lbDetectedFormat": {
+      "Caption": ""
+    },
+    "lbLocal": {
+      "Caption": "Local"
+    },
+    "lbRelative": {
+      "Caption": ""
+    },
+    "lbSourceTime": {
+      "Caption": "Source"
+    },
+    "lbUTC": {
+      "Caption": "UTC"
+    },
+    "nCut": {
+      "Caption": "Cut"
+    },
+    "nCopy": {
+      "Caption": "Local"
+    },
+    "nPaste": {
+      "Caption": "Paste"
+    },
+    "nSelectAll": {
+      "Caption": "Select All"
+    },
+    "nToggleBookmark": {
+      "Caption": "Toggle Bookmark"
+    },
+    "nBookmarks": {
+      "Caption": "Go to Bookmark"
+    }
+  },
+  "NetworkForm": {
+    "Caption": "IP/CIDR Calculator",
+    "gbTop": {
+      "Caption": "Input Data"
+    },
+    "cbIPInput": {
+      "TextHint": "Enter IP, subnet, or CIDR (e.g., 192.168.1.1/24)"
+    },
+    "tsInfo": {
+      "Caption": "Information"
+    },
+    "tsVLSM": {
+      "Caption": "Partitioning (VLSM)"
+    },
+    "lbVLSMMask": {
+      "Caption": "New mask:"
+    },
+    "lvVLSM": {
+      "Columns": {
+        "0": "#",
+        "1": "Subnet",
+        "2": "Hosts range",
+        "3": "Broadcast"
+      }
+    },
+    "ledNetworkAddress": {
+      "EditLabel.Caption": "Network Address"
+    },
+    "ledHostRange": {
+      "EditLabel.Caption": "Usable Host Range"
+    },
+    "ledBroadcastAddress": {
+      "EditLabel.Caption": "Broadcast"
+    },
+    "ledUsableHosts": {
+      "EditLabel.Caption": "Total Usable Hosts"
+    },
+    "ledNetmask": {
+      "EditLabel.Caption": "Netmask"
+    },
+    "ledWildcardMask": {
+      "EditLabel.Caption": "Wildcard Mask"
+    },
+    "ledNetworkType": {
+      "EditLabel.Caption": "Network Type"
+    },
+    "ledBinaryView": {
+      "EditLabel.Caption": "Binary View"
+    },
+    "bCopyAll": {
+      "Caption": "📄 Copy all"
+    },
+    "bCopyVLSM": {
+      "Caption": "📄 Copy"
+    },
+    "lbVLSMHostCount": {
+      "Caption": ""
+    }
+  },
+  "ChmodForm": {
+    "Caption": "chmod Calculator",
+    "cbUr": {
+      "Caption": "Read (r)"
+    },
+    "cbUw": {
+      "Caption": "Write (w)"
+    },
+    "cbUx": {
+      "Caption": "Execute (x)"
+    },
+    "cbGr": {
+      "Caption": "Read (r)"
+    },
+    "cbGw": {
+      "Caption": "Write (w)"
+    },
+    "cbGx": {
+      "Caption": "Execute (x)"
+    },
+    "cbOr": {
+      "Caption": "Read (r)"
+    },
+    "cbOw": {
+      "Caption": "Write (w)"
+    },
+    "cbOx": {
+      "Caption": "Execute (x)"
+    },
+    "cbSuid": {
+      "Caption": "SUID"
+    },
+    "cbSgid": {
+      "Caption": "SGID"
+    },
+    "cbSticky": {
+      "Caption": "Sticky"
+    },
+    "cbIsDir": {
+      "Caption": "Is Directory"
+    },
+    "cbRecursive": {
+      "Caption": "Recursive (-R)"
+    },
+    "cbSudo": {
+      "Caption": "sudo"
+    },
+    "cbSmartExecute": {
+      "Caption": "Smart +X for directories"
+    },
+    "cbSeparateMode": {
+      "Caption": "Separate files (644) and directories (755)"
+    },
+    "gbOwner": {
+      "Caption": "Owner (User)"
+    },
+    "gbGroup": {
+      "Caption": "Group"
+    },
+    "gbPublic": {
+      "Caption": "Public (Other)"
+    },
+    "gbSpecialBits": {
+      "Caption": "Special Bits"
+    },
+    "gbCommand": {
+      "Caption": "Command"
+    },
+    "ebOctal": {
+      "EditLabel.Caption": "Octal"
+    },
+    "ebSymbolic": {
+      "EditLabel.Caption": "Symbolic"
+    },
+    "lbUser": {
+      "Caption": "User"
+    },
+    "lbGroup": {
+      "Caption": "Group Name"
+    },
+    "ebCommand": {
+      "EditLabel.Caption": "Resulting Command"
+    },
+    "lbPresets": {
+      "Caption": "Presets"
+    },
+    "bSavePreset": {
+      "Caption": "💾"
+    },
+    "bDeletePreset": {
+      "Caption": "🗑"
+    },
+    "bCopyCommand": {
+      "Caption": "📋"
+    }
+  },
+  "ArchiveBuilderForm": {
+    "Caption": "Archive Commands",
+    "tsCreate": {
+      "Caption": "Create Archive"
+    },
+    "lbSourcePath": {
+      "Caption": "Source Directory"
+    },
+    "lbExclude": {
+      "Caption": "Exclude"
+    },
+    "lbPresets": {
+      "Caption": "Presets"
+    },
+    "ebCommand": {
+      "EditLabel.Caption": "Final Command"
+    },
+    "lbDestPath": {
+      "Caption": "Archive Path"
+    },
+    "lbFormat": {
+      "Caption": "Archive Format"
+    },
+    "lbPassword": {
+      "Caption": "Password (zip/7z only)"
+    },
+    "cbMaxCompression": {
+      "Caption": "Maximum Compression"
+    },
+    "cbRelativePath": {
+      "Caption": "Relative Paths"
+    },
+    "cbSplit": {
+      "Caption": "Split into Volumes (MB)"
+    },
+    "tsExtract": {
+      "Caption": "Extract from Archive"
+    },
+    "lbExtSourcePath": {
+      "Caption": "Archive Path"
+    },
+    "lbExtDestPath": {
+      "Caption": "Extract to (leave empty for current directory):"
+    },
+    "lbExtFormat": {
+      "Caption": "Utility"
+    },
+    "lbExtPassword": {
+      "Caption": "Password (zip/7z only)"
+    },
+    "cbListOnly": {
+      "Caption": "List contents only (Dry Run/List)"
+    }
+  },
+  "SettingsForm": {
+    "Caption": "Settings",
+    "tsHotkeys": {
+      "Caption": "Hotkeys"
+    },
+    "tsApplications": {
+      "Caption": "Applications"
+    },
+    "lvApplications": {
+      "Columns": {
+        "0": "Process"
+      }
+    },
+    "bAppAdd": {
+      "Caption": "Add"
+    },
+    "bAppRename": {
+      "Caption": "Rename"
+    },
+    "bAppDelete": {
+      "Caption": "Delete"
+    },
+    "bAppPick": {
+      "Caption": "From list..."
+    },
+    "tsCounters": {
+      "Caption": "Counters"
+    },
+    "lvCounters": {
+      "Columns": {
+        "0": "Snippet ID",
+        "1": "Current value"
+      }
+    },
+    "bCounterReset": {
+      "Caption": "Reset selected"
+    },
+    "bCounterResetAll": {
+      "Caption": "Reset all"
+    },
+    "tsLocalSync": {
+      "Caption": "Markdown Sync"
+    },
+    "gbGlobalHotkeys": {
+      "Caption": "Global Hotkeys"
+    },
+    "chkEnableQuickSearch": {
+      "Caption": "Global call of \"Quick Search Panel\""
+    },
+    "chkEnablePassGen": {
+      "Caption": "Global call of \"Password Generator\""
+    },
+    "chkEnableRepeatLast": {
+      "Caption": "Repeat last snippet (uses most recent run)"
+    },
+    "chkEnableFavSlots": {
+      "Caption": "Favorite slots 1..0 (only modifiers matter)"
+    },
+    "gbAppHotkeys": {
+      "Caption": "Local Hotkeys"
+    },
+    "ebSearchHotkeys": {
+      "TextHint": "Type something to search..."
+    },
+    "lvHotkeys": {
+      "Columns": {
+        "0": "Category",
+        "1": "Action",
+        "2": "Hotkey"
+      }
+    },
+    "lbHotkey": {
+      "Caption": "Hotkey:"
+    },
+    "lbAction": {
+      "Caption": "Action:"
+    },
+    "lbActionID": {
+      "Caption": "Action ID:"
+    },
+    "bApplyShortcut": {
+      "Caption": "✔"
+    },
+    "bResetShortcut": {
+      "Caption": "↺"
+    },
+    "bResetAll": {
+      "Caption": "Reset all"
+    },
+    "bSave": {
+      "Caption": "Save"
+    },
+    "bCancel": {
+      "Caption": "Cancel"
+    },
+    "ledMarkdownPath": {
+      "EditLabel.Caption": "Markdown Sync Path"
+    },
+    "cbSyncOnStart": {
+      "Caption": "Sync on database open"
+    },
+    "cbSyncOnExit": {
+      "Caption": "Sync on database close"
+    },
+    "tsGeneral": {
+      "Caption": "General"
+    },
+    "cbTagsMatchAll": {
+      "Caption": "Show only snippets containing all selected tags"
+    },
+    "lbVCLStyle": {
+      "Caption": "Interface style:"
+    }
+  },
+  "AppPickerForm": {
+    "Caption": "Add applications",
+    "ebFilter": {
+      "TextHint": "Filter by name..."
+    },
+    "tsRunning": {
+      "Caption": "Running now"
+    },
+    "tsRecent": {
+      "Caption": "Recent"
+    },
+    "lvRunning": {
+      "Columns": {
+        "0": "Application",
+        "1": "Process"
+      }
+    },
+    "lvRecent": {
+      "Columns": {
+        "0": "Application",
+        "1": "Last run"
+      }
+    },
+    "bAdd": {
+      "Caption": "Add selected"
+    },
+    "bCancel": {
+      "Caption": "Cancel"
+    }
+  },
+  "CustomHelpForm": {
+    "Caption": "Reference information",
+    "bCopyText": {
+      "Caption": "Copy text",
+      "Hint": "Copy help text to the clipboard"
+    }
+  },
+  "Messages": {
+    "Help": {
+      "MainForm": {
+        "tvCategories": {
+          "Title": "Category List",
+          "Main": "Tree list of categories in the current workspace. If \"All Workspaces\" is selected, workspaces are displayed as root categories, but snippets cannot be added to them.<br><blockquote><b>Virtual categories</b> \"Recent\" and \"Frequently used\": snippets cannot be added manually to these categories, only modified or deleted.</blockquote><br><blockquote><b>Chains</b> - a named sequence of snippets executed one by one. Create: right-click the \"Chains\" node and choose \"New chain\", or right-click a snippet and choose \"Create chain from snippet\". Run by double-clicking the chain or via its context menu; a progress panel with a \"Stop\" button (Esc works too) appears during execution. Edit and delete via the chain's context menu.</blockquote>",
+          "Expanded": "<code>ALT+A</code> - Add category<br><code>ALT+E</code> - Edit category<br><code>ALT+D</code> - Delete category"
+        },
+        "lvSnippets": {
+          "Title": "Snippet List",
+          "Main": "Flat list of snippets in the selected workspace. Multi-selection is supported (CTRL+click / SHIFT+click): the context menu offers bulk actions - Run in order, Export, Add tag, Move to category.",
+          "Expanded": "<code>CTRL+ALT+A</code> - Add snippet<br><code>CTRL+ALT+E</code> - Edit snippet<br><code>CTRL+ALT+D</code> - Delete snippet"
+        },
+        "lvTags": {
+          "Title": "Tag List",
+          "Main": "Displays a complete list of all tags in the database. For convenience, tags already assigned to the selected snippet are automatically pinned at the top of the list and highlighted in green.",
+          "Expanded": "💡 <b>Navigation and Hotkeys:</b><br><b>Click a tag</b> — filter snippets by the selected tag.<br><b>CTRL+click / SHIFT+click</b> — select several tags: snippets are shown for all checked ones.<br>The match mode — all tags or any of them — is switched on the General tab in Settings.<br><b>Click on empty space or ESC</b> — reset the filter.<br><br><code>CTRL+SHIFT+A</code> — add a new tag.<br><code>CTRL+SHIFT+E</code> — edit tag name.<br><code>CTRL+SHIFT+D</code> — delete the selected tag from the database."
+        },
+        "ebSearch": {
+          "Title": "Search Bar",
+          "Main": "Search covers title, code, comments, and tags; the engine also matches parts of words (query <code>List</code> finds <code>TList</code>), results are sorted by relevance.<br><blockquote><b>Query language:</b><ul><li><code>word</code> - full-text search; several words in a row are searched as a phrase;</li><li><code>tag:word</code> - filter by tag name; multiple tag: - all must match;</li><li><code>cat:name</code> - the snippet's direct category; multiple cat: - any of them;</li><li><code>title:word</code> - substring in the title;</li><li><code>comment:word</code> - substring in the comment;</li><li><code>fav</code> - favorites only;</li><li><code>-word</code> - exclude snippets containing the word in title or code.</li></ul>Tokens combine: <code>fav tag:docker title:logs -prod</code>. Search is case-insensitive.</blockquote>",
+          "Expanded": "Type a query while the search bar is focused, and it will be applied automatically.<br><br>Tag Management (Global):<br><code>CTRL+SHIFT+A</code> - Add tag<br><code>CTRL+SHIFT+E</code> - Edit tag<br><code>CTRL+SHIFT+D</code> - Delete tag"
+        },
+        "FrequentlyUsed": "Frequently Used",
+        "Recent": "Recent",
+        "Favorites": "Favorites",
+        "Chains": "Chains"
+      },
+      "ChainEditorForm": {
+        "lvSteps": {
+          "Title": "Chain steps",
+          "Main": "The chain's snippets run top to bottom, each typed into the selected target terminal window. Reorder by dragging rows or with the Up/Down buttons. The 'Remove step' button deletes the selected step from the chain. The field below the list sets the pause for the selected step.",
+          "Expanded": "Hotkeys (while the steps list has focus):<br><code>CTRL+↑ / CTRL+↓</code> - move the selected step;<br><code>DEL</code> - remove the selected step.<br>Adding: double-click a snippet in the library on the right, or use the 'Add step' button."
+        },
+        "edPause": {
+          "Title": "Pause after step",
+          "Main": "Delay in seconds after the selected step finishes, before the next one starts. 0 - the next step starts immediately after the previous one finishes typing. The value is stored in milliseconds in the database.",
+          "Expanded": "Applied when the field loses focus and when the chain is saved (OK button)."
+        },
+        "lvLibrary": {
+          "Title": "Snippet library",
+          "Main": "All snippets from all workspaces; search filters by title substring. Double-clicking a snippet or the 'Add step' button appends it as a step to the end of the chain.",
+          "Expanded": "The 'Workspace' column shows the snippet's workspace - a chain can combine steps from different workspaces."
+        }
+      },
+      "SequenceDialog": {
+        "lvOrder": {
+          "Title": "Execution order",
+          "Main": "Snippets are typed top to bottom into the chosen target window. Change the order with buttons or CTRL+Up/CTRL+Down, DEL removes a snippet from the sequence. The Run button (or ENTER) starts typing.",
+          "Expanded": ""
+        }
+      },
+      "TagSelectDialog": {
+        "edSearch": {
+          "Title": "Tag search",
+          "Main": "Filters the list of existing tags by substring. If a tag with the entered name does not exist, it will be created after clicking OK and added to all selected snippets.",
+          "Expanded": "<code>ENTER</code> - confirm the choice."
+        },
+        "lvTags": {
+          "Title": "Existing tags",
+          "Main": "All database tags. Select a tag and click OK (or double-click the row) to add it to all selected snippets at once. Tags already attached to a snippet are not duplicated.",
+          "Expanded": ""
+        }
+      },
+      "CategorySelectDialog": {
+        "tvCategories": {
+          "Title": "Workspace categories",
+          "Main": "Tree of all workspaces and their categories; the first selected snippet's workspace is expanded. Select the target category and click OK (or double-click). Snippets are moved into it; when the workspace changes, the snippet's workspace changes too and its favorite is transferred.",
+          "Expanded": ""
+        }
+      },
+      "AddEditSnippet": {
+        "mContent": {
+          "Title": "Snippet Text",
+          "Main": "Main input field for snippet code. Supports syntax highlighting and auto-completion for Linux Shell/Bash. <blockquote><ul><li><b>Macros:</b> The built-in engine allows prompting the user for arguments, inserting pauses, awaiting confirmation, and more. Full syntax is available on the «Macros» tab.</li><li><b>Execution (Line breaks):</b> Each new line is interpreted by the terminal as an <code>ENTER</code> key press (sending a command). Keep this in mind when writing multi-line scripts.</li><li><b>AI Assistant:</b> Built-in integration with Yandex AI Studio for code generation and refactoring. It is recommended to set up and use «Agents» — they return concise, ready-to-use code without unnecessary reasoning. You can configure AI via the main menu.</li><li><b>Data Protection:</b> Snippets are automatically checked for sensitive information (passwords, API keys, SSH tokens, DB connection strings). If threats are detected, saving will be blocked until you explicitly check the «Ignore checks» checkbox.</li></ul></blockquote>",
+          "Expanded": "<code>CTRL+I</code> - Open AI Assistant prompt window.<br><code>CTRL+ALT+P</code> - Open AI Settings window."
+        },
+        "mComment": {
+          "Title": "Snippet Comment",
+          "Main": "Field for notes and explanations about the code. Describe what this snippet is for, what parameters it accepts, or what to pay special attention to.<br><br>💡 <b>Tip:</b> Comment text is actively indexed by the internal search, so a detailed description will help you find the necessary script much faster in the future.",
+          "Expanded": ""
+        },
+        "lvAllTags": {
+          "Title": "Tag List",
+          "Main": "Select tags for the snippet. You can move them by double-clicking or simply dragging and dropping (Drag & Drop) between the lists. Multiple tag selection is supported using Ctrl or Shift.",
+          "Expanded": ""
+        }
+      },
+      "PasswordGenForm": {
+        "lvHistory": {
+          "Title": "Generation History",
+          "Main": "All passwords created during the current session are saved here. <blockquote><ul><li><b>Preview:</b> A single click will return the selected password to the main input field.</li><li><b>Quick Apply:</b> A double click will apply the password and immediately close the window. If the generator was called via a global hotkey, the password will be <b>automatically typed</b> into your active window (e.g., terminal). Otherwise, it will simply be copied to the clipboard.</li></ul></blockquote>",
+          "Expanded": "💡 <b>Generator Hotkeys:</b><br><code>CTRL+SHIFT+G</code> — launch from the main program window.<br><code>CTRL+ALT+G</code> — global launch from anywhere in the system on top of other windows."
+        }
+      },
+      "CronGenForm": {
+        "CheckListBox": {
+          "Title": "Exact values (Smart selection)",
+          "Main": "Click on the desired values to select them. You can click on the checkbox or directly on the text for convenience.",
+          "Expanded": "<b>Advanced selection:</b><ul><li><b>Brush (Drag‑to‑Check):</b> Click on a value, hold down the left mouse button and drag the cursor over adjacent items to quickly select (or deselect) an entire group.</li><li><b>Keyboard shortcuts (hold while clicking):</b><ul><li><code>Ctrl + Click</code> — forcibly <b>check</b> items.</li><li><code>Shift + Click</code> — forcibly <b>uncheck</b> items.</li><li><code>Alt + Click</code> — <b>toggle</b> (invert) the current selection state of an item.</li></ul></li></ul>"
+        }
+      },
+      "EpochConverterForm": {
+        "mEpoch": {
+          "Title": "Log and Text Analyzer",
+          "Main": "Paste any text, JSON, or system log here. The program will automatically find all timestamps (Unix Epoch) and standard dates.",
+          "Expanded": "💡 <b>Smart recognition of Unix Time (seconds, milliseconds, and microseconds) is supported</b>, as well as dates in ISO 8601, Apache/Nginx, Syslog, and local time formats.<br><br>All found matches are highlighted: light blue markers indicate background timestamps, bright yellow marks the active timestamp selected in the list.<br><br><b>Bookmark system for navigation:</b><ul><li><code>Ctrl+B</code> (or context menu item) — create or delete a bookmark on the current line.</li><li><code>CTRL+SHIFT+0..9</code> — hotkeys to set numbered bookmarks.</li><li><code>Alt+0..9</code> — instantly jump to the corresponding bookmark.</li></ul>Right-click brings up a context menu with a 'Go to Bookmark' submenu, showing a dynamic list of all active bookmarks with line numbers and text previews."
+        },
+        "lvParsed": {
+          "Title": "List of Found Dates",
+          "Main": "Chronological list of all timestamps extracted from your text, with instant conversion to local time.",
+          "Expanded": "The 'Relative' column displays live time (e.g., '3 hours ago' or 'in 5 min'), which updates every second.<br>Clicking any row in the list instantly scrolls the text (log) to the corresponding line, highlights it with a yellow marker, and synchronizes the calendar for further work."
+        }
+      },
+      "NetworkForm": {
+        "cbIPInput": {
+          "Title": "IP Address & Mask Input",
+          "Main": "Input field for IPv4 address and subnet parameters.",
+          "Expanded": "Supported input formats:<br>• <code>192.168.1.50/24</code> (CIDR notation)<br>• <code>192.168.1.50 255.255.255.0</code> (IP and mask separated by space)<br>• <code>192.168.1.50</code> (mask is taken from the spin control on the right)<br><br>If an invalid address is entered, the text turns red."
+        },
+        "seMask": {
+          "Title": "Subnet Prefix (CIDR)",
+          "Main": "Subnet mask bit length (from /0 to /32).",
+          "Expanded": "Defines the number of fixed network bits.<br><br>Common prefix examples:<br>• <code>/24</code> — 254 hosts (standard local network)<br>• <code>/30</code> — 2 hosts (Point-to-Point router link)<br>• <code>/32</code> — 1 host (single IP address)"
+        },
+        "ledNetworkAddress": {
+          "Title": "Network Address",
+          "Main": "The first and base address of the subnet, acting as its identifier.",
+          "Expanded": "This address cannot be assigned to a physical device or server. All host bits are set to zero."
+        },
+        "ledHostRange": {
+          "Title": "Usable Host Range",
+          "Main": "The range of IP addresses that can be assigned to real devices.",
+          "Expanded": "Includes all addresses from the first host (<code>Network + 1</code>) to the last host (<code>Broadcast - 1</code>)."
+        },
+        "ledBroadcastAddress": {
+          "Title": "Broadcast Address",
+          "Main": "A special address used to send packets to all devices in the subnet.",
+          "Expanded": "Packets sent to this address are received by all nodes in the subnet. All host bits are set to one."
+        },
+        "ledUsableHosts": {
+          "Title": "Total Usable Hosts",
+          "Main": "Number of IP addresses in the subnet available for allocation to hosts.",
+          "Expanded": "Calculated as: <code>(2 ^ (32 - N)) - 2</code>, where N is the prefix length. Two addresses are reserved for Network and Broadcast.<br><br>Exception: <code>/31</code> subnets provide 2 usable hosts (RFC 3021)."
+        },
+        "ledNetmask": {
+          "Title": "Subnet Mask (Netmask)",
+          "Main": "Subnet mask in traditional dotted-decimal format.",
+          "Expanded": "Used by network adapters to separate the network portion of the IP address from the host portion (e.g., <code>255.255.255.0</code> for /24)."
+        },
+        "ledWildcardMask": {
+          "Title": "Wildcard Mask",
+          "Main": "The inverted subnet mask.",
+          "Expanded": "Calculated by bitwise inversion of the subnet mask (<code>255.255.255.255 - Netmask</code>).<br><br>Widely used in firewall rules, Access Control Lists (ACLs) on Cisco, MikroTik devices, and OSPF configurations."
+        },
+        "ledNetworkType": {
+          "Title": "Network Type",
+          "Main": "IP address classification according to RFC standards.",
+          "Expanded": "Possible values:<br>• <b>Private (RFC 1918)</b> — isolated local IPs (10.x, 172.16.x, 192.168.x)<br>• <b>Public IP</b> — globally routable Internet addresses<br>• <b>Loopback</b> — local host loopback interface (127.0.0.1)<br>• <b>Link-Local (APIPA)</b> — auto-assigned IPs when DHCP is unavailable (169.254.x)"
+        },
+        "ledBinaryView": {
+          "Title": "Binary View",
+          "Main": "32-bit binary representation of the IP address.",
+          "Expanded": "The <code>|</code> delimiter visually separates the network bit portion from the host portion."
+        },
+        "lvVLSM": {
+          "Title": "Subnet Table (VLSM)",
+          "Main": "This displays the list of subnets obtained after splitting the original network using the new mask.",
+          "Expanded": "The table contains the following data for each generated subnet:<br>• Subnet: Network address and its prefix (e.g., 192.168.1.0/26).<br>• Host Range: Available IP addresses for device assignment (excluding network address and broadcast).<br>• Broadcast: Broadcast address of the subnet.<br>• Hosts: Number of usable (available) addresses.<br><br>Note: To prevent program freezes and memory overflow, a limit of 4096 subnets displayed at a time is enforced."
+        }
+      },
+      "ChmodForm": {
+        "gbCommand": {
+          "Title": "Permission Calculator (Chmod / Chown)",
+          "Main": "Visual constructor for safe and fast generation of Linux permission configuration commands.",
+          "Expanded": "Matrix of permissions and special bits:<br>• R (Read), W (Write), X (Execute / Enter directory).<br>• SUID / SGID: Run as owner / Inherit directory group.<br>• Sticky Bit: Prevents deletion of others' files in shared folders (e.g., /tmp).<br>Smart modifiers:<br>• Smart X (+X): Safe recursion. Grants execute (enter) permissions only to directories, without making regular text files executable.<br>• Separate mode: Generates a `find` command chain for bulk web server permissions (directories — 755, files — 644).<br>• Recursive (-R): Applies the command to all nested items.<br>Formats and history:<br>• The \"Octal\" (0755) and \"Symbolic\" (drwxr-xr-x) fields synchronize with the checkboxes. Entering `d` as the first character automatically marks the target as a directory.<br>• Usernames, groups, and paths are automatically remembered (saved to history) when the \"Copy\" button is pressed.<br>• Frequent settings (e.g., for SSH keys) can be saved in \"Presets\"."
+        }
+      },
+      "QuickSearchForm": {
+        "Title": "Quick Search",
+        "Main": "Floating quick search panel for snippets. Opens with the global <code>ALT+Q</code> hotkey. Start typing — the result list updates automatically. With an empty query, favorite snippets are shown (the first ten are hot slots for quick launching). Drag the panel edges to resize; <code>CTRL</code>+left mouse button moves the whole window.",
+        "Expanded": "<b>Search modes</b><br>• «Text search» — substring search across snippets.<br>• «FTS5 search» — full-text search supporting <code>AND</code>, <code>OR</code>, <code>NOT</code> operators, quotes and <code>*</code> prefixes.<br>• Queries shorter than three characters are not executed.<br>• The drop-down list on the right limits the search to a single workspace.<br><br><b>Keys</b><br><code>ENTER</code> — run the selected snippet<br><code>↑</code> / <code>↓</code> — move focus from the search box to the results list<br><code>ESC</code> — clear the query; press again to close the panel<br><code>1</code>…<code>0</code> — launch a favorite by number (with an empty query)<br><code>CTRL+ALT+↑</code> / <code>↓</code> — adjust window opacity (<code>SHIFT</code> — larger step)<br><br>Double-click a row to run the snippet. Hover a row to preview its content."
+      },
+      "TerminalManager": {
+        "lvWindows": {
+          "Title": "Terminal Manager",
+          "Main": "The list of all open windows of applications from the allowed list (configured in \"Settings → Applications\"). A checkmark means the window is remembered and can become the auto-typing target for a snippet. Unchecking and pressing \"Apply\" forgets the window; the next time you activate it, it will be remembered again. The window opens from the \"File\" menu (<code>ALT+T</code>) or via the \"Manager\" button in the terminal chooser dialog.",
+          "Expanded": "<b>How to use</b><br>• Checked — the window stays in history, unchecked — the window is removed from history. The state is applied by the \"Apply\" button (<code>ENTER</code>); \"Cancel\" (<code>ESC</code>) changes nothing.<br>• \"Select all\" checks every row, \"Clear history\" immediately forgets all windows (including those not visible in the list).<br>• Double-clicking a row toggles its checkmark.<br>• The filter matches by title and process name; only rows remaining in the list are affected.<br>• If a window was closed while the dialog was open, \"Apply\" safely skips it.<br><br><b>History</b> keeps the last 50 windows; only windows of allowed applications are added at the moment of their activation."
+        }
+      }
+    },
+    "Actions": {
+      "MainForm": {
+        "Data": {
+          "Caption": "Data Management",
+          "AddSnippet": "Add New Snippet",
+          "DeleteSnippet": "Delete Snippet",
+          "EditSnippet": "Edit Snippet",
+          "AddCategory": "Create Category",
+          "DeleteCategory": "Delete Category",
+          "EditCategory": "Rename Category",
+          "AddTag": "Add Tag",
+          "DeleteTag": "Delete Tag",
+          "EditTag": "Rename Tag"
+        },
+        "Database": {
+          "Caption": "Database",
+          "CreateDatabase": "Create Database",
+          "OpenDatabase": "Open Database",
+          "CloseDatabase": "Close Database",
+          "SyncDatabase": "Sync Database"
+        },
+        "File": {
+          "Caption": "File",
+          "TerminalManager": "Terminal Manager"
+        },
+        "Tools": {
+          "Caption": "DevOps Utilities",
+          "Search": "Full-text Search",
+          "PasswordGenerator": "Password Generator",
+          "CronGenerator": "Cron Builder",
+          "EpochConverter": "Unix Epoch Converter",
+          "NetworkCalculator": "IP/CIDR Calculator",
+          "ChmodCalculator": "Chmod Calculator",
+          "ArchiveBuilder": "Archive Builder (tar/zip)"
+        },
+        "Other": {
+          "Caption": "Other",
+          "Settings": "Program Settings"
+        },
+        "Favorites": {
+          "Caption": "Favorites",
+          "Toggle": "Add to favorites",
+          "ToggleAdd": "Add to favorites",
+          "ToggleRemove": "Remove from favorites",
+          "MoveTop": "To top",
+          "MoveUp": "Up",
+          "MoveDown": "Down",
+          "MoveEnd": "To end",
+          "Slot1": "Slot 1",
+          "Slot2": "Slot 2",
+          "Slot3": "Slot 3",
+          "Slot4": "Slot 4",
+          "Slot5": "Slot 5",
+          "Slot6": "Slot 6",
+          "Slot7": "Slot 7",
+          "Slot8": "Slot 8",
+          "Slot9": "Slot 9",
+          "Slot0": "Slot 0"
+        },
+        "SnippetMenu": {
+          "Caption": "Snippet menu",
+          "RunSnippet": "Run",
+          "DryRunSnippet": "Dry run",
+          "RunSequence": "Running in order",
+          "ChainCreateFromSnippet": "Create chain from snippet",
+          "SnippetHistory": "Version history…",
+          "AddTagToSnippets": "Add tag to selected snippets",
+          "RemoveTagFromSnippets": "Remove tag from selected snippets",
+          "MoveToCategory": "Move to category",
+          "ExportSnippets": "Export snippets"
+        }
+      },
+      "AddEditSnippetForm": {
+        "Caption": "Snippet Editor",
+        "actShowAIForm": "Show AI Assistant",
+        "actConfigureAI": "Configure AI Assistant"
+      },
+      "AISettingsForm": {
+        "Caption": "AI Settings",
+        "actSave": "Save settings",
+        "actCreateProvider": "Create provider",
+        "actDeleteProvider": "Delete provider",
+        "actEditProvider": "Edit provider",
+        "actCreateModel": "Create model",
+        "actDeleteModel": "Delete model",
+        "actEditModel": "Edit model"
+      },
+      "TagEditor": {
+        "Caption": "Tag Editor",
+        "actAddTag": "Add tag",
+        "actDeleteTag": "Delete tag",
+        "actEditTag": "Edit tag"
+      },
+      "WorkspaceManagerForm": {
+        "Caption": "Workspace Management",
+        "actAddWorkspace": "Add workspace",
+        "actDeleteWorkspace": "Delete workspace",
+        "actEditWorkspace": "Edit workspace"
+      },
+      "GlobalQuickSearch": "Quick Search Panel",
+      "GlobalPasswordGen": "Password Generator",
+      "GlobalRepeatLast": "Repeat Last Snippet",
+      "FavoriteSlot": "Favorite Slot"
+    },
+    "CmdLine": {
+      "HelpTitle": "Command Line Parameters",
+      "HelpText": "SSHSnippetsKeeper.exe [keys]\n\nDatabase maintenance (works while the app is already running):\n  -migrate -db=<file>          Apply schema migrations to the database.\n  -backup [path] -db=<file>    Database snapshot (VACUUM INTO). The path comes\n                               right after -backup: a folder or a file; without\n                               it the copy is stored next to the DB.\n  -checkdb -db=<file>          Integrity check (integrity_check,\n                               foreign_key_check).\n  -newdb <file>                Create a new database with the baseline schema.\n\nInformation:\n  -version                     Print the application version.\n  -help                        Show this help.\n\nGUI keys:\n  -db=<path>    Open the specified SQLite database on startup.\n  -user=<name>  Select a workspace by name (use after -db).\n  -nosync       Disable automatic sync with the Markdown vault.\n  -minimized    Start minimized.\n\nThe /, - and -- prefixes are equivalent, case-insensitive.\nExit codes: 0 - success, 2 - database schema is newer than the app, 3 - error,\n4 - database file not found or not specified, 5 - integrity problems.",
+      "Version": "SSH Snippets Keeper, version %s",
+      "NoDbParam": "Database path is not specified. Add the /db <database file> key.",
+      "DbFileNotFound": "Database file not found: %s",
+      "UserNotFound": "Workspace \"%s\" not found.",
+      "BackupTargetExists": "Backup file already exists: %s. Choose another name or delete the file.",
+      "NewDbNoParam": "Path for the new database is not specified. Use: SSHSnippetsKeeper.exe /newdb <database file>",
+      "NewDbAlreadyExists": "Database file already exists: %s. /newdb does not overwrite existing databases.",
+      "NewDbDirNotFound": "Folder for the new database not found: %s",
+      "NewDbCreated": "New database created: %s (schema v%s)",
+      "CheckOk": "Database integrity check passed.",
+      "CheckFailed": "Integrity check found problems:\n%s"
+    },
+    "Common": {
+      "GeneralError": "Error: %s",
+      "CopyTooltip": "Click to copy",
+      "NotificationDefaultCaption": "SSH Snippets Keeper",
+      "Confirmation": "Confirmation",
+      "Error": "Error",
+      "Warning": "Warning",
+      "Information": "Information",
+      "OK": "OK",
+      "Cancel": "Cancel",
+      "Copy": "Copy",
+      "Cut": "Cut",
+      "Paste": "Paste",
+      "Help": "Help",
+      "MoreInfo": "More Info",
+      "PreparingForm": "Preparing...",
+      "WinEventHookError": "Failed to set up WinEventHook. Error: %s",
+      "CopiedToClipboard": "Copied to clipboard.",
+      "NoDataToCopy": "❌ No data to copy to the clipboard.",
+      "Security": "Security",
+      "Additional": "ADDITIONAL:",
+      "HotkeyConflict": "This key combination is already used by the action:\n'%s'.\n\nChoose another one.",
+      "HotkeyRegistrationError": "Failed to register the global hotkey '%s'. It might be occupied by another application.",
+      "SyncFolderCreationError": "Failed to create synchronization folder: %s",
+      "SyncingStorage": "Synchronizing storage...",
+      "SyncCompleted": "Synchronization completed.",
+      "SyncCompletedStats": "Synchronization completed. Created: %d, updated: %d.",
+      "SyncError": "Error synchronizing: %s",
+      "ImportNoConnection": "Import aborted: no database connection.",
+      "ImportTransactionStartError": "Import aborted: failed to start a transaction: %s",
+      "PathEscapeBlocked": "Attempt to write outside the vault has been blocked.",
+      "StatusDbNotOpen": "No database opened",
+      "StatusDbDirty": "● Unsynced changes",
+      "StatusSnippetCount": "Snippets: %d",
+      "StatusSnippetCountSel": "Snippets: %d (selected: %d)",
+      "DebugComponentNotFound": "Component not found on form: %s",
+      "DiscardChangesConfirm": "Changes detected that will be lost if you close this window.\n\nClose window without saving changes?",
+      "DatabaseBusy": "The database is busy (possibly syncing). Please try again in a few seconds. Details: %s",
+      "UnsyncedDataWarning": "There are changes that have not been exported to the Markdown vault yet.\nThey will not be written to the vault files on exit.\n\nExit anyway?"
+    },
+    "DB": {
+      "SQLExecutionError": "Error executing SQL query: %s",
+      "OpenError": "Error opening database: %s",
+      "CreateError": "Error creating database: %s",
+      "OpenedSuccess": "SQLite database opened.",
+      "CreatedSuccess": "SQLite database created.",
+      "AutoBackupCreated": "Database auto-backup created: %s",
+      "AutoBackupFailed": "Failed to create database auto-backup: %s",
+      "NoConnectionError": "Error: No connection to the database.",
+      "NewerVersion": "The database was created by a newer application version (schema v%s, application supports up to v%s). Please update SSH Snippets Keeper.",
+      "MigrateFailed": "Database schema migration failed at step v%s: %s",
+      "BackupCreated": "Database backup created: %s",
+      "BackupFailed": "Failed to create database backup (%s): %s",
+      "MigratedSuccess": "Database schema updated to version %s.",
+      "MigrateUpToDate": "Database schema is up to date (v%s), no migration needed."
+    },
+    "Settings": {
+      "ResetAllHotkeysConfirm": "Reset all hotkeys to their default values?",
+      "CountersResetConfirm": "Reset the counter for snippet #%s?",
+      "CountersResetAllConfirm": "Reset all counters?",
+      "SelectVaultPath": "Select vault folder",
+      "ApplicationsAddPrompt": "Application executable file name (e.g., ssh.exe):",
+      "ApplicationsRenamePrompt": "New application executable file name:",
+      "ApplicationsDeleteConfirm": "Delete application \"%s\" from the allowed list?",
+      "ApplicationsInvalidName": "Specify an executable file name (e.g., ssh.exe).",
+      "ApplicationsDuplicate": "Application \"%s\" is already in the list.",
+      "StyleApplyError": "Failed to apply style \"%s\"."
+    },
+    "AppPicker": {
+      "RunningEmpty": "No visible running applications.",
+      "RunningFound": "Running applications: %d",
+      "RecentEmpty": "The recent applications list is empty.",
+      "RecentFound": "Recent applications: %d"
+    },
+    "TermManager": {
+      "NoOpenWindows": "No open windows of allowed applications.",
+      "Status": "Open windows: %d · remembered: %d"
+    },
+    "Category": {
+      "SelectPrompt": "First, select a workspace or category.",
+      "VirtualFolderError": "Cannot add categories to virtual folders.",
+      "NewNamePrompt": "Enter name:",
+      "NewDefaultName": "New Category",
+      "CreatedMsg": "Category \"%s\" created.",
+      "DeleteWithChildrenConfirm": "Delete category \"%s\" and all its nested items?",
+      "DeleteMsg": "Category \"%s\" deleted.",
+      "DeleteError": "Error deleting category: %s",
+      "CreateError": "Error creating category: %s",
+      "RenameError": "Error renaming category: %s",
+      "MoveError": "Error moving category: %s",
+      "ParentCategoryNotFound": "Parent category not found.",
+      "MoveToDifferentSpaceError": "Cannot move category to a different workspace.",
+      "CategoryNotFound": "Category not found.",
+      "AccessDenied": "Access denied: Category belongs to another user.",
+      "InvalidIdError": "Invalid identifier for the category.",
+      "EmptyNameError": "Category name cannot be empty."
+    },
+    "Snippet": {
+      "LanguageManualHint": "Language: %s. Chosen manually — autodetect is off.",
+      "LanguageAutoHint": "Language: %s. Detected automatically as you edit.",
+      "NotFound": "Snippet not found.",
+      "SelectPrompt": "Select a specific category to add a snippet.",
+      "WorkspaceUndefined": "Failed to determine the workspace for the snippet (UserID=%d). Try selecting a specific workspace in the filter.",
+      "DeletedMsg": "Snippet deleted.",
+      "DeleteConfirm": "Delete snippet \"%s\"?",
+      "DeleteError": "Error deleting snippet: %s",
+      "DuplicatedMsg": "Snippet duplicated.",
+      "DuplicateError": "Failed to duplicate snippet: %s",
+      "DuplicateTitleSuffix": "%s (copy)",
+      "SaveError": "Error saving snippet: %s",
+      "NoComment": "No comment",
+      "CaptionEdit": "Edit Snippet",
+      "CaptionAdd": "Add Snippet",
+      "TitleEmptyError": "Enter snippet title.",
+      "NoContentError": "Snippet text is empty.",
+      "InvalidIdError": "Invalid identifier for the snippet.",
+      "DiffTitle": "title",
+      "DiffTags": "tags",
+      "DiffLanguage": "language",
+      "DiffLocked": "language lock",
+      "DiffSecurity": "security trust",
+      "DiffOther": "Also changing: %s",
+      "DiffSectionContent": "— Content —",
+      "DiffSectionComment": "— Comment —",
+      "DiffNoTextChanges": "No text changes."
+    },
+    "History": {
+      "Caption": "Version History",
+      "RestoreConfirm": "Restore the version from %s?\nThe current text will be saved to history.",
+      "RestoreDone": "Version restored.",
+      "RestoreError": "Restore error: %s",
+      "VersionNotFound": "The selected version was not found.",
+      "CurrentRow": "Current version"
+    },
+    "Tag": {
+      "NewPrompt": "Enter tag name:",
+      "NewDefaultName": "New Tag",
+      "AddedMsg": "Tag \"%s\" added.",
+      "DeleteConfirm": "Delete tag \"%s\"?",
+      "DeletedMsg": "Tag deleted.",
+      "AddError": "Error adding tag: %s",
+      "DeleteError": "Error deleting tag: %s",
+      "RenameError": "Error renaming tag: %s",
+      "RenamedMsg": "Tag renamed: \"%s\" → \"%s\"",
+      "FilterPrefixAny": "Filter by tags (any): \"%s\"",
+      "FilterPrefixAll": "Filter by tags (all): \"%s\"",
+      "FilterReset": "Filter reset.",
+      "InvalidIdError": "Invalid identifier for the tag.",
+      "EmptyNameError": "Tag name cannot be empty.",
+      "DuplicateNameError": "Tag with name \"%s\" already exists.",
+      "MaxSnippetTagsReached": "A snippet can have at most %d tags.",
+      "NameTooLong": "Tag name cannot be longer than %d characters."
+    },
+    "User": {
+      "InvalidIdError": "Invalid user identifier"
+    },
+    "Terminal": {
+      "HistoryEmpty": "History is empty. First, activate a terminal window.",
+      "WindowsFound": "Found %d terminal windows. Select target window:",
+      "WindowNoLongerExists": "The selected window no longer exists.",
+      "ConfirmTarget": "Insert the snippet into window \"%s\"?",
+      "WindowsCount": "Windows: %d",
+      "KeyboardHint": "Enter - select · Esc - cancel · 1..9 - quick pick",
+      "FilterEmpty": "No matches",
+      "FilterHint": "Filter: title or process",
+      "ViewTiles": "Tiles",
+      "ViewTable": "Table",
+      "ColTitle": "Title",
+      "ColProcess": "Process",
+      "ColActivated": "Activated",
+      "LastUsed": "last used",
+      "ViewGroups": "Groups",
+      "ViewGroupsHint": "Group windows by process",
+      "PreviewEmpty": "No window to preview",
+      "PreviewUnavailable": "Preview unavailable",
+      "PreviewHeader": "Preview",
+      "PreviewMinimized": "Window is minimized"
+    },
+    "Workspace": {
+      "AllSpaces": "All Workspaces",
+      "RenameError": "To rename a workspace, use the \"Workspace Management\" button.",
+      "EmptyNameError": "Workspace name cannot be empty.",
+      "SystemSpaceError": "This workspace cannot be deleted (it is a system space)."
+    },
+    "Chains": {
+      "Menu": {
+        "Create": "New chain",
+        "CreateFromSnippet": "Create chain from snippet",
+        "Run": "Run",
+        "Edit": "Edit",
+        "Delete": "Delete"
+      },
+      "Editor": {
+        "CaptionAdd": "New chain",
+        "CaptionEdit": "Edit chain",
+        "Name": "Name:",
+        "Steps": "Chain steps",
+        "AddStep": "Add step",
+        "RemoveStep": "Remove step",
+        "MoveUp": "Up",
+        "MoveDown": "Down",
+        "PauseSec": "Pause after step, sec:",
+        "PauseHint": "Delay after the selected step before the next one",
+        "Library": "Snippet library",
+        "Search": "Search...",
+        "LibraryHint": "Or double-click a snippet",
+        "ColStep": "No",
+        "ColSnippet": "Snippet",
+        "ColPause": "Pause, sec",
+        "ColWorkspace": "Workspace",
+        "Untitled": "(untitled)"
+      },
+      "Run": {
+        "PanelTitle": "Chain execution",
+        "Progress": "Chain \"%s\" - step %d/%d: %s",
+        "Stop": "Stop",
+        "Empty": "Chain \"%s\" has no steps.",
+        "ErrorActive": "A chain is already running.",
+        "ErrorMissingSnippet": "Step %d: snippet not found, chain stopped.",
+        "ErrorWindow": "Target window is unavailable, chain stopped."
+      },
+      "DeleteConfirm": "Delete chain \"%s\"?",
+      "CreatedMsg": "Chain \"%s\" created.",
+      "DeletedMsg": "Chain \"%s\" deleted.",
+      "RenameError": "Failed to rename chain: %s",
+      "Panel": {
+        "Caption": "Chain \"%s\" - steps: %d"
+      },
+      "Error": {
+        "EmptyName": "Enter chain name.",
+        "DuplicateName": "Chain \"%s\" already exists.",
+        "NotFound": "Chain not found.",
+        "SnippetNotFound": "Step %d: snippet not found."
+      }
+    },
+    "MultiSelect": {
+      "Menu": {
+        "RunSequence": "Run in order",
+        "Export": "Export...",
+        "AddTag": "Add tag...",
+        "MoveToCategory": "Move to category...",
+        "RemoveTag": "Remove tag..."
+      },
+      "Sequence": {
+        "Caption": "Execution order",
+        "Hint": "Order is top to bottom. Buttons or CTRL+Up/CTRL+Down change the order, DEL removes a snippet from the sequence.",
+        "ColNum": "#",
+        "ColSnippet": "Snippet",
+        "Up": "Up",
+        "Down": "Down",
+        "Remove": "Remove",
+        "Run": "Run"
+      },
+      "RunSequence": {
+        "PanelTitle": "Running in order",
+        "ErrorActive": "A sequence is already running."
+      },
+      "Export": {
+        "FilePickerTitle": "Choose export folder",
+        "DoneMsg": "Snippets exported: %d",
+        "Error": "Export error: %s"
+      },
+      "AddTag": {
+        "Caption": "Add tag to selected snippets",
+        "SearchHint": "Search the list or type a new tag name...",
+        "Hint": "Tag not in the list? Just type a new name in the field above - the tag will be created and added to all selected snippets.",
+        "ColTag": "Tag",
+        "DoneMsg": "Tag \"%s\" added to %d snippets (already had: %d)."
+      },
+      "RemoveTag": {
+        "Caption": "Remove tag from selected snippets",
+        "Hint": "The list shows tags of the selected snippets. Pick one or more tags (you can search in the field above) - they will be removed from every selected snippet that has them.",
+        "DoneMsg": "Removed %d tag links, skipped (tag not present): %d."
+      },
+      "Move": {
+        "Caption": "Move to category",
+        "DoneMsg": "Moved: %d, skipped: %d."
+      }
+    },
+    "Security": {
+      "DenyReason": {
+        "PrivateSSHKey": "Private SSH/RSA key",
+        "GitHubToken": "GitHub token",
+        "AWSAccessKey": "AWS Access Key",
+        "GoogleCloudAPIKey": "Google Cloud / API key",
+        "StripeSecretKey": "Stripe secret key",
+        "TelegramBotToken": "Telegram Bot token",
+        "JWTToken": "JWT token",
+        "SlackToken": "Slack token",
+        "BearerToken": "Authorization Bearer token",
+        "URLConnectionString": "Credentials in URL (Connection string)",
+        "ExplicitPasswordKey": "Explicit password or key",
+        "HashKey": "MD5/SHA hash or Hex key",
+        "HighEntropyString": "High entropy string (possibly a hash or token): \"%s...\""
+      },
+      "SensitiveDataFound": "Sensitive data found:\n• %s\nPlease review the snippet text before sending it to the terminal.\n\nDo you want to proceed with the submission?",
+      "ReportSummary": "Snippets checked: %d. Suspicious findings: %d.",
+      "ReportSummaryClean": "Snippets checked: %d. No suspicious content found.",
+      "ReportInContent": "Content: %s",
+      "ReportInComment": "Comment: %s",
+      "ReportTrusted": "yes",
+      "ReportNotTrusted": "no"
+    },
+    "Markdown": {
+      "DeleteFolderError": "Failed to delete folder: \"%s\""
+    },
+    "AI": {
+      "PipCallError": "PIP call error: %s",
+      "PythonNotFound": "Critical error: Python interpreter not found!",
+      "ModelNotLoaded": "Error: The neural network model is not loaded!",
+      "AskCallError": "AI call error: %s",
+      "JSONError": "Failed to extract response from JSON: %s",
+      "APIError": "API Error (%d): %s"
+    },
+    "Epoch": {
+      "Seconds": "sec",
+      "Minutes": "min",
+      "Hours": "h",
+      "Days": "d",
+      "Ago": "%d %s ago",
+      "After": "After %d %s",
+      "JustNow": "just now",
+      "Format-seconds": "Format: Seconds (Classic/Linux)",
+      "Format-milliseconds": "Format: Milliseconds (Java/JS/ELK)",
+      "Format-microseconds": "Format: Microseconds (Python/Influx)",
+      "Format-non-standard": "Format: Non standard",
+      "EmptryString": "␣",
+      "NoActiveBookmarks": "(No active bookmarks)",
+      "CreateBookmark": "Add bookmark",
+      "DeleteBookmark": "Delete bookmark"
+    },
+    "Cron": {
+      "Error-5Elements": "Error: Cron expression must consist of exactly 5 elements.",
+      "EveryStep": "Every %d %s",
+      "Range": "%s - %s",
+      "Range-Base": "%s - %s",
+      "Prefix-Minutes": "Minutes: %s",
+      "Prefix-Hours": "Hours: %s",
+      "Prefix-DaysOfMonth": "Days of month: %s",
+      "Prefix-Months": "Months: %s",
+      "Prefix-DaysOfWeek": "Days of week: %s",
+      "Every-Minutes": "Every minute",
+      "Every-Hours": "Every hour",
+      "Every-DaysOfMonth": "Every day of the month",
+      "Every-Months": "Every month",
+      "Every-DaysOfWeek": "Any day of the week",
+      "Dow-WorkDays": "Monday through Friday",
+      "Dow-Weekends": "on weekends",
+      "Word-Minute-1": "minute",
+      "Word-Minute-2": "minutes",
+      "Word-Minute-5": "minutes",
+      "Word-Hour-1": "hour",
+      "Word-Hour-2": "hours",
+      "Word-Hour-5": "hours",
+      "Word-Day-1": "day",
+      "Word-Day-2": "days",
+      "Word-Day-5": "days",
+      "Word-Month-1": "month",
+      "Word-Month-2": "months",
+      "Word-Month-5": "months",
+      "Word-Dow-1": "day of the week",
+      "Word-Dow-2": "days of the week",
+      "Word-Dow-5": "days of the week",
+      "Month-Prep-1": "in January",
+      "Month-Prep-2": "in February",
+      "Month-Prep-3": "in March",
+      "Month-Prep-4": "in April",
+      "Month-Prep-5": "in May",
+      "Month-Prep-6": "in June",
+      "Month-Prep-7": "in July",
+      "Month-Prep-8": "in August",
+      "Month-Prep-9": "in September",
+      "Month-Prep-10": "in October",
+      "Month-Prep-11": "in November",
+      "Month-Prep-12": "in December",
+      "Dow-Prep-0": "on Sunday",
+      "Dow-Prep-1": "on Monday",
+      "Dow-Prep-2": "on Tuesday",
+      "Dow-Prep-3": "on Wednesday",
+      "Dow-Prep-4": "on Thursday",
+      "Dow-Prep-5": "on Friday",
+      "Dow-Prep-6": "on Saturday",
+      "Month-1": "January",
+      "Month-2": "February",
+      "Month-3": "March",
+      "Month-4": "April",
+      "Month-5": "May",
+      "Month-6": "June",
+      "Month-7": "July",
+      "Month-8": "August",
+      "Month-9": "September",
+      "Month-10": "October",
+      "Month-11": "November",
+      "Month-12": "December",
+      "Dow-0": "Sunday",
+      "Dow-1": "Monday",
+      "Dow-2": "Tuesday",
+      "Dow-3": "Wednesday",
+      "Dow-4": "Thursday",
+      "Dow-5": "Friday",
+      "Dow-6": "Saturday",
+      "Dow-7": "Sunday"
+    },
+    "AddEditSnippet": {
+      "CloseConfirmText": "Changes detected that will be lost if you close this window.\n\nClose window without saving changes?",
+      "SecurityWarningText": "Activating this option will disable automatic security checks for this snippet, such as:\n\n• Infrastructure keys and API tokens\n• Web tokens and authorization headers\n• Passwords and DB connection strings\n• Private cryptography (SSH/RSA)\n• Mathematical entropy analysis (string randomness)\n\nAre you sure you want to add this snippet to the scanner exceptions?",
+      "SecurityDisabledStatus": "ℹ️ Security checks disabled by user.",
+      "SecuritySafeStatus": "✅ Text checked, no security threats detected.",
+      "SecurityThreatStatus": "⚠ Threat: %s (Saving blocked)",
+      "SecurityToastFound": "Found: %s",
+      "SecurityToastTitle": "⚠ Security Threat",
+      "AutocompleteUpdated": "Autocomplete file updated. Content will be reloaded.",
+      "AIChooseModelError": "Select an AI provider and model!",
+      "EnterSnippetTextHere": "Enter snippet name here...",
+      "MacroCounter": "Macros: %d",
+      "MacroCounterSel": "Macro: %d of %d",
+      "DetectNoContent": "No code to detect language from - add some code first"
+    },
+    "AISettingsForm": {
+      "DeleteModelConfirm": "Delete this model?",
+      "AddHubPrompt": "Enter AI provider name:",
+      "DeleteHubConfirm": "Delete provider and ALL its models?",
+      "AddModelPrompt": "New Model/Agent"
+    },
+    "PasswordGenForm": {
+      "BulkLimitWarning": "Displaying more than 10,000 passwords on the screen may cause the interface to freeze. It is recommended to generate them directly to a file.\n\nContinue?",
+      "BulkSaveSuccessToast": "Successfully saved to file",
+      "HistoryCopyToast": "Generated passwords copied to clipboard.",
+      "BulkGenerationToFile": "Generation is writing directly to file...",
+      "MassGenerationCaption": "Mass Generation",
+      "CopyBtn": "Copy",
+      "InsertAndCloseBtn": "Insert and Close",
+      "StopGeneratorCaption": "Stopping generator, please wait...",
+      "PresetSimilar": "Similar Characters",
+      "PresetBrackets": "Brackets",
+      "PresetPunctuation": "Punctuation Marks",
+      "PresetBashSQL": "Unsafe for Bash/SQL",
+      "PresetQuotes": "Quotes",
+      "PresetSpace": "Space",
+      "PresetURL": "URL / Web Separators",
+      "PresetPathJSON": "Path / JSON Characters",
+      "PresetMath": "Mathematical Symbols",
+      "MemoryClearConfirm": "Delete all passwords from memory?",
+      "MemoryCleared": "Password memory cleared.",
+      "HtPasswdTitle": "Nginx .htpasswd",
+      "HtPasswdLoginPrompt": "Enter login for Basic Auth:",
+      "HtPasswdLoginError": "Login cannot be empty.",
+      "HtPasswdBcryptCopied": "Bcrypt string copied to clipboard. Clipboard will be cleared in 15 seconds.",
+      "NoPasswordGenerated": "Generate a password first.",
+      "StatusSummary": "Length: %d · %s bits · %s",
+      "StatusStrengthWeak": "weak",
+      "StatusStrengthMedium": "medium",
+      "StatusStrengthStrong": "strong",
+      "StatusClipboardCountdown": "Clipboard will be cleared in %d s",
+      "Presets": {
+        "WebStandard": "Standard Web Password (Web Safe)",
+        "ActiveDirectory": "Active Directory (A-Z, a-z, 0-9, symbol)",
+        "StrictAlphaNumeric": "Letters and numbers only (A-Z, a-z, 0-9)",
+        "MacAddress": "MAC Address (XX:XX:XX:XX:XX:XX)",
+        "UUIDv4": "UUID v4 (Random GUID)",
+        "Base64Key": "Base64 Key (JWT/API)",
+        "BashSafe": "Bash Safe (no $, !, `, \\ or quotes)",
+        "DockerEnvSafe": "Docker & .env Safe",
+        "BitrixDb": "For Bitrix DB",
+        "PinCode": "PIN Code (Numbers only)",
+        "Custom": "Custom settings...",
+        "HexToken": "Hex token (a-f, 0-9)",
+        "UrlSafe": "URL Safe (RFC 3986)",
+        "OracleSafe": "Oracle DB (starts with letter, _$# only)",
+        "NoLookAlikes": "No look-alikes (I, l, 1, O, 0)",
+        "Unknown": "Unknown preset"
+      }
+    },
+    "InputForm": {
+      "Prompt": {
+        "String": "Enter text",
+        "Number": "Enter an integer",
+        "Hex": "Enter HEX value (e.g., FF or 0xFF)",
+        "Float": "Enter a float number (e.g., 3.14)",
+        "Password": "Enter password",
+        "Date": "Enter date (YYYY-MM-DD or local format)",
+        "Time": "Enter time (HH:MM)",
+        "DateTime": "Enter date and time (YYYY-MM-DD HH:MM, YYYY-MM-DD or local format; use _ instead of space)",
+        "Select": "Pick a value from the list"
+      },
+      "Error": {
+        "Number": "Error: enter an integer",
+        "Hex": "Error: enter a HEX value (0-9, A-F)",
+        "Float": "Error: enter a float (e.g., 3.14)",
+        "Date": "Error: enter a date (e.g., 2026-01-31)",
+        "Time": "Error: enter a time (e.g., 14:30)",
+        "DateTime": "Error: date/time format must be YYYY-MM-DD HH:MM (or YYYY-MM-DD; use _ instead of space)"
+      }
+    },
+    "ParamsForm": {
+      "Hint": "Fill in the parameters - on run they will be gathered in a single dialog",
+      "Error": {
+        "Invalid": "Invalid parameter: %s"
+      }
+    },
+    "DryRun": {
+      "PreviewTitle": "Dry run: %s",
+      "Summary": "Steps: %d, warnings: %d",
+      "Line": {
+        "Enter": "Press Enter",
+        "Sleep": "Pause %s ms",
+        "Input": "Input \"%s\" (%s)",
+        "Default": "default: %s",
+        "Confirm": "Wait for confirmation: \"%s\"",
+        "SendKey": "Press keys %s",
+        "Value": "%s → %s",
+        "ClearLine": "Clear line (Ctrl+C → Ctrl+U)",
+        "KeyDelay": "Key delay: %s ms",
+        "CounterNote": "(preview: the counter is not incremented)"
+      },
+      "Warn": {
+        "Unknown": "Unrecognized macro - it will be skipped on run: %s",
+        "Invalid": "Typo in macro parameters - check before run"
+      },
+      "TypeName": {
+        "String": "string",
+        "Number": "number",
+        "Hex": "hex",
+        "Float": "float",
+        "Password": "password",
+        "Date": "date",
+        "Time": "time",
+        "DateTime": "date/time",
+        "Confirm": "confirm",
+        "Select": "select"
+      }
+    },
+    "MacroDoc": {
+      "Title": "Macros: how it works",
+      "Body": "<h3>Basics</h3><p>The snippet is typed into the target window character by character, like keyboard input. Every new line of text sends ENTER. Macros in curly braces are replaced with values at run time. A mistake in macro parameters highlights the card in red but does not abort the run - the value falls back to safe default behavior.</p><h3>Data input: INPUT</h3><ul><li><code>{INPUT Name}</code> - asks for text and inserts it at the macro position.</li><li><code>{INPUT[NUMBER:100] Size}</code> - types: STRING, NUMBER, HEX, FLOAT, PASSWORD, DATE, TIME, DATETIME; after the colon comes the default value.</li><li><code>{INPUT[SELECT:prod|stage|dev] Env}</code> - pick one value from a list (options separated by |).</li><li><code>{INPUT[Confirm] Proceed?}</code> - pause and wait for confirmation.</li><li>An underscore _ can be used instead of a space in date values.</li></ul><h3>Substituted values</h3><ul><li><code>{DATETIME:yyyy-MM-dd}</code> - current date and time, FormatDateTime mask; default yyyy-MM-dd HH:mm:ss.</li><li><code>{UUID}</code> - new lowercase UUID.</li><li><code>{RANDOM:16}</code> - random string of the given length (default 16, max 1024).</li><li><code>{ENV:HOME}</code> - environment variable value.</li><li><code>{CLIPBOARD}</code> - clipboard text at run time.</li></ul><h3>COUNTER counter</h3><p><code>{COUNTER}</code> - sequential run number of the snippet: 1, 2, 3… Each snippet has its own state; the state is stored in the shared appstate.json file (next to settings.json) and survives application restarts.</p><p>Parameters are separated by a semicolon:</p><ul><li><code>start=N</code> - initial value, applies while the counter has no stored state;</li><li><code>step=N</code> - increment applied after each take (0 is forbidden, negative allowed);</li><li><code>pad=N</code> - zero-padding on the left to N digits (1..18), display only;</li><li><code>current</code> - return this run's number without incrementing the counter;</li><li><code>volatile</code> - do not persist the change across runs.</li></ul><p>Examples: <code>{COUNTER:start=100;step=2;pad=3}</code> yields 100, 102, 104… To repeat the same number twice in one run: <code>{COUNTER}</code> … <code>{COUNTER:current}</code>. One-off counter without saving to file: <code>{COUNTER:volatile}</code>. Reset values in Settings, the Counters tab.</p><h3>Terminal control</h3><ul><li><code>{SLEEP 500}</code> - pause in milliseconds (max 600000).</li><li><code>{ENTER}</code> - press ENTER.</li><li><code>{SENDKEY CTRL+C}</code> - key by name (ENTER, TAB, F1-F12), character or VK code; combinations with CTRL, ALT, SHIFT are supported.</li><li><code>{CLEAR_LINE}</code> - clear the current line: Ctrl+C, pause, Ctrl+U.</li><li><code>{KEYDELAY 20}</code> - delay between characters for the following text (ms).</li></ul><h3>Card editor</h3><p>Double-click a card to edit the step, drag cards to reorder. A red card means a mistake in the step parameters.</p>"
+    },
+    "MacroBuilder": {
+      "StepType": {
+        "Sleep": "Pause",
+        "Enter": "ENTER",
+        "Key": "Key",
+        "Input": "Input",
+        "Value": "Value",
+        "ClearLine": "Clear line",
+        "KeyDelay": "Delay"
+      },
+      "PropMs": "Pause, ms:",
+      "PropKey": "Key (CTRL+C, F5, a):",
+      "PropName": "Name (prompt):",
+      "PropDefault": "Default value:",
+      "PropOptions": "Options separated by | (for SELECT):",
+      "PropInputType": "Input type:",
+      "PropValueType": "Value kind:",
+      "PropArg": "Argument (format/length/name):",
+      "DefaultParamName": "Parameter",
+      "Error": {
+        "BadKey": "Unknown key: %s",
+        "EnvEmpty": "Set a variable name for ENV",
+        "BadMs": "Delay must be an integer >= 0 (ms)",
+        "BadRandom": "RANDOM length must be an integer >= 1",
+        "BadCounter": "Invalid COUNTER parameters. Allowed: start=N, step=N (non-zero), pad=N (1..18), current, volatile",
+        "BadDefault": "Default value is not valid for type %s",
+        "BadOptions": "For SELECT specify at least one option (separated by |)"
+      }
+    },
+    "Macro": {
+      "StopPanelTitle": "Typing snippet...",
+      "StopButton": "Stop",
+      "TargetWindowClosed": "Target window closed - typing aborted.",
+      "PauseWaiting": "Paused: switch back to the target window - typing will resume",
+      "UnknownCommand": "Unknown command %s - typing aborted.",
+      "TypingInProgress": "Snippet typing is in progress - wait for completion and run again.",
+      "ProgressChars": "%d/%d characters (%d%%)",
+      "PauseRemaining": "Pause: ~%d s left",
+      "CardEdit": "Edit macro",
+      "CardDuplicate": "Duplicate",
+      "CardDelete": "Delete",
+      "CardCopy": "Copy",
+      "CardPaste": "Paste",
+      "InsertSleep": "Pause (SLEEP)",
+      "InsertEnter": "ENTER",
+      "InsertKey": "Key (SENDKEY)",
+      "InsertInput": "Input (INPUT)",
+      "InsertValue": "Value (DATETIME/UUID/...)",
+      "InsertClearLine": "Clear line (CLEAR_LINE)",
+      "InsertKeyDelay": "Key delay (KEYDELAY)"
+    },
+    "TagEditorForm": {
+      "InputQueryTitle": "New Tag",
+      "InputQueryPrompt": "Enter tag name:",
+      "DeleteConfirmFormat": "Delete selected tags (%d items)?",
+      "DeleteConfirmTitle": "Confirm Deletion",
+      "SaveErrorFormat": "Error saving tags: %s"
+    },
+    "WorkspaceManagerForm": {
+      "NewWorkspaceCaption": "New Workspace",
+      "NewWorkspaceName": "Enter new workspace name:",
+      "AddError": "Error adding workspace: %s",
+      "DeleteConfirm": "Delete selected workspace \"%s\"?\nAll nested snippets in this workspace will be deleted!",
+      "DeleteError": "Error deleting workspace: %s",
+      "RenameError": "Error renaming workspace: %s",
+      "SelectWorkspaceFirst": "First, select a workspace."
+    },
+    "CronGenForm": {
+      "CopiedToClipboardToast": "Cron job text copied to clipboard.",
+      "TaskSchedule": "🕒 Cron task schedule: "
+    },
+    "NetworkForm": {
+      "InvalidFormat": "❌ Invalid IP or mask format",
+      "HostsPerSubnet": "Hosts per subnet: %d",
+      "TooManySubnets": "Too many subnets. Please decrease the mask difference."
+    },
+    "ChmodForm": {
+      "InputQueryTitle": "New Preset",
+      "InputQueryPrompt": "Enter a name for the current permissions set:",
+      "PresetSaved": "Preset successfully saved.",
+      "DeleteConfirmFormat": "Are you sure you want to delete the preset \"%s\"?",
+      "DeleteTitle": "Deletion",
+      "Presets-Divider": "--- My Presets ---",
+      "Presets-WebDir": "Web Directory (755)",
+      "Presets-WebFile": "Web File (644)",
+      "Presets-SshDir": ".ssh Directory (700)",
+      "Presets-SshPrivateKey": "Private SSH Key (600)",
+      "Presets-SshPublicKey": "Public SSH Key (644)",
+      "Presets-Script": "Executable Script (755)"
+    },
+    "ArchiveBuilderForm": {
+      "Messages": {
+        "SavePresetTitle": "Save Preset",
+        "SavePresetPrompt": "Enter preset name:",
+        "PresetSaved": "Preset saved successfully",
+        "DeletePresetConfirm": "Delete preset \"%s\"?",
+        "DeleteTitle": "Confirmation"
+      },
+      "DefaultPresets": {
+        "BitrixSite": "Bitrix: Site Backup (No Cache)",
+        "BitrixCore": "Bitrix: Core Only",
+        "Logs": "Logs: Compress all logs",
+        "FastZstd": "Fast ZSTD: Ultra-fast backup",
+        "NodeJs": "Node.js: Source only (no node_modules)",
+        "Laravel": "PHP Frameworks: Source (no vendor/cache)",
+        "CleanSource": "Clean Source: For Client (no .git/IDE files)",
+        "SqlDumps": "SQL Dumps: Ultra-compression (tar.xz -9)",
+        "CustomDivider": "--- Custom Presets ---"
+      },
+      "FormatPresets": {
+        "AutoDetect": "Auto detect",
+        "zip": "zip",
+        "tar": "tar.* (gz, bz2, xz, zst, lz4)",
+        "7z": "7z"
+      }
+    }
+  }
+}

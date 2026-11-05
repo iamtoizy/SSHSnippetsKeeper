@@ -332,6 +332,9 @@
         <DCCReference Include="UI\Forms\SnippetDiffFormUI.pas">
             <Form>SnippetDiffForm</Form>
         </DCCReference>
+        <DCCReference Include="UI\Forms\SecurityReportFormUI.pas">
+            <Form>SecurityReportForm</Form>
+        </DCCReference>
         <DCCReference Include="Core\Core.LocalAIService.pas"/>
         <DCCReference Include="Common\Common.AppState.pas"/>
         <DCCReference Include="Common\Common.AppVersion.pas"/>

@@ -210,6 +210,7 @@ type
         procedure actRunSnippetExecute(Sender: TObject);
         procedure actDryRunSnippetExecute(Sender: TObject);
         procedure actRunSequenceExecute(Sender: TObject);
+        procedure actSecurityReportExecute(Sender: TObject);
         procedure actExportSnippetsExecute(Sender: TObject);
         procedure actAddTagToSnippetsExecute(Sender: TObject);
         procedure actRemoveTagFromSnippetsExecute(Sender: TObject);
@@ -384,6 +385,7 @@ uses
     QuickSearchFormUI,
     SequenceOrderDialogUI,
     SettingsFormUI,
+    SecurityReportFormUI,
     SnippetRunner,
     SnippetViewData,
     System.Math,
@@ -504,6 +506,16 @@ end;
 procedure TMainForm.actNetworkCalculatorExecute(Sender: TObject);
 begin
     TNetworkForm.ExecuteGlobal(Self, AppContext);
+end;
+
+procedure TMainForm.actSecurityReportExecute(Sender: TObject);
+begin
+    if not AppContext.DatabaseManager.IsConnected then
+    begin
+        MessagesHandler.ShowError(TUIStateLoader.GetMessage('DB.NoConnectionError'));
+        Exit;
+    end;
+    TSecurityReportForm.Execute(Self, AppContext);
 end;
 
 procedure TMainForm.actOpenDatabaseExecute(Sender: TObject);
