@@ -116,6 +116,12 @@
     "puDeleteSnippet": {
       "Caption": "Удалить"
     },
+    "lvSnippets": {
+      "Columns": {
+        "1": "Название",
+        "2": "Последний запуск"
+      }
+    },
     "puToggleFavorite": {
       "Caption": "Добавить в избранное"
     },

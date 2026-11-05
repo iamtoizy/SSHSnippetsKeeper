@@ -106,7 +106,6 @@ object MainForm: TMainForm
     Alignment = taLeftJustify
     BevelOuter = bvLowered
     TabOrder = 2
-    ExplicitWidth = 624
     object spSearch: TSplitter
       Left = 598
       Top = 1
@@ -216,10 +215,12 @@ object MainForm: TMainForm
       object lblChainName: TLabel
         Left = 0
         Top = 0
-        Width = 3
-        Height = 15
+        Width = 356
+        Height = 41
         Align = alClient
         Layout = tlCenter
+        ExplicitWidth = 3
+        ExplicitHeight = 15
       end
       object btnChainDelete: TButton
         Left = 532
@@ -264,7 +265,17 @@ object MainForm: TMainForm
       Width = 426
       Height = 495
       Align = alClient
-      Columns = <>
+      Columns = <
+        item
+          Caption = 'colSnippetTitle'
+          Tag = 1
+          Width = 230
+        end
+        item
+          Caption = 'colSnippetLastRun'
+          Tag = 2
+          Width = 140
+        end>
       Enabled = False
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
@@ -283,7 +294,7 @@ object MainForm: TMainForm
       ShowHint = False
       SmallImages = vilSnippets
       TabOrder = 0
-      ViewStyle = vsList
+      ViewStyle = vsReport
       OnClick = lvSnippetsClick
       OnContextPopup = lvSnippetsContextPopup
       OnDblClick = lvSnippetsDblClick
@@ -305,7 +316,7 @@ object MainForm: TMainForm
         Left = 0
         Top = 0
         Width = 191
-        Height = 470
+        Height = 495
         Align = alClient
         Columns = <>
         HideSelection = False

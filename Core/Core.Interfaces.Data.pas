@@ -8,7 +8,8 @@ uses
     Core.Entities.Chain,
     Core.Entities.Snippet,
     Core.Entities.Tag,
-    Core.Entities.User
+    Core.Entities.User,
+    System.Generics.Collections
     ;
 
 type
@@ -44,6 +45,8 @@ type
         function SearchByMaskSimple(const Mask: string; UserID: Integer = 0): TArray<TSnippetDTO>;
         function SearchAdvanced(const Query: TStructuredQuery; UseFTS: Boolean; UserID: Integer = 0): TArray<TSnippetDTO>;
         procedure RecordRun(SnippetID, UserID: Integer);
+        // Время последнего запуска по списку ID (snippet_stats.last_exec_at)
+        function GetLastRunBatch(const SnippetIDs: TArray<Integer>): TDictionary<Integer, Int64>;
         function GetFavorites(UserID: Integer): TArray<TSnippetDTO>;
         function GetFavoriteOrder(UserID: Integer): TArray<Integer>;
         function IsFavorite(SnippetID, UserID: Integer): Boolean;

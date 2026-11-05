@@ -25,6 +25,7 @@ type
         function GetAll(UserID: Integer = 0): TArray<TSnippetDTO>;
         function GetSnippetByCategory(const CategoryID, UserID: Integer): TArray<TSnippetDTO>;
         procedure RecordRun(SnippetID: Integer; UserID: Integer);
+        function GetLastRunBatch(const SnippetIDs: TArray<Integer>): TDictionary<Integer, Int64>;
         function GetSnippetTags(SnippetID: Integer): TArray<TTagDTO>;
         function GetSnippetsByTag(const TagID: Integer): TArray<TSnippetDTO>;
         function GetSnippetsByTags(const TagIDs: TArray<Integer>; MatchAll: Boolean = False): TArray<TSnippetDTO>;
@@ -372,6 +373,74 @@ begin
         for Key in Map.Keys do
             Map[Key].Free;
         Map.Free;
+    end;
+end;
+
+function TSnippetRepository.GetLastRunBatch(const SnippetIDs: TArray<Integer>): TDictionary<Integer, Int64>;
+const
+    MAX_PARAMS = 900; // Защита от лимита SQLite
+var
+    Query: TFDQuery;
+    Map: TDictionary<Integer, Int64>;
+    i, ChunkStart, ChunkEnd: Integer;
+    ParamName: string;
+    SQL: TStringBuilder;
+begin
+    Result := nil;
+
+    if Length(SnippetIDs) = 0 then
+        Exit;
+
+    Map := TDictionary<Integer, Int64>.Create;
+    try
+        ChunkStart := 0;
+        while ChunkStart < Length(SnippetIDs) do
+        begin
+            ChunkEnd := ChunkStart + MAX_PARAMS;
+            if ChunkEnd > Length(SnippetIDs) then
+                ChunkEnd := Length(SnippetIDs);
+
+            Query := CreateQuery;
+            SQL := TStringBuilder.Create;
+            try
+                SQL.Append('SELECT snippet_id, last_exec_at FROM snippet_stats ');
+                SQL.Append('WHERE last_exec_at IS NOT NULL AND snippet_id IN (');
+
+                for i := ChunkStart to ChunkEnd - 1 do
+                begin
+                    ParamName := 'id' + i.ToString;
+                    SQL.Append(':' + ParamName);
+                    if i < ChunkEnd - 1 then
+                        SQL.Append(',');
+                end;
+
+                SQL.Append(')');
+
+                Query.SQL.Text := SQL.ToString;
+
+                for i := ChunkStart to ChunkEnd - 1 do
+                    Query.ParamByName('id' + i.ToString).AsInteger := SnippetIDs[i];
+
+                Query.Open;
+
+                while not Query.Eof do
+                begin
+                    Map.AddOrSetValue(Query.FieldByName('snippet_id').AsInteger,
+                        Query.FieldByName('last_exec_at').AsLargeInt);
+                    Query.Next;
+                end;
+            finally
+                SQL.Free;
+                Query.Free;
+            end;
+
+            ChunkStart := ChunkEnd;
+        end;
+
+        Result := Map;
+    except
+        Map.Free;
+        raise;
     end;
 end;
 

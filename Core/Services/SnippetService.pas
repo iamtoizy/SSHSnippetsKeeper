@@ -6,6 +6,7 @@ uses
     Core.Interfaces.Data, Core.Interfaces.Services,
     Core.Entities.Snippet,
     Core.Entities.Tag,
+    System.Generics.Collections,
     System.SysUtils
     ;
 
@@ -50,6 +51,7 @@ type
         function SearchSnippets(const Query: string; UseFTS: Boolean; UserID: Integer = 0): TArray<TSnippetDTO>;
 
         procedure RecordRun(SnippetID, UserID: Integer);
+        function GetLastRunBatch(const SnippetIDs: TArray<Integer>): TDictionary<Integer, Int64>;
         function GetFavorites(UserID: Integer): TArray<TSnippetDTO>;
         function IsFavorite(SnippetID, UserID: Integer): Boolean;
         procedure AddFavorite(SnippetID, UserID: Integer);
@@ -279,6 +281,11 @@ end;
 procedure TSnippetService.RecordRun(SnippetID, UserID: Integer);
 begin
     FSnippetRepo.RecordRun(SnippetID, UserID);
+end;
+
+function TSnippetService.GetLastRunBatch(const SnippetIDs: TArray<Integer>): TDictionary<Integer, Int64>;
+begin
+    Result := FSnippetRepo.GetLastRunBatch(SnippetIDs);
 end;
 
 function TSnippetService.GetFavorites(UserID: Integer): TArray<TSnippetDTO>;

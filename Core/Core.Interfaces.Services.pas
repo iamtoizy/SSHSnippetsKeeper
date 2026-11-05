@@ -9,7 +9,8 @@ uses
     Core.Entities.Tag,
     Core.Entities.User,
     Core.Interfaces.Settings,
-    System.Classes
+    System.Classes,
+    System.Generics.Collections
     ;
 
 type
@@ -33,6 +34,8 @@ type
         function GetRecentSnippets(UserID: Integer; Count: Integer): TArray<TSnippetDTO>;
         function SearchSnippets(const Query: string; UseFTS: Boolean; UserID: Integer = 0): TArray<TSnippetDTO>;
         procedure RecordRun(SnippetID, UserID: Integer);
+        // Время последнего запуска по списку ID (snippet_stats.last_exec_at)
+        function GetLastRunBatch(const SnippetIDs: TArray<Integer>): TDictionary<Integer, Int64>;
         function GetFavorites(UserID: Integer): TArray<TSnippetDTO>;
         function IsFavorite(SnippetID, UserID: Integer): Boolean;
         procedure AddFavorite(SnippetID, UserID: Integer);

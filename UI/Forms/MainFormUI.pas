@@ -293,6 +293,7 @@ type
         function GetSyncEngine: TSyncController;
         function GetSearchEngine: TMainSearchController;
         procedure FillSnippetListView(const Snippets: TArray<TSnippetDTO>);
+        procedure UpdateSnippetLastRunRow(SnippetID: Integer);
         function GetSelectedSnippetID: Integer;
         procedure SelectSnippetByID(SnippetID: Integer);
         procedure FreeSnippetListData;
@@ -1690,11 +1691,15 @@ var
     ViewData: TSnippetViewData;
     FavList: TArray<TSnippetDTO>;
     FavPos: TDictionary<Integer, Integer>;
+    LastRuns: TDictionary<Integer, Int64>;
+    IDs: TArray<Integer>;
+    LastRun: Int64;
     I, Pos: Integer;
     Prefix: string;
     IsFav: Boolean;
 begin
     FavPos := nil;
+    LastRuns := nil;
     if Assigned(AppContext.DatabaseManager) and AppContext.DatabaseManager.IsConnected then
     begin
         FavList := AppContext.SnippetService.GetFavorites(FFilterUserID);
@@ -1703,6 +1708,12 @@ begin
         for I := 0 to High(FavList) do
             if not FavPos.ContainsKey(FavList[I].ID) then
                 FavPos.Add(FavList[I].ID, I);
+
+        // Время последнего запуска одним батч-запросом (snippet_stats.last_exec_at)
+        SetLength(IDs, Length(Snippets));
+        for I := 0 to High(Snippets) do
+            IDs[I] := Snippets[I].ID;
+        LastRuns := AppContext.SnippetService.GetLastRunBatch(IDs);
     end;
 
     lvSnippets.Items.BeginUpdate;
@@ -1733,13 +1744,13 @@ begin
             end;
 
             Item.Caption := Prefix + Snippet.Title;
-            Item.SubItems.Add(DateTimeToStr(UnixToDateTime(Snippet.CreatedAt, False)));
-            Item.StateIndex := 0;
 
-            if (Snippet.UpdatedAt > 0) then
-                Item.SubItems.Add(DateTimeToStr(UnixToDateTime(Snippet.UpdatedAt, False)))
+            if (LastRuns <> nil) and LastRuns.TryGetValue(Snippet.ID, LastRun) then
+                Item.SubItems.Add(DateTimeToStr(UnixToDateTime(LastRun, False)))
             else
                 Item.SubItems.Add('');
+
+            Item.StateIndex := 0;
 
             ViewData := TSnippetViewData.Create;
             ViewData.ID := Snippet.ID;
@@ -1760,8 +1771,24 @@ begin
     finally
         lvSnippets.Items.EndUpdate;
         FreeAndNil(FavPos);
+        FreeAndNil(LastRuns);
     end;
     UpdateSnippetCount;
+end;
+
+procedure TMainForm.UpdateSnippetLastRunRow(SnippetID: Integer);
+var
+    I: Integer;
+begin
+    // Колонку «Последний запуск» точечно обновляет коллбэк TSnippetRunner:
+    // OnRecordRun срабатывает в главном потоке (Synchronize в TMacroThread)
+    for I := 0 to lvSnippets.Items.Count - 1 do
+        if Assigned(lvSnippets.Items[I].Data) and
+            (TSnippetViewData(lvSnippets.Items[I].Data).ID = SnippetID) then
+        begin
+            lvSnippets.Items[I].SubItems[0] := DateTimeToStr(Now);
+            Break;
+        end;
 end;
 
 procedure TMainForm.lvSnippetsDeletion(Sender: TObject; Item: TListItem);
@@ -1773,9 +1800,10 @@ end;
 procedure TMainForm.lvSnippetsAdvancedCustomDrawItem(Sender: TCustomListView; Item: TListItem;
     State: TCustomDrawState; Stage: TCustomDrawStage; var DefaultDraw: Boolean);
 var
-    R: TRect;
+    R, SubR: TRect;
     BgColor, FgColor: TColor;
     Images: TCustomImageList;
+    I, X: Integer;
 begin
     // Тёмные стили рисуют выделение в списке без фокуса почти тем же цветом,
     // что и фон. Из-за этого выбранный сниппет визуально "пропадает", когда
@@ -1809,20 +1837,44 @@ begin
 
     // Иконка строки (если она когда-нибудь появится у сниппета)
     Images := TListView(Sender).SmallImages;
+    X := R.Left;
     if (Item.ImageIndex >= 0) and (Images <> nil) then
     begin
         Images.Draw(Sender.Canvas, R.Left + 2,
             R.Top + (R.Height - Images.Height) div 2, Item.ImageIndex);
-        Inc(R.Left, Images.Width + 4);
+        Inc(X, Images.Width + 4);
     end
     else
-        Inc(R.Left, 4);
+        Inc(X, 4);
 
     Sender.Canvas.Brush.Style := bsClear;
     Sender.Canvas.Font := TListView(Sender).Font;
     Sender.Canvas.Font.Color := FgColor;
-    DrawText(Sender.Canvas.Handle, PChar(Item.Caption), Length(Item.Caption), R,
+
+    // Рисуем по колонкам: в отчёте заголовок не должен вылезать в соседнюю
+    // колонку, а значения SubItems обязаны остаться видимыми на выделенной
+    // строке (иначе «Последний запуск» исчезает на выделении без фокуса)
+    SubR := R;
+    SubR.Left := X;
+    if TListView(Sender).Columns.Count > 0 then
+        SubR.Right := R.Left + TListView(Sender).Columns[0].Width
+    else
+        SubR.Right := R.Right;
+    DrawText(Sender.Canvas.Handle, PChar(Item.Caption), Length(Item.Caption), SubR,
         DT_LEFT or DT_VCENTER or DT_SINGLELINE or DT_END_ELLIPSIS or DT_NOPREFIX);
+
+    for I := 0 to Item.SubItems.Count - 1 do
+    begin
+        if I + 1 >= TListView(Sender).Columns.Count then
+            Break;
+        X := R.Left;
+        Inc(X, TListView(Sender).Columns[I].Width);
+        SubR := R;
+        SubR.Left := X + 4;
+        SubR.Right := X + TListView(Sender).Columns[I + 1].Width;
+        DrawText(Sender.Canvas.Handle, PChar(Item.SubItems[I]), Length(Item.SubItems[I]), SubR,
+            DT_LEFT or DT_VCENTER or DT_SINGLELINE or DT_END_ELLIPSIS or DT_NOPREFIX);
+    end;
 end;
 
 procedure TMainForm.FreeSnippetListData;
@@ -1932,6 +1984,7 @@ begin
         Exit;
 
     Runner := TSnippetRunner.Create(FUserID, AppContext);
+    Runner.OnRunRecorded := UpdateSnippetLastRunRow;
     try
         Runner.ExecuteSnippet(ExtractSnippetByListItem(Item));
     finally
@@ -1952,6 +2005,7 @@ begin
         Exit;
 
     Runner := TSnippetRunner.Create(FUserID, AppContext);
+    Runner.OnRunRecorded := UpdateSnippetLastRunRow;
     try
         Runner.DryRunSnippet(ExtractSnippetByListItem(Item));
     finally

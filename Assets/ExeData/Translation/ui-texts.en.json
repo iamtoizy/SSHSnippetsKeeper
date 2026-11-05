@@ -116,6 +116,12 @@
     "puDeleteSnippet": {
       "Caption": "Delete"
     },
+    "lvSnippets": {
+      "Columns": {
+        "1": "Title",
+        "2": "Last run"
+      }
+    },
     "puToggleFavorite": {
       "Caption": "Add to favorites"
     },

@@ -9,6 +9,7 @@ uses
     Core.Interfaces.Services,
     Core.Interfaces.UI,
     MacroInputTypes,
+    System.SysUtils,
     Winapi.Windows,
     WindowMonitor
     ;
@@ -26,6 +27,9 @@ type
         function IsTypingBlocked: Boolean;
     public
         class var IsExecuting: Boolean;
+        // Коллбэк «запуск записан»: вызывается в главном потоке
+        // (TMacroThread зовёт OnRecordRun через Synchronize)
+        OnRunRecorded: TProc<Integer>;
         constructor Create(UserID: Integer; AppContext: IAppContext);
         function PickTargetWindow(out TargetHWND: HWND): Boolean;
         procedure         ExecuteSnippet(const Snippet: TSnippetDTO);
@@ -45,7 +49,6 @@ uses
     MacroStopPanelUI,
     ParamsFormUI,
     System.Classes,
-    System.SysUtils,
     Vcl.Controls
     ;
 
@@ -98,6 +101,7 @@ var
     Context: TMacroContext;
     AppContext: IAppContext;
     SnippetService: ISnippetService;
+    RunRecorded: TProc<Integer>;
 begin
     Context := TMacroContext.Create;
     // Коллбэки ниже живут дольше этого объекта: TMacroThread выполняет макрос
@@ -107,6 +111,7 @@ begin
     // подсчёт ссылок удержит их, пока живы замыкания.
     AppContext := FAppContext;
     SnippetService := FAppContext.SnippetService;
+    RunRecorded := OnRunRecorded;
     Context.Executor := FAppContext.WindowHelper;
     Context.UserCanceled := False;
     Context.SnippetID := SnippetID;
@@ -115,6 +120,8 @@ begin
         procedure(SnippetID, AUserID: Integer)
         begin
             SnippetService.RecordRun(SnippetID, AUserID);
+            if Assigned(RunRecorded) then
+                RunRecorded(SnippetID);
         end;
 
     // Коллбэк для ввода
