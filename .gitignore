@@ -79,6 +79,8 @@ Binary/
 *.sqlite-shm
 *.sqlite-journal
 *.sqlite
+# Бэкапы БД рядом с базой: .backup-*.bak, .pre_import_*.bak, .auto_*.bak - НЕ коммитим
+Assets/ExeData/*.bak
 .idea/
 settings.json
 
