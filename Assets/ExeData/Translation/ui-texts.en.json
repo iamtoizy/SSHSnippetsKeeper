@@ -182,6 +182,9 @@
     "nTerminalManager": {
       "Caption": "Terminal Manager"
     },
+    "nSecurityReport": {
+      "Caption": "Security Scanner Report"
+    },
     "nSyncDatabase": {
       "Caption": "Synchronize Database"
     }
@@ -234,6 +237,20 @@
   },
   "SnippetDiffForm": {
     "Caption": "Snippet changes",
+    "bClose": {
+      "Caption": "Close"
+    }
+  },
+  "SecurityReportForm": {
+    "Caption": "Security Scanner Report",
+    "lvFindings": {
+      "Columns": {
+        "1": "Snippet",
+        "2": "Category",
+        "3": "Reason",
+        "4": "Trusted"
+      }
+    },
     "bClose": {
       "Caption": "Close"
     }
@@ -1717,7 +1734,13 @@
         "HashKey": "MD5/SHA hash or Hex key",
         "HighEntropyString": "High entropy string (possibly a hash or token): \"%s...\""
       },
-      "SensitiveDataFound": "Sensitive data found:\n• %s\nPlease review the snippet text before sending it to the terminal.\n\nDo you want to proceed with the submission?"
+      "SensitiveDataFound": "Sensitive data found:\n• %s\nPlease review the snippet text before sending it to the terminal.\n\nDo you want to proceed with the submission?",
+      "ReportSummary": "Snippets checked: %d. Suspicious findings: %d.",
+      "ReportSummaryClean": "Snippets checked: %d. No suspicious content found.",
+      "ReportInContent": "Content: %s",
+      "ReportInComment": "Comment: %s",
+      "ReportTrusted": "yes",
+      "ReportNotTrusted": "no"
     },
     "Markdown": {
       "DeleteFolderError": "Failed to delete folder: \"%s\""
