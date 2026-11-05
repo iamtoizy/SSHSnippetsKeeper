@@ -5,6 +5,7 @@ interface
 uses
     Core.Interfaces.Data, Core.Interfaces.Services,
     Core.Entities.Snippet,
+    Core.Entities.Tag,
     System.SysUtils
     ;
 
@@ -33,6 +34,7 @@ type
         function CreateSnippet(const Snippet: TSnippetDTO; const TagIDs: TArray<Integer>): Integer;
         procedure UpdateSnippet(const Snippet: TSnippetDTO; const TagIDs: TArray<Integer>);
         procedure DeleteSnippet(const SnippetID: Integer);
+        function DuplicateSnippet(SnippetID: Integer): Integer;
         procedure MoveSnippet(SnippetID, NewCategoryID: Integer);
 
         // Методы для UI
@@ -61,7 +63,8 @@ implementation
 
 uses
     Common.Localization,
-    Common.QueryLanguage
+    Common.QueryLanguage,
+    System.DateUtils
     ;
 
 { TSnippetService }
@@ -168,6 +171,40 @@ begin
         TUIStateLoader.GetMessage('Snippet.InvalidIdError')
     );
     FSnippetRepo.Delete(SnippetID);
+end;
+
+function TSnippetService.DuplicateSnippet(SnippetID: Integer): Integer;
+var
+    Src: TSnippetDTO;
+    Tags: TArray<TTagDTO>;
+    TagIDs: TArray<Integer>;
+    NowStamp: Int64;
+    I: Integer;
+begin
+    if SnippetID <= 0 then raise ESnippetValidationException.Create(
+        TUIStateLoader.GetMessage('Snippet.InvalidIdError')
+    );
+
+    Src := FSnippetRepo.GetByID(SnippetID);
+    if Src.ID = 0 then
+        raise ESnippetValidationException.Create(
+            TUIStateLoader.GetMessage('Snippet.NotFound')
+        );
+
+    // Полная копия: тот же пользователь/категория/теги, новый ID,
+    // свежие время создания/изменения и суффикс в заголовке
+    Src.ID := 0;
+    Src.Title := Format(TUIStateLoader.GetMessage('Snippet.DuplicateTitleSuffix'), [Src.Title]);
+    NowStamp := DateTimeToUnix(Now);
+    Src.CreatedAt := NowStamp;
+    Src.UpdatedAt := NowStamp;
+
+    Tags := FTagRepo.GetSnippetTags(SnippetID);
+    SetLength(TagIDs, Length(Tags));
+    for I := 0 to High(Tags) do
+        TagIDs[I] := Tags[I].ID;
+
+    Result := CreateSnippet(Src, TagIDs);
 end;
 
 function TSnippetService.GetSnippetByID(SnippetID: Integer): TSnippetDTO;

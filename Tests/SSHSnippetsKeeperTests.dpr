@@ -23,6 +23,7 @@ uses
     Tests.Chains in 'Tests.Chains.pas',
     Tests.MarkdownImporter in 'Tests.MarkdownImporter.pas',
     Tests.MultiSelect in 'Tests.MultiSelect.pas',
+    Tests.SnippetDuplicate in 'Tests.SnippetDuplicate.pas',
     Tests.CustomBashSyn in 'Tests.CustomBashSyn.pas',
     Tests.MacroInputTypes in 'Tests.MacroInputTypes.pas',
     Tests.SnippetLanguages in 'Tests.SnippetLanguages.pas',
@@ -56,6 +57,7 @@ begin
         TDUnitX.RegisterTestFixture(TChainsTests);
         TDUnitX.RegisterTestFixture(TMarkdownImporterTests);
         TDUnitX.RegisterTestFixture(TMultiSelectTests);
+        TDUnitX.RegisterTestFixture(TSnippetDuplicateTests);
         TDUnitX.RegisterTestFixture(TCustomBashSynTests);
         TDUnitX.RegisterTestFixture(TMacroInputTypesTests);
         TDUnitX.RegisterTestFixture(TSnippetLanguagesTests);

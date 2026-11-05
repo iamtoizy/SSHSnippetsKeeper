@@ -62,6 +62,9 @@
     "nEditSnippet": {
       "Caption": "Редактировать"
     },
+    "nDuplicateSnippet": {
+      "Caption": "Дублировать"
+    },
     "nDeleteSnippet": {
       "Caption": "Удалить"
     },
@@ -106,6 +109,9 @@
     },
     "puSnippetHistory": {
       "Caption": "История версий…"
+    },
+    "puDuplicateSnippet": {
+      "Caption": "Дублировать"
     },
     "puDeleteSnippet": {
       "Caption": "Удалить"
@@ -1450,6 +1456,9 @@
       "DeletedMsg": "Сниппет удалён.",
       "DeleteConfirm": "Удалить сниппет «%s»?",
       "DeleteError": "Ошибка удаления сниппета: %s",
+      "DuplicatedMsg": "Сниппет продублирован.",
+      "DuplicateError": "Ошибка дублирования сниппета: %s",
+      "DuplicateTitleSuffix": "%s (копия)",
       "SaveError": "Ошибка сохранения сниппета: %s",
       "NoComment": "Без комментария",
       "CaptionEdit": "Редактирование сниппета",

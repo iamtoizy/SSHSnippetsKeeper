@@ -100,6 +100,7 @@ type
         nAddCategory: TMenuItem;
         nDeleteCategory: TMenuItem;
         nEditCategory: TMenuItem;
+        nDuplicateSnippet: TMenuItem;
         nDeleteSnippet: TMenuItem;
         pSearchType: TPanel;
         rbText: TRadioButton;
@@ -124,6 +125,7 @@ type
         ActionList: TActionList;
         actAddSnippet: TAction;
         actEditSnippet: TAction;
+        actDuplicateSnippet: TAction;
         actDeleteSnippet: TAction;
         actCreateDatabase: TAction;
         actOpenDatabase: TAction;
@@ -196,6 +198,7 @@ type
         procedure actDeleteCategoryExecute(Sender: TObject);
         procedure actDeleteSnippetExecute(Sender: TObject);
         procedure actDeleteTagExecute(Sender: TObject);
+        procedure actDuplicateSnippetExecute(Sender: TObject);
         procedure actEditCategoryExecute(Sender: TObject);
         procedure actEditSnippetExecute(Sender: TObject);
         procedure actEditTagExecute(Sender: TObject);
@@ -301,6 +304,7 @@ type
         procedure DoAddSnippet;
         procedure DoEditSnippet;
         procedure DoDeleteSnippet;
+        procedure DoDuplicateSnippet;
         procedure DoShowSnippetHistory;
         procedure DoToggleFavorite;
         procedure DoMoveFavorite(Direction: TFavoriteMoveDirection);
@@ -464,6 +468,11 @@ end;
 procedure TMainForm.actDeleteTagExecute(Sender: TObject);
 begin
     FTags.DeleteTag;
+end;
+
+procedure TMainForm.actDuplicateSnippetExecute(Sender: TObject);
+begin
+    DoDuplicateSnippet;
 end;
 
 procedure TMainForm.actEditCategoryExecute(Sender: TObject);
@@ -731,6 +740,7 @@ begin
                 actAddSnippet.Enabled := False;
                 actEditSnippet.Enabled := False;
                 actDeleteSnippet.Enabled := False;
+                actDuplicateSnippet.Enabled := False;
                 actRunSnippet.Enabled := False;
                 actDryRunSnippet.Enabled := False;
 
@@ -819,6 +829,7 @@ begin
     actAddSnippet.Enabled := (Node <> nil) and not IsVirtual and not IsWorkspace;
     SingleSelection := (lvSnippets.Selected <> nil) and (lvSnippets.SelCount = 1);
     actDeleteSnippet.Enabled := SingleSelection;
+    actDuplicateSnippet.Enabled := SingleSelection;
     actEditSnippet.Enabled := SingleSelection;
     actRunSnippet.Enabled := SingleSelection;
     actDryRunSnippet.Enabled := SingleSelection;
@@ -1555,6 +1566,37 @@ begin
                     TUIStateLoader.GetMessage('Snippet.DeleteError', [E.Message])
                 );
         end;
+    end;
+end;
+
+procedure TMainForm.DoDuplicateSnippet;
+var
+    Item: TListItem;
+    Snippet: TSnippetDTO;
+    SelectedCatID: Integer;
+begin
+    Item := lvSnippets.Selected;
+    if Item = nil then
+        Exit;
+
+    Snippet := ExtractSnippetByListItem(Item);
+
+    try
+        AppContext.SnippetService.DuplicateSnippet(Snippet.ID);
+
+        if tvCategories.Selected <> nil then
+            SelectedCatID := Integer(IntPtr(tvCategories.Selected.Data))
+        else
+            SelectedCatID := PRESERVE_CATEGORY_EMPTY_ID;
+
+        ReloadUI(SelectedCatID);
+        FStatus.Flash(TUIStateLoader.GetMessage('Snippet.DuplicatedMsg'));
+        MarkDataChanged;
+    except
+        on E: Exception do
+            MessagesHandler.ShowError(
+                TUIStateLoader.GetMessage('Snippet.DuplicateError', [E.Message])
+            );
     end;
 end;
 

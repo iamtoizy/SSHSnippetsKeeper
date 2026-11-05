@@ -376,6 +376,9 @@ object MainForm: TMainForm
         object nEditSnippet: TMenuItem
           Action = actEditSnippet
         end
+        object nDuplicateSnippet: TMenuItem
+          Action = actDuplicateSnippet
+        end
         object nDeleteSnippet: TMenuItem
           Action = actDeleteSnippet
         end
@@ -5229,6 +5232,9 @@ object MainForm: TMainForm
     object puSnippetHistory: TMenuItem
       Action = actSnippetHistory
     end
+    object puDuplicateSnippet: TMenuItem
+      Action = actDuplicateSnippet
+    end
     object puDeleteSnippet: TMenuItem
       Action = actDeleteSnippet
     end
@@ -5310,6 +5316,11 @@ object MainForm: TMainForm
       Category = 'Snippets'
       Caption = 'actDeleteSnippet'
       OnExecute = actDeleteSnippetExecute
+    end
+    object actDuplicateSnippet: TAction
+      Category = 'Snippets'
+      Caption = 'actDuplicateSnippet'
+      OnExecute = actDuplicateSnippetExecute
     end
     object actCreateDatabase: TAction
       Category = 'Database'

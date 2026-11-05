@@ -22,6 +22,8 @@ type
         function CreateSnippet(const Snippet: TSnippetDTO; const TagIDs: TArray<Integer>): Integer;
         procedure UpdateSnippet(const Snippet: TSnippetDTO; const TagIDs: TArray<Integer>);
         procedure DeleteSnippet(const SnippetID: Integer);
+        // Дублирование сниппета: полная копия с новым ID, свежим временем и суффиксом в заголовке
+        function DuplicateSnippet(SnippetID: Integer): Integer;
         function GetSnippetByID(SnippetID: Integer): TSnippetDTO;
         function GetAllSnippets(UserID: Integer = 0): TArray<TSnippetDTO>;
         function GetSnippetsByCategory(CategoryID, UserID: Integer): TArray<TSnippetDTO>;
