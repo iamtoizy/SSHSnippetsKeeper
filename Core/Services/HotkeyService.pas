@@ -96,6 +96,9 @@ begin
     RegisterAction('TMainForm.actCloseDatabase',  'Actions.MainForm.Database.CloseDatabase',  'Actions.MainForm.Database.Caption', 'Ctrl+Q');
     RegisterAction('TMainForm.actSyncDatabase',  'Actions.MainForm.Database.SyncDatabase',  'Actions.MainForm.Database.Caption', 'Ctrl+Alt+Shift+E');
 
+    // --- БЛОК ФАЙЛ (Менеджер терминалов) ---
+    RegisterAction('TMainForm.actTerminalManager', 'Actions.MainForm.File.TerminalManager', 'Actions.MainForm.File.Caption', 'Alt+T');
+
     // --- БЛОК УТИЛИТ ---
     RegisterAction('TMainForm.actSearch',            'Actions.MainForm.Tools.Search',            'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+S');
     RegisterAction('TMainForm.actPasswordGenerator', 'Actions.MainForm.Tools.PasswordGenerator', 'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+G');

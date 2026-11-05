@@ -106,6 +106,7 @@ object MainForm: TMainForm
     Alignment = taLeftJustify
     BevelOuter = bvLowered
     TabOrder = 2
+    ExplicitWidth = 624
     object spSearch: TSplitter
       Left = 598
       Top = 1
@@ -215,12 +216,10 @@ object MainForm: TMainForm
       object lblChainName: TLabel
         Left = 0
         Top = 0
-        Width = 356
-        Height = 41
+        Width = 3
+        Height = 15
         Align = alClient
         Layout = tlCenter
-        ExplicitWidth = 3
-        ExplicitHeight = 15
       end
       object btnChainDelete: TButton
         Left = 532
@@ -421,6 +420,9 @@ object MainForm: TMainForm
       end
       object nArchiveBuilder: TMenuItem
         Action = actArchiveBuilder
+      end
+      object nTerminalManager: TMenuItem
+        Action = actTerminalManager
       end
     end
   end
@@ -5413,6 +5415,11 @@ object MainForm: TMainForm
       Category = 'Tools'
       Caption = 'actArchiveBuilder'
       OnExecute = actArchiveBuilderExecute
+    end
+    object actTerminalManager: TAction
+      Category = 'Tools'
+      Caption = 'actTerminalManager'
+      OnExecute = actTerminalManagerExecute
     end
     object actSettings: TAction
       Category = 'Other'

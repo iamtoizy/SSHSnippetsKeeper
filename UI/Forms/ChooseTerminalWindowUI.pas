@@ -35,6 +35,7 @@ type
         ilSmallIcons: TImageList;
         lbPreviewEmpty: TLabel;
         sbPreview: TSpeedButton;
+        sbManager: TSpeedButton;
         procedure lvTerminalListDblClick(Sender: TObject);
         procedure lvTerminalListColumnClick(Sender: TObject; Column: TListColumn);
         procedure lvTerminalListSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
@@ -52,6 +53,7 @@ type
         procedure FormDestroy(Sender: TObject);
         procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
         procedure FormKeyPress(Sender: TObject; var Key: Char);
+        procedure sbManagerClick(Sender: TObject);
     private
         FSelectedWindow: TWindowMonitorInfo;
         FWindows: TArray<TWindowMonitorInfo>;
@@ -131,6 +133,7 @@ uses
     System.SysUtils,
     System.Types,
     SynThemeAdapter,
+    TerminalManagerFormUI,
     Vcl.Forms,
     Vcl.Themes,
     Winapi.CommCtrl,
@@ -1383,6 +1386,14 @@ begin
 
     AutoSizeColumns;
     EnableAntiFlicker;
+end;
+
+procedure TChooseTerminalWindow.sbManagerClick(Sender: TObject);
+begin
+    // Менеджер меняет историю: перечитываем список и подгонку высоты после закрытия
+    TTerminalManagerForm.ExecuteModal(Self, FAppContext);
+    PopulateList;
+    AdjustFormHeight;
 end;
 
 end.

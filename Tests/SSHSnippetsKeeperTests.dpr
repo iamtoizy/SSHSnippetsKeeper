@@ -19,6 +19,7 @@ uses
     Tests.QueryLanguage in 'Tests.QueryLanguage.pas',
     Tests.SearchTags in 'Tests.SearchTags.pas',
     Tests.DbMigrations in 'Tests.DbMigrations.pas',
+    Tests.WindowMonitor in 'Tests.WindowMonitor.pas',
     Tests.Chains in 'Tests.Chains.pas',
     Tests.MarkdownImporter in 'Tests.MarkdownImporter.pas',
     Tests.MultiSelect in 'Tests.MultiSelect.pas',
@@ -49,6 +50,7 @@ begin
         TDUnitX.RegisterTestFixture(TQueryLanguageTests);
         TDUnitX.RegisterTestFixture(TSearchTagsTests);
         TDUnitX.RegisterTestFixture(TDbMigrationTests);
+        TDUnitX.RegisterTestFixture(TWindowMonitorTests);
         TDUnitX.RegisterTestFixture(TChainsTests);
         TDUnitX.RegisterTestFixture(TMarkdownImporterTests);
         TDUnitX.RegisterTestFixture(TMultiSelectTests);

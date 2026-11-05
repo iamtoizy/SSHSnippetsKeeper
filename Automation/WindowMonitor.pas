@@ -34,9 +34,14 @@ type
 
         function GetLastAllowedWindow: TWindowMonitorInfo;
         function GetAllowedWindowsHistory: TArray<TWindowMonitorInfo>;
+        function GetOpenAllowedWindows: TArray<TWindowMonitorInfo>;
         function GetCurrentForegroundWindow: TWindowMonitorInfo;
         function CanAutoType: Boolean;
         function ActivateWindow(AWindowInfo: TWindowMonitorInfo): Boolean;
+
+        function RegisterWindow(AHWND: THandle): Boolean;
+        procedure RemoveWindow(AHWND: THandle);
+        procedure ClearHistory;
 
         procedure AddAllowedProcess(const ExeName: string);
         procedure RemoveAllowedProcess(const ExeName: string);
@@ -58,6 +63,7 @@ implementation
 
 uses
     System.SysUtils,
+    System.Generics.Collections,
     Common.Localization
     ;
 
@@ -208,6 +214,44 @@ begin
     end;
 end;
 
+{ Ручная регистрация окна в истории (менеджер терминалов).
+  Проверки те же, что в WinEventProc: окно живое, видимое,
+  процесс разрешён. Возвращает True, если окно добавлено }
+function TWindowMonitor.RegisterWindow(AHWND: THandle): Boolean;
+var
+    WindowInfo: TWindowMonitorInfo;
+begin
+    Result := False;
+
+    if (AHWND = 0) or (not IsWindow(AHWND)) or (not IsWindowVisible(AHWND)) then
+        Exit;
+
+    if not IsProcessAllowed(GetExeNameFromHWND(AHWND)) then
+        Exit;
+
+    WindowInfo := GetWindowInfo(AHWND);
+    WindowInfo.ActivatedAt := Now;
+    AddToHistory(WindowInfo);
+
+    Result := True;
+end;
+
+{ Удаление окна из истории по HWND ("забыть" окно).
+  Повторная активация пользователем снова добавит его через хук }
+procedure TWindowMonitor.RemoveWindow(AHWND: THandle);
+var
+    I: Integer;
+begin
+    for I := FAllowedWindowHistory.Count - 1 downto 0 do
+        if FAllowedWindowHistory[I].HWND = AHWND then
+            FAllowedWindowHistory.Delete(I);
+end;
+
+procedure TWindowMonitor.ClearHistory;
+begin
+    FAllowedWindowHistory.Clear;
+end;
+
 procedure TWindowMonitor.AddAllowedProcess(const ExeName: string);
 begin
     if not FAllowedProcesses.Contains(LowerCase(ExeName)) then
@@ -289,6 +333,57 @@ begin
     // Чистим историю перед возвратом
     CleanupInvalidWindows;
     Result := FAllowedWindowHistory.Items;
+end;
+
+var
+    GOpenList: TList<TWindowMonitorInfo>;
+
+{ Фильтры те же, что у перечисления приложений: видимое, не toolwindow,
+  с непустым заголовком; но БЕЗ дедупликации по exe - менеджеру нужны
+  все окна каждого разрешённого процесса (десяток окон putty и т.п.) }
+procedure AddOpenAllowedWindow(Wnd: HWND);
+var
+    ExeName: string;
+begin
+    if not IsWindowVisible(Wnd) then
+        Exit;
+
+    if (GetWindowLong(Wnd, GWL_EXSTYLE) and WS_EX_TOOLWINDOW) <> 0 then
+        Exit;
+
+    if GetWindowTextLength(Wnd) <= 0 then
+        Exit;
+
+    ExeName := GetExeNameFromHWND(Wnd);
+    if ExeName = '' then
+        Exit;
+
+    // Собственные окна приложения в менеджере не показываем
+    if SameText(ExeName, ExtractFileName(ParamStr(0))) then
+        Exit;
+
+    if (not Assigned(GWinMonitor)) or (not GWinMonitor.IsProcessAllowed(ExeName)) then
+        Exit;
+
+    GOpenList.Add(GWinMonitor.GetWindowInfo(Wnd));
+end;
+
+function EnumOpenAllowedProc(Wnd: HWND; LParam: LPARAM): BOOL; stdcall;
+begin
+    AddOpenAllowedWindow(Wnd);
+    Result := True;
+end;
+
+function TWindowMonitor.GetOpenAllowedWindows: TArray<TWindowMonitorInfo>;
+begin
+    Result := nil;
+    GOpenList := TList<TWindowMonitorInfo>.Create;
+    try
+        EnumWindows(@EnumOpenAllowedProc, 0);
+        Result := GOpenList.ToArray;
+    finally
+        GOpenList.Free;
+    end;
 end;
 
 function TWindowMonitor.GetAllowedWindowCount: Integer;

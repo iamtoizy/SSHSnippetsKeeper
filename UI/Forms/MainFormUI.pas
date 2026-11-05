@@ -120,6 +120,7 @@ type
         nNetworkCalculator: TMenuItem;
         nChmodCalculator: TMenuItem;
         nArchiveBuilder: TMenuItem;
+        nTerminalManager: TMenuItem;
         ActionList: TActionList;
         actAddSnippet: TAction;
         actEditSnippet: TAction;
@@ -140,6 +141,7 @@ type
         actNetworkCalculator: TAction;
         actChmodCalculator: TAction;
         actArchiveBuilder: TAction;
+        actTerminalManager: TAction;
         nSettings: TMenuItem;
         N1: TMenuItem;
         actSettings: TAction;
@@ -180,6 +182,7 @@ type
         procedure actAddSnippetExecute(Sender: TObject);
         procedure actAddTagExecute(Sender: TObject);
         procedure actArchiveBuilderExecute(Sender: TObject);
+        procedure actTerminalManagerExecute(Sender: TObject);
         procedure actChainCreateExecute(Sender: TObject);
         procedure actChainCreateFromSnippetExecute(Sender: TObject);
         procedure actChainDeleteExecute(Sender: TObject);
@@ -382,6 +385,7 @@ uses
     System.UITypes,
     TagEditorFormUI,
     TagSelectDialogUI,
+    TerminalManagerFormUI,
     UI.Helpers,
     UI.HoverHelpManager,
     Common.Localization,
@@ -604,6 +608,11 @@ begin
     finally
         if Assigned(FHotkeyMgr) then FHotkeyMgr.StartListening;
     end;
+end;
+
+procedure TMainForm.actTerminalManagerExecute(Sender: TObject);
+begin
+    TTerminalManagerForm.ExecuteModal(Self, AppContext);
 end;
 
 procedure TMainForm.FormCreate(Sender: TObject);

@@ -167,6 +167,9 @@
     "nArchiveBuilder": {
       "Caption": "Archive Commands"
     },
+    "nTerminalManager": {
+      "Caption": "Terminal Manager"
+    },
     "nSyncDatabase": {
       "Caption": "Synchronize Database"
     }
@@ -422,7 +425,35 @@
     }
   },
   "ChooseTerminalWindow": {
-    "Caption": "Choose Terminal"
+    "Caption": "Choose Terminal",
+    "sbManager": {
+      "Caption": "Manager"
+    }
+  },
+  "TerminalManagerForm": {
+    "Caption": "Terminal Manager",
+    "ebFilter": {
+      "TextHint": "Filter by title or process..."
+    },
+    "bSelectAll": {
+      "Caption": "Select all"
+    },
+    "bClearHistory": {
+      "Caption": "Clear history"
+    },
+    "bApply": {
+      "Caption": "Apply"
+    },
+    "bCancel": {
+      "Caption": "Cancel"
+    },
+    "lvWindows": {
+      "Columns": {
+        "0": "Title",
+        "1": "Process",
+        "2": "Remembered"
+      }
+    }
   },
   "WorkspaceManagerForm": {
     "Caption": "Workspace Management",
@@ -1241,6 +1272,13 @@
         "Title": "Quick Search",
         "Main": "Floating quick search panel for snippets. Opens with the global <code>ALT+Q</code> hotkey. Start typing — the result list updates automatically. With an empty query, favorite snippets are shown (the first ten are hot slots for quick launching). Drag the panel edges to resize; <code>CTRL</code>+left mouse button moves the whole window.",
         "Expanded": "<b>Search modes</b><br>• «Text search» — substring search across snippets.<br>• «FTS5 search» — full-text search supporting <code>AND</code>, <code>OR</code>, <code>NOT</code> operators, quotes and <code>*</code> prefixes.<br>• Queries shorter than three characters are not executed.<br>• The drop-down list on the right limits the search to a single workspace.<br><br><b>Keys</b><br><code>ENTER</code> — run the selected snippet<br><code>↑</code> / <code>↓</code> — move focus from the search box to the results list<br><code>ESC</code> — clear the query; press again to close the panel<br><code>1</code>…<code>0</code> — launch a favorite by number (with an empty query)<br><code>CTRL+ALT+↑</code> / <code>↓</code> — adjust window opacity (<code>SHIFT</code> — larger step)<br><br>Double-click a row to run the snippet. Hover a row to preview its content."
+      },
+      "TerminalManager": {
+        "lvWindows": {
+          "Title": "Terminal Manager",
+          "Main": "The list of all open windows of applications from the allowed list (configured in \"Settings → Applications\"). A checkmark means the window is remembered and can become the auto-typing target for a snippet. Unchecking and pressing \"Apply\" forgets the window; the next time you activate it, it will be remembered again. The window opens from the \"File\" menu (<code>ALT+T</code>) or via the \"Manager\" button in the terminal chooser dialog.",
+          "Expanded": "<b>How to use</b><br>• Checked — the window stays in history, unchecked — the window is removed from history. The state is applied by the \"Apply\" button (<code>ENTER</code>); \"Cancel\" (<code>ESC</code>) changes nothing.<br>• \"Select all\" checks every row, \"Clear history\" immediately forgets all windows (including those not visible in the list).<br>• Double-clicking a row toggles its checkmark.<br>• The filter matches by title and process name; only rows remaining in the list are affected.<br>• If a window was closed while the dialog was open, \"Apply\" safely skips it.<br><br><b>History</b> keeps the last 50 windows; only windows of allowed applications are added at the moment of their activation."
+        }
       }
     },
     "Actions": {
@@ -1263,6 +1301,10 @@
           "OpenDatabase": "Open Database",
           "CloseDatabase": "Close Database",
           "SyncDatabase": "Sync Database"
+        },
+        "File": {
+          "Caption": "File",
+          "TerminalManager": "Terminal Manager"
         },
         "Tools": {
           "Caption": "DevOps Utilities",
@@ -1429,6 +1471,10 @@
       "RunningFound": "Running applications: %d",
       "RecentEmpty": "The recent applications list is empty.",
       "RecentFound": "Recent applications: %d"
+    },
+    "TermManager": {
+      "NoOpenWindows": "No open windows of allowed applications.",
+      "Status": "Open windows: %d · remembered: %d"
     },
     "Category": {
       "SelectPrompt": "First, select a workspace or category.",

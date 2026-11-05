@@ -47,11 +47,25 @@ object ChooseTerminalWindow: TChooseTerminalWindow
     object pViewButtons: TPanel
       Left = 428
       Top = 5
-      Width = 348
+      Width = 429
       Height = 24
       Align = alRight
       BevelOuter = bvNone
       TabOrder = 1
+      object sbManager: TSpeedButton
+        Left = 0
+        Top = 0
+        Width = 80
+        Height = 24
+        AlignWithMargins = True
+        Margins.Left = 0
+        Margins.Top = 0
+        Margins.Right = 1
+        Margins.Bottom = 0
+        Align = alLeft
+        Caption = #1052#1077#1085#1077#1076#1078#1077#1088
+        OnClick = sbManagerClick
+      end
       object sbTiles: TSpeedButton
         Left = 0
         Top = 0
