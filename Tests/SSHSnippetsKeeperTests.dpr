@@ -28,7 +28,9 @@ uses
     Tests.SnippetLanguages in 'Tests.SnippetLanguages.pas',
     Tests.SnippetLanguageDetect in 'Tests.SnippetLanguageDetect.pas',
     Tests.SnippetLanguageNB in 'Tests.SnippetLanguageNB.pas',
-    Tests.SynHighlighterFactory in 'Tests.SynHighlighterFactory.pas'
+    Tests.SynHighlighterFactory in 'Tests.SynHighlighterFactory.pas',
+    Tests.SynEditRoundTrip in 'Tests.SynEditRoundTrip.pas',
+    Tests.DirtyDetection in 'Tests.DirtyDetection.pas'
     ;
 
 var
@@ -60,6 +62,8 @@ begin
         TDUnitX.RegisterTestFixture(TSnippetLanguageDetectTests);
         TDUnitX.RegisterTestFixture(TSnippetLanguageNBTests);
         TDUnitX.RegisterTestFixture(TSynHighlighterFactoryTests);
+        TDUnitX.RegisterTestFixture(TSynEditRoundTripTests);
+        TDUnitX.RegisterTestFixture(TDirtyDetectionTests);
         TDUnitX.RegisterTestFixture(TMacroBodySynTests);
         TDUnitX.RegisterTestFixture(TMacroSchemeRegexTests);
         Runner := TDUnitX.CreateRunner([TDUnitXConsoleLogger.Create(False)]);

@@ -187,7 +187,6 @@ type
         procedure ShowAIOverlay;
         procedure ExecuteAICommand;
         function IsAutocompleteVisible: Boolean;
-        function IsSnippetChanged: Boolean;
         procedure SetSyntax;
         procedure ApplySnippetLanguage(const ALanguage: string);
         function DetectSnippetLanguageSmart(const AContent: string): string;
@@ -211,6 +210,10 @@ type
         procedure FinishCardDrag;
         procedure InsertMacroTemplate(const Template: string);
     public
+        // Проверка "есть ли реальные правки" для FormCloseQueryAI; публичная,
+        // чтобы регрессия Tests.DirtyDetection вызывала её напрямую
+        function IsSnippetChanged: Boolean;
+
         procedure Prepare(IsEditMode: Boolean; const Snippet: TSnippetDTO; CatID, UserID: Integer);
 
         property Snippet: TSnippetDTO read FSnippet write FSnippet;

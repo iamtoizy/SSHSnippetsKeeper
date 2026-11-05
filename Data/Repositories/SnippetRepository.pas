@@ -59,30 +59,30 @@ uses
     ;
 
 const
-    SQL_GET_ALL_SNIPPETS_BASE = 'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at, language, language_locked FROM snippets';
-    SQL_ADD_SNIPPET = 'INSERT INTO snippets (user_id, category_id, title, content, comment, language, language_locked, created_at, updated_at) ' +
-            'VALUES (:user_id, :cat_id, :title, :content, :comment, :language, :language_locked, :created_at, :updated_at)';
+    SQL_GET_ALL_SNIPPETS_BASE = 'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at, language, language_locked, is_security_ignored FROM snippets';
+    SQL_ADD_SNIPPET = 'INSERT INTO snippets (user_id, category_id, title, content, comment, language, language_locked, is_security_ignored, created_at, updated_at) ' +
+            'VALUES (:user_id, :cat_id, :title, :content, :comment, :language, :language_locked, :is_security_ignored, :created_at, :updated_at)';
     SQL_DELETE_SNIPPET = 'DELETE FROM snippets WHERE id = :id';
-    SQL_GET_ALL_SNIPPETS = 'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at, language, language_locked FROM snippets ORDER BY title';
+    SQL_GET_ALL_SNIPPETS = 'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at, language, language_locked, is_security_ignored FROM snippets ORDER BY title';
     SQL_UPDATE_SNIPPET = 'UPDATE snippets SET title = :title, content = :content, ' +
-        'comment = :comment, category_id = :category_id, language = :language, language_locked = :language_locked, updated_at = :updated_at ' +
+        'comment = :comment, category_id = :category_id, language = :language, language_locked = :language_locked, is_security_ignored = :is_security_ignored, updated_at = :updated_at ' +
         'WHERE id = :id';
     SQL_UPDATE_TAGS_DELETE_QUERY = 'DELETE FROM snippet_tags WHERE snippet_id = :id';
     SQL_UPDATE_TAGS_INSERT_QUERY = 'INSERT INTO snippet_tags (snippet_id, tag_id) VALUES (:snip_id, :tag_id)';
-    SQL_SELECT_SNIPPETS_BY_ID = 'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at, language, language_locked FROM snippets WHERE id = ?';
+    SQL_SELECT_SNIPPETS_BY_ID = 'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at, language, language_locked, is_security_ignored FROM snippets WHERE id = ?';
     SQL_SELECT_SNIPPETS_BY_CATEGORY =
-        'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at, language, language_locked FROM snippets WHERE category_id = ? ORDER BY title';
+        'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at, language, language_locked, is_security_ignored FROM snippets WHERE category_id = ? ORDER BY title';
     SQL_SELECT_SNIPPETS_BY_CATEGORY_USER =
-        'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at, language, language_locked FROM snippets WHERE category_id = ? AND user_id = ? ORDER BY title';
+        'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at, language, language_locked, is_security_ignored FROM snippets WHERE category_id = ? AND user_id = ? ORDER BY title';
     SQL_SELECT_SNIPPETS_BY_TAG =
         'SELECT s.id, s.user_id, s.title, s.content, s.comment, ' +
-        's.category_id, s.created_at, s.updated_at, s.language, s.language_locked ' +
+        's.category_id, s.created_at, s.updated_at, s.language, s.language_locked, s.is_security_ignored ' +
         'FROM snippets s ' +
         'JOIN snippet_tags st ON s.id = st.snippet_id ' +
         'WHERE st.tag_id = ? ' +
         'ORDER BY s.title';
     SQL_SELECT_SNIPPET_TAGS = 'SELECT t.id, t.name FROM tags t JOIN snippet_tags st ON t.id = st.tag_id WHERE st.snippet_id = :SnippetID ORDER BY t.name';
-    SQL_FULLTEXT_SEARCH = 'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at, language, language_locked ' + 'FROM snippets ' +
+    SQL_FULLTEXT_SEARCH = 'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at, language, language_locked, is_security_ignored ' + 'FROM snippets ' +
         'WHERE title LIKE :m COLLATE NOCASE ' + '   OR content LIKE :m COLLATE NOCASE ' + 'ORDER BY updated_at DESC, title ASC';
     SQL_SNIPPET_SEARCH = 'SELECT s.id, s.title, s.category_id, snippet_fts.rank ' + 'FROM snippet_fts ' + 'JOIN snippets s ON s.id = snippet_fts.rowid ' +
         'WHERE snippet_fts MATCH :search ' + 'ORDER BY rank DESC';
@@ -95,14 +95,14 @@ const
     SQL_GET_SNIPPET_BY_CATEGORY_ID_WITH_USER_ID = 'SELECT category_id, COUNT(*) AS cnt FROM snippets WHERE user_id = ? GROUP BY category_id';
     SQL_GET_SNIPPET_BY_CATEGORY_ID_NO_USER_ID = 'SELECT category_id, COUNT(*) AS cnt FROM snippets GROUP BY category_id';
     SQL_GET_TOP_SNIPPETS =
-        'SELECT s.id, s.user_id, s.title, s.content, s.comment, s.category_id, s.created_at, s.updated_at, s.language, s.language_locked ' +
+        'SELECT s.id, s.user_id, s.title, s.content, s.comment, s.category_id, s.created_at, s.updated_at, s.language, s.language_locked, s.is_security_ignored ' +
         'FROM snippets s ' +
         'JOIN snippet_stats st ON st.snippet_id = s.id ' +
         'WHERE s.user_id = ? ' +
         'ORDER BY st.exec_count DESC, st.last_exec_at DESC ' +
         'LIMIT ?';
     SQL_GET_RECENT_SNIPPETS =
-        'SELECT s.id, s.user_id, s.title, s.content, s.comment, s.category_id, s.created_at, s.updated_at, s.language, s.language_locked ' +
+        'SELECT s.id, s.user_id, s.title, s.content, s.comment, s.category_id, s.created_at, s.updated_at, s.language, s.language_locked, s.is_security_ignored ' +
         'FROM snippets s ' +
         'JOIN snippet_stats st ON st.snippet_id = s.id ' +
         'WHERE s.user_id = ? ' +
@@ -110,7 +110,7 @@ const
         'LIMIT ?';
     SQL_SELECT_SNIPPETS_BY_TAGS_ANY =
         'SELECT DISTINCT s.id, s.user_id, s.title, s.content, s.comment, ' +
-        's.category_id, s.created_at, s.updated_at, s.language, s.language_locked ' +
+        's.category_id, s.created_at, s.updated_at, s.language, s.language_locked, s.is_security_ignored ' +
         'FROM snippets s ' +
         'JOIN snippet_tags st ON s.id = st.snippet_id ' +
         'WHERE st.tag_id IN (%s) ' +
@@ -118,7 +118,7 @@ const
 
     SQL_SELECT_SNIPPETS_BY_TAGS_ALL =
         'SELECT s.id, s.user_id, s.title, s.content, s.comment, ' +
-        's.category_id, s.created_at, s.updated_at, s.language, s.language_locked ' +
+        's.category_id, s.created_at, s.updated_at, s.language, s.language_locked, s.is_security_ignored ' +
         'FROM snippets s ' +
         'JOIN snippet_tags st ON s.id = st.snippet_id ' +
         'WHERE st.tag_id IN (%s) ' +
@@ -127,12 +127,12 @@ const
         'ORDER BY s.title';
 
     SQL_GET_FAVORITES_ALL =
-        'SELECT s.id, s.user_id, s.title, s.content, s.comment, s.category_id, s.created_at, s.updated_at, s.language, s.language_locked ' +
+        'SELECT s.id, s.user_id, s.title, s.content, s.comment, s.category_id, s.created_at, s.updated_at, s.language, s.language_locked, s.is_security_ignored ' +
         'FROM snippet_favorites f ' +
         'JOIN snippets s ON s.id = f.snippet_id ' +
         'ORDER BY f.user_id, f.sort_order, f.created_at';
     SQL_GET_FAVORITES_BY_USER =
-        'SELECT s.id, s.user_id, s.title, s.content, s.comment, s.category_id, s.created_at, s.updated_at, s.language, s.language_locked ' +
+        'SELECT s.id, s.user_id, s.title, s.content, s.comment, s.category_id, s.created_at, s.updated_at, s.language, s.language_locked, s.is_security_ignored ' +
         'FROM snippet_favorites f ' +
         'JOIN snippets s ON s.id = f.snippet_id ' +
         'WHERE f.user_id = ? ' +
@@ -401,6 +401,10 @@ begin
 
         while not Query.Eof do
         begin
+            // Обнуляем запись: непронумерованные Boolean-поля иначе содержат
+            // мусор стека (регрессия ложного "обнаружены изменения" в форме
+            // редактирования: нечитанное is_security_ignored давало != 0)
+            Snip := Default(TSnippetDTO);
             Snip.ID := Query.FieldByName('id').AsInteger;
             Snip.UserID := Query.FieldByName('user_id').AsInteger;
             Snip.Title := Query.FieldByName('title').AsString;
@@ -411,6 +415,7 @@ begin
             Snip.UpdatedAt := Query.FieldByName('updated_at').AsLargeInt;
             Snip.Language := NormalizeSnippetLanguage(Query.FieldByName('language').AsString);
             Snip.LanguageLocked := Query.FieldByName('language_locked').AsInteger <> 0;
+            Snip.IsSecurityCheckIgnored := Query.FieldByName('is_security_ignored').AsInteger <> 0;
             Snip.Tags := [];
 
             List.Add(Snip);
@@ -453,6 +458,7 @@ begin
         Q.ParamByName('comment').AsString := Snippet.Comment;
         Q.ParamByName('language').AsString := NormalizeSnippetLanguage(Snippet.Language);
         Q.ParamByName('language_locked').AsInteger := Ord(Snippet.LanguageLocked);
+        Q.ParamByName('is_security_ignored').AsInteger := Ord(Snippet.IsSecurityCheckIgnored);
         Q.ParamByName('category_id').AsInteger := Snippet.CategoryID;
         Q.ParamByName('updated_at').AsLargeInt := Snippet.UpdatedAt;
         Q.ParamByName('id').AsInteger := Snippet.ID;
@@ -537,6 +543,7 @@ begin
         Q.ParamByName('comment').AsString := Snippet.Comment;
         Q.ParamByName('language').AsString := NormalizeSnippetLanguage(Snippet.Language);
         Q.ParamByName('language_locked').AsInteger := Ord(Snippet.LanguageLocked);
+        Q.ParamByName('is_security_ignored').AsInteger := Ord(Snippet.IsSecurityCheckIgnored);
         Q.ParamByName('created_at').AsLargeInt := Snippet.CreatedAt;
         Q.ParamByName('updated_at').DataType := ftLargeInt;
 
@@ -572,6 +579,8 @@ begin
         while not Q.Eof do
         begin
             var Snippet: TSnippetDTO;
+            // Непронумерованные поля записи не инициализируются компилятором
+            Snippet := Default(TSnippetDTO);
             Snippet.ID := Q.FieldByName('id').AsInteger;
             Snippet.Title := Q.FieldByName('title').AsString;
             Snippet.CategoryID := Q.FieldByName('category_id').AsInteger;
@@ -599,7 +608,7 @@ begin
     SafeMask := '"' + SafeMask + '" *';
 
     // Выбираем только стандартные поля, чтобы InternalLoadSnippets смог их распарсить
-    SQL := 'SELECT s.id, s.user_id, s.title, s.content, s.comment, s.category_id, s.created_at, s.updated_at, s.language, s.language_locked ' +
+    SQL := 'SELECT s.id, s.user_id, s.title, s.content, s.comment, s.category_id, s.created_at, s.updated_at, s.language, s.language_locked, s.is_security_ignored ' +
            'FROM snippets s ' +
            'JOIN snippet_fts fts ON s.id = fts.rowid ' +
            'WHERE snippet_fts MATCH ? ';
@@ -628,7 +637,7 @@ begin
 
     SearchStr := '%' + Trim(Mask) + '%';
 
-    SQL := 'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at, language, language_locked ' +
+    SQL := 'SELECT id, user_id, title, content, comment, category_id, created_at, updated_at, language, language_locked, is_security_ignored ' +
            'FROM snippets ' +
            'WHERE (title LIKE ? COLLATE NOCASE OR content LIKE ? COLLATE NOCASE ' +
            'OR EXISTS (SELECT 1 FROM snippet_tags st JOIN tags t ON t.id = st.tag_id ' +
@@ -668,7 +677,7 @@ begin
     Sb := TStringBuilder.Create;
     Params := TList<Variant>.Create;
     try
-        Sb.Append('SELECT s.id, s.user_id, s.title, s.content, s.comment, s.category_id, s.created_at, s.updated_at, s.language, s.language_locked ');
+        Sb.Append('SELECT s.id, s.user_id, s.title, s.content, s.comment, s.category_id, s.created_at, s.updated_at, s.language, s.language_locked, s.is_security_ignored ');
         Sb.Append('FROM snippets s ');
 
         if FTSInclude <> '' then

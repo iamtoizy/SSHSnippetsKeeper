@@ -30,6 +30,7 @@ implementation
 
 uses
     Common.Localization,
+    Common.SnippetLanguages,
     Data.DB,
     FireDAC.Stan.Param,
     System.Generics.Collections,
@@ -121,13 +122,15 @@ begin
     Query := CreateQuery;
     try
         Query.SQL.Text :=
-            'SELECT id, user_id, title, content, category_id, created_at, updated_at ' +
+            'SELECT id, user_id, title, content, category_id, created_at, updated_at, language, language_locked, is_security_ignored ' +
             'FROM snippets WHERE category_id = :category_id ORDER BY title';
         Query.ParamByName('category_id').AsInteger := CategoryID;
         Query.Open;
 
         while not Query.Eof do
         begin
+            // Обнуляем запись: нечитанные Boolean-поля иначе содержат мусор стека
+            Snip := Default(TSnippetDTO);
             Snip.ID := Query.FieldByName('id').AsInteger;
             Snip.UserID := Query.FieldByName('user_id').AsInteger;
             Snip.Title := Query.FieldByName('title').AsString;
@@ -135,6 +138,9 @@ begin
             Snip.CategoryID := Query.FieldByName('category_id').AsInteger;
             Snip.CreatedAt := Query.FieldByName('created_at').AsLargeInt;
             Snip.UpdatedAt := Query.FieldByName('updated_at').AsLargeInt;
+            Snip.Language := NormalizeSnippetLanguage(Query.FieldByName('language').AsString);
+            Snip.LanguageLocked := Query.FieldByName('language_locked').AsInteger <> 0;
+            Snip.IsSecurityCheckIgnored := Query.FieldByName('is_security_ignored').AsInteger <> 0;
 
             List.Add(Snip);
             Query.Next;

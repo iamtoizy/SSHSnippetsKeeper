@@ -63,6 +63,8 @@ begin
 
         while not Query.Eof do
         begin
+            // Непронумерованные поля записи не инициализируются компилятором
+            Tag := Default(TTagDTO);
             Tag.ID := Query.FieldByName('id').AsInteger;
             Tag.Name := Query.FieldByName('name').AsString;
             List.Add(Tag);
