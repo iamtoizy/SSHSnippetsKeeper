@@ -16,8 +16,11 @@ type
         FRepo: TSnippetRepository;
         function SchemaPath(const Filename: string): string;
         procedure ExecScript(const Filenames: array of string);
-        function AddSnippet(const Title, Content: string; UserID: Integer = 1): Integer;
+        function AddSnippet(const Title, Content: string; UserID: Integer = 1;
+            const Language: string = ''): Integer;
         procedure AddTag(SnippetID: Integer; const TagName: string);
+        procedure SetDates(SnippetID: Integer; CreatedAt, UpdatedAt: Int64);
+        procedure AddFavorite(SnippetID: Integer; UserID: Integer);
     public
         [Setup]
         procedure Setup;
@@ -43,12 +46,29 @@ type
         procedure AdvancedFTS_BareWord_FindsByTag;
         [Test]
         procedure LanguageLocked_RoundTrip;
+        [Test]
+        procedure Advanced_LangFilter_SimpleAndFTS;
+        [Test]
+        procedure Advanced_ContentFilter_NotTitle;
+        [Test]
+        procedure Advanced_ContentPhrase;
+        [Test]
+        procedure Advanced_TitlePhrase_Simple;
+        [Test]
+        procedure AdvancedFTS_BarePhrase;
+        [Test]
+        procedure AdvancedFTS_ExcludedPhrase;
+        [Test]
+        procedure Advanced_DateFilters;
+        [Test]
+        procedure Advanced_ExcludeFavorites;
     end;
 
 implementation
 
 uses
     System.SysUtils,
+    System.DateUtils,
     System.IOUtils,
     FireDAC.Comp.Script,
     FireDAC.Comp.ScriptCommands,
@@ -128,11 +148,14 @@ begin
     FreeAndNil(FConn);
 end;
 
-function TSearchTagsTests.AddSnippet(const Title, Content: string; UserID: Integer): Integer;
+function TSearchTagsTests.AddSnippet(const Title, Content: string; UserID: Integer;
+    const Language: string): Integer;
 begin
     FConn.ExecSQL('INSERT INTO snippets (user_id, title, content) VALUES (?, ?, ?)',
         [UserID, Title, Content]);
     Result := FConn.ExecSQLScalar('SELECT last_insert_rowid()');
+    if Language <> '' then
+        FConn.ExecSQL('UPDATE snippets SET language = ? WHERE id = ?', [Language, Result]);
 end;
 
 procedure TSearchTagsTests.AddTag(SnippetID: Integer; const TagName: string);
@@ -140,6 +163,18 @@ begin
     FConn.ExecSQL('INSERT OR IGNORE INTO tags (name) VALUES (?)', [TagName]);
     FConn.ExecSQL('INSERT INTO snippet_tags (snippet_id, tag_id) VALUES (?, ?)',
         [SnippetID, FConn.ExecSQLScalar('SELECT id FROM tags WHERE name = ?', [TagName])]);
+end;
+
+procedure TSearchTagsTests.SetDates(SnippetID: Integer; CreatedAt, UpdatedAt: Int64);
+begin
+    FConn.ExecSQL('UPDATE snippets SET created_at = ?, updated_at = ? WHERE id = ?',
+        [CreatedAt, UpdatedAt, SnippetID]);
+end;
+
+procedure TSearchTagsTests.AddFavorite(SnippetID: Integer; UserID: Integer);
+begin
+    FConn.ExecSQL('INSERT OR IGNORE INTO snippet_favorites (user_id, snippet_id) VALUES (?, ?)',
+        [UserID, SnippetID]);
 end;
 
 procedure TSearchTagsTests.SimpleMask_FindsByTitle;
@@ -270,10 +305,175 @@ begin
     end;
 end;
 
-initialization
-    GDriverLink := TFDPhysSQLiteDriverLink.Create(nil);
+procedure TSearchTagsTests.Advanced_LangFilter_SimpleAndFTS;
+var
+    Found: TArray<TSnippetDTO>;
+begin
+    AddSnippet('ps helper', 'Get-Service check', 1, 'powershell');
+    AddSnippet('bash helper', 'ls -la', 1, 'bash');
+    AddSnippet('bat helper', 'dir /w', 1, 'batch');
 
-finalization
-    GDriverLink.Free;
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('lang:powershell'), False, 1);
+    Assert.AreEqual(1, Integer(Length(Found)));
+    Assert.AreEqual('ps helper', Found[0].Title);
+
+    // Несколько lang: - достаточно любого
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('lang:powershell lang:batch'), False, 1);
+    Assert.AreEqual(2, Integer(Length(Found)));
+
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('lang:zzz'), False, 1);
+    Assert.AreEqual(0, Integer(Length(Found)));
+
+    // FTS-режим: язык + полнотекстовое слово
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('lang:powershell service'), True, 1);
+    Assert.AreEqual(1, Integer(Length(Found)));
+    Assert.AreEqual('ps helper', Found[0].Title);
+end;
+
+procedure TSearchTagsTests.Advanced_ContentFilter_NotTitle;
+var
+    Found: TArray<TSnippetDTO>;
+begin
+    // Слово только в заголовке - content: не должно находить
+    AddSnippet('systemctl helper', 'nothing here', 1);
+    AddSnippet('plain', 'systemctl restart nginx', 1);
+
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('content:systemctl'), False, 1);
+    Assert.AreEqual(1, Integer(Length(Found)));
+    Assert.AreEqual('plain', Found[0].Title);
+
+    // Для сравнения: голое слово ищет и по заголовку
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('systemctl'), False, 1);
+    Assert.AreEqual(2, Integer(Length(Found)));
+
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('content:systemctl'), True, 1);
+    Assert.AreEqual(1, Integer(Length(Found)));
+    Assert.AreEqual('plain', Found[0].Title);
+end;
+
+procedure TSearchTagsTests.Advanced_ContentPhrase;
+var
+    Found: TArray<TSnippetDTO>;
+begin
+    AddSnippet('compose up', 'docker compose up -d', 1);
+    AddSnippet('compose down', 'docker compose down', 1);
+
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('content:"compose up"'), False, 1);
+    Assert.AreEqual(1, Integer(Length(Found)));
+    Assert.AreEqual('compose up', Found[0].Title);
+end;
+
+procedure TSearchTagsTests.Advanced_TitlePhrase_Simple;
+var
+    Found: TArray<TSnippetDTO>;
+begin
+    AddSnippet('nginx config backup', 'echo one', 1);
+    AddSnippet('config nginx backup', 'echo two', 1);
+
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('title:"nginx config"'), False, 1);
+    Assert.AreEqual(1, Integer(Length(Found)));
+    Assert.AreEqual('nginx config backup', Found[0].Title);
+
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('"config backup"'), False, 1);
+    Assert.AreEqual(1, Integer(Length(Found)));
+    Assert.AreEqual('nginx config backup', Found[0].Title);
+end;
+
+procedure TSearchTagsTests.AdvancedFTS_BarePhrase;
+var
+    ID: Integer;
+    Found: TArray<TSnippetDTO>;
+begin
+    ID := AddSnippet('run script', './deploy.sh');
+    AddTag(ID, 'deploy-prod');
+
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('"run script"'), True, 1);
+    Assert.AreEqual(1, Integer(Length(Found)));
+    Assert.AreEqual('run script', Found[0].Title);
+
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('"script run"'), True, 1);
+    Assert.AreEqual(0, Integer(Length(Found)));
+end;
+
+procedure TSearchTagsTests.AdvancedFTS_ExcludedPhrase;
+var
+    Found: TArray<TSnippetDTO>;
+begin
+    AddSnippet('docker ps listing', 'docker ps -a', 1);
+    AddSnippet('plain script', 'echo hello', 1);
+
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('"docker ps"'), True, 1);
+    Assert.AreEqual(1, Integer(Length(Found)));
+    Assert.AreEqual('docker ps listing', Found[0].Title);
+
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('-"docker ps"'), True, 1);
+    Assert.AreEqual(1, Integer(Length(Found)));
+    Assert.AreEqual('plain script', Found[0].Title);
+end;
+
+procedure TSearchTagsTests.Advanced_DateFilters;
+var
+    IDA, IDB: Integer;
+    Found: TArray<TSnippetDTO>;
+begin
+    // Даты задаются локальным epoch - тест не зависит от часового пояса
+    IDA := AddSnippet('old snippet', 'echo old');
+    IDB := AddSnippet('new snippet', 'echo new');
+    SetDates(IDA,
+        DateTimeToUnix(EncodeDate(2024, 3, 15), False),
+        DateTimeToUnix(EncodeDate(2024, 3, 16), False));
+    SetDates(IDB,
+        DateTimeToUnix(EncodeDate(2025, 7, 2), False),
+        DateTimeToUnix(EncodeDate(2025, 7, 3), False));
+
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('created:2024-03-15'), False, 1);
+    Assert.AreEqual(1, Integer(Length(Found)));
+    Assert.AreEqual('old snippet', Found[0].Title);
+
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('created:>=2025-01-01'), False, 1);
+    Assert.AreEqual(1, Integer(Length(Found)));
+    Assert.AreEqual('new snippet', Found[0].Title);
+
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('created:<2025-01-01'), False, 1);
+    Assert.AreEqual(1, Integer(Length(Found)));
+    Assert.AreEqual('old snippet', Found[0].Title);
+
+    // Целый месяц по updated_at
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('updated:2025-07'), False, 1);
+    Assert.AreEqual(1, Integer(Length(Found)));
+    Assert.AreEqual('new snippet', Found[0].Title);
+
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('created:2024-03-20'), False, 1);
+    Assert.AreEqual(0, Integer(Length(Found)));
+end;
+
+procedure TSearchTagsTests.Advanced_ExcludeFavorites;
+var
+    FavID, PlainID, OtherID: Integer;
+    Found: TArray<TSnippetDTO>;
+begin
+    // Оба сниппета пользователя 1 содержат "fav" в тексте: если бы -fav
+    // исключал слово, а не работал флагом, остались бы 0 строк
+    FavID := AddSnippet('my fav command', 'echo favorite', 1);
+    PlainID := AddSnippet('plain script', 'echo my fav', 1);
+    OtherID := AddSnippet('other script', 'echo other', 2);
+    AddFavorite(FavID, 1);
+    AddFavorite(OtherID, 2);
+
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('fav'), False, 1);
+    Assert.AreEqual(1, Integer(Length(Found)));
+    Assert.AreEqual('my fav command', Found[0].Title);
+
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('-fav'), False, 1);
+    Assert.AreEqual(1, Integer(Length(Found)));
+    Assert.AreEqual('plain script', Found[0].Title);
+
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('fav'), False, 2);
+    Assert.AreEqual(1, Integer(Length(Found)));
+    Assert.AreEqual('other script', Found[0].Title);
+
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('-fav'), False, 2);
+    Assert.AreEqual(0, Integer(Length(Found)));
+end;
 
 end.

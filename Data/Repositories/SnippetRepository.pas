@@ -729,7 +729,8 @@ function TSnippetRepository.SearchAdvanced(const Query: TStructuredQuery; UseFTS
 var
     Sb: TStringBuilder;
     Params: TList<Variant>;
-    FTSInclude, Safe, Word: string;
+    FTSInclude, Safe, Word, Phrase, Col: string;
+    DF: TQueryDateFilter;
     I: Integer;
 begin
     Result := nil;
@@ -770,6 +771,16 @@ begin
                 Params.Add(UserID);
         end;
 
+        if Query.ExcludeFavorites then
+        begin
+            Sb.Append('AND NOT EXISTS (SELECT 1 FROM snippet_favorites f WHERE f.snippet_id = s.id ');
+            if UserID > 0 then
+                Sb.Append('AND f.user_id = ? ');
+            Sb.Append(') ');
+            if UserID > 0 then
+                Params.Add(UserID);
+        end;
+
         if FTSInclude <> '' then
         begin
             Sb.Append('AND snippet_fts MATCH ? ');
@@ -797,6 +808,27 @@ begin
             end;
         end;
 
+        for Phrase in Query.ExcludedPhrases do
+        begin
+            if UseFTS then
+            begin
+                Safe := SanitizeFTS5(Phrase);
+                if Safe = '' then
+                    Continue;
+                Sb.Append('AND s.id NOT IN (SELECT rowid FROM snippet_fts WHERE snippet_fts MATCH ?) ');
+                Params.Add('"' + Safe + '"');
+            end
+            else
+            begin
+                Sb.Append('AND NOT (s.title LIKE ? COLLATE NOCASE OR s.content LIKE ? COLLATE NOCASE ' +
+                    'OR EXISTS (SELECT 1 FROM snippet_tags st JOIN tags t ON t.id = st.tag_id ' +
+                    'WHERE st.snippet_id = s.id AND t.name LIKE ? COLLATE NOCASE)) ');
+                Params.Add('%' + Phrase + '%');
+                Params.Add('%' + Phrase + '%');
+                Params.Add('%' + Phrase + '%');
+            end;
+        end;
+
         for Word in Query.TagValues do
         begin
             Sb.Append('AND EXISTS (SELECT 1 FROM snippet_tags st JOIN tags t ON t.id = st.tag_id ' +
@@ -816,16 +848,53 @@ begin
             Sb.Append(') ');
         end;
 
+        // Язык у сниппета один, поэтому несколько lang: объединяются через OR
+        if Length(Query.LanguageValues) > 0 then
+        begin
+            Sb.Append('AND (s.language LIKE ? COLLATE NOCASE ');
+            Params.Add('%' + Query.LanguageValues[0] + '%');
+            for I := 1 to High(Query.LanguageValues) do
+            begin
+                Sb.Append('OR s.language LIKE ? COLLATE NOCASE ');
+                Params.Add('%' + Query.LanguageValues[I] + '%');
+            end;
+            Sb.Append(') ');
+        end;
+
         for Word in Query.TitleValues do
         begin
             Sb.Append('AND s.title LIKE ? COLLATE NOCASE ');
             Params.Add('%' + Word + '%');
         end;
 
+        for Phrase in Query.TitlePhrases do
+        begin
+            Sb.Append('AND s.title LIKE ? COLLATE NOCASE ');
+            Params.Add('%' + Phrase + '%');
+        end;
+
         for Word in Query.CommentValues do
         begin
             Sb.Append('AND s.comment LIKE ? COLLATE NOCASE ');
             Params.Add('%' + Word + '%');
+        end;
+
+        for Phrase in Query.CommentPhrases do
+        begin
+            Sb.Append('AND s.comment LIKE ? COLLATE NOCASE ');
+            Params.Add('%' + Phrase + '%');
+        end;
+
+        for Word in Query.ContentValues do
+        begin
+            Sb.Append('AND s.content LIKE ? COLLATE NOCASE ');
+            Params.Add('%' + Word + '%');
+        end;
+
+        for Phrase in Query.ContentPhrases do
+        begin
+            Sb.Append('AND s.content LIKE ? COLLATE NOCASE ');
+            Params.Add('%' + Phrase + '%');
         end;
 
         if (not UseFTS) and (Length(Query.BareWords) > 0) then
@@ -838,6 +907,65 @@ begin
                 Params.Add('%' + Word + '%');
                 Params.Add('%' + Word + '%');
             end;
+
+        for Phrase in Query.BarePhrases do
+        begin
+            if UseFTS then
+            begin
+                Safe := SanitizeFTS5(Phrase);
+                if Safe = '' then
+                    Continue;
+                Sb.Append('AND s.id IN (SELECT rowid FROM snippet_fts WHERE snippet_fts MATCH ?) ');
+                Params.Add('"' + Safe + '"');
+            end
+            else
+            begin
+                Sb.Append('AND (s.title LIKE ? COLLATE NOCASE OR s.content LIKE ? COLLATE NOCASE ' +
+                    'OR EXISTS (SELECT 1 FROM snippet_tags st JOIN tags t ON t.id = st.tag_id ' +
+                    'WHERE st.snippet_id = s.id AND t.name LIKE ? COLLATE NOCASE)) ');
+                Params.Add('%' + Phrase + '%');
+                Params.Add('%' + Phrase + '%');
+                Params.Add('%' + Phrase + '%');
+            end;
+        end;
+
+        for DF in Query.DateFilters do
+        begin
+            if DF.Field = qdfCreated then
+                Col := 's.created_at'
+            else
+                Col := 's.updated_at';
+            // Границы: EpochFrom включительно, EpochTo исключительно;
+            // оператор относится к окну даты с учётом его точности
+            case DF.Op of
+                qdoEqual:
+                    begin
+                        Sb.Append('AND ' + Col + ' >= ? AND ' + Col + ' < ? ');
+                        Params.Add(DF.EpochFrom);
+                        Params.Add(DF.EpochTo);
+                    end;
+                qdoGreater:
+                    begin
+                        Sb.Append('AND ' + Col + ' >= ? ');
+                        Params.Add(DF.EpochTo);
+                    end;
+                qdoGreaterEqual:
+                    begin
+                        Sb.Append('AND ' + Col + ' >= ? ');
+                        Params.Add(DF.EpochFrom);
+                    end;
+                qdoLess:
+                    begin
+                        Sb.Append('AND ' + Col + ' < ? ');
+                        Params.Add(DF.EpochFrom);
+                    end;
+                qdoLessEqual:
+                    begin
+                        Sb.Append('AND ' + Col + ' < ? ');
+                        Params.Add(DF.EpochTo);
+                    end;
+            end;
+        end;
 
         if FTSInclude <> '' then
             Sb.Append('ORDER BY fts.rank ASC')
