@@ -65,6 +65,10 @@ type
         cbTagsMatchAll: TCheckBox;
         lbVCLStyle: TLabel;
         cbVCLStyle: TComboBox;
+        gbSnippetColumns: TGroupBox;
+        cbColLanguage: TCheckBox;
+        cbColLastRun: TCheckBox;
+        cbColUpdated: TCheckBox;
         tsApplications: TTabSheet;
         lvApplications: TListView;
         pApplicationsButtons: TPanel;
@@ -204,6 +208,11 @@ begin
     // -----------------------------------
 
     cbTagsMatchAll.Checked := Setts.TagsMatchAll;
+
+    // Видимость колонок списка сниппетов (битовая маска)
+    cbColLanguage.Checked := (Setts.UISettings.SnippetListColumns and 1) <> 0;
+    cbColLastRun.Checked := (Setts.UISettings.SnippetListColumns and 2) <> 0;
+    cbColUpdated.Checked := (Setts.UISettings.SnippetListColumns and 4) <> 0;
 
     TVCLStyleService.FillStyleList(cbVCLStyle.Items);
     cbVCLStyle.ItemIndex := cbVCLStyle.Items.IndexOf(Setts.UISettings.VCLStyle);
@@ -676,6 +685,15 @@ begin
 
     Setts.TagsMatchAll := cbTagsMatchAll.Checked;
 
+    Setts.UISettings.SnippetListColumns := 0;
+    if cbColLanguage.Checked then
+        Setts.UISettings.SnippetListColumns := Setts.UISettings.SnippetListColumns or 1;
+    if cbColLastRun.Checked then
+        Setts.UISettings.SnippetListColumns := Setts.UISettings.SnippetListColumns or 2;
+    if cbColUpdated.Checked then
+        Setts.UISettings.SnippetListColumns := Setts.UISettings.SnippetListColumns or 4;
+    Setts.UISettings.SnippetListColumnsDefined := True;
+
     SetLength(Setts.AllowedApplications.Items, lvApplications.Items.Count);
     for I := 0 to lvApplications.Items.Count - 1 do
     begin
@@ -759,7 +777,10 @@ begin
             .Append(Trim(ledMarkdownPath.Text)).Append('|')
             .Append(cbSyncOnStart.Checked).Append('|')
             .Append(cbSyncOnExit.Checked).Append('|')
-            .Append(cbTagsMatchAll.Checked).Append('|');
+            .Append(cbTagsMatchAll.Checked).Append('|')
+            .Append(cbColLanguage.Checked).Append('|')
+            .Append(cbColLastRun.Checked).Append('|')
+            .Append(cbColUpdated.Checked).Append('|');
 
         for Item in lvApplications.Items do
             SB.Append(Item.Caption).Append(':')

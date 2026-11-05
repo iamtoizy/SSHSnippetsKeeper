@@ -15,6 +15,7 @@ object MainForm: TMainForm
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnResize = FormResize
   TextHeight = 15
   object splLeft: TSplitter
     Left = 185
@@ -23,6 +24,7 @@ object MainForm: TMainForm
     ExplicitLeft = 240
     ExplicitTop = 168
     ExplicitHeight = 100
+    OnMoved = ListSplitterMoved
   end
   object Splitter2: TSplitter
     Left = 0
@@ -202,6 +204,7 @@ object MainForm: TMainForm
       ExplicitLeft = 376
       ExplicitTop = 304
       ExplicitHeight = 100
+      OnMoved = ListSplitterMoved
     end
     object pChainActions: TPanel
       Left = 0
@@ -272,8 +275,18 @@ object MainForm: TMainForm
           Width = 230
         end
         item
+          Caption = 'colSnippetLanguage'
+          Tag = 3
+          Width = 110
+        end
+        item
           Caption = 'colSnippetLastRun'
           Tag = 2
+          Width = 140
+        end
+        item
+          Caption = 'colSnippetUpdated'
+          Tag = 4
           Width = 140
         end>
       Enabled = False

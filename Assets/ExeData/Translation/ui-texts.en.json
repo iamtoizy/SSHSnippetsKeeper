@@ -119,7 +119,9 @@
     "lvSnippets": {
       "Columns": {
         "1": "Title",
-        "2": "Last run"
+        "2": "Last run",
+        "3": "Language",
+        "4": "Last modified"
       }
     },
     "puToggleFavorite": {
@@ -1090,6 +1092,18 @@
     },
     "lbVCLStyle": {
       "Caption": "Interface style:"
+    },
+    "gbSnippetColumns": {
+      "Caption": "Snippet list columns"
+    },
+    "cbColLanguage": {
+      "Caption": "Language"
+    },
+    "cbColLastRun": {
+      "Caption": "Last run"
+    },
+    "cbColUpdated": {
+      "Caption": "Last modified"
     }
   },
   "AppPickerForm": {
@@ -1139,8 +1153,8 @@
         },
         "lvSnippets": {
           "Title": "Snippet List",
-          "Main": "Flat list of snippets in the selected workspace. Multi-selection is supported (CTRL+click / SHIFT+click): the context menu offers bulk actions - Run in order, Export, Add tag, Move to category.",
-          "Expanded": "<code>CTRL+ALT+A</code> - Add snippet<br><code>CTRL+ALT+E</code> - Edit snippet<br><code>CTRL+ALT+D</code> - Delete snippet"
+          "Main": "Flat list of snippets in the selected workspace. Multi-selection is supported (CTRL+click / SHIFT+click): the context menu offers bulk actions - Run in order, Export, Add tag, Move to category, Delete.",
+          "Expanded": "<code>CTRL+ALT+A</code> - Add snippet<br><code>CTRL+ALT+E</code> - Edit snippet<br><code>CTRL+D</code> - Duplicate snippet<br><code>CTRL+ALT+D</code> - Delete snippet"
         },
         "lvTags": {
           "Title": "Tag List",
@@ -1353,7 +1367,8 @@
           "EpochConverter": "Unix Epoch Converter",
           "NetworkCalculator": "IP/CIDR Calculator",
           "ChmodCalculator": "Chmod Calculator",
-          "ArchiveBuilder": "Archive Builder (tar/zip)"
+          "ArchiveBuilder": "Archive Builder (tar/zip)",
+          "SecurityReport": "Security Scanner Report"
         },
         "Other": {
           "Caption": "Other",
@@ -1386,6 +1401,7 @@
           "RunSequence": "Running in order",
           "ChainCreateFromSnippet": "Create chain from snippet",
           "SnippetHistory": "Version history…",
+          "Duplicate": "Duplicate",
           "AddTagToSnippets": "Add tag to selected snippets",
           "RemoveTagFromSnippets": "Remove tag from selected snippets",
           "MoveToCategory": "Move to category",
@@ -1543,7 +1559,9 @@
       "SelectPrompt": "Select a specific category to add a snippet.",
       "WorkspaceUndefined": "Failed to determine the workspace for the snippet (UserID=%d). Try selecting a specific workspace in the filter.",
       "DeletedMsg": "Snippet deleted.",
+      "DeletedMsgMulti": "Snippets deleted: %d",
       "DeleteConfirm": "Delete snippet \"%s\"?",
+      "DeleteConfirmMulti": "Delete selected snippets (%d)?",
       "DeleteError": "Error deleting snippet: %s",
       "DuplicatedMsg": "Snippet duplicated.",
       "DuplicateError": "Failed to duplicate snippet: %s",

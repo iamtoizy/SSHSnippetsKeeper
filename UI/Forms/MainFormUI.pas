@@ -262,6 +262,8 @@ type
         procedure sbBottomMouseDown(Sender: TObject; Button: TMouseButton; Shift:
             TShiftState; X, Y: Integer);
         procedure sbBottomResize(Sender: TObject);
+        procedure ListSplitterMoved(Sender: TObject);
+        procedure FormResize(Sender: TObject);
         procedure tmrAutoSyncTimer(Sender: TObject);
         procedure tmrSearchTimerTimer(Sender: TObject);
         procedure tvCategoriesClick(Sender: TObject);
@@ -295,6 +297,9 @@ type
         function GetSearchEngine: TMainSearchController;
         procedure FillSnippetListView(const Snippets: TArray<TSnippetDTO>);
         procedure UpdateSnippetLastRunRow(SnippetID: Integer);
+        procedure SizeSnippetListColumns;
+        procedure StretchSnippetTitleColumn;
+        procedure EnsureSnippetColumns;
         function GetSelectedSnippetID: Integer;
         procedure SelectSnippetByID(SnippetID: Integer);
         procedure FreeSnippetListData;
@@ -344,6 +349,7 @@ type
         procedure LanguageMenuItemClick(Sender: TObject);
         // Синхронизация Markdown
         procedure PerformSync(IsAsync: Boolean; ShowToastOnDone: Boolean = False);
+        function ListViewHelpOffset(LV: TListView): Integer;
     protected
         procedure WMActivate(var Msg: TWMActivate); message WM_ACTIVATE;
         procedure DoInitialize; override;
@@ -641,7 +647,10 @@ begin
     if Assigned(FHotkeyMgr) then
         FHotkeyMgr.StopListening;
     try
-        TSettingsForm.ExecuteModal(Self, AppContext);
+        if TSettingsForm.ExecuteModal(Self, AppContext) = mrOk then
+            // Настройки могли затронуть список сниппетов (видимость колонок) -
+            // пересобираем колонки и строки с сохранением выделения
+            ReloadSnippetListKeepingSelection;
     finally
         if Assigned(FHotkeyMgr) then FHotkeyMgr.StartListening;
     end;
@@ -856,7 +865,7 @@ begin
     // Сниппеты можно добавлять только в конкретные категории
     actAddSnippet.Enabled := (Node <> nil) and not IsVirtual and not IsWorkspace;
     SingleSelection := (lvSnippets.Selected <> nil) and (lvSnippets.SelCount = 1);
-    actDeleteSnippet.Enabled := SingleSelection;
+    actDeleteSnippet.Enabled := (lvSnippets.Selected <> nil);
     actDuplicateSnippet.Enabled := SingleSelection;
     actEditSnippet.Enabled := SingleSelection;
     actRunSnippet.Enabled := SingleSelection;
@@ -1379,7 +1388,7 @@ begin
 
     // Регистрация подсказок
     RegisterHelp(tvCategories, hipTopRight, 'Help.MainForm.tvCategories', hkCustomForm);
-    RegisterHelp(lvSnippets, hipTopRight, 'Help.MainForm.lvSnippets', hkCustomForm);
+    RegisterHelp(lvSnippets, hipTopRight, 'Help.MainForm.lvSnippets', hkCustomForm, 0, ListViewHelpOffset(lvSnippets));
     RegisterHelp(lvTags, hipTopRight, 'Help.MainForm.lvTags', hkCustomForm);
     RegisterHelp(ebSearch, hipTopRight, 'Help.MainForm.ebSearch', hkCustomForm);
 
@@ -1397,6 +1406,21 @@ begin
     TStateMgr.Instance.FirstRun;
 
     GWinMonitor.StartMonitoring;
+end;
+
+{ Высота строки заголовков ListView в координатах 96 DPI - сдвиг кнопки
+  справки вниз, ниже заголовков колонок, чтобы не наезжала на них
+  (паттерн TerminalManagerForm/ChainEditorForm/TagSelectDialog/SequenceOrderDialog) }
+function TMainForm.ListViewHelpOffset(LV: TListView): Integer;
+var
+    HeaderWnd: HWND;
+    R: TRect;
+begin
+    Result := 2;
+    HeaderWnd := FindWindowEx(LV.Handle, 0, 'SysHeader32', nil);
+    if (HeaderWnd = 0) or not GetWindowRect(HeaderWnd, R) then
+        Exit;
+    Result := Max(1, MulDiv(R.Bottom - R.Top, 96, LV.CurrentPPI)) + 2;
 end;
 
 procedure TMainForm.DoShownOnScreen;
@@ -1419,6 +1443,8 @@ begin
     actAddTagToSnippets.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.AddTag');
     actRemoveTagFromSnippets.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.RemoveTag');
     actMoveToCategory.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.MoveToCategory');
+    // Заголовки колонок lvSnippets могли смениться - пересчитываем ширины
+    SizeSnippetListColumns;
 end;
 
 procedure TMainForm.lvSnippetsClick(Sender: TObject);
@@ -1562,38 +1588,48 @@ end;
 
 procedure TMainForm.DoDeleteSnippet;
 var
-    Item: TListItem;
-    Snippet: TSnippetDTO;
+    Snippets: TArray<TSnippetDTO>;
+    I: Integer;
     SelectedCatID: Integer;
+    ConfirmMsg: string;
 begin
-    Item := lvSnippets.Selected;
-    if Item = nil then
+    Snippets := GetSelectedSnippets;
+    if Length(Snippets) = 0 then
         Exit;
 
-    Snippet := ExtractSnippetByListItem(Item);
+    // Одиночное удаление подтверждаем заголовком сниппета, пакетное - количеством
+    if Length(Snippets) = 1 then
+        ConfirmMsg := TUIStateLoader.GetMessage('Snippet.DeleteConfirm', [Snippets[0].Title])
+    else
+        ConfirmMsg := TUIStateLoader.GetMessage('Snippet.DeleteConfirmMulti', [Length(Snippets)]);
 
-    if MessagesHandler.AskConfirmation(
-        TUIStateLoader.GetMessage('Snippet.DeleteConfirm', [Snippet.Title]),
+    if not MessagesHandler.AskConfirmation(
+        ConfirmMsg,
         TUIStateLoader.GetMessage('Common.Confirmation'),
         MB_YESNO or MB_ICONQUESTION or MB_DEFBUTTON2
-    ) then begin
-        try
-            AppContext.SnippetService.DeleteSnippet(Snippet.ID);
+    ) then
+        Exit;
 
-            if tvCategories.Selected <> nil then
-                SelectedCatID := Integer(IntPtr(tvCategories.Selected.Data))
-            else
-                SelectedCatID := PRESERVE_CATEGORY_EMPTY_ID;
+    try
+        for I := 0 to High(Snippets) do
+            AppContext.SnippetService.DeleteSnippet(Snippets[I].ID);
 
-            ReloadUI(SelectedCatID);
-            FStatus.Flash(TUIStateLoader.GetMessage('Snippet.DeletedMsg'));
-            MarkDataChanged;
-        except
-            on E: Exception do
-                MessagesHandler.ShowError(
-                    TUIStateLoader.GetMessage('Snippet.DeleteError', [E.Message])
-                );
-        end;
+        if tvCategories.Selected <> nil then
+            SelectedCatID := Integer(IntPtr(tvCategories.Selected.Data))
+        else
+            SelectedCatID := PRESERVE_CATEGORY_EMPTY_ID;
+
+        ReloadUI(SelectedCatID);
+        if Length(Snippets) = 1 then
+            FStatus.Flash(TUIStateLoader.GetMessage('Snippet.DeletedMsg'))
+        else
+            FStatus.Flash(TUIStateLoader.GetMessage('Snippet.DeletedMsgMulti', [Length(Snippets)]));
+        MarkDataChanged;
+    except
+        on E: Exception do
+            MessagesHandler.ShowError(
+                TUIStateLoader.GetMessage('Snippet.DeleteError', [E.Message])
+            );
     end;
 end;
 
@@ -1724,7 +1760,17 @@ var
     I, Pos: Integer;
     Prefix: string;
     IsFav: Boolean;
+    Mask: Integer;
+    ShowLang, ShowRun, ShowUpdated: Boolean;
 begin
+    // Колонки пересобираем до заполнения строк: состав SubItems зависит от маски
+    EnsureSnippetColumns;
+
+    Mask := AppContext.SettingsManager.Data.UISettings.SnippetListColumns and 7;
+    ShowLang := (Mask and 1) <> 0;
+    ShowRun := (Mask and 2) <> 0;
+    ShowUpdated := (Mask and 4) <> 0;
+
     FavPos := nil;
     LastRuns := nil;
     if Assigned(AppContext.DatabaseManager) and AppContext.DatabaseManager.IsConnected then
@@ -1737,10 +1783,13 @@ begin
                 FavPos.Add(FavList[I].ID, I);
 
         // Время последнего запуска одним батч-запросом (snippet_stats.last_exec_at)
-        SetLength(IDs, Length(Snippets));
-        for I := 0 to High(Snippets) do
-            IDs[I] := Snippets[I].ID;
-        LastRuns := AppContext.SnippetService.GetLastRunBatch(IDs);
+        if ShowRun then
+        begin
+            SetLength(IDs, Length(Snippets));
+            for I := 0 to High(Snippets) do
+                IDs[I] := Snippets[I].ID;
+            LastRuns := AppContext.SnippetService.GetLastRunBatch(IDs);
+        end;
     end;
 
     lvSnippets.Items.BeginUpdate;
@@ -1772,10 +1821,25 @@ begin
 
             Item.Caption := Prefix + Snippet.Title;
 
-            if (LastRuns <> nil) and LastRuns.TryGetValue(Snippet.ID, LastRun) then
-                Item.SubItems.Add(DateTimeToStr(UnixToDateTime(LastRun, False)))
-            else
-                Item.SubItems.Add('');
+            if ShowLang then
+                Item.SubItems.Add(TSynHighlighterFactory.DisplayName(Snippet.Language));
+
+            if ShowRun then
+            begin
+                if (LastRuns <> nil) and LastRuns.TryGetValue(Snippet.ID, LastRun) then
+                    Item.SubItems.Add(DateTimeToStr(UnixToDateTime(LastRun, False)))
+                else
+                    Item.SubItems.Add('');
+            end;
+
+            // Сниппет ни разу не редактировали (updated_at в БД NULL) - показываем дату создания
+            if ShowUpdated then
+            begin
+                if Snippet.UpdatedAt > 0 then
+                    Item.SubItems.Add(DateTimeToStr(UnixToDateTime(Snippet.UpdatedAt, False)))
+                else
+                    Item.SubItems.Add(DateTimeToStr(UnixToDateTime(Snippet.CreatedAt, False)));
+            end;
 
             Item.StateIndex := 0;
 
@@ -1788,6 +1852,7 @@ begin
             ViewData.Comment := Snippet.Comment;
             ViewData.Language := Snippet.Language;
             ViewData.LanguageLocked := Snippet.LanguageLocked;
+            ViewData.UpdatedAt := Snippet.UpdatedAt;
             ViewData.IsFavorite := IsFav;
             if (Pos >= 0) and (Pos <= 9) then
                 ViewData.FavoriteSlot := Pos
@@ -1800,22 +1865,187 @@ begin
         FreeAndNil(FavPos);
         FreeAndNil(LastRuns);
     end;
+    SizeSnippetListColumns;
     UpdateSnippetCount;
 end;
 
 procedure TMainForm.UpdateSnippetLastRunRow(SnippetID: Integer);
 var
-    I: Integer;
+    I, Mask, RunIdx: Integer;
 begin
-    // Колонку «Последний запуск» точечно обновляет коллбэк TSnippetRunner:
-    // OnRecordRun срабатывает в главном потоке (Synchronize в TMacroThread)
+    Mask := AppContext.SettingsManager.Data.UISettings.SnippetListColumns and 7;
+
+    // Колонка «Последний запуск» может быть скрыта в настройках
+    if (Mask and 2) = 0 then
+        Exit;
+
+    // Точечное обновление делает коллбэк TSnippetRunner: OnRecordRun срабатывает
+    // в главном потоке (Synchronize в TMacroThread). Дата идет после «Языка»,
+    // если та видима
+    if (Mask and 1) <> 0 then
+        RunIdx := 1
+    else
+        RunIdx := 0;
+
     for I := 0 to lvSnippets.Items.Count - 1 do
         if Assigned(lvSnippets.Items[I].Data) and
             (TSnippetViewData(lvSnippets.Items[I].Data).ID = SnippetID) then
         begin
-            lvSnippets.Items[I].SubItems[0] := DateTimeToStr(Now);
+            lvSnippets.Items[I].SubItems[RunIdx] := DateTimeToStr(Now);
             Break;
         end;
+    // Свежий штамп времени мог стать шире колонки - пересчитываем ширины
+    SizeSnippetListColumns;
+end;
+
+procedure TMainForm.SizeSnippetListColumns;
+const
+    CELL_TEXT_PAD = 12; // запас на внутренние отступы ячейки и заголовка
+var
+    I, J: Integer;
+    W, MaxW: Integer;
+    S: string;
+begin
+    if not lvSnippets.HandleAllocated then
+        Exit;
+
+    // Фиксированные колонки (язык, даты) подстраиваются под самую широкую
+    // ячейку либо заголовок, «Название» забирает весь остаток ширины списка.
+    // ClientWidth уже исключает вертикальный скроллбар, если он показан
+    lvSnippets.Items.BeginUpdate;
+    try
+        for I := 1 to lvSnippets.Columns.Count - 1 do
+        begin
+            MaxW := ListView_GetStringWidth(lvSnippets.Handle, PChar(lvSnippets.Columns[I].Caption));
+            for J := 0 to lvSnippets.Items.Count - 1 do
+            begin
+                if I - 1 < lvSnippets.Items[J].SubItems.Count then
+                    S := lvSnippets.Items[J].SubItems[I - 1]
+                else
+                    S := '';
+                if S <> '' then
+                begin
+                    W := ListView_GetStringWidth(lvSnippets.Handle, PChar(S));
+                    if W > MaxW then
+                        MaxW := W;
+                end;
+            end;
+            lvSnippets.Columns[I].Width := MaxW + CELL_TEXT_PAD;
+        end;
+
+        // «Название» забирает весь остаток ширины списка
+        StretchSnippetTitleColumn;
+    finally
+        lvSnippets.Items.EndUpdate;
+    end;
+end;
+
+procedure TMainForm.StretchSnippetTitleColumn;
+const
+    // Ширина «Названия», когда места нет вовсе (фиксированные колонки сами
+    // не влезают) - дальше уже честная горизонтальная прокрутка
+    MIN_TITLE_WIDTH = 100;
+    // Жесткий минимум «Названия» без горизонтальной прокрутки: при остатке
+    // ниже колонка сжимается до остатка. Типичный случай - появилась
+    // вертикальная полоса и остаток стал на ее ширину меньше
+    COMPACT_TITLE_WIDTH = 50;
+var
+    I, FixedWidth, AvailWidth, Remaining: Integer;
+    R: TRect;
+begin
+    if not lvSnippets.HandleAllocated then
+        Exit;
+
+    // Пересчет видимости скроллбаров у ListView бывает отложен: вертикальная
+    // полоса может появиться позже WM_SIZE (например, при уменьшении высоты
+    // окна). Форсируем пересчет - шлем контролу его же WM_SIZE с фактической
+    // клиентской областью; после этого состояние полос гарантированно финальное
+    Winapi.Windows.GetClientRect(lvSnippets.Handle, R);
+    lvSnippets.Perform(WM_SIZE, SIZE_RESTORED,
+        MakeLParam(Word(R.Right - R.Left), Word(R.Bottom - R.Top)));
+
+    // Дешевая O(1)-подгонка после ресайза окна или сплиттера: фиксированные
+    // колонки не пересчитываем, «Название» забирает весь остаток ширины списка
+    FixedWidth := 0;
+    for I := 1 to lvSnippets.Columns.Count - 1 do
+        Inc(FixedWidth, lvSnippets.Columns[I].Width);
+
+    // Клиентскую область после форс-пересчета берем напрямую из ОС: она уже
+    // сужена на ширину вертикальной полосы, если та видима
+    Winapi.Windows.GetClientRect(lvSnippets.Handle, R);
+    AvailWidth := R.Right - R.Left;
+
+    Remaining := AvailWidth - FixedWidth;
+    if Remaining >= COMPACT_TITLE_WIDTH then
+        lvSnippets.Columns[0].Width := Remaining
+    else
+        lvSnippets.Columns[0].Width := MIN_TITLE_WIDTH;
+end;
+
+procedure TMainForm.EnsureSnippetColumns;
+const
+    MASK_LANGUAGE = 1;
+    MASK_LASTRUN = 2;
+    MASK_UPDATED = 4;
+var
+    Mask, Count, I: Integer;
+    ExpectedTags: array[0..3] of Integer;
+    Match: Boolean;
+    Col: TListColumn;
+begin
+    Mask := AppContext.SettingsManager.Data.UISettings.SnippetListColumns and 7;
+
+    // Порядок колонок: Название (Tag 1, видна всегда), Язык (Tag 3),
+    // Последний запуск (Tag 2), Последнее изменение (Tag 4)
+    ExpectedTags[0] := 1;
+    Count := 1;
+    if (Mask and MASK_LANGUAGE) <> 0 then
+    begin
+        ExpectedTags[Count] := 3;
+        Inc(Count);
+    end;
+    if (Mask and MASK_LASTRUN) <> 0 then
+    begin
+        ExpectedTags[Count] := 2;
+        Inc(Count);
+    end;
+    if (Mask and MASK_UPDATED) <> 0 then
+    begin
+        ExpectedTags[Count] := 4;
+        Inc(Count);
+    end;
+
+    Match := lvSnippets.Columns.Count = Count;
+    if Match then
+        for I := 0 to Count - 1 do
+            if lvSnippets.Columns[I].Tag <> ExpectedTags[I] then
+            begin
+                Match := False;
+                Break;
+            end;
+
+    if Match then
+        Exit;
+
+    lvSnippets.Columns.Clear;
+    for I := 0 to Count - 1 do
+    begin
+        Col := lvSnippets.Columns.Add;
+        Col.Tag := ExpectedTags[I];
+        case ExpectedTags[I] of
+            3: Col.Width := 110;
+            2, 4: Col.Width := 140;
+        else
+            Col.Width := 230; // «Название»
+        end;
+    end;
+    // Заголовки-плейсхолдеры заменяем на локализованные подписи
+    TUIStateLoader.ApplyTranslations(Self);
+end;
+
+procedure TMainForm.ListSplitterMoved(Sender: TObject);
+begin
+    StretchSnippetTitleColumn;
 end;
 
 procedure TMainForm.lvSnippetsDeletion(Sender: TObject; Item: TListItem);
@@ -2805,7 +3035,17 @@ end;
 
 procedure TMainForm.sbBottomResize(Sender: TObject);
 begin
+    // OnResize статус-бара стреляет ДО ресайза pCenter (alClient выравнивается
+    // после него), ширина списка здесь еще старая - только перестраиваем панели
     FStatus.Layout;
+end;
+
+procedure TMainForm.FormResize(Sender: TObject);
+begin
+    // Растяжка перед замерами сама форсирует пересчет скроллбаров lvSnippets,
+    // поэтому не зависит от того, завершен ли реалайн детей и успела ли
+    // появиться вертикальная полоса прокрутки
+    StretchSnippetTitleColumn;
 end;
 
 procedure TMainForm.tmrAutoSyncTimer(Sender: TObject);

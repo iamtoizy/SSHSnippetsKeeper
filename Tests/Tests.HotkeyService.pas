@@ -64,6 +64,10 @@ begin
     Svc := NewService;
     try
         Assert.IsTrue(Svc.GetActionShortCut('TMainForm.actAddSnippet') <> 0);
+        Assert.AreEqual(Integer(TextToShortCut('Ctrl+D')),
+            Integer(Svc.GetActionShortCut('TMainForm.actDuplicateSnippet')));
+        Assert.AreEqual(Integer(TextToShortCut('Ctrl+Shift+K')),
+            Integer(Svc.GetActionShortCut('TMainForm.actSecurityReport')));
     finally
         Svc.Free;
     end;

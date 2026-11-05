@@ -12,6 +12,7 @@ type
         Comment: string;
         Language: string;
         LanguageLocked: Boolean; // True = язык выбран вручную, автодетект отключён
+        UpdatedAt: Int64; // Unix-время последнего изменения; 0 = ни разу не редактировался
         IsFavorite: Boolean;
         FavoriteSlot: Integer; // 0..8 = слоты клавиш 1..9, 9 = клавиша 0, -1 = вне слотов
     end;

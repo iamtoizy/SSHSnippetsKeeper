@@ -21,6 +21,12 @@ type
     TUISettings = record
         Help: THelp;
         VCLStyle: string;
+        // Видимость колонок списка сниппетов (битовая маска):
+        // bit0 = «Язык» (Tag 3), bit1 = «Последний запуск» (Tag 2),
+        // bit2 = «Последнее изменение» (Tag 4); «Название» (Tag 1) видна всегда
+        SnippetListColumns: Integer;
+        // Маркер инициализации: False = старый settings.json без маски колонок
+        SnippetListColumnsDefined: Boolean;
     end;
 
     TWindowsNode = record

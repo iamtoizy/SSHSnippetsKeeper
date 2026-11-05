@@ -360,6 +360,10 @@ begin
     FSettings.UISettings.Help.HelpButton.FadeDuration := 500;
     FSettings.CurrentLanguage := 'ru';
 
+    // Все колонки списка сниппетов видимы по умолчанию
+    FSettings.UISettings.SnippetListColumns := 7;
+    FSettings.UISettings.SnippetListColumnsDefined := True;
+
     // Дефолты для глобальных горячих клавиш
     FSettings.Hotkeys.QuickSearch.Modifiers := MOD_ALT;
     FSettings.Hotkeys.QuickSearch.Key := Ord('Q');
@@ -456,6 +460,13 @@ begin
             FSettings.WindowHelper.KeyPressInterval := 10;
         if Trim(FSettings.CurrentLanguage) = '' then
             FSettings.CurrentLanguage := 'ru';
+
+        // Маска видимости колонок списка сниппетов: в старом файле настроек
+        // поля нет — считаем все колонки видимыми; маску чистим от лишних битов
+        if not FSettings.UISettings.SnippetListColumnsDefined then
+            FSettings.UISettings.SnippetListColumns := 7;
+        FSettings.UISettings.SnippetListColumns := FSettings.UISettings.SnippetListColumns and 7;
+        FSettings.UISettings.SnippetListColumnsDefined := True;
 
         // 2. Глобальные горячие клавиши
         if FSettings.Hotkeys.QuickSearch.Key = 0 then

@@ -354,6 +354,38 @@ object SettingsForm: TSettingsForm
         TabOrder = 1
         OnChange = cbVCLStyleChange
       end
+      object gbSnippetColumns: TGroupBox
+        Left = 3
+        Top = 88
+        Width = 610
+        Height = 98
+        Caption = #1050#1086#1083#1086#1085#1082#1080' '#1089#1087#1080#1089#1082#1072' '#1089#1085#1080#1087#1087#1077#1090#1086#1074
+        TabOrder = 2
+        object cbColLanguage: TCheckBox
+          Left = 12
+          Top = 22
+          Width = 590
+          Height = 17
+          Caption = #1071#1079#1099#1082
+          TabOrder = 0
+        end
+        object cbColLastRun: TCheckBox
+          Left = 12
+          Top = 45
+          Width = 590
+          Height = 17
+          Caption = #1055#1086#1089#1083#1077#1076#1085#1080#1081' '#1079#1072#1087#1091#1089#1082
+          TabOrder = 1
+        end
+        object cbColUpdated: TCheckBox
+          Left = 12
+          Top = 68
+          Width = 590
+          Height = 17
+          Caption = #1055#1086#1089#1083#1077#1076#1085#1077#1077' '#1080#1079#1084#1077#1085#1077#1085#1080#1077
+          TabOrder = 2
+        end
+      end
     end
     object tsCounters: TTabSheet
       Caption = 'Counters'

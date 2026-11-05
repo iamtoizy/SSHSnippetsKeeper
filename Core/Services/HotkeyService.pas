@@ -107,6 +107,7 @@ begin
     RegisterAction('TMainForm.actNetworkCalculator', 'Actions.MainForm.Tools.NetworkCalculator', 'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+I');
     RegisterAction('TMainForm.actChmodCalculator',   'Actions.MainForm.Tools.ChmodCalculator',   'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+M');
     RegisterAction('TMainForm.actArchiveBuilder',    'Actions.MainForm.Tools.ArchiveBuilder',    'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+Z');
+    RegisterAction('TMainForm.actSecurityReport',    'Actions.MainForm.Tools.SecurityReport',    'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+K');
 
     // --- ПРОЧЕЕ ---
     RegisterAction('TMainForm.actSettings', 'Actions.MainForm.Other.Settings', 'Actions.MainForm.Other.Caption', 'Ctrl+Alt+P');
@@ -138,6 +139,7 @@ begin
     RegisterAction('TMainForm.actRemoveTagFromSnippets', 'Actions.MainForm.SnippetMenu.RemoveTagFromSnippets', 'Actions.MainForm.SnippetMenu.Caption', 'Ctrl+Alt+R');
     RegisterAction('TMainForm.actMoveToCategory',        'Actions.MainForm.SnippetMenu.MoveToCategory',        'Actions.MainForm.SnippetMenu.Caption', 'Ctrl+Alt+M');
     RegisterAction('TMainForm.actExportSnippets',        'Actions.MainForm.SnippetMenu.ExportSnippets',        'Actions.MainForm.SnippetMenu.Caption', 'Ctrl+E');
+    RegisterAction('TMainForm.actDuplicateSnippet',      'Actions.MainForm.SnippetMenu.Duplicate',             'Actions.MainForm.SnippetMenu.Caption', 'Ctrl+D');
     //
     // TAddEditSnippetForm
     //
