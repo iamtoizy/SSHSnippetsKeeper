@@ -60,6 +60,7 @@ type
         function IsConnected: Boolean;
         function GetConnectionString: string;
         function CreateImportSnapshot: string;
+        function CreateAutoBackup: string;
     end;
 
     // Контекст над in-memory SQLite: реальные репозитории и сервисы
@@ -296,6 +297,11 @@ function TTestDatabaseManager.CreateImportSnapshot: string;
 begin
     Inc(SnapshotCalls);
     Result := SnapshotResult;
+end;
+
+function TTestDatabaseManager.CreateAutoBackup: string;
+begin
+    Result := '';
 end;
 
 { TTestAppContext }
@@ -598,6 +604,7 @@ begin
     ConnA := TFDConnection.Create(nil);
     ConnB := nil;
     LocalMgr := nil;
+    Held := False;
     try
         ConnA.Params.Add('DriverID=SQLite');
         ConnA.Params.Add('Database=' + DbFile);
@@ -630,13 +637,15 @@ begin
                 TMarkdownImporter.ImportFromDirectory(Ctx, VaultDirLocked);
             end);
 
+        // Владение проверяем ДО освобождения контекста: его деструктор может
+        // стать последним _Release и уничтожить заглушку (см. DbManagerHeld)
+        Held := DbManagerHeld(LocalMgr);
         Ctx := nil;
 
         Assert.AreEqual(0, Integer(ConnA.ExecSQLScalar(
             'SELECT COUNT(*) FROM users WHERE name = ''user1''')));
         Assert.AreEqual(0, Integer(ConnA.ExecSQLScalar('SELECT COUNT(*) FROM snippets')));
     finally
-        Held := DbManagerHeld(LocalMgr);
         if ConnA.InTransaction then
             ConnA.Rollback;
         Ctx := nil;

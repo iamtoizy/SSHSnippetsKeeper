@@ -1,4 +1,4 @@
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{4A1F6D38-2C7B-4E5A-9D10-7F3B8C62E4A9}</ProjectGuid>
     </PropertyGroup>
@@ -7,6 +7,9 @@
             <Dependencies/>
         </Projects>
         <Projects Include="Tests\SSHSnippetsKeeperTests.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Tools\LangNBTrainer\LangNBTrainer.dproj">
             <Dependencies/>
         </Projects>
     </ItemGroup>
@@ -35,14 +38,23 @@
     <Target Name="SSHSnippetsKeeperTests:Make">
         <MSBuild Projects="Tests\SSHSnippetsKeeperTests.dproj" Targets="Make"/>
     </Target>
+    <Target Name="LangNBTrainer">
+        <MSBuild Projects="Tools\LangNBTrainer\LangNBTrainer.dproj"/>
+    </Target>
+    <Target Name="LangNBTrainer:Clean">
+        <MSBuild Projects="Tools\LangNBTrainer\LangNBTrainer.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="LangNBTrainer:Make">
+        <MSBuild Projects="Tools\LangNBTrainer\LangNBTrainer.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="SSHSnippetsKeeper;SSHSnippetsKeeperTests"/>
+        <CallTarget Targets="SSHSnippetsKeeper;SSHSnippetsKeeperTests;LangNBTrainer"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="SSHSnippetsKeeper:Clean;SSHSnippetsKeeperTests:Clean"/>
+        <CallTarget Targets="SSHSnippetsKeeper:Clean;SSHSnippetsKeeperTests:Clean;LangNBTrainer:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="SSHSnippetsKeeper:Make;SSHSnippetsKeeperTests:Make"/>
+        <CallTarget Targets="SSHSnippetsKeeper:Make;SSHSnippetsKeeperTests:Make;LangNBTrainer:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

@@ -1468,6 +1468,8 @@
       "CreateError": "Ошибка создания базы данных: %s",
       "OpenedSuccess": "База данных SQLite открыта.",
       "CreatedSuccess": "База данных SQLite создана.",
+      "AutoBackupCreated": "Создан автобэкап базы данных: %s",
+      "AutoBackupFailed": "Не удалось создать автобэкап базы данных: %s",
       "NoConnectionError": "Ошибка: нет подключения к базе данных.",
       "NewerVersion": "База данных создана более новой версией приложения (схема v%s, приложение поддерживает до v%s). Обнови SSH Snippets Keeper.",
       "MigrateFailed": "Ошибка миграции схемы базы данных на шаге v%s: %s",

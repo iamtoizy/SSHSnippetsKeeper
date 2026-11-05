@@ -54,6 +54,7 @@ type
         function IsConnected: Boolean;
         function GetConnectionString: string;
         function CreateImportSnapshot: string;
+        function CreateAutoBackup: string;
     end;
 
 var
@@ -178,6 +179,12 @@ end;
 function TAppDatabase.CreateImportSnapshot: string;
 begin
     Result := Data.Database.Migrations.CreateImportSnapshot(
+        FDConnection, FDConnection.Params.Database);
+end;
+
+function TAppDatabase.CreateAutoBackup: string;
+begin
+    Result := Data.Database.Migrations.CreateAutoBackup(
         FDConnection, FDConnection.Params.Database);
 end;
 

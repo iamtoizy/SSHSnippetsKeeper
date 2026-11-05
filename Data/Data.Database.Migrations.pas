@@ -23,6 +23,9 @@ const
     // Сколько последних pre_import_-снапшотов хранится рядом с файлом БД
     IMPORT_SNAPSHOT_KEEP = 3;
 
+    // Сколько последних auto_-автобэкапов хранится рядом с файлом БД
+    AUTO_BACKUP_KEEP = 3;
+
     // Коды возврата консольных команд (/migrate, /backup, /checkdb, /newdb)
     MIGRATE_EXIT_OK           = 0;
     MIGRATE_EXIT_NEWER_SCHEMA = 2;
@@ -76,6 +79,15 @@ type
 // хранящая IMPORT_SNAPSHOT_KEEP последних копий.
 // Для :memory:/отсутствующего файла БД возвращает '' (снапшотить нечего).
 function CreateImportSnapshot(AConnection: TFDConnection;
+    const ADatabaseFile: string): string;
+
+// Автобэкап при открытии БД: VACUUM INTO в <имя БД>.auto_<метка времени>.bak
+// рядом с БД + ротация, хранящая AUTO_BACKUP_KEEP последних копий.
+// Не чаще одного раза в сутки: если копия с сегодняшней датой уже есть,
+// возвращается '' (частые перезапуски приложения не затирают все
+// точки восстановления).
+// Для :memory:/отсутствующего файла БД возвращает '' (бэкапить нечего).
+function CreateAutoBackup(AConnection: TFDConnection;
     const ADatabaseFile: string): string;
 
 // Консольный режим ключа /migrate: накатывает схему и завершает процесс
@@ -390,6 +402,70 @@ begin
             end));
 
     for I := IMPORT_SNAPSHOT_KEEP to High(Files) do
+        TFile.Delete(Files[I]);
+end;
+
+function CreateAutoBackup(AConnection: TFDConnection;
+    const ADatabaseFile: string): string;
+var
+    BackupFile: string;
+    Files: TArray<string>;
+    TodayPrefix: string;
+    I: Integer;
+    Migrator: TDatabaseMigrator;
+begin
+    Result := '';
+
+    // :memory: и несуществующие файлы бэкапировать нечего
+    // (и сканировать папку нельзя - путь некорректен)
+    if (ADatabaseFile = '') or SameText(ADatabaseFile, ':memory:') or
+        (not TFile.Exists(ADatabaseFile)) then
+        Exit;
+
+    // Страж «не чаще раза в сутки»: копия с сегодняшней меткой уже есть -
+    // новая не создаётся. Дата в имени дополнена нулями (yyyymmdd),
+    // поэтому сравнение по префиксу точное
+    TodayPrefix := ADatabaseFile + '.auto_' + FormatDateTime('yyyymmdd', Now);
+    Files := TDirectory.GetFiles(TPath.GetDirectoryName(ADatabaseFile),
+        TPath.GetFileName(ADatabaseFile) + '.auto_*.bak');
+
+    for I := 0 to High(Files) do
+        if Files[I].StartsWith(TodayPrefix, True) then
+            Exit;
+
+    BackupFile := ADatabaseFile + '.auto_' +
+        FormatDateTime('yyyymmdd_hhnnsszzz', Now) + '.bak';
+
+    // Снапшот выполняется вне транзакций: VACUUM INTO нельзя выполнять
+    // в активной транзакции на том же соединении
+    Migrator := TDatabaseMigrator.Create(AConnection, ADatabaseFile);
+    try
+        Migrator.CreateBackup(BackupFile);
+        Result := Migrator.BackupPath;
+    finally
+        Migrator.Free;
+    end;
+
+    if Result = '' then
+        Exit;
+
+    // Ротация: храним только AUTO_BACKUP_KEEP последних автобэкапов.
+    // Метка времени в имени гарантирует, что лексикографический порядок
+    // совпадает с хронологией
+    Files := TDirectory.GetFiles(TPath.GetDirectoryName(ADatabaseFile),
+        TPath.GetFileName(ADatabaseFile) + '.auto_*.bak');
+
+    if Length(Files) <= AUTO_BACKUP_KEEP then
+        Exit;
+
+    TArray.Sort<string>(Files,
+        TComparer<string>.Construct(
+            function(const ALeft, ARight: string): Integer
+            begin
+                Result := CompareText(ARight, ALeft);
+            end));
+
+    for I := AUTO_BACKUP_KEEP to High(Files) do
         TFile.Delete(Files[I]);
 end;
 

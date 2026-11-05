@@ -515,11 +515,26 @@ begin
 end;
 
 function TMainForm.OpenDatabaseFile(const AFileName: string): Boolean;
+var
+    AutoBackupFile: string;
 begin
     Result := False;
     try
         AppContext.DatabaseManager.OpenDatabase(AFileName);
         TStateMgr.Instance.OpenDatabase;
+
+        // Автобэкап БД не чаще раза в сутки (страж внутри менеджера).
+        // Сбой бэкапа не мешает работе с БД - сообщаем и продолжаем
+        try
+            AutoBackupFile := AppContext.DatabaseManager.CreateAutoBackup;
+            if AutoBackupFile <> '' then
+                ShowSimpleToast(TUIStateLoader.GetMessage(
+                    'DB.AutoBackupCreated', [AutoBackupFile]));
+        except
+            on E: Exception do
+                MessagesHandler.ShowError(
+                    TUIStateLoader.GetMessage('DB.AutoBackupFailed', [E.Message]));
+        end;
 
         LoadUsersToComboBox;  // Сначала загружаем выпадающий список
         cbUserChange(cbUser); // Вызываем OnChange, что инициирует ReloadUI с правильным ID

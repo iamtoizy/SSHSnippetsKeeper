@@ -1468,6 +1468,8 @@
       "CreateError": "Error creating database: %s",
       "OpenedSuccess": "SQLite database opened.",
       "CreatedSuccess": "SQLite database created.",
+      "AutoBackupCreated": "Database auto-backup created: %s",
+      "AutoBackupFailed": "Failed to create database auto-backup: %s",
       "NoConnectionError": "Error: No connection to the database.",
       "NewerVersion": "The database was created by a newer application version (schema v%s, application supports up to v%s). Please update SSH Snippets Keeper.",
       "MigrateFailed": "Database schema migration failed at step v%s: %s",
