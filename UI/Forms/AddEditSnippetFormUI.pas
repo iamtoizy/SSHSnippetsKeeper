@@ -444,7 +444,7 @@ var
     TagIDs: TList<Integer>;
     I: Integer;
     TagArr: TArray<Integer>;
-    UnixText: string;
+    UnixText, UnixComment: string;
 begin
     if Trim(ebTitle.Text) = '' then
     begin
@@ -466,14 +466,19 @@ begin
         TagIDs.Free;
     end;
 
+    // Контент и комментарий в БД хранятся с LF-окончаниями: SynEdit отдаёт
+    // текст с теми разделителями, что определил при загрузке буфера, поэтому
+    // без нормализации комментарий попадал в БД в CRLF (регрессия проверяется
+    // в Tests.DirtyDetection на импортёрском CRLF-комментарии)
     UnixText := StringReplace(mContent.Text, #13#10, #10, [rfReplaceAll]);
+    UnixComment := StringReplace(mComment.Text, #13#10, #10, [rfReplaceAll]);
 
     Snippet := Default(TSnippetDTO);
     Snippet.UserID := FUserID;
     Snippet.CategoryID := FCategoryID;
     Snippet.Title := ebTitle.Text;
     Snippet.Content := UnixText;
-    Snippet.Comment := mComment.Text;
+    Snippet.Comment := UnixComment;
     Snippet.Language := NormalizeSnippetLanguage(FCurrentLanguage);
     Snippet.LanguageLocked := FLangLocked;
     Snippet.IsSecurityCheckIgnored := cbIgnoreSecurityChecks.Checked;

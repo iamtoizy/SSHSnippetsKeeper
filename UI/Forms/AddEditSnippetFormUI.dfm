@@ -247,7 +247,7 @@ object AddEditSnippetForm: TAddEditSnippetForm
         Caption = #1057#1086#1076#1077#1088#1078#1080#1084#1086#1077' '#1089#1085#1080#1087#1087#1077#1090#1072
         object sMiddle: TSplitter
           Left = 0
-          Top = 169
+          Top = 301
           Width = 521
           Height = 3
           Cursor = crVSplit
@@ -328,14 +328,15 @@ object AddEditSnippetForm: TAddEditSnippetForm
           Left = 0
           Top = 26
           Width = 521
-          Height = 143
+          Height = 275
           Align = alClient
           BevelOuter = bvNone
           TabOrder = 1
           Visible = False
+          ExplicitHeight = 143
           object pbLoading: TProgressBar
             Left = 0
-            Top = 126
+            Top = 258
             Width = 521
             Height = 17
             Align = alBottom
@@ -343,12 +344,13 @@ object AddEditSnippetForm: TAddEditSnippetForm
             ParentDoubleBuffered = False
             Style = pbstMarquee
             TabOrder = 1
+            ExplicitTop = 126
           end
           object mAIPrompt: TSynEdit
             Left = 0
             Top = 0
             Width = 521
-            Height = 126
+            Height = 258
             Cursor = crDefault
             Align = alClient
             CaseSensitive = True
@@ -403,13 +405,14 @@ object AddEditSnippetForm: TAddEditSnippetForm
                 FullRow = True
               end>
             WordWrap = True
+            ExplicitHeight = 126
           end
         end
         object mComment: TSynEdit
           Left = 0
-          Top = 172
+          Top = 304
           Width = 521
-          Height = 222
+          Height = 90
           Cursor = crDefault
           Align = alBottom
           DoubleBuffered = True
@@ -472,7 +475,7 @@ object AddEditSnippetForm: TAddEditSnippetForm
           Left = 0
           Top = 26
           Width = 521
-          Height = 143
+          Height = 275
           Align = alClient
           DoubleBuffered = True
           Font.Charset = DEFAULT_CHARSET
@@ -536,6 +539,7 @@ object AddEditSnippetForm: TAddEditSnippetForm
           WantTabs = True
           OnChange = mContentChange
           OnProcessCommand = mContentProcessCommand
+          ExplicitHeight = 143
         end
       end
       object tsMacros: TTabSheet
