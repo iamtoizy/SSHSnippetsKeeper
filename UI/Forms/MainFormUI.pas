@@ -146,6 +146,7 @@ type
         actChmodCalculator: TAction;
         actArchiveBuilder: TAction;
         actTerminalManager: TAction;
+        actSecurityReport: TAction;
         nSettings: TMenuItem;
         N1: TMenuItem;
         actSettings: TAction;
@@ -852,6 +853,9 @@ begin
                 tvCategories.Enabled := True;
                 lvSnippets.Enabled := True;
 
+                // Отчёт сканера работает по всей базе - пункт нужен только с подключённой БД
+                actSecurityReport.Visible := True;
+
                 FStatus.SetDatabase(CurrentDbFileName);
                 FStatus.SetDirty(False);
                 FStatus.SetEvent('');
@@ -874,6 +878,9 @@ begin
                 rbFTS.Enabled := False;
                 tvCategories.Enabled := False;
                 lvSnippets.Enabled := False;
+
+                // Без подключённой БД сканировать нечего - пункт отчёта скрыт
+                actSecurityReport.Visible := False;
 
                 // Жестко отключаем все зависимые от контента действия (главное меню и попапы)
                 actAddCategory.Enabled := False;
