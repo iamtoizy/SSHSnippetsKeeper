@@ -1163,12 +1163,12 @@
       "MainForm": {
         "tvCategories": {
           "Title": "Category List",
-          "Main": "Tree list of categories in the current workspace. If \"All Workspaces\" is selected, workspaces are displayed as root categories, but snippets cannot be added to them.<br><blockquote><b>Virtual categories</b> \"Recent\" and \"Frequently used\": snippets cannot be added manually to these categories, only modified or deleted.</blockquote><br><blockquote><b>Chains</b> - a named sequence of snippets executed one by one. Create: right-click the \"Chains\" node and choose \"New chain\", or right-click a snippet and choose \"Create chain from snippet\". Run by double-clicking the chain or via its context menu; a progress panel with a \"Stop\" button (Esc works too) appears during execution. Edit and delete via the chain's context menu.</blockquote><br><blockquote><b>Smart folders</b> - saved search queries. Create: right-click the \"Smart folders\" node and choose \"Save search as smart folder\" (the search box must be non-empty), then enter a name. Selecting a folder runs the saved query and shows the results in the snippet list. Rename with F2 or via the context menu; delete via \"Delete smart folder\".</blockquote>",
+          "Main": "Tree list of categories in the current workspace. If \"All Workspaces\" is selected, workspaces are displayed as root categories, but snippets cannot be added to them.<br><blockquote><b>Virtual categories</b> \"Recent\" and \"Frequently used\": snippets cannot be added manually to these categories, only modified or deleted.</blockquote><br><blockquote><b>Chains</b> - a named sequence of snippets executed one by one. Create: right-click the \"Chains\" node and choose \"New chain\", or right-click a snippet and choose \"Create chain from snippet\". Run by double-clicking the chain or via its context menu; a progress panel with a \"Stop\" button (Esc works too) appears during execution. Edit and delete via the chain's context menu.</blockquote><br><blockquote><b>Saved searches</b> - named search queries. Create: right-click the \"Saved searches\" node and choose \"Save search\" (the search box must be non-empty), then enter a name. Selecting a search runs the query and shows the results in the snippet list. Rename with F2 or via the context menu; delete via \"Delete saved search\".</blockquote>",
           "Expanded": "<code>ALT+A</code> - Add category<br><code>ALT+E</code> - Edit category<br><code>ALT+D</code> - Delete category"
         },
         "lvSnippets": {
           "Title": "Snippet List",
-          "Main": "Flat list of snippets in the selected category; it also shows results of searches, smart folders, and tag filters. Run with a double click or \"Run\": the snippet is typed into the selected target window; \"Dry run\" shows the snippet without typing and lets you run it after review.<br><blockquote><b>Columns:</b> \"Title\" is always visible; \"Language\", \"Last run\" and \"Last modified\" can be toggled in Settings. If a snippet was never edited, \"Last modified\" shows the creation date.</blockquote><br><blockquote><b>Favorites:</b> favorite snippets are marked with ★, the first ten also show a slot number (1..0) triggered by the global keys ALT+1…ALT+0 (configurable). Reorder favorites by dragging a row onto another favorite, or via the context menu \"Move in favorites\" (To top / Up / Down / To end). Hovering a row shows a tooltip with ID, title, language and comment.</blockquote><br><blockquote><b>Multi-selection</b> (CTRL+click / SHIFT+click) enables bulk context-menu actions: \"Running in order\", \"Export snippets\", \"Add tag to selected snippets\", \"Remove tag from selected snippets\", \"Move to category\", \"Delete\". The menu also offers \"Create chain from snippet\", \"Version history…\" (view and restore), \"Add to favorites\" / \"Remove from favorites\" and \"Save search as smart folder\" (when the list shows search results).</blockquote>",
+          "Main": "Flat list of snippets in the selected category; it also shows results of searches, saved searches, and tag filters. Run with a double click or \"Run\": the snippet is typed into the selected target window; \"Dry run\" shows the snippet without typing and lets you run it after review.<br><blockquote><b>Columns:</b> \"Title\" is always visible; \"Language\", \"Last run\" and \"Last modified\" can be toggled in Settings. If a snippet was never edited, \"Last modified\" shows the creation date.</blockquote><br><blockquote><b>Favorites:</b> favorite snippets are marked with ★, the first ten also show a slot number (1..0) triggered by the global keys ALT+1…ALT+0 (configurable). Reorder favorites by dragging a row onto another favorite, or via the context menu \"Move in favorites\" (To top / Up / Down / To end). Hovering a row shows a tooltip with ID, title, language and comment.</blockquote><br><blockquote><b>Multi-selection</b> (CTRL+click / SHIFT+click) enables bulk context-menu actions: \"Running in order\", \"Export snippets\", \"Add tag to selected snippets\", \"Remove tag from selected snippets\", \"Move to category\", \"Delete\". The menu also offers \"Create chain from snippet\", \"Version history…\" (view and restore), \"Add to favorites\" / \"Remove from favorites\" and \"Save search\" (when the list shows search results).</blockquote>",
           "Expanded": "<code>ALT+1…ALT+0</code> - Run favorite snippet by slot (global)<br><code>CTRL+ALT+A</code> - Add snippet<br><code>CTRL+ALT+E</code> - Edit snippet<br><code>CTRL+D</code> - Duplicate snippet<br><code>CTRL+ALT+D</code> - Delete snippet"
         },
         "lvTags": {
@@ -1185,7 +1185,7 @@
         "Recent": "Recent",
         "Favorites": "Favorites",
         "Chains": "Chains",
-        "SavedQueries": "Smart folders"
+        "SavedQueries": "Saved searches"
       },
       "ChainEditorForm": {
         "lvSteps": {
@@ -1729,21 +1729,21 @@
     },
     "SavedQueries": {
       "Menu": {
-        "Create": "Save search as smart folder",
-        "CreateFromSearch": "Save search as smart folder",
-        "Delete": "Delete smart folder"
+        "Create": "Save search",
+        "CreateFromSearch": "Save search",
+        "Delete": "Delete saved search"
       },
-      "SaveTitle": "Smart folder",
-      "NamePrompt": "Smart folder name:",
-      "DeleteConfirm": "Delete smart folder \"%s\"?",
-      "CreatedMsg": "Smart folder \"%s\" created.",
-      "DeletedMsg": "Smart folder \"%s\" deleted.",
-      "RenameError": "Failed to rename smart folder: %s",
+      "SaveTitle": "Saved search",
+      "NamePrompt": "Saved search name:",
+      "DeleteConfirm": "Delete saved search \"%s\"?",
+      "CreatedMsg": "Saved search \"%s\" created.",
+      "DeletedMsg": "Saved search \"%s\" deleted.",
+      "RenameError": "Failed to rename saved search: %s",
       "Error": {
-        "EmptyName": "Enter the smart folder name.",
+        "EmptyName": "Enter the saved search name.",
         "EmptyQuery": "The search box is empty - nothing to save.",
-        "DuplicateName": "Smart folder \"%s\" already exists.",
-        "NotFound": "Smart folder not found."
+        "DuplicateName": "Saved search \"%s\" already exists.",
+        "NotFound": "Saved search not found."
       }
     },
     "MultiSelect": {
