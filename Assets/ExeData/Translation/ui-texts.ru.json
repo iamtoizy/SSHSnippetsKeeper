@@ -253,6 +253,12 @@
         "4": "Доверенный"
       }
     },
+    "lbFilter": {
+      "Caption": "Показывать:"
+    },
+    "bRescan": {
+      "Caption": "Пересканировать"
+    },
     "bClose": {
       "Caption": "Закрыть"
     }
@@ -1812,7 +1818,12 @@
       "ReportInContent": "Содержимое: %s",
       "ReportInComment": "Комментарий: %s",
       "ReportTrusted": "да",
-      "ReportNotTrusted": "нет"
+      "ReportNotTrusted": "нет",
+      "ReportFilterAll": "Все опасные сниппеты",
+      "ReportFilterNotTrusted": "Только без отметки \"Доверенный\"",
+      "ReportScanning": "Идёт сканирование базы...",
+      "ReportScanTime": "Время сканирования: %s с",
+      "ReportScanError": "Ошибка сканирования: %s"
     },
     "Markdown": {
       "DeleteFolderError": "Не удалось удалить папку: \"%s\""

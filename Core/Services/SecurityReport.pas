@@ -31,6 +31,12 @@ type
 function BuildSecurityReport(const Scanner: ISecurityScanner;
     const Snippets: TArray<TSnippetDTO>): TArray<TSecurityFinding>;
 
+// Отбор записей для отображения из уже собранного отчёта: HideTrusted=True
+// скрывает сниппеты, для которых включено "доверять" (IsSecurityCheckIgnored).
+// Фильтрация списка не запускает повторное сканирование базы.
+function FilterSecurityReport(const Findings: TArray<TSecurityFinding>;
+    HideTrusted: Boolean): TArray<TSecurityFinding>;
+
 implementation
 
 function BuildSecurityReport(const Scanner: ISecurityScanner;
@@ -63,6 +69,18 @@ begin
         if (Finding.ContentReason <> '') or (Finding.CommentReason <> '') then
             Result := Result + [Finding];
     end;
+end;
+
+function FilterSecurityReport(const Findings: TArray<TSecurityFinding>;
+    HideTrusted: Boolean): TArray<TSecurityFinding>;
+var
+    Finding: TSecurityFinding;
+begin
+    Result := [];
+
+    for Finding in Findings do
+        if not (HideTrusted and Finding.Trusted) then
+            Result := Result + [Finding];
 end;
 
 end.

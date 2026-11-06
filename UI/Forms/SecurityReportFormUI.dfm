@@ -30,7 +30,7 @@ object SecurityReportForm: TSecurityReportForm
     Left = 0
     Top = 30
     Width = 760
-    Height = 457
+    Height = 438
     Align = alClient
     Columns = <
       item
@@ -66,7 +66,7 @@ object SecurityReportForm: TSecurityReportForm
   end
   object pBottom: TPanel
     Left = 0
-    Top = 487
+    Top = 468
     Width = 760
     Height = 33
     Align = alBottom
@@ -75,6 +75,32 @@ object SecurityReportForm: TSecurityReportForm
     DesignSize = (
       760
       33)
+    object lbFilter: TLabel
+      Left = 12
+      Top = 9
+      Width = 71
+      Height = 15
+      Caption = 'lbFilter'
+      Layout = tlCenter
+    end
+    object cbFilter: TComboBox
+      Left = 90
+      Top = 5
+      Width = 230
+      Height = 23
+      Style = csDropDownList
+      TabOrder = 0
+      OnChange = cbFilterChange
+    end
+    object bRescan: TButton
+      Left = 540
+      Top = 6
+      Width = 110
+      Height = 25
+      Anchors = [akTop, akRight]
+      Caption = 'bRescan'
+      TabOrder = 1
+    end
     object bClose: TButton
       Left = 658
       Top = 6
@@ -84,7 +110,16 @@ object SecurityReportForm: TSecurityReportForm
       Cancel = True
       Caption = 'bClose'
       ModalResult = 2
-      TabOrder = 0
+      TabOrder = 2
     end
+  end
+  object sbBottom: TStatusBar
+    Left = 0
+    Top = 501
+    Width = 760
+    Height = 19
+    Panels = <>
+    SimplePanel = True
+    SizeGrip = False
   end
 end
