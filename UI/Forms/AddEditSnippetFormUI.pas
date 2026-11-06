@@ -5,6 +5,7 @@ interface
 uses
     UI.Services.AIService,
     BaseFormUI,
+    Common.DraftStore,
     Core.BashCompletionEngine,
     Core.Entities.Snippet,
     Core.Interfaces.App,
@@ -151,6 +152,7 @@ type
         procedure tmrSecurityScanTimer(Sender: TObject);
     protected
         procedure Loaded; override;
+        procedure DoShownOnScreen; override;
     private
         FIsAICanceled: Boolean;
         FFirstShow: Boolean;
@@ -187,6 +189,11 @@ type
         FDragDropOffset: Integer;
         FSaveDragCursor: TCursor;
 
+        FDraftStore: TDraftStore;
+        FDraftTimer: TTimer;
+        FDraftSuspend: Boolean;
+        FDraftRestoreDone: Boolean;
+
         procedure ShowAIOverlay;
         procedure ExecuteAICommand;
         function IsAutocompleteVisible: Boolean;
@@ -217,6 +224,16 @@ type
         // изменённых нетекстовых полей для шапки окна просмотра
         function BuildSaveDiff(const ANewContent, ANewComment: string;
             out AOtherChanges: string): TArray<TDiffLine>;
+
+        procedure DraftTouch(Sender: TObject);
+        procedure tmrDraftSaveTick(Sender: TObject);
+        function DraftKey: string;
+        function BuildDraftPayload: TDraftPayload;
+        function JoinDraftTags(const P: TDraftPayload): string;
+        function DraftDiffers(const P: TDraftPayload): Boolean;
+        procedure ApplyDraft(const P: TDraftPayload);
+        procedure TryRestoreDraft;
+        procedure DeleteCurrentDraft;
     public
         // Проверка "есть ли реальные правки" для FormCloseQueryAI; публичная,
         // чтобы регрессия Tests.DirtyDetection вызывала её напрямую
@@ -343,6 +360,7 @@ begin
     FreeAndNil(FCardPlugin);
     FreeAndNil(FMacroCards);
     FreeAndNil(FInsertTemplates);
+    FreeAndNil(FDraftStore);
 
     FreeAndNil(FCurrentMulti);
     FreeAndNil(FCurrentHighlighter);
@@ -440,6 +458,191 @@ begin
         (FCurrentLanguage <> NormalizeSnippetLanguage(FOriginalSnippet.Language)) or
         (FLangLocked <> FOriginalSnippet.LanguageLocked) or
         (cbIgnoreSecurityChecks.Checked <> FOriginalSnippet.SecurityIgnore);
+end;
+
+function TAddEditSnippetForm.DraftKey: string;
+begin
+    if FIsEditMode then
+        Result := IntToStr(FSnippet.ID)
+    else
+        Result := DRAFT_NEW_KEY;
+end;
+
+procedure TAddEditSnippetForm.DraftTouch(Sender: TObject);
+begin
+    if FDraftSuspend or (FDraftStore = nil) then
+        Exit;
+    FDraftTimer.Enabled := False;
+    FDraftTimer.Enabled := True;
+end;
+
+procedure TAddEditSnippetForm.tmrDraftSaveTick(Sender: TObject);
+var
+    P: TDraftPayload;
+begin
+    FDraftTimer.Enabled := False;
+    if FDraftSuspend or (FDraftStore = nil) then
+        Exit;
+    if IsSnippetChanged then
+    begin
+        P := BuildDraftPayload;
+        FDraftStore.SaveDraft(P);
+    end
+    else
+        FDraftStore.DeleteDraft(DraftKey);
+end;
+
+function TAddEditSnippetForm.BuildDraftPayload: TDraftPayload;
+var
+    I: Integer;
+begin
+    Result := Default(TDraftPayload);
+    Result.Key := DraftKey;
+    Result.Title := ebTitle.Text;
+    Result.Content := StringReplace(mContent.Text, #13#10, #10, [rfReplaceAll]);
+    Result.Comment := StringReplace(mComment.Text, #13#10, #10, [rfReplaceAll]);
+    Result.Language := NormalizeSnippetLanguage(FCurrentLanguage);
+    Result.LanguageLocked := FLangLocked;
+    Result.SecurityIgnore := cbIgnoreSecurityChecks.Checked;
+    SetLength(Result.Tags, lvSelectedTags.Items.Count);
+    for I := 0 to lvSelectedTags.Items.Count - 1 do
+        Result.Tags[I] := lvSelectedTags.Items[I].Caption;
+end;
+
+function TAddEditSnippetForm.JoinDraftTags(const P: TDraftPayload): string;
+var
+    Tag: string;
+begin
+    Result := '';
+    for Tag in P.Tags do
+        Result := Result + ';' + Tag;
+end;
+
+function TAddEditSnippetForm.DraftDiffers(const P: TDraftPayload): Boolean;
+var
+    TagsStr, UIContent, DraftContent, UIComment, DraftComment: string;
+    I: Integer;
+begin
+    TagsStr := '';
+    for I := 0 to lvSelectedTags.Items.Count - 1 do
+        TagsStr := TagsStr + ';' + lvSelectedTags.Items[I].Caption;
+    UIContent := StringReplace(mContent.Text, #13#10, #10, [rfReplaceAll]);
+    DraftContent := StringReplace(P.Content, #13#10, #10, [rfReplaceAll]);
+    UIComment := StringReplace(mComment.Text, #13#10, #10, [rfReplaceAll]);
+    DraftComment := StringReplace(P.Comment, #13#10, #10, [rfReplaceAll]);
+
+    Result :=
+        (ebTitle.Text <> P.Title) or
+        (UIContent <> DraftContent) or
+        (UIComment <> DraftComment) or
+        (TagsStr <> JoinDraftTags(P)) or
+        (FCurrentLanguage <> NormalizeSnippetLanguage(P.Language)) or
+        (FLangLocked <> P.LanguageLocked) or
+        (cbIgnoreSecurityChecks.Checked <> P.SecurityIgnore);
+end;
+
+procedure TAddEditSnippetForm.ApplyDraft(const P: TDraftPayload);
+var
+    I: Integer;
+    Item: TListItem;
+    DraftTag: string;
+begin
+    FDraftSuspend := True;
+    try
+        ebTitle.Text := P.Title;
+        mComment.Text := P.Comment;
+
+        FSuppressDetect := True;
+        try
+            mContent.Text := P.Content;
+        finally
+            FSuppressDetect := False;
+        end;
+        FDetectBaselineText := mContent.Text;
+
+        FLangLocked := P.LanguageLocked;
+        FCurrentLanguage := NormalizeSnippetLanguage(P.Language);
+        SyncLanguageCombo;
+        UpdateAutoLanguageCheck;
+        SetSyntax;
+
+        FSuppressSecurityConfirm := True;
+        try
+            cbIgnoreSecurityChecks.Checked := P.SecurityIgnore;
+        finally
+            FSuppressSecurityConfirm := False;
+        end;
+
+        lvAllTags.Items.BeginUpdate;
+        lvSelectedTags.Items.BeginUpdate;
+        try
+            for DraftTag in P.Tags do
+                for I := lvAllTags.Items.Count - 1 downto 0 do
+                    if SameText(lvAllTags.Items[I].Caption, DraftTag) then
+                    begin
+                        Item := lvSelectedTags.Items.Add;
+                        Item.Caption := lvAllTags.Items[I].Caption;
+                        Item.Data := lvAllTags.Items[I].Data;
+                        Item.StateIndex := 1;
+                        lvAllTags.Items.Delete(I);
+                        Break;
+                    end;
+        finally
+            lvAllTags.Items.EndUpdate;
+            lvSelectedTags.Items.EndUpdate;
+        end;
+    finally
+        FDraftSuspend := False;
+    end;
+end;
+
+procedure TAddEditSnippetForm.TryRestoreDraft;
+var
+    P: TDraftPayload;
+    Baseline: Int64;
+begin
+    if FDraftRestoreDone or (FDraftStore = nil) then
+        Exit;
+    FDraftRestoreDone := True;
+
+    if not FDraftStore.LoadDraft(DraftKey, P) then
+        Exit;
+
+    if FIsEditMode then
+    begin
+        if FSnippet.UpdatedAt > 0 then
+            Baseline := FSnippet.UpdatedAt
+        else
+            Baseline := FSnippet.CreatedAt;
+        if P.SavedAt <= Baseline then
+        begin
+            FDraftStore.DeleteDraft(DraftKey);
+            Exit;
+        end;
+    end;
+
+    if not DraftDiffers(P) then
+    begin
+        FDraftStore.DeleteDraft(DraftKey);
+        Exit;
+    end;
+
+    if Application.MessageBox(
+        PChar(Format(TUIStateLoader.GetMessage('Draft.RestorePrompt'),
+            [DateTimeToStr(UnixToDateTime(P.SavedAt, False))])),
+        PChar(TUIStateLoader.GetMessage('Draft.RestoreTitle')),
+        MB_YESNO or MB_ICONQUESTION) = IDYES then
+        ApplyDraft(P)
+    else
+        FDraftStore.DeleteDraft(DraftKey);
+end;
+
+procedure TAddEditSnippetForm.DeleteCurrentDraft;
+begin
+    if FDraftStore = nil then
+        Exit;
+    FDraftTimer.Enabled := False;
+    FDraftStore.DeleteDraft(DraftKey);
 end;
 
 procedure TAddEditSnippetForm.bCancelClick(Sender: TObject);
@@ -589,6 +792,9 @@ begin
             ModalResult := mrNone;
         end;
     end;
+
+    if ModalResult = mrOk then
+        DeleteCurrentDraft;
 end;
 
 procedure TAddEditSnippetForm.cbAIHubChange(Sender: TObject);
@@ -642,6 +848,7 @@ begin
     FCurrentLanguage := NormalizeSnippetLanguage(Langs[cbLanguage.ItemIndex]);
     FDetectBaselineText := mContent.Text;
     SetSyntax;
+    DraftTouch(Sender);
 end;
 
 procedure TAddEditSnippetForm.ApplySnippetLanguage(const ALanguage: string);
@@ -681,6 +888,7 @@ begin
     ForceDetectLanguage;
     if mContent.CanFocus then
         mContent.SetFocus;
+    DraftTouch(Sender);
 end;
 
 function TAddEditSnippetForm.DetectSnippetLanguageSmart(const AContent: string): string;
@@ -765,6 +973,7 @@ begin
     end
     else
         FLangLocked := True;
+    DraftTouch(Sender);
 end;
 
 procedure TAddEditSnippetForm.cbIgnoreSecurityChecksClick(Sender: TObject);
@@ -789,6 +998,7 @@ begin
 
     // После валидации чекбокса принудительно пересчитываем статус кнопок
     tmrSecurityScanTimer(nil);
+    DraftTouch(Sender);
 end;
 
 procedure TAddEditSnippetForm.PopulateHubs;
@@ -1011,10 +1221,14 @@ begin
     if not CanClose then
         MessageBeep(MB_ICONWARNING)
     else if (ModalResult <> mrOk) and IsSnippetChanged then
+    begin
         CanClose := Application.MessageBox(
             PChar(TUIStateLoader.GetMessage('AddEditSnippet.CloseConfirmText')),
             PChar(TUIStateLoader.GetMessage('Common.Warning')),
             MB_YESNO) <> IDNO;
+        if CanClose then
+            DeleteCurrentDraft;
+    end;
 end;
 
 procedure TAddEditSnippetForm.FormCreate(Sender: TObject);
@@ -1037,6 +1251,16 @@ begin
 
     // Закрытие блокируется, пока выполняется AI-запрос (см. FormCloseQueryAI)
     OnCloseQuery := FormCloseQueryAI;
+
+    FDraftSuspend := False;
+    FDraftRestoreDone := False;
+    FDraftStore := TDraftStore.Create(ResolvePath('Drafts', True));
+    FDraftTimer := TTimer.Create(Self);
+    FDraftTimer.Interval := 4000;
+    FDraftTimer.Enabled := False;
+    FDraftTimer.OnTimer := tmrDraftSaveTick;
+    ebTitle.OnChange := DraftTouch;
+    mComment.OnChange := DraftTouch;
 end;
 
 procedure TAddEditSnippetForm.FormShow(Sender: TObject);
@@ -1044,6 +1268,12 @@ begin
     // Вся тяжелая работа уже выполнена в памяти
     tmrReloadCommands.Enabled := True;
     ebTitle.SetFocus;
+end;
+
+procedure TAddEditSnippetForm.DoShownOnScreen;
+begin
+    inherited;
+    TryRestoreDraft;
 end;
 
 function TAddEditSnippetForm.GetSnippet: TSnippetDTO;
@@ -1090,6 +1320,7 @@ begin
             DstLV.Items.EndUpdate;
         end;
     end;
+    DraftTouch(Sender);
 end;
 
 procedure TAddEditSnippetForm.lvAllTagsDragDrop(Sender, Source: TObject; X, Y: Integer);
@@ -1142,6 +1373,7 @@ begin
     finally
         ItemsToMove.Free;
     end;
+    DraftTouch(Sender);
 end;
 
 procedure TAddEditSnippetForm.lvAllTagsDragOver(Sender, Source: TObject; X, Y: Integer; State: TDragState; var Accept: Boolean);
@@ -1208,7 +1440,7 @@ begin
     if not FLangLocked and not FSuppressDetect then
         FLangTimer.Enabled := True;
 
-    UpdateStatusBar;
+    DraftTouch(Sender);
 end;
 
 procedure TAddEditSnippetForm.mContentStatusChange(Sender: TObject; Changes: TSynStatusChanges);
@@ -1880,6 +2112,7 @@ var
 begin
     // Загрузка не должна перебиваться автодетектом от присвоения .Text
     FSuppressDetect := True;
+    FDraftSuspend := True;
 
     // 1. Принимаем входящие данные
     FIsEditMode := IsEditMode;
@@ -1994,6 +2227,7 @@ begin
 
     FDetectBaselineText := mContent.Text;
     FSuppressDetect := False;
+    FDraftSuspend := False;
 end;
 
 procedure TAddEditSnippetForm.SetSyntax;

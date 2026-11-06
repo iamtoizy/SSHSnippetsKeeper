@@ -343,6 +343,7 @@
         <DCCReference Include="Common\Common.AppVersion.pas"/>
         <DCCReference Include="Common\Common.CmdLine.pas"/>
         <DCCReference Include="Common\Common.Consts.pas"/>
+        <DCCReference Include="Common\Common.DraftStore.pas"/>
         <DCCReference Include="Common\Common.Helpers.pas"/>
         <DCCReference Include="Common\Common.Localization.pas"/>
         <DCCReference Include="Common\Common.QueryLanguage.pas"/>

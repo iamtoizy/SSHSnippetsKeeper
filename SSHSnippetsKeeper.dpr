@@ -170,6 +170,7 @@ uses
   Common.AppVersion in 'Common\Common.AppVersion.pas',
   Common.CmdLine in 'Common\Common.CmdLine.pas',
   Common.Consts in 'Common\Common.Consts.pas',
+  Common.DraftStore in 'Common\Common.DraftStore.pas',
   Common.Helpers in 'Common\Common.Helpers.pas',
   Common.Localization in 'Common\Common.Localization.pas',
   Common.QueryLanguage in 'Common\Common.QueryLanguage.pas',

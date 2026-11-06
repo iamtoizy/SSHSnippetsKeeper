@@ -87,6 +87,10 @@ var
 begin
     SetLength(Raw, 64);
     try
+{$IFOPT Q+}
+{$DEFINE ENTROPY_Q_RESTORE}
+{$Q-}
+{$ENDIF}
         X := $9E3779B9;
         for I := 0 to High(Raw) do
         begin
@@ -96,6 +100,10 @@ begin
             X := X + $85EBCA6B + UInt32(I) * $C2B2AE3D;
             Raw[I] := Byte(X shr ((I and 3) shl 3));
         end;
+{$IFDEF ENTROPY_Q_RESTORE}
+{$UNDEF ENTROPY_Q_RESTORE}
+{$Q+}
+{$ENDIF}
         Hasher := THashSHA2.Create(SHA256);
         Hasher.Update(Raw);
         Result := Hasher.HashAsBytes;

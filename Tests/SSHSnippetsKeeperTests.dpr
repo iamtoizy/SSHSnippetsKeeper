@@ -16,6 +16,7 @@ uses
     Tests.MacroCardController in 'Tests.MacroCardController.pas',
     Tests.HotkeyService in 'Tests.HotkeyService.pas',
     Tests.TextDiff in 'Tests.TextDiff.pas',
+    Tests.DraftStore in 'Tests.DraftStore.pas',
     Tests.QueryLanguage in 'Tests.QueryLanguage.pas',
     Tests.SearchTags in 'Tests.SearchTags.pas',
     Tests.DbMigrations in 'Tests.DbMigrations.pas',
@@ -54,6 +55,7 @@ begin
         TDUnitX.RegisterTestFixture(TMacroCardControllerTests);
         TDUnitX.RegisterTestFixture(THotkeyServiceTests);
         TDUnitX.RegisterTestFixture(TTextDiffTests);
+        TDUnitX.RegisterTestFixture(TDraftStoreTests);
         TDUnitX.RegisterTestFixture(TQueryLanguageTests);
         TDUnitX.RegisterTestFixture(TSearchTagsTests);
         TDUnitX.RegisterTestFixture(TDbMigrationTests);

@@ -1456,6 +1456,10 @@
       "CheckOk": "Database integrity check passed.",
       "CheckFailed": "Integrity check found problems:\n%s"
     },
+    "Draft": {
+      "RestoreTitle": "Draft",
+      "RestorePrompt": "An unsaved draft from %s was found.\n\nRestore it?"
+    },
     "Common": {
       "GeneralError": "Error: %s",
       "CopyTooltip": "Click to copy",

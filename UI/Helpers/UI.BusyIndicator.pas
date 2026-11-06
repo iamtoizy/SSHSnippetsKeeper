@@ -5,6 +5,7 @@ interface
 uses
     System.Classes,
     System.SysUtils,
+    Vcl.AppEvnts,
     Vcl.Forms
     ;
 
@@ -104,6 +105,11 @@ type
     public
         constructor Create;
         procedure AfterConstruction; override;
+        // Приложение потеряло фокус: визуально прячем оверлей, busy-сессия
+        // продолжается - topmost-оверлей не должен висеть поверх чужих окон
+        procedure AppDeactivate(Sender: TObject);
+        // Фокус вернулся: busy-сессия ещё жива - показываем оверлей заново
+        procedure AppActivate(Sender: TObject);
         // Готовит параметры и просит поток показать оверлей (не блокирует UI)
         procedure ShowAsync(AHostForm: TCustomForm; const ACaption: string);
         // Просит поток скрыть оверлей (не блокирует UI)
@@ -115,6 +121,11 @@ var
     GBusyThread: TBusyOverlayThread = nil;
     // Оверлей показан (флаг UI-потока, мгновенная защита от повторного Show)
     GBusyShown: Boolean = False;
+    // Активная busy-сессия: параметры для повторного показа после возврата
+    // фокуса приложению
+    GBusyHostForm: TCustomForm = nil;
+    GBusyCaption: string = '';
+    GBusyAppEvents: TApplicationEvents = nil;
 
 // Относительная яркость цвета (0..1) для выбора контрастной палитры
 function GetRelativeLuminance(AColor: TColor): Double;
@@ -466,6 +477,18 @@ begin
     PostThreadMessage(ThreadID, BUSY_THREAD_MSG_HIDE, 0, 0);
 end;
 
+procedure TBusyOverlayThread.AppDeactivate(Sender: TObject);
+begin
+    if GBusyShown then
+        HideAsync;
+end;
+
+procedure TBusyOverlayThread.AppActivate(Sender: TObject);
+begin
+    if GBusyShown and (GBusyHostForm <> nil) and GBusyHostForm.HandleAllocated then
+        ShowAsync(GBusyHostForm, GBusyCaption);
+end;
+
 { TUIBusyIndicator }
 
 class procedure TUIBusyIndicator.Show(AHostForm: TCustomForm; const ACaption: string);
@@ -488,6 +511,14 @@ begin
     // даже когда UI-поток полностью занят постройкой формы
     Screen.Cursor := crHourGlass;
     GBusyShown := True;
+    GBusyHostForm := AHostForm;
+    GBusyCaption := ACaption;
+    if GBusyAppEvents = nil then
+    begin
+        GBusyAppEvents := TApplicationEvents.Create(nil);
+        GBusyAppEvents.OnDeactivate := GBusyThread.AppDeactivate;
+        GBusyAppEvents.OnActivate := GBusyThread.AppActivate;
+    end;
     GBusyThread.ShowAsync(AHostForm, ACaption);
 end;
 
@@ -496,6 +527,8 @@ begin
     if not GBusyShown then
         Exit;
     GBusyShown := False;
+    GBusyHostForm := nil;
+    GBusyCaption := '';
     Screen.Cursor := crDefault;
     TUIHoverHelpManager.ResumeAfterBusy;
     // Скрытие неблокирующее: окно скроет поток оверлея в своём цикле
@@ -520,6 +553,11 @@ initialization
     GBusyThread := TBusyOverlayThread.Create;
 
 finalization
+    if GBusyAppEvents <> nil then
+    begin
+        GBusyAppEvents.Free;
+        GBusyAppEvents := nil;
+    end;
     if GBusyThread <> nil then
     begin
         PostThreadMessage(GBusyThread.ThreadID, WM_QUIT, 0, 0);

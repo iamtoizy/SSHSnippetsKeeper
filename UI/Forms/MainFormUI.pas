@@ -288,6 +288,7 @@ type
         FCloseAfterChainStop: Boolean;
         FNoSyncMode: Boolean;
         FCmdProcessed: Boolean;
+        FPurgedStaleDrafts: Boolean;
         FCmdParams: TCmdLineParams;
         FHotkeyMgr: TGlobalHotkeyManager;
         FSync: TSyncController;
@@ -328,6 +329,8 @@ type
         procedure DoAddTagToSnippets;
         procedure DoRemoveTagFromSnippets;
         procedure DoMoveToCategory;
+        procedure DeleteSnippetDraft(ASnippetID: Integer);
+        procedure PurgeStaleDrafts;
         function GetSelectedSnippets: TArray<TSnippetDTO>;
         procedure ReloadSnippetListKeepingSelection;
 
@@ -386,6 +389,7 @@ uses
     Core.Entities.Category,
     ChmodFormUI,
     Common.Consts,
+    Common.DraftStore,
     Common.Helpers,
     Core.MarkdownExporter,
     Core.MarkdownImporter,
@@ -550,6 +554,8 @@ begin
         AppContext.DatabaseManager.OpenDatabase(AFileName);
         TStateMgr.Instance.OpenDatabase;
 
+        PurgeStaleDrafts;
+
         // Автобэкап БД не чаще раза в сутки (страж внутри менеджера).
         // Сбой бэкапа не мешает работе с БД - сообщаем и продолжаем
         try
@@ -681,6 +687,7 @@ begin
 
     FUserID := 1;
     FIgnoreCategoryChange := False;
+    FPurgedStaleDrafts := False;
 
     FHotItemIndex := -1;
     FFilterUserID := 0;
@@ -1733,7 +1740,10 @@ begin
 
     try
         for I := 0 to High(Snippets) do
+        begin
             AppContext.SnippetService.DeleteSnippet(Snippets[I].ID);
+            DeleteSnippetDraft(Snippets[I].ID);
+        end;
 
         if tvCategories.Selected <> nil then
             SelectedCatID := Integer(IntPtr(tvCategories.Selected.Data))
@@ -1751,6 +1761,47 @@ begin
             MessagesHandler.ShowError(
                 TUIStateLoader.GetMessage('Snippet.DeleteError', [E.Message])
             );
+    end;
+end;
+
+procedure TMainForm.DeleteSnippetDraft(ASnippetID: Integer);
+var
+    Store: TDraftStore;
+begin
+    Store := TDraftStore.Create(ResolvePath('Drafts', True));
+    try
+        Store.DeleteDraft(IntToStr(ASnippetID));
+    finally
+        Store.Free;
+    end;
+end;
+
+procedure TMainForm.PurgeStaleDrafts;
+var
+    Store: TDraftStore;
+    All: TArray<TSnippetDTO>;
+    LiveIDs: TArray<Int64>;
+    I: Integer;
+begin
+    if FPurgedStaleDrafts then
+        Exit;
+    if (not Assigned(AppContext.DatabaseManager)) or (not AppContext.DatabaseManager.IsConnected) then
+        Exit;
+    if not Assigned(AppContext.SnippetService) then
+        Exit;
+    FPurgedStaleDrafts := True;
+    try
+        Store := TDraftStore.Create(ResolvePath('Drafts', True));
+        try
+            All := AppContext.SnippetService.GetAllSnippets;
+            SetLength(LiveIDs, Length(All));
+            for I := 0 to High(All) do
+                LiveIDs[I] := All[I].ID;
+            Store.PurgeStale(DateTimeToUnix(Now, False) - 14 * 86400, LiveIDs);
+        finally
+            Store.Free;
+        end;
+    except
     end;
 end;
 

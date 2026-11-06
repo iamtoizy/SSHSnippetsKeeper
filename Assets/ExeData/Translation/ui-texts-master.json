@@ -1405,6 +1405,10 @@
       "DbFileNotFound": "Файл базы данных не найден: %s",
       "UserNotFound": "Пространство «%s» не найдено."
     },
+    "Draft": {
+      "RestoreTitle": "Черновик",
+      "RestorePrompt": "Обнаружен несохранённый черновик от %s.\n\nВосстановить его?"
+    },
     "Common": {
       "GeneralError": "Ошибка: %s",
       "CopyTooltip": "Кликните, чтобы скопировать",
