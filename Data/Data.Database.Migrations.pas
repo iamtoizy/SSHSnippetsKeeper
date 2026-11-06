@@ -24,7 +24,11 @@ const
     IMPORT_SNAPSHOT_KEEP = 3;
 
     // Сколько последних auto_-автобэкапов хранится рядом с файлом БД
+    // Дефолт ротации: сколько последних auto_-автобэкапов хранится рядом с БД
     AUTO_BACKUP_KEEP = 3;
+
+    // Дефолтный минимальный интервал между автобэкапами, секунды (раз в сутки)
+    AUTO_BACKUP_INTERVAL_SECONDS = 86400;
 
     // Коды возврата консольных команд (/migrate, /backup, /checkdb, /newdb)
     MIGRATE_EXIT_OK           = 0;
@@ -82,13 +86,38 @@ function CreateImportSnapshot(AConnection: TFDConnection;
     const ADatabaseFile: string): string;
 
 // Автобэкап при открытии БД: VACUUM INTO в <имя БД>.auto_<метка времени>.bak
-// рядом с БД + ротация, хранящая AUTO_BACKUP_KEEP последних копий.
-// Не чаще одного раза в сутки: если копия с сегодняшней датой уже есть,
-// возвращается '' (частые перезапуски приложения не затирают все
-// точки восстановления).
+// рядом с БД + ротация, хранящая AKeep последних копий.
+// Страж интервала: если свежайшая копия с корректной меткой в имени моложе
+// AIntervalSeconds секунд, возвращается '' (частые перезапуски приложения
+// не затирают точки восстановления). AForce = принудительная копия
+// («Создать копию сейчас»): интервал игнорируется, ротация применяется.
 // Для :memory:/отсутствующего файла БД возвращает '' (бэкапить нечего).
 function CreateAutoBackup(AConnection: TFDConnection;
-    const ADatabaseFile: string): string;
+    const ADatabaseFile: string;
+    AIntervalSeconds: Integer = AUTO_BACKUP_INTERVAL_SECONDS;
+    AKeep: Integer = AUTO_BACKUP_KEEP;
+    AForce: Boolean = False): string;
+
+// Автобэкап на отдельном короткоживущем соединении: основное соединение GUI
+// не затрагивается, функция безопасна для вызова из фонового потока.
+// Параметры соединения как у консольных команд (/backup): работа параллельно
+// с запущенным приложением. Остальное - как CreateAutoBackup.
+function CreateAutoBackupStandalone(const ADatabaseFile: string;
+    AIntervalSeconds: Integer = AUTO_BACKUP_INTERVAL_SECONDS;
+    AKeep: Integer = AUTO_BACKUP_KEEP;
+    AForce: Boolean = False): string;
+
+// Свежайшая авто-копия (auto_*.bak) рядом с файлом БД: путь и метка времени
+// из имени файла ( Stamp = 0, если копий с корректной меткой нет).
+// Для :memory:/отсутствующей папки возвращает ''.
+function FindLatestAutoBackup(const ADatabaseFile: string;
+    out AStamp: TDateTime): string;
+
+// Истёк ли интервал автобэкапа: True, если копий с корректной меткой нет
+// либо свежайшая старше AIntervalSeconds секунд. Без создания копии -
+// для периодических проверок во время долгой работы приложения
+function AutoBackupDue(const ADatabaseFile: string;
+    AIntervalSeconds: Integer): Boolean;
 
 // Консольный режим ключа /migrate: накатывает схему и завершает процесс
 // с кодом возврата (без GUI и мьютекса единственного экземпляра).
@@ -361,12 +390,121 @@ begin
         TFile.Delete(Files[I]);
 end;
 
+// Метка времени из имени авто-копии (<имя БД>.auto_yyyymmdd_hhnnsszzz.bak).
+// Имя не разбирается - 0 (файл не участвует в страже интервала)
+function ParseAutoBackupStamp(const ABackupFile: string): TDateTime;
+var
+    Token: string;
+    P: Integer;
+    Y, M, D, Hh, Mm, Ss: Integer;
+begin
+    Result := 0;
+
+    P := Pos('.auto_', ABackupFile);
+    if P = 0 then
+        Exit;
+
+    // Ровно 15 значащих символов yyyymmdd_hhnnss; миллисекунды в хвосте
+    // для стража интервала не нужны
+    Token := Copy(ABackupFile, P + Length('.auto_'), 15);
+    if (Length(Token) <> 15) or (Token[9] <> '_') then
+        Exit;
+
+    if (not TryStrToInt(Copy(Token, 1, 4), Y)) or
+        (not TryStrToInt(Copy(Token, 5, 2), M)) or
+        (not TryStrToInt(Copy(Token, 7, 2), D)) or
+        (not TryStrToInt(Copy(Token, 10, 2), Hh)) or
+        (not TryStrToInt(Copy(Token, 12, 2), Mm)) or
+        (not TryStrToInt(Copy(Token, 14, 2), Ss)) then
+        Exit;
+
+    // Некорректные даты/времени Encode* переводят в исключение
+    try
+        Result := EncodeDate(Y, M, D) + EncodeTime(Hh, Mm, Ss, 0);
+    except
+        Result := 0;
+    end;
+end;
+
+// Свежайшая авто-копия рядом с БД: путь и метка времени из имени файла.
+// Копий с корректной меткой нет - пустой путь и AStamp = 0
+function FindLatestAutoBackup(const ADatabaseFile: string;
+    out AStamp: TDateTime): string;
+var
+    Files: TArray<string>;
+    I: Integer;
+    Stamp: TDateTime;
+begin
+    AStamp := 0;
+    Result := '';
+
+    if (ADatabaseFile = '') or SameText(ADatabaseFile, ':memory:') then
+        Exit;
+
+    if not TDirectory.Exists(TPath.GetDirectoryName(ADatabaseFile)) then
+        Exit;
+
+    Files := TDirectory.GetFiles(TPath.GetDirectoryName(ADatabaseFile),
+        TPath.GetFileName(ADatabaseFile) + '.auto_*.bak');
+
+    for I := 0 to High(Files) do
+    begin
+        Stamp := ParseAutoBackupStamp(Files[I]);
+        if (Stamp <> 0) and (Stamp > AStamp) then
+        begin
+            AStamp := Stamp;
+            Result := Files[I];
+        end;
+    end;
+end;
+
+function AutoBackupDue(const ADatabaseFile: string;
+    AIntervalSeconds: Integer): Boolean;
+var
+    Latest: string;
+    LatestStamp: TDateTime;
+begin
+    Latest := FindLatestAutoBackup(ADatabaseFile, LatestStamp);
+    Result := (Latest = '') or
+        (Now - LatestStamp >= AIntervalSeconds / SecsPerDay);
+end;
+
+// Ротация копий по маске: хранит AKeep последних по метке времени в имени.
+// AKeep < 1 - лимита нет, ротация не выполняется
+procedure PruneBackupFiles(const ADatabaseFile, AFileMask: string; AKeep: Integer);
+var
+    Files: TArray<string>;
+    I: Integer;
+begin
+    if AKeep < 1 then
+        Exit;
+
+    Files := TDirectory.GetFiles(TPath.GetDirectoryName(ADatabaseFile), AFileMask);
+
+    if Length(Files) <= AKeep then
+        Exit;
+
+    // Метка времени в имени гарантирует, что лексикографический порядок
+    // совпадает с хронологией
+    TArray.Sort<string>(Files,
+        TComparer<string>.Construct(
+            function(const ALeft, ARight: string): Integer
+            begin
+                Result := CompareText(ARight, ALeft);
+            end));
+
+    for I := AKeep to High(Files) do
+        TFile.Delete(Files[I]);
+end;
+
+// Снапшот файла БД перед массовым импортом markdown: VACUUM INTO в
+// <имя БД>.pre_import_<метка времени>.bak рядом с БД + ротация,
+// хранящая IMPORT_SNAPSHOT_KEEP последних копий.
+// Для :memory:/отсутствующего файла БД возвращает '' (снапшотить нечего).
 function CreateImportSnapshot(AConnection: TFDConnection;
     const ADatabaseFile: string): string;
 var
     BackupFile: string;
-    Files: TArray<string>;
-    I: Integer;
     Migrator: TDatabaseMigrator;
 begin
     Result := '';
@@ -386,33 +524,17 @@ begin
     if Result = '' then
         Exit;
 
-    // Ротация: храним только IMPORT_SNAPSHOT_KEEP последних снапшотов.
-    // Метка времени в имени гарантирует, что лексикографический порядок
-    // совпадает с хронологией
-    Files := TDirectory.GetFiles(TPath.GetDirectoryName(ADatabaseFile),
-        TPath.GetFileName(ADatabaseFile) + '.pre_import_*.bak');
-
-    if Length(Files) <= IMPORT_SNAPSHOT_KEEP then
-        Exit;
-
-    TArray.Sort<string>(Files,
-        TComparer<string>.Construct(
-            function(const ALeft, ARight: string): Integer
-            begin
-                Result := CompareText(ARight, ALeft);
-            end));
-
-    for I := IMPORT_SNAPSHOT_KEEP to High(Files) do
-        TFile.Delete(Files[I]);
+    // Ротация: храним только IMPORT_SNAPSHOT_KEEP последних снапшотов
+    PruneBackupFiles(ADatabaseFile,
+        TPath.GetFileName(ADatabaseFile) + '.pre_import_*.bak',
+        IMPORT_SNAPSHOT_KEEP);
 end;
 
 function CreateAutoBackup(AConnection: TFDConnection;
-    const ADatabaseFile: string): string;
+    const ADatabaseFile: string; AIntervalSeconds: Integer; AKeep: Integer;
+    AForce: Boolean): string;
 var
     BackupFile: string;
-    Files: TArray<string>;
-    TodayPrefix: string;
-    I: Integer;
     Migrator: TDatabaseMigrator;
 begin
     Result := '';
@@ -423,16 +545,11 @@ begin
         (not TFile.Exists(ADatabaseFile)) then
         Exit;
 
-    // Страж «не чаще раза в сутки»: копия с сегодняшней меткой уже есть -
-    // новая не создаётся. Дата в имени дополнена нулями (yyyymmdd),
-    // поэтому сравнение по префиксу точное
-    TodayPrefix := ADatabaseFile + '.auto_' + FormatDateTime('yyyymmdd', Now);
-    Files := TDirectory.GetFiles(TPath.GetDirectoryName(ADatabaseFile),
-        TPath.GetFileName(ADatabaseFile) + '.auto_*.bak');
-
-    for I := 0 to High(Files) do
-        if Files[I].StartsWith(TodayPrefix, True) then
-            Exit;
+    // Страж интервала: свежайшая копия моложе AIntervalSeconds секунд -
+    // новая не создаётся. AForce («Создать копию сейчас») интервал
+    // игнорирует: ручная копия нужна немедленно, независимо от графика
+    if (not AForce) and (not AutoBackupDue(ADatabaseFile, AIntervalSeconds)) then
+        Exit;
 
     BackupFile := ADatabaseFile + '.auto_' +
         FormatDateTime('yyyymmdd_hhnnsszzz', Now) + '.bak';
@@ -450,24 +567,54 @@ begin
     if Result = '' then
         Exit;
 
-    // Ротация: храним только AUTO_BACKUP_KEEP последних автобэкапов.
-    // Метка времени в имени гарантирует, что лексикографический порядок
-    // совпадает с хронологией
-    Files := TDirectory.GetFiles(TPath.GetDirectoryName(ADatabaseFile),
-        TPath.GetFileName(ADatabaseFile) + '.auto_*.bak');
+    // Ротация: храним только AKeep последних автобэкапов
+    PruneBackupFiles(ADatabaseFile,
+        TPath.GetFileName(ADatabaseFile) + '.auto_*.bak', AKeep);
+end;
 
-    if Length(Files) <= AUTO_BACKUP_KEEP then
+function CreateAutoBackupStandalone(const ADatabaseFile: string;
+    AIntervalSeconds: Integer; AKeep: Integer; AForce: Boolean): string;
+var
+    Connection: TFDConnection;
+    DriverLink: TFDPhysSQLiteDriverLink;
+begin
+    Result := '';
+
+    if (ADatabaseFile = '') or SameText(ADatabaseFile, ':memory:') or
+        (not TFile.Exists(ADatabaseFile)) then
         Exit;
 
-    TArray.Sort<string>(Files,
-        TComparer<string>.Construct(
-            function(const ALeft, ARight: string): Integer
-            begin
-                Result := CompareText(ARight, ALeft);
-            end));
+    // Отдельное короткоживущее соединение: VACUUM INTO читает БД и пишет
+    // в новый файл, соединение GUI не затрагивается. Параметры как у
+    // консольных команд (/backup) - работа параллельно с запущенным
+    // приложением. ReadOnly не задаём: открытие WAL-БД может потребовать
+    // восстановления wal-index (запись в -shm)
+    DriverLink := TFDPhysSQLiteDriverLink.Create(nil);
+    Connection := TFDConnection.Create(nil);
+    try
+        Connection.Params.Add('DriverID=SQLite');
+        Connection.Params.Add('Database=' + ADatabaseFile);
+        // SharedCache=False: блокировки как между процессами, а не табличные
+        // внутри общего с GUI кэша
+        Connection.Params.Add('SharedCache=False');
+        // Без этих параметров FireDAC при открытии выполняет
+        // "PRAGMA journal_mode = DELETE" и включает Exclusive-блокировки:
+        // БД молча выводится из WAL, при активном писателе открытие падает
+        Connection.Params.Add('JournalMode=WAL');
+        Connection.Params.Add('LockingMode=Normal');
+        Connection.Params.Add('BusyTimeout=5000');
+        Connection.Params.Add('CharacterSet=utf8');
+        // FireDAC перед каждым оператором сбрасывает busy_timeout в ноль,
+        // если у оператора LockWait=False (дефолт)
+        Connection.UpdateOptions.LockWait := True;
+        Connection.Connected := True;
 
-    for I := AUTO_BACKUP_KEEP to High(Files) do
-        TFile.Delete(Files[I]);
+        Result := CreateAutoBackup(Connection, ADatabaseFile,
+            AIntervalSeconds, AKeep, AForce);
+    finally
+        Connection.Free;
+        DriverLink.Free;
+    end;
 end;
 
 function ConsoleWriteTextW(hConsoleOutput: THandle; lpBuffer: PWideChar;

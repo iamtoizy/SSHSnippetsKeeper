@@ -413,6 +413,13 @@ begin
     FLangTimer.Enabled := False;
     FLangTimer.OnTimer := tmrLangDetectTimer;
 
+    FDraftStore := TDraftStore.Create(ResolvePath('Drafts', True),
+        TDraftStore.DbScopeFor(AppContext.DatabaseManager.DatabaseFile));
+    FDraftTimer := TTimer.Create(Self);
+    FDraftTimer.Interval := 4000;
+    FDraftTimer.Enabled := False;
+    FDraftTimer.OnTimer := tmrDraftSaveTick;
+
     // Сразу применяем подсветку синтаксиса до показа формы (не ждем таймер)
     FCurrentLanguage := SNIPPET_LANG_BASH;
     SyncLanguageCombo;
@@ -1254,11 +1261,6 @@ begin
 
     FDraftSuspend := False;
     FDraftRestoreDone := False;
-    FDraftStore := TDraftStore.Create(ResolvePath('Drafts', True));
-    FDraftTimer := TTimer.Create(Self);
-    FDraftTimer.Interval := 4000;
-    FDraftTimer.Enabled := False;
-    FDraftTimer.OnTimer := tmrDraftSaveTick;
     ebTitle.OnChange := DraftTouch;
     mComment.OnChange := DraftTouch;
 end;

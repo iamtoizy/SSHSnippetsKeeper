@@ -386,6 +386,78 @@ object SettingsForm: TSettingsForm
           TabOrder = 2
         end
       end
+      object gbBackup: TGroupBox
+        Left = 3
+        Top = 194
+        Width = 610
+        Height = 148
+        Caption = #1056#1077#1079#1077#1088#1074#1085#1086#1077#32#1082#1086#1087#1080#1088#1086#1074#1072#1085#1080#1077#32#1073#1072#1079#1099#32#1076#1072#1085#1085#1099#1093
+        TabOrder = 3
+        object lbBackupInterval: TLabel
+          Left = 12
+          Top = 53
+          Width = 50
+          Height = 15
+          Caption = #1048#1085#1090#1077#1088#1074#1072#1083#58
+        end
+        object lbBackupKeep: TLabel
+          Left = 330
+          Top = 53
+          Width = 90
+          Height = 15
+          Caption = #1061#1088#1072#1085#1080#1090#1100#32#1082#1086#1087#1080#1081#58
+        end
+        object lbBackupLast: TLabel
+          Left = 205
+          Top = 90
+          Width = 380
+          Height = 15
+          Caption = #1055#1086#1089#1083#1077#1076#1085#1103#1103#32#1082#1086#1087#1080#1103#58#32#1077#1097#1105#32#1085#1077#32#1089#1086#1079#1076#1072#1074#1072#1083#1072#1089#1100
+        end
+        object chkBackupEnabled: TCheckBox
+          Left = 12
+          Top = 22
+          Width = 590
+          Height = 17
+          Caption = #1040#1074#1090#1086#1084#1072#1090#1080#1095#1077#1089#1082#1080#32#1089#1086#1079#1076#1072#1074#1072#1090#1100#32#1088#1077#1079#1077#1088#1074#1085#1099#1077#32#1082#1086#1087#1080#1080
+          TabOrder = 0
+        end
+        object cbBackupInterval: TComboBox
+          Left = 120
+          Top = 49
+          Width = 180
+          Height = 23
+          Style = csDropDownList
+          ItemIndex = 3
+          TabOrder = 1
+          Items.Strings = (
+            '1 hour'
+            '6 hours'
+            '12 hours'
+            '24 hours'
+            '3 days'
+            '7 days')
+        end
+        object seBackupKeep: TSpinEdit
+          Left = 440
+          Top = 49
+          Width = 70
+          Height = 23
+          MaxValue = 20
+          MinValue = 1
+          TabOrder = 2
+          Value = 3
+        end
+        object bBackupCreateNow: TButton
+          Left = 12
+          Top = 85
+          Width = 180
+          Height = 25
+          Caption = #1057#1086#1079#1076#1072#1090#1100#32#1082#1086#1087#1080#1102#32#1089#1077#1081#1095#1072#1089
+          TabOrder = 3
+          OnClick = bBackupCreateNowClick
+        end
+      end
     end
     object tsCounters: TTabSheet
       Caption = 'Counters'

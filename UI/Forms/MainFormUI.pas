@@ -111,6 +111,7 @@ type
         nTools: TMenuItem;
         nPasswordGenerator: TMenuItem;
         tmrSearchTimer: TTimer;
+        tmrBackup: TTimer;
         nDataManagament: TMenuItem;
         nExit: TMenuItem;
         pmLanguage: TPopupMenu;
@@ -273,6 +274,7 @@ type
         procedure FormResize(Sender: TObject);
         procedure tmrAutoSyncTimer(Sender: TObject);
         procedure tmrSearchTimerTimer(Sender: TObject);
+        procedure tmrBackupTimer(Sender: TObject);
         procedure tvCategoriesClick(Sender: TObject);
         procedure tvCategoriesEndDrag(Sender, Target: TObject; X, Y: Integer);
         procedure tvCategoriesDblClick(Sender: TObject);
@@ -289,6 +291,7 @@ type
         FNoSyncMode: Boolean;
         FCmdProcessed: Boolean;
         FPurgedStaleDrafts: Boolean;
+        FBackupRunning: Boolean;
         FCmdParams: TCmdLineParams;
         FHotkeyMgr: TGlobalHotkeyManager;
         FSync: TSyncController;
@@ -339,6 +342,9 @@ type
         procedure LoadUsersToComboBox;
         procedure ProcessCommandLineParams;
         function OpenDatabaseFile(const AFileName: string): Boolean;
+        procedure RunAutoBackupInBackground;
+        procedure StartAutoBackupThread(const ADbFile: string;
+            AIntervalSeconds, AKeep: Integer);
         procedure SelectWorkspaceByName(const AName: string);
         procedure UpdateMenuState;
         procedure UpdateFavoriteMenuState;
@@ -394,6 +400,7 @@ uses
     Core.MarkdownExporter,
     Core.MarkdownImporter,
     CronGenFormUI,
+    Data.Database.Migrations,
     EpochConverterFormUI,
     HistoryFormUI,
     HotkeyService,
@@ -546,8 +553,6 @@ begin
 end;
 
 function TMainForm.OpenDatabaseFile(const AFileName: string): Boolean;
-var
-    AutoBackupFile: string;
 begin
     Result := False;
     try
@@ -556,18 +561,10 @@ begin
 
         PurgeStaleDrafts;
 
-        // Автобэкап БД не чаще раза в сутки (страж внутри менеджера).
+        // Автобэкап БД (включённость/интервал/ротация - в настройках):
+        // фоновый поток на отдельном соединении, UI не блокируется.
         // Сбой бэкапа не мешает работе с БД - сообщаем и продолжаем
-        try
-            AutoBackupFile := AppContext.DatabaseManager.CreateAutoBackup;
-            if AutoBackupFile <> '' then
-                ShowSimpleToast(TUIStateLoader.GetMessage(
-                    'DB.AutoBackupCreated', [AutoBackupFile]));
-        except
-            on E: Exception do
-                MessagesHandler.ShowError(
-                    TUIStateLoader.GetMessage('DB.AutoBackupFailed', [E.Message]));
-        end;
+        RunAutoBackupInBackground;
 
         LoadUsersToComboBox;  // Сначала загружаем выпадающий список
         cbUserChange(cbUser); // Вызываем OnChange, что инициирует ReloadUI с правильным ID
@@ -590,6 +587,99 @@ begin
         on E: Exception do
             MessagesHandler.ShowError(TUIStateLoader.GetMessage('DB.OpenError', [E.Message]));
     end;
+end;
+
+// Автобэкап БД после открытия: фоновый поток + отдельное короткоживущее
+// соединение (VACUUM INTO), основное соединение и UI не блокируются.
+// Свежая копия (интервал из настроек) - тихий пропуск без тоста
+procedure TMainForm.RunAutoBackupInBackground;
+var
+    DbFile: string;
+    IntervalSeconds, Keep: Integer;
+begin
+    if (not AppContext.SettingsManager.Data.Backup.Enabled) or FBackupRunning then
+        Exit;
+
+    DbFile := AppContext.DatabaseManager.DatabaseFile;
+    if DbFile = '' then
+        Exit;
+
+    IntervalSeconds := AppContext.SettingsManager.Data.Backup.IntervalSeconds;
+    Keep := AppContext.SettingsManager.Data.Backup.Keep;
+
+    StartAutoBackupThread(DbFile, IntervalSeconds, Keep);
+end;
+
+// Общий стартер фонового автобэкапа (открытие БД и таймер): отдельное
+// короткоживущее соединение + VACUUM INTO, UI не блокируется.
+// FBackupRunning сериализует запуски - двух параллельных копий не бывает
+procedure TMainForm.StartAutoBackupThread(const ADbFile: string;
+    AIntervalSeconds, AKeep: Integer);
+begin
+    FBackupRunning := True;
+
+    TThread.CreateAnonymousThread(
+        procedure
+        var
+            BackupFile, ErrorMsg: string;
+        begin
+            BackupFile := '';
+            ErrorMsg := '';
+            try
+                BackupFile := Data.Database.Migrations.CreateAutoBackupStandalone(
+                    ADbFile, AIntervalSeconds, AKeep);
+            except
+                on E: Exception do
+                    ErrorMsg := E.Message;
+            end;
+
+            TThread.Synchronize(nil,
+                procedure
+                begin
+                    // Флаг сбрасывается всегда - даже при тихом пропуске
+                    FBackupRunning := False;
+
+                    // Приложение может завершаться, пока поток ещё работает:
+                    // тост в уничтоженное окно недопустим
+                    if Application.Terminated then
+                        Exit;
+
+                    if ErrorMsg <> '' then
+                        MessagesHandler.ShowError(TUIStateLoader.GetMessage(
+                            'DB.AutoBackupFailed', [ErrorMsg]))
+                    else if BackupFile <> '' then
+                        ShowSimpleToast(TUIStateLoader.GetMessage(
+                            'DB.AutoBackupCreated', [BackupFile]));
+                end);
+        end).Start;
+end;
+
+// Периодическая проверка автобэкапа во время долгой работы приложения:
+// тик раз в минуту только проверяет страж интервала; сама копия создаётся
+// в фоне, если свежайшая старше настроенного интервала
+procedure TMainForm.tmrBackupTimer(Sender: TObject);
+var
+    DbFile: string;
+    IntervalSeconds, Keep: Integer;
+begin
+    if FBackupRunning then
+        Exit;
+
+    if not AppContext.SettingsManager.Data.Backup.Enabled then
+        Exit;
+
+    DbFile := AppContext.DatabaseManager.DatabaseFile;
+    if DbFile = '' then
+        Exit;
+
+    IntervalSeconds := AppContext.SettingsManager.Data.Backup.IntervalSeconds;
+    Keep := AppContext.SettingsManager.Data.Backup.Keep;
+
+    // Страж не истёк - тик пропускается без тостов и соединений
+    if not Data.Database.Migrations.AutoBackupDue(DbFile, IntervalSeconds) then
+        Exit;
+
+    StartAutoBackupThread(DbFile, IntervalSeconds, Keep);
 end;
 
 procedure TMainForm.ProcessCommandLineParams;
@@ -1768,7 +1858,10 @@ procedure TMainForm.DeleteSnippetDraft(ASnippetID: Integer);
 var
     Store: TDraftStore;
 begin
-    Store := TDraftStore.Create(ResolvePath('Drafts', True));
+    if (not Assigned(AppContext.DatabaseManager)) or (not AppContext.DatabaseManager.IsConnected) then
+        Exit;
+    Store := TDraftStore.Create(ResolvePath('Drafts', True),
+        TDraftStore.DbScopeFor(AppContext.DatabaseManager.DatabaseFile));
     try
         Store.DeleteDraft(IntToStr(ASnippetID));
     finally
@@ -1791,9 +1884,10 @@ begin
         Exit;
     FPurgedStaleDrafts := True;
     try
-        Store := TDraftStore.Create(ResolvePath('Drafts', True));
-        try
-            All := AppContext.SnippetService.GetAllSnippets;
+    Store := TDraftStore.Create(ResolvePath('Drafts', True),
+        TDraftStore.DbScopeFor(AppContext.DatabaseManager.DatabaseFile));
+    try
+        All := AppContext.SnippetService.GetAllSnippets;
             SetLength(LiveIDs, Length(All));
             for I := 0 to High(All) do
                 LiveIDs[I] := All[I].ID;

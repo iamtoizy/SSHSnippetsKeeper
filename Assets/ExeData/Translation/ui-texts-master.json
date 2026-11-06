@@ -1073,6 +1073,21 @@
     },
     "cbColUpdated": {
       "Caption": "Последнее изменение"
+    },
+    "gbBackup": {
+      "Caption": "Резервное копирование базы данных"
+    },
+    "chkBackupEnabled": {
+      "Caption": "Автоматически создавать резервные копии"
+    },
+    "lbBackupInterval": {
+      "Caption": "Интервал:"
+    },
+    "lbBackupKeep": {
+      "Caption": "Хранить копий:"
+    },
+    "bBackupCreateNow": {
+      "Caption": "Создать копию сейчас"
     }
   },
   "AppPickerForm": {
@@ -1466,6 +1481,21 @@
       "ApplicationsDeleteConfirm": "Удалить приложение «%s» из списка разрешённых?",
       "ApplicationsInvalidName": "Укажи имя исполняемого файла (например, ssh.exe).",
       "ApplicationsDuplicate": "Приложение «%s» уже есть в списке.",
+      "BackupGroup": "Резервное копирование базы данных",
+      "BackupEnabled": "Автоматически создавать резервные копии",
+      "BackupInterval": "Интервал:",
+      "BackupInterval1h": "1 час",
+      "BackupInterval6h": "6 часов",
+      "BackupInterval12h": "12 часов",
+      "BackupInterval24h": "24 часа",
+      "BackupInterval3d": "3 дня",
+      "BackupInterval7d": "7 дней",
+      "BackupKeep": "Хранить копий:",
+      "BackupCreateNow": "Создать копию сейчас",
+      "BackupLastCopy": "Последняя копия: %s",
+      "BackupLastCopyNone": "Последняя копия: ещё не создавалась",
+      "BackupInProgress": "идёт создание копии…",
+      "BackupNoDatabase": "База данных не открыта — копировать нечего.",
       "StyleApplyError": "Не удалось применить стиль «%s»."
     },
     "AppPicker": {

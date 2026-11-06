@@ -43,6 +43,14 @@ type
         procedure PurgeStale_OrphanStaleCorruptRemoved;
         [Test]
         procedure PurgeStale_MissingDir_Zero;
+        [Test]
+        procedure DbScopeFor_DeterministicAndDistinct;
+        [Test]
+        procedure Scope_IsolatesKeysBetweenDbs;
+        [Test]
+        procedure Scope_Purge_ForeignOnlyByAge;
+        [Test]
+        procedure Scope_Purge_OwnLiveOrphanAndLegacy;
     end;
 
 implementation
@@ -304,6 +312,121 @@ begin
         Assert.AreEqual(0, Store.PurgeStale(0, nil));
     finally
         Store.Free;
+    end;
+end;
+
+procedure TDraftStoreTests.DbScopeFor_DeterministicAndDistinct;
+var
+    S1, S2, S3: string;
+begin
+    S1 := TDraftStore.DbScopeFor('C:\db\a\snippets.sqlite');
+    S2 := TDraftStore.DbScopeFor('C:\db\a\snippets.sqlite');
+    S3 := TDraftStore.DbScopeFor('C:\db\b\snippets.sqlite');
+    Assert.AreEqual(8, Length(S1));
+    Assert.AreEqual(S1, S2);
+    Assert.AreNotEqual(S1, S3);
+    Assert.AreEqual('', TDraftStore.DbScopeFor(''));
+end;
+
+procedure TDraftStoreTests.Scope_IsolatesKeysBetweenDbs;
+var
+    A, B: TDraftStore;
+    P, Loaded: TDraftPayload;
+begin
+    A := TDraftStore.Create(FDir, 'aaaa1111');
+    try
+        B := TDraftStore.Create(FDir, 'bbbb2222');
+        try
+            P := NewPayload('87');
+            Assert.IsTrue(A.SaveDraft(P));
+            Assert.AreEqual('aaaa1111', P.DbScope);
+            Assert.AreEqual('aaaa1111_87', P.Key);
+
+            Assert.IsFalse(B.DraftExists('87'));
+            Assert.IsFalse(B.LoadDraft('87', Loaded));
+
+            Assert.IsTrue(A.DraftExists('87'));
+            Assert.IsTrue(A.LoadDraft('87', Loaded));
+            Assert.AreEqual('aaaa1111', Loaded.DbScope);
+            Assert.AreEqual('aaaa1111_87', Loaded.Key);
+        finally
+            B.Free;
+        end;
+    finally
+        A.Free;
+    end;
+end;
+
+procedure TDraftStoreTests.Scope_Purge_ForeignOnlyByAge;
+var
+    A, B: TDraftStore;
+    P: TDraftPayload;
+    NowEpoch, Cutoff: Int64;
+begin
+    A := TDraftStore.Create(FDir, 'aaaa1111');
+    try
+        B := TDraftStore.Create(FDir, 'bbbb2222');
+        try
+            NowEpoch := DateTimeToUnix(Now, False);
+            Cutoff := NowEpoch - 14 * 86400;
+
+            P := NewPayload('87');
+            P.SavedAt := NowEpoch - 60;
+            Assert.IsTrue(A.SaveDraft(P));
+
+            Assert.AreEqual(0, B.PurgeStale(Cutoff, nil));
+            Assert.IsTrue(A.DraftExists('87'));
+
+            P := NewPayload('99');
+            P.SavedAt := NowEpoch - 30 * 86400;
+            Assert.IsTrue(A.SaveDraft(P));
+
+            Assert.AreEqual(1, B.PurgeStale(Cutoff, nil));
+            Assert.IsFalse(A.DraftExists('99'));
+        finally
+            B.Free;
+        end;
+    finally
+        A.Free;
+    end;
+end;
+
+procedure TDraftStoreTests.Scope_Purge_OwnLiveOrphanAndLegacy;
+var
+    A, U: TDraftStore;
+    P: TDraftPayload;
+    NowEpoch, Cutoff: Int64;
+    LiveIDs: TArray<Int64>;
+begin
+    A := TDraftStore.Create(FDir, 'aaaa1111');
+    try
+        U := TDraftStore.Create(FDir);
+        try
+            NowEpoch := DateTimeToUnix(Now, False);
+            Cutoff := NowEpoch - 14 * 86400;
+
+            P := NewPayload('1');
+            P.SavedAt := NowEpoch - 60;
+            Assert.IsTrue(A.SaveDraft(P));
+
+            P := NewPayload('99');
+            P.SavedAt := NowEpoch - 60;
+            Assert.IsTrue(A.SaveDraft(P));
+
+            P := NewPayload('55');
+            P.SavedAt := NowEpoch - 60;
+            Assert.IsTrue(U.SaveDraft(P));
+
+            LiveIDs := TArray<Int64>.Create(1);
+            Assert.AreEqual(1, A.PurgeStale(Cutoff, LiveIDs));
+            Assert.IsTrue(A.DraftExists('1'));
+            Assert.IsFalse(A.DraftExists('99'));
+            Assert.IsTrue(TFile.Exists(TPath.Combine(FDir, '55.draft')));
+        finally
+            U.Free;
+        end;
+    finally
+        A.Free;
     end;
 end;
 

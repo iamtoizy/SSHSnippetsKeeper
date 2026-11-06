@@ -13,6 +13,7 @@ const
 type
     TDraftPayload = record
         Key: string;
+        DbScope: string;
         SavedAt: Int64;
         Title: string;
         Content: string;
@@ -27,13 +28,19 @@ type
     TDraftStore = class
     private
         FDir: string;
+        FDbScope: string;
         function DraftPath(const AKey: string): string;
         function SanitizeKey(const AKey: string): string;
+        function QualifiedKey(const AKey: string): string;
         function EnsureDir: Boolean;
+        function ReadDraftFile(const AQualifiedKey: string; out APayload: TDraftPayload): Boolean;
+        function DeleteDraftFile(const AQualifiedKey: string): Boolean;
         class function NowEpoch: Int64; static;
         class function ContainsId(const AIDs: TArray<Int64>; AID: Int64): Boolean; static;
     public
-        constructor Create(const ADir: string);
+        constructor Create(const ADir: string; const ADbScope: string = '');
+
+        class function DbScopeFor(const ADatabaseFile: string): string; static;
 
         function SaveDraft(var APayload: TDraftPayload): Boolean;
         function LoadDraft(const AKey: string; out APayload: TDraftPayload): Boolean;
@@ -42,6 +49,7 @@ type
         function PurgeStale(ACutoffEpoch: Int64; const ALiveIDs: TArray<Int64>): Integer;
 
         property Directory: string read FDir;
+        property DbScope: string read FDbScope;
     end;
 
 implementation
@@ -51,15 +59,28 @@ uses
     System.Classes,
     System.DateUtils,
     System.Generics.Collections,
+    System.Hash,
     System.IOUtils,
     System.JSON,
     Winapi.Windows
     ;
 
-constructor TDraftStore.Create(const ADir: string);
+constructor TDraftStore.Create(const ADir: string; const ADbScope: string);
 begin
     inherited Create;
     FDir := ADir;
+    if ADbScope.IsEmpty then
+        FDbScope := ''
+    else
+        FDbScope := SanitizeKey(ADbScope);
+end;
+
+class function TDraftStore.DbScopeFor(const ADatabaseFile: string): string;
+begin
+    Result := '';
+    if ADatabaseFile.IsEmpty then
+        Exit;
+    Result := Copy(THashSHA2.GetHashString(LowerCase(ExpandFileName(ADatabaseFile))), 1, 8);
 end;
 
 function TDraftStore.SanitizeKey(const AKey: string): string;
@@ -78,9 +99,17 @@ begin
         raise EArgumentException.Create('Draft key must not be empty');
 end;
 
+function TDraftStore.QualifiedKey(const AKey: string): string;
+begin
+    if FDbScope = '' then
+        Result := SanitizeKey(AKey)
+    else
+        Result := SanitizeKey(FDbScope + '_' + AKey);
+end;
+
 function TDraftStore.DraftPath(const AKey: string): string;
 begin
-    Result := TPath.Combine(FDir, SanitizeKey(AKey) + '.draft');
+    Result := TPath.Combine(FDir, QualifiedKey(AKey) + '.draft');
 end;
 
 function TDraftStore.EnsureDir: Boolean;
@@ -120,7 +149,8 @@ var
     Json, Enc, Target, TmpPath: string;
 begin
     Result := False;
-    APayload.Key := SanitizeKey(APayload.Key);
+    APayload.Key := QualifiedKey(APayload.Key);
+    APayload.DbScope := FDbScope;
     if APayload.SavedAt <= 0 then
         APayload.SavedAt := NowEpoch;
     APayload.Version := DRAFT_FORMAT_VERSION;
@@ -129,6 +159,7 @@ begin
     try
         Js.AddPair('version', TJSONNumber.Create(APayload.Version));
         Js.AddPair('key', APayload.Key);
+        Js.AddPair('dbScope', APayload.DbScope);
         Js.AddPair('savedAt', TJSONNumber.Create(APayload.SavedAt));
         Js.AddPair('title', APayload.Title);
         Js.AddPair('content', APayload.Content);
@@ -151,7 +182,7 @@ begin
             Exit;
         if not EnsureDir then
             Exit;
-        Target := DraftPath(APayload.Key);
+        Target := TPath.Combine(FDir, APayload.Key + '.draft');
         TmpPath := Target + '.tmp';
         TFile.WriteAllText(TmpPath, Enc, TEncoding.UTF8);
         if not MoveFileEx(PChar(TmpPath), PChar(Target), MOVEFILE_REPLACE_EXISTING) then
@@ -167,6 +198,17 @@ begin
 end;
 
 function TDraftStore.LoadDraft(const AKey: string; out APayload: TDraftPayload): Boolean;
+begin
+    Result := False;
+    APayload := Default(TDraftPayload);
+    if not ReadDraftFile(QualifiedKey(AKey), APayload) then
+        Exit;
+    if APayload.DbScope <> FDbScope then
+        Exit;
+    Result := True;
+end;
+
+function TDraftStore.ReadDraftFile(const AQualifiedKey: string; out APayload: TDraftPayload): Boolean;
 var
     Path, Enc: string;
     Plain: TBytes;
@@ -181,7 +223,7 @@ begin
     V := nil;
     try
         try
-            Path := DraftPath(AKey);
+            Path := TPath.Combine(FDir, AQualifiedKey + '.draft');
             if not TFile.Exists(Path) then
                 Exit;
             Enc := TFile.ReadAllText(Path, TEncoding.UTF8);
@@ -201,6 +243,7 @@ begin
             if APayload.Version <> DRAFT_FORMAT_VERSION then
                 Exit;
             Obj.TryGetValue<string>('key', APayload.Key);
+            Obj.TryGetValue<string>('dbScope', APayload.DbScope);
             Obj.TryGetValue<Int64>('savedAt', APayload.SavedAt);
             Obj.TryGetValue<string>('title', APayload.Title);
             Obj.TryGetValue<string>('content', APayload.Content);
@@ -225,6 +268,11 @@ begin
 end;
 
 function TDraftStore.DeleteDraft(const AKey: string): Boolean;
+begin
+    Result := DeleteDraftFile(QualifiedKey(AKey));
+end;
+
+function TDraftStore.DeleteDraftFile(const AQualifiedKey: string): Boolean;
 var
     Path: string;
     FS: TFileStream;
@@ -233,7 +281,7 @@ var
 begin
     Result := True;
     try
-        Path := DraftPath(AKey);
+        Path := TPath.Combine(FDir, AQualifiedKey + '.draft');
         if not TFile.Exists(Path) then
             Exit;
         FS := TFileStream.Create(Path, fmOpenReadWrite or fmShareDenyWrite);
@@ -276,6 +324,16 @@ var
     FileEntry, Key: string;
     P: TDraftPayload;
     Id: Int64;
+
+    function OwnNumericTail(const AQualifiedKey: string; out ANumeric: Int64): Boolean;
+    begin
+        Result := False;
+        if FDbScope = '' then
+            Result := TryStrToInt64(AQualifiedKey, ANumeric)
+        else if AQualifiedKey.StartsWith(FDbScope + '_') then
+            Result := TryStrToInt64(Copy(AQualifiedKey, Length(FDbScope) + 2), ANumeric);
+    end;
+
 begin
     Result := 0;
     try
@@ -285,21 +343,28 @@ begin
         for FileEntry in FileEntries do
         begin
             Key := TPath.GetFileNameWithoutExtension(FileEntry);
-            if not LoadDraft(Key, P) then
+            if not ReadDraftFile(Key, P) then
             begin
-                if DeleteDraft(Key) then
+                if DeleteDraftFile(Key) then
                     Inc(Result);
                 Continue;
             end;
-            if TryStrToInt64(Key, Id) and not ContainsId(ALiveIDs, Id) then
+            if P.DbScope <> FDbScope then
             begin
-                if DeleteDraft(Key) then
+                if (P.SavedAt > 0) and (P.SavedAt < ACutoffEpoch) then
+                    if DeleteDraftFile(Key) then
+                        Inc(Result);
+                Continue;
+            end;
+            if OwnNumericTail(Key, Id) and not ContainsId(ALiveIDs, Id) then
+            begin
+                if DeleteDraftFile(Key) then
                     Inc(Result);
                 Continue;
             end;
             if (P.SavedAt > 0) and (P.SavedAt < ACutoffEpoch) then
             begin
-                if DeleteDraft(Key) then
+                if DeleteDraftFile(Key) then
                     Inc(Result);
             end;
         end;

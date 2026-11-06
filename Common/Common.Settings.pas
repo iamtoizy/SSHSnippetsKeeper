@@ -372,6 +372,12 @@ begin
     FSettings.UISettings.SnippetListColumns := 7;
     FSettings.UISettings.SnippetListColumnsDefined := True;
 
+    // Автобэкап БД: включён, раз в сутки, хранить 3 копии
+    FSettings.Backup.Enabled := True;
+    FSettings.Backup.IntervalSeconds := 86400;
+    FSettings.Backup.Keep := 3;
+    FSettings.BackupDefined := True;
+
     // Дефолты для глобальных горячих клавиш
     FSettings.Hotkeys.QuickSearch.Modifiers := MOD_ALT;
     FSettings.Hotkeys.QuickSearch.Key := Ord('Q');
@@ -475,6 +481,22 @@ begin
             FSettings.UISettings.SnippetListColumns := 7;
         FSettings.UISettings.SnippetListColumns := FSettings.UISettings.SnippetListColumns and 7;
         FSettings.UISettings.SnippetListColumnsDefined := True;
+
+        // Узел бэкапа: в старом settings.json его нет — восстанавливаем
+        // дефолты (автобэкап до нововведения работал всегда)
+        if not FSettings.BackupDefined then
+        begin
+            FSettings.Backup.Enabled := True;
+            FSettings.Backup.IntervalSeconds := 86400;
+            FSettings.Backup.Keep := 3;
+            FSettings.BackupDefined := True;
+        end;
+
+        // Битые значения не должны отключать бэкап или ротацию
+        if FSettings.Backup.IntervalSeconds <= 0 then
+            FSettings.Backup.IntervalSeconds := 86400;
+        if FSettings.Backup.Keep <= 0 then
+            FSettings.Backup.Keep := 3;
 
         // 2. Глобальные горячие клавиши
         if FSettings.Hotkeys.QuickSearch.Key = 0 then

@@ -5932,6 +5932,12 @@ object MainForm: TMainForm
     Left = 214
     Top = 497
   end
+  object tmrBackup: TTimer
+    Interval = 60000
+    OnTimer = tmrBackupTimer
+    Left = 282
+    Top = 497
+  end
   object pmLanguage: TPopupMenu
     Left = 215
     Top = 441

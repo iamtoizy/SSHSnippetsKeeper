@@ -110,6 +110,16 @@ type
         ShortCutValue: Integer;
     end;
 
+    // Автобэкап БД при открытии (auto_*.bak рядом с файлом БД)
+    TBackupSettings = record
+        // Автобэкап включён
+        Enabled: Boolean;
+        // Минимальный интервал между копиями, секунды (3600 = 1ч, 86400 = сутки)
+        IntervalSeconds: Integer;
+        // Сколько последних копий хранится (ротация)
+        Keep: Integer;
+    end;
+
     TAppSettings = record
         UISettings: TUISettings;
         AllowedWindows: TArrayRecord<TWindowsNode>;
@@ -148,6 +158,11 @@ type
 
         // Фильтр по тегам: True = сниппет должен иметь все выбранные теги
         TagsMatchAll: Boolean;
+
+        // Резервное копирование БД
+        Backup: TBackupSettings;
+        // Маркер инициализации: False = старый settings.json без узла Backup
+        BackupDefined: Boolean;
 
         // Окно выбора терминала: True = режим таблицы, False = плитки
         TerminalChooserTableView: Boolean;

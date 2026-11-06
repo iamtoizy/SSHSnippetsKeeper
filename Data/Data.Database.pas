@@ -53,8 +53,8 @@ type
         procedure CloseDatabase;
         function IsConnected: Boolean;
         function GetConnectionString: string;
+        function DatabaseFile: string;
         function CreateImportSnapshot: string;
-        function CreateAutoBackup: string;
     end;
 
 var
@@ -130,6 +130,16 @@ begin
     Result := FDConnection.Connected;
 end;
 
+function TAppDatabase.DatabaseFile: string;
+begin
+    Result := '';
+    if not IsConnected then
+        Exit;
+    Result := FDConnection.Params.Database;
+    if SameText(Result, ':memory:') then
+        Result := '';
+end;
+
 procedure TAppDatabase.ApplyPRAGMA;
 begin
     FDConnection.ExecSQL('PRAGMA foreign_keys = ON;');
@@ -179,12 +189,6 @@ end;
 function TAppDatabase.CreateImportSnapshot: string;
 begin
     Result := Data.Database.Migrations.CreateImportSnapshot(
-        FDConnection, FDConnection.Params.Database);
-end;
-
-function TAppDatabase.CreateAutoBackup: string;
-begin
-    Result := Data.Database.Migrations.CreateAutoBackup(
         FDConnection, FDConnection.Params.Database);
 end;
 

@@ -21,13 +21,11 @@ type
         procedure CloseDatabase;
         function IsConnected: Boolean;
         function GetConnectionString: string;
+        // Полный путь к файлу открытой БД; '' если не подключены или :memory:
+        function DatabaseFile: string;
         // Снапшот файла БД перед массовым импортом markdown (pre_import_*.bak).
         // Возвращает путь к копии или '' (in-memory, файл БД отсутствует)
         function CreateImportSnapshot: string;
-        // Автобэкап при открытии БД (auto_*.bak), не чаще раза в сутки.
-        // Возвращает путь к копии или '' (in-memory, файла БД нет,
-        // сегодняшняя копия уже создана)
-        function CreateAutoBackup: string;
     end;
 
     // Репозитории

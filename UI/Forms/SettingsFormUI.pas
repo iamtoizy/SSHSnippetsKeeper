@@ -19,6 +19,7 @@ uses
     Vcl.Forms,
     Vcl.Graphics,
     Vcl.Mask,
+    Vcl.Samples.Spin,
     Vcl.StdCtrls,
     EditEx,
     Winapi.Messages,
@@ -69,6 +70,14 @@ type
         cbColLanguage: TCheckBox;
         cbColLastRun: TCheckBox;
         cbColUpdated: TCheckBox;
+        gbBackup: TGroupBox;
+        lbBackupInterval: TLabel;
+        lbBackupKeep: TLabel;
+        lbBackupLast: TLabel;
+        chkBackupEnabled: TCheckBox;
+        cbBackupInterval: TComboBox;
+        seBackupKeep: TSpinEdit;
+        bBackupCreateNow: TButton;
         tsApplications: TTabSheet;
         lvApplications: TListView;
         pApplicationsButtons: TPanel;
@@ -102,6 +111,7 @@ type
         procedure lvCountersSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
         procedure bCounterResetClick(Sender: TObject);
         procedure bCounterResetAllClick(Sender: TObject);
+        procedure bBackupCreateNowClick(Sender: TObject);
     private
         FLocalActions: TDictionary<string, TActionHotkeyInfo>;
         FHotkeyData: TObjectList<THotkeyViewData>;
@@ -113,10 +123,15 @@ type
         FSavedPasswordGen: THotkeyConfig;
         FSavedRepeatLast: THotkeyConfig;
         FSavedFavoriteSlots: THotkeyConfig;
+        FBackupBusy: Boolean;
         procedure LoadSettingsToUI;
         procedure PopulateHotkeysList(const FilterText: string = '');
         procedure PopulateApplicationsList;
         procedure PopulateCountersList;
+        procedure FillBackupIntervalCombo;
+        procedure UpdateBackupLastCopyLabel;
+        function IntervalToIndex(ASeconds: Integer): Integer;
+        function IndexToInterval(AIndex: Integer): Integer;
         function TryNormalizeAppName(var AName: string; const AIgnoreExisting: string): Boolean;
         function BuildUISnapshot: string;
         procedure CaptureSnapshot;
@@ -142,6 +157,7 @@ uses
     MacroCounters,
     System.IOUtils,
     Common.Localization,
+    Data.Database.Migrations,
     SynThemeAdapter,
     Vcl.FileCtrl,
     Vcl.Menus,
@@ -213,6 +229,14 @@ begin
     cbColLanguage.Checked := (Setts.UISettings.SnippetListColumns and 1) <> 0;
     cbColLastRun.Checked := (Setts.UISettings.SnippetListColumns and 2) <> 0;
     cbColUpdated.Checked := (Setts.UISettings.SnippetListColumns and 4) <> 0;
+
+    // --- Резервное копирование БД ---
+    FillBackupIntervalCombo;
+    chkBackupEnabled.Checked := Setts.Backup.Enabled;
+    cbBackupInterval.ItemIndex := IntervalToIndex(Setts.Backup.IntervalSeconds);
+    seBackupKeep.Value := Setts.Backup.Keep;
+    UpdateBackupLastCopyLabel;
+    // --------------------------------
 
     TVCLStyleService.FillStyleList(cbVCLStyle.Items);
     cbVCLStyle.ItemIndex := cbVCLStyle.Items.IndexOf(Setts.UISettings.VCLStyle);
@@ -435,6 +459,132 @@ begin
 
     Counters.ResetAll;
     PopulateCountersList;
+end;
+
+// =============================================================================
+// РЕЗЕРВНОЕ КОПИРОВАНИЕ БД
+// =============================================================================
+
+const
+    // Пункты комбобокса интервалов: значения в секундах и суффиксы ключей
+    // локализации Settings.BackupInterval<суффикс>
+    BACKUP_INTERVAL_SECONDS: array [0..5] of Integer =
+        (3600, 21600, 43200, 86400, 259200, 604800);
+    BACKUP_INTERVAL_KEYS: array [0..5] of string =
+        ('1h', '6h', '12h', '24h', '3d', '7d');
+
+procedure TSettingsForm.FillBackupIntervalCombo;
+var
+    I: Integer;
+begin
+    cbBackupInterval.Items.BeginUpdate;
+    try
+        cbBackupInterval.Items.Clear;
+        for I := Low(BACKUP_INTERVAL_SECONDS) to High(BACKUP_INTERVAL_SECONDS) do
+            cbBackupInterval.Items.Add(TUIStateLoader.GetMessage(
+                'Settings.BackupInterval' + BACKUP_INTERVAL_KEYS[I]));
+    finally
+        cbBackupInterval.Items.EndUpdate;
+    end;
+end;
+
+function TSettingsForm.IntervalToIndex(ASeconds: Integer): Integer;
+var
+    I: Integer;
+begin
+    Result := 3; // Неизвестное значение - дефолт (сутки)
+    for I := Low(BACKUP_INTERVAL_SECONDS) to High(BACKUP_INTERVAL_SECONDS) do
+        if BACKUP_INTERVAL_SECONDS[I] = ASeconds then
+            Exit(I);
+end;
+
+function TSettingsForm.IndexToInterval(AIndex: Integer): Integer;
+begin
+    if (AIndex < Low(BACKUP_INTERVAL_SECONDS)) or
+        (AIndex > High(BACKUP_INTERVAL_SECONDS)) then
+        Result := 86400
+    else
+        Result := BACKUP_INTERVAL_SECONDS[AIndex];
+end;
+
+procedure TSettingsForm.UpdateBackupLastCopyLabel;
+var
+    DbFile, Latest: string;
+    Stamp: TDateTime;
+begin
+    DbFile := AppContext.DatabaseManager.DatabaseFile;
+    Latest := Data.Database.Migrations.FindLatestAutoBackup(DbFile, Stamp);
+
+    if Latest = '' then
+        lbBackupLast.Caption := TUIStateLoader.GetMessage('Settings.BackupLastCopyNone')
+    else
+        lbBackupLast.Caption := TUIStateLoader.GetMessage('Settings.BackupLastCopy',
+            [FormatDateTime('dd.mm.yyyy hh:nn', Stamp)]);
+end;
+
+// «Создать копию сейчас»: интервал игнорируется (AForce), ротация
+// применяется; значения берутся прямо с формы, сохранение не обязательно.
+// Копирование в фоновом потоке на отдельном соединении - UI не виснет
+procedure TSettingsForm.bBackupCreateNowClick(Sender: TObject);
+var
+    DbFile: string;
+    IntervalSeconds, Keep: Integer;
+begin
+    if FBackupBusy then
+        Exit;
+
+    DbFile := AppContext.DatabaseManager.DatabaseFile;
+    if DbFile = '' then
+    begin
+        MessagesHandler.ShowWarning(
+            TUIStateLoader.GetMessage('Settings.BackupNoDatabase'));
+        Exit;
+    end;
+
+    IntervalSeconds := IndexToInterval(cbBackupInterval.ItemIndex);
+    Keep := seBackupKeep.Value;
+
+    // Кнопка и закрытие формы блокируются: Synchronize должен попасть
+    // в живую форму
+    FBackupBusy := True;
+    bBackupCreateNow.Enabled := False;
+    bSave.Enabled := False;
+    bCancel.Enabled := False;
+    lbBackupLast.Caption := TUIStateLoader.GetMessage('Settings.BackupInProgress');
+
+    TThread.CreateAnonymousThread(
+        procedure
+        var
+            BackupFile, ErrorMsg: string;
+        begin
+            BackupFile := '';
+            ErrorMsg := '';
+            try
+                BackupFile := Data.Database.Migrations.CreateAutoBackupStandalone(
+                    DbFile, IntervalSeconds, Keep, True);
+            except
+                on E: Exception do
+                    ErrorMsg := E.Message;
+            end;
+
+            TThread.Synchronize(nil,
+                procedure
+                begin
+                    FBackupBusy := False;
+                    bBackupCreateNow.Enabled := True;
+                    bSave.Enabled := True;
+                    bCancel.Enabled := True;
+
+                    if ErrorMsg <> '' then
+                        MessagesHandler.ShowError(TUIStateLoader.GetMessage(
+                            'DB.BackupFailed', [DbFile, ErrorMsg]))
+                    else if BackupFile <> '' then
+                        ShowSimpleToast(TUIStateLoader.GetMessage(
+                            'DB.BackupCreated', [BackupFile]));
+
+                    UpdateBackupLastCopyLabel;
+                end);
+        end).Start;
 end;
 
 procedure TSettingsForm.PopulateApplicationsList;
@@ -694,6 +844,13 @@ begin
         Setts.UISettings.SnippetListColumns := Setts.UISettings.SnippetListColumns or 4;
     Setts.UISettings.SnippetListColumnsDefined := True;
 
+    // --- Настройки автобэкапа ---
+    Setts.Backup.Enabled := chkBackupEnabled.Checked;
+    Setts.Backup.IntervalSeconds := IndexToInterval(cbBackupInterval.ItemIndex);
+    Setts.Backup.Keep := seBackupKeep.Value;
+    Setts.BackupDefined := True;
+    // ----------------------------
+
     SetLength(Setts.AllowedApplications.Items, lvApplications.Items.Count);
     for I := 0 to lvApplications.Items.Count - 1 do
     begin
@@ -751,6 +908,13 @@ end;
 
 procedure TSettingsForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
+    // Фоновое копирование ещё идёт: Synchronize должен попасть в живую форму
+    if FBackupBusy then
+    begin
+        CanClose := False;
+        Exit;
+    end;
+
     if IsUIChanged and (not MessagesHandler.AskWarning(
         TUIStateLoader.GetMessage('Common.DiscardChangesConfirm'),
         TUIStateLoader.GetMessage('Common.Warning'))) then
@@ -780,7 +944,10 @@ begin
             .Append(cbTagsMatchAll.Checked).Append('|')
             .Append(cbColLanguage.Checked).Append('|')
             .Append(cbColLastRun.Checked).Append('|')
-            .Append(cbColUpdated.Checked).Append('|');
+            .Append(cbColUpdated.Checked).Append('|')
+            .Append(chkBackupEnabled.Checked).Append('|')
+            .Append(cbBackupInterval.ItemIndex).Append('|')
+            .Append(seBackupKeep.Value).Append('|');
 
         for Item in lvApplications.Items do
             SB.Append(Item.Caption).Append(':')

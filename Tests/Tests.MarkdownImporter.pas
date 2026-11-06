@@ -59,8 +59,8 @@ type
         procedure CloseDatabase;
         function IsConnected: Boolean;
         function GetConnectionString: string;
+        function DatabaseFile: string;
         function CreateImportSnapshot: string;
-        function CreateAutoBackup: string;
     end;
 
     // Контекст над in-memory SQLite: реальные репозитории и сервисы
@@ -294,15 +294,15 @@ begin
     Result := '';
 end;
 
+function TTestDatabaseManager.DatabaseFile: string;
+begin
+    Result := '';
+end;
+
 function TTestDatabaseManager.CreateImportSnapshot: string;
 begin
     Inc(SnapshotCalls);
     Result := SnapshotResult;
-end;
-
-function TTestDatabaseManager.CreateAutoBackup: string;
-begin
-    Result := '';
 end;
 
 { TTestAppContext }

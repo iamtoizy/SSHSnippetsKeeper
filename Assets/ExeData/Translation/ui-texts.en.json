@@ -1104,6 +1104,21 @@
     },
     "cbColUpdated": {
       "Caption": "Last modified"
+    },
+    "gbBackup": {
+      "Caption": "Database backup"
+    },
+    "chkBackupEnabled": {
+      "Caption": "Create backup copies automatically"
+    },
+    "lbBackupInterval": {
+      "Caption": "Interval:"
+    },
+    "lbBackupKeep": {
+      "Caption": "Copies to keep:"
+    },
+    "bBackupCreateNow": {
+      "Caption": "Create copy now"
     }
   },
   "AppPickerForm": {
@@ -1526,6 +1541,21 @@
       "ApplicationsDeleteConfirm": "Delete application \"%s\" from the allowed list?",
       "ApplicationsInvalidName": "Specify an executable file name (e.g., ssh.exe).",
       "ApplicationsDuplicate": "Application \"%s\" is already in the list.",
+      "BackupGroup": "Database backup",
+      "BackupEnabled": "Create backup copies automatically",
+      "BackupInterval": "Interval:",
+      "BackupInterval1h": "1 hour",
+      "BackupInterval6h": "6 hours",
+      "BackupInterval12h": "12 hours",
+      "BackupInterval24h": "24 hours",
+      "BackupInterval3d": "3 days",
+      "BackupInterval7d": "7 days",
+      "BackupKeep": "Copies to keep:",
+      "BackupCreateNow": "Create copy now",
+      "BackupLastCopy": "Last copy: %s",
+      "BackupLastCopyNone": "Last copy: none yet",
+      "BackupInProgress": "creating copy…",
+      "BackupNoDatabase": "No database is open — nothing to copy.",
       "StyleApplyError": "Failed to apply style \"%s\"."
     },
     "AppPicker": {
