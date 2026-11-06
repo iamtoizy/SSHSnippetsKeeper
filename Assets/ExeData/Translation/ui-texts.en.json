@@ -188,7 +188,7 @@
       "Caption": "Security Scanner Report"
     },
     "nSyncDatabase": {
-      "Caption": "Synchronize Database"
+      "Caption": "Sync with Markdown vault"
     }
   },
   "TagEditorForm": {
@@ -1079,10 +1079,10 @@
       "EditLabel.Caption": "Markdown Sync Path"
     },
     "cbSyncOnStart": {
-      "Caption": "Sync on database open"
+      "Caption": "Sync with Markdown vault on database open"
     },
     "cbSyncOnExit": {
-      "Caption": "Sync on database close"
+      "Caption": "Sync with Markdown vault on database close"
     },
     "tsGeneral": {
       "Caption": "General"
@@ -1168,8 +1168,8 @@
         },
         "lvSnippets": {
           "Title": "Snippet List",
-          "Main": "Flat list of snippets in the selected workspace. Multi-selection is supported (CTRL+click / SHIFT+click): the context menu offers bulk actions - Run in order, Export, Add tag, Move to category, Delete.",
-          "Expanded": "<code>CTRL+ALT+A</code> - Add snippet<br><code>CTRL+ALT+E</code> - Edit snippet<br><code>CTRL+D</code> - Duplicate snippet<br><code>CTRL+ALT+D</code> - Delete snippet"
+          "Main": "Flat list of snippets in the selected category; it also shows results of searches, smart folders, and tag filters. Run with a double click or \"Run\": the snippet is typed into the selected target window; \"Dry run\" shows the snippet without typing and lets you run it after review.<br><blockquote><b>Columns:</b> \"Title\" is always visible; \"Language\", \"Last run\" and \"Last modified\" can be toggled in Settings. If a snippet was never edited, \"Last modified\" shows the creation date.</blockquote><br><blockquote><b>Favorites:</b> favorite snippets are marked with ★, the first ten also show a slot number (1..0) triggered by the global keys ALT+1…ALT+0 (configurable). Reorder favorites by dragging a row onto another favorite, or via the context menu \"Move in favorites\" (To top / Up / Down / To end). Hovering a row shows a tooltip with ID, title, language and comment.</blockquote><br><blockquote><b>Multi-selection</b> (CTRL+click / SHIFT+click) enables bulk context-menu actions: \"Running in order\", \"Export snippets\", \"Add tag to selected snippets\", \"Remove tag from selected snippets\", \"Move to category\", \"Delete\". The menu also offers \"Create chain from snippet\", \"Version history…\" (view and restore), \"Add to favorites\" / \"Remove from favorites\" and \"Save search as smart folder\" (when the list shows search results).</blockquote>",
+          "Expanded": "<code>ALT+1…ALT+0</code> - Run favorite snippet by slot (global)<br><code>CTRL+ALT+A</code> - Add snippet<br><code>CTRL+ALT+E</code> - Edit snippet<br><code>CTRL+D</code> - Duplicate snippet<br><code>CTRL+ALT+D</code> - Delete snippet"
         },
         "lvTags": {
           "Title": "Tag List",
@@ -1369,7 +1369,7 @@
           "CreateDatabase": "Create Database",
           "OpenDatabase": "Open Database",
           "CloseDatabase": "Close Database",
-          "SyncDatabase": "Sync Database"
+          "SyncDatabase": "Sync with Markdown vault"
         },
         "File": {
           "Caption": "File",
@@ -1499,7 +1499,7 @@
       "HotkeyConflict": "This key combination is already used by the action:\n'%s'.\n\nChoose another one.",
       "HotkeyRegistrationError": "Failed to register the global hotkey '%s'. It might be occupied by another application.",
       "SyncFolderCreationError": "Failed to create synchronization folder: %s",
-      "SyncingStorage": "Synchronizing storage...",
+      "SyncingStorage": "Synchronizing Markdown vault...",
       "SyncCompleted": "Synchronization completed.",
       "SyncCompletedStats": "Synchronization completed. Created: %d, updated: %d.",
       "SyncError": "Error synchronizing: %s",
