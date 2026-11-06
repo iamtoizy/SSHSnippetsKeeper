@@ -253,6 +253,12 @@
         "4": "Trusted"
       }
     },
+    "lbFilter": {
+      "Caption": "Show:"
+    },
+    "bRescan": {
+      "Caption": "Rescan"
+    },
     "bClose": {
       "Caption": "Close"
     }
@@ -1812,7 +1818,12 @@
       "ReportInContent": "Content: %s",
       "ReportInComment": "Comment: %s",
       "ReportTrusted": "yes",
-      "ReportNotTrusted": "no"
+      "ReportNotTrusted": "no",
+      "ReportFilterAll": "All flagged snippets",
+      "ReportFilterNotTrusted": "Only not trusted",
+      "ReportScanning": "Scanning...",
+      "ReportScanTime": "Scan time: %s s",
+      "ReportScanError": "Scan error: %s"
     },
     "Markdown": {
       "DeleteFolderError": "Failed to delete folder: \"%s\""

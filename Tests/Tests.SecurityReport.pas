@@ -25,6 +25,10 @@ type
         procedure TrustedSnippet_ListedAndMarked;
         [Test]
         procedure Finding_KeepsIdsAndTitle;
+        [Test]
+        procedure Filter_HideTrusted_HidesIgnoredSnippets;
+        [Test]
+        procedure Filter_ShowAll_EmptyInputStaysEmpty;
     end;
 
 implementation
@@ -136,6 +140,42 @@ begin
     Assert.AreEqual(3, Findings[0].UserID);
     Assert.AreEqual('leaky', Findings[0].Title);
     Assert.IsFalse(Findings[0].Trusted);
+end;
+
+procedure TSecurityReportTests.Filter_HideTrusted_HidesIgnoredSnippets;
+var
+    Scanner: ISecurityScanner;
+    Snippets: TArray<TSnippetDTO>;
+    Findings, Filtered: TArray<TSecurityFinding>;
+begin
+    Scanner := TSecurityScanner.Create;
+    Snippets := [
+        MakeSnippet('legacy', 'token = my_secret_token_value', ''),
+        MakeSnippet('leaky', 'password = my_hidden_secret', '')];
+    Snippets[0].IsSecurityCheckIgnored := True;
+
+    Findings := BuildSecurityReport(Scanner, Snippets);
+    Assert.AreEqual(2, Integer(Length(Findings)));
+
+    // Скрываем доверенные: остаётся только 'leaky'
+    Filtered := FilterSecurityReport(Findings, True);
+    Assert.AreEqual(1, Integer(Length(Filtered)));
+    Assert.AreEqual('leaky', Filtered[0].Title);
+    Assert.IsFalse(Filtered[0].Trusted);
+
+    // Без фильтра возвращаются обе записи
+    Filtered := FilterSecurityReport(Findings, False);
+    Assert.AreEqual(2, Integer(Length(Filtered)));
+end;
+
+procedure TSecurityReportTests.Filter_ShowAll_EmptyInputStaysEmpty;
+var
+    Findings: TArray<TSecurityFinding>;
+begin
+    Findings := [];
+
+    Assert.AreEqual(0, Integer(Length(FilterSecurityReport(Findings, True))));
+    Assert.AreEqual(0, Integer(Length(FilterSecurityReport(Findings, False))));
 end;
 
 end.
