@@ -461,12 +461,15 @@ begin
     List := TList<TSnippetDTO>.Create;
     IDList := TList<Integer>.Create;
     Query := CreateQuery;
-    if not Assigned(Query.Connection) then
-        Exit(Result);
-
     TagMap := nil;
 
     try
+        // Проверка внутри try: иначе ранний выход оставлял запрос
+        // и оба списка неосвобождёнными (утечка на каждом вызове
+        // до открытия базы)
+        if not Assigned(Query.Connection) then
+            Exit(Result);
+
         Query.SQL.Text := SQL;
         SetQueryParams(Query, Params);
         Query.Open;
