@@ -77,6 +77,9 @@ type
         class function EffectiveUpdatedAt(const Parsed: TParsedMarkdown; const FilePath: string): Int64;
         // Снапшот БД нужен: много новых записей, >20% базы или первый синк
         class function SnapshotRequired(ANewCount, ATotalSnippets: Integer): Boolean;
+        // Владелец, которого задаёт путь файла (только чтение, без создания)
+        class function PathOwnerUserID(const BaseDir, FilePath: string;
+            UserCache: TDictionary<string, Integer>): Integer;
 
         // Разрешает путь к категории: создает юзера и дерево категорий на основе папок на диске
         class function ResolveCategoryAndUserFromPath(
@@ -359,6 +362,29 @@ begin
         ((ANewCount > IMPORT_SNAPSHOT_NEW_LIMIT) or (5 * ANewCount > ATotalSnippets));
 end;
 
+class function TMarkdownImporter.PathOwnerUserID(const BaseDir, FilePath: string;
+    UserCache: TDictionary<string, Integer>): Integer;
+var
+    RelPath, AbsBase, AbsDir: string;
+    PathParts: TArray<string>;
+begin
+    Result := 0;
+
+    AbsBase := IncludeTrailingPathDelimiter(TPath.GetFullPath(BaseDir));
+    AbsDir := TPath.GetFullPath(TPath.GetDirectoryName(FilePath));
+
+    if not AbsDir.StartsWith(AbsBase, True) then Exit;
+    if SameText(AbsDir, ExcludeTrailingPathDelimiter(AbsBase)) then Exit;
+
+    RelPath := AbsDir.Substring(Length(AbsBase));
+    PathParts := RelPath.Split([TPath.DirectorySeparatorChar], TStringSplitOptions.ExcludeEmpty);
+    if Length(PathParts) = 0 then Exit;
+
+    // Пользователь может быть ещё не создан: тогда владельца нет
+    if not UserCache.TryGetValue(PathParts[0].ToLower, Result) then
+        Result := 0;
+end;
+
 class function TMarkdownImporter.ImportFromDirectory(const AppContext: IAppContext; const BaseDir: string): TMarkdownImportResult;
 var
     FilePath: string;
@@ -459,7 +485,17 @@ begin
 
                 ExistingSnippet := Default(TSnippetDTO);
                 if Parsed.ID > 0 then
+                begin
                     ExistingSnippet := AppContext.SnippetService.GetSnippetByID(Parsed.ID);
+
+                    // id в YAML - подсказка, а не право на запись: файл,
+                    // скопированный из другого хранилища или подброшенный,
+                    // не должен переписывать сниппет чужого пространства.
+                    // Владелец берётся из пути и только читается
+                    if (ExistingSnippet.ID > 0) and
+                       (ExistingSnippet.UserID <> PathOwnerUserID(BaseDir, FilePath, UserCache)) then
+                        ExistingSnippet := Default(TSnippetDTO);
+                end;
 
                 Item.FilePath := FilePath;
                 Item.Parsed := Parsed;

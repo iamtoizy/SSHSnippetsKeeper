@@ -138,6 +138,8 @@ type
         procedure NewSnippet_CreatedDespiteOldDate;
         [Test]
         procedure NoMarker_DoesNotOverwrite;
+        [Test]
+        procedure ForeignId_DoesNotOverwriteOtherUserSnippet;
 
         // Слой 3
         [Test]
@@ -479,7 +481,9 @@ begin
     FConn.Connected := True;
     FConn.ExecSQL('PRAGMA foreign_keys = ON');
     ExecSchema(FConn);
-    FConn.ExecSQL('INSERT OR IGNORE INTO users (id, name) VALUES (1, ''Local User'')');
+    // Имя пользователя совпадает с именем папки в хранилище: импортер
+    // выводит владельца файла из пути и только для него доверяет id из YAML
+    FConn.ExecSQL('INSERT OR IGNORE INTO users (id, name) VALUES (1, ''user1'')');
 
     FDbManager := TTestDatabaseManager.Create;
     FContext := TTestAppContext.Create(FConn, FDbManager);
@@ -786,6 +790,49 @@ begin
     Assert.AreEqual(0, Res.Updated);
     Assert.AreEqual('db content', string(FConn.ExecSQLScalar(
         'SELECT content FROM snippets WHERE id = ?', [SnipID])));
+end;
+
+procedure TMarkdownImporterTests.ForeignId_DoesNotOverwriteOtherUserSnippet;
+var
+    Cat: TCategoryDTO;
+    Snip: TSnippetDTO;
+    CatID, ForeignID: Integer;
+    Res: TMarkdownImportResult;
+begin
+    // Соседнее пространство: у другого пользователя свой сниппет
+    FConn.ExecSQL('INSERT INTO users (id, name) VALUES (2, ''other'')');
+    Cat := Default(TCategoryDTO);
+    Cat.Name := 'scripts';
+    Cat.ParentID := 0;
+    Cat.UserID := 2;
+    CatID := FContext.CategoryService.CreateCategory(Cat);
+
+    Snip := Default(TSnippetDTO);
+    Snip.UserID := 2;
+    Snip.CategoryID := CatID;
+    Snip.Title := 'foreign';
+    Snip.Content := 'foreign content';
+    Snip.Language := 'bash';
+    Snip.CreatedAt := 1600000000;
+    Snip.UpdatedAt := 1700000000;
+    ForeignID := FContext.SnippetService.CreateSnippet(Snip, []);
+
+    // Файл в пространстве user1 с чужим id и нашим маркером: id из YAML
+    // не даёт права переписывать сниппет другого пространства
+    WriteFile(TPath.Combine('vault', 'user1', 'scripts', 'stolen.md'),
+        MdFile(ForeignID, 1800000000, 'Stolen', 'attacker content'));
+
+    Res := TMarkdownImporter.ImportFromDirectory(FContext, VaultDir);
+
+    Assert.AreEqual(0, Res.Updated);
+    Assert.AreEqual(1, Res.Created);
+    Assert.AreEqual('foreign content', string(FConn.ExecSQLScalar(
+        'SELECT content FROM snippets WHERE id = ?', [ForeignID])));
+    Assert.AreEqual(Int64(1700000000), Int64(FConn.ExecSQLScalar(
+        'SELECT updated_at FROM snippets WHERE id = ?', [ForeignID])));
+    // Файл не потерян: он импортирован как новый в пространство user1
+    Assert.AreEqual(1, Integer(FConn.ExecSQLScalar(
+        'SELECT COUNT(*) FROM snippets WHERE title = ''Stolen'' AND user_id = 1')));
 end;
 
 // ---------------------------------------------------------------------------
