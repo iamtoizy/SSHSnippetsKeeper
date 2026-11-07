@@ -39,6 +39,8 @@ type
         [Test]
         procedure UpdateTags_ReplacesSet;
         [Test]
+        procedure UpdateTags_RollsBackOnFailure;
+        [Test]
         procedure MoveSnippet_KeepsTags_AndChangesCategory;
         [Test]
         procedure MoveSnippet_CrossWorkspace_UserAndFavoriteTransfer;
@@ -236,6 +238,40 @@ begin
         Assert.AreEqual(2, Integer(Length(TagRepo.GetSnippetTags(SnipID))));
         Assert.AreEqual('b2', TagRepo.GetSnippetTags(SnipID)[0].Name);
         Assert.AreEqual('c3', TagRepo.GetSnippetTags(SnipID)[1].Name);
+    finally
+        SnipRepo.Free;
+        TagRepo.Free;
+    end;
+end;
+
+procedure TMultiSelectTests.UpdateTags_RollsBackOnFailure;
+var
+    TagRepo: TTagRepository;
+    SnipRepo: TSnippetRepository;
+    SnipID, T1, T2: Integer;
+    Raised: Boolean;
+begin
+    SnipID := AddSnippetRaw('atomic');
+    T1 := AddTagRaw('keep-on-error');
+    T2 := AddTagRaw('dup-source');
+    TagRepo := TTagRepository.Create(FConn);
+    SnipRepo := TSnippetRepository.Create(FConn);
+    try
+        TagRepo.LinkTagToSnippet(SnipID, T1);
+
+        Raised := False;
+        try
+            // Повтор тега нарушает PRIMARY KEY (snippet_id, tag_id)
+            SnipRepo.UpdateTags(SnipID, [T2, T2]);
+        except
+            Raised := True;
+        end;
+
+        Assert.IsTrue(Raised, 'Дубликат тега должен приводить к исключению');
+        // Удаление старых связей откатилось вместе с неудачной вставкой:
+        // раньше теги терялись навсегда
+        Assert.AreEqual(1, Integer(Length(TagRepo.GetSnippetTags(SnipID))));
+        Assert.AreEqual('keep-on-error', TagRepo.GetSnippetTags(SnipID)[0].Name);
     finally
         SnipRepo.Free;
         TagRepo.Free;

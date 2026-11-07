@@ -37,7 +37,8 @@ uses
     Tests.SnippetLanguageNB in 'Tests.SnippetLanguageNB.pas',
     Tests.SynHighlighterFactory in 'Tests.SynHighlighterFactory.pas',
     Tests.SynEditRoundTrip in 'Tests.SynEditRoundTrip.pas',
-    Tests.DirtyDetection in 'Tests.DirtyDetection.pas'
+    Tests.DirtyDetection in 'Tests.DirtyDetection.pas',
+    Tests.Localization in 'Tests.Localization.pas'
     ;
 
 var
@@ -83,6 +84,7 @@ begin
         TDUnitX.RegisterTestFixture(TDirtyDetectionTests);
         TDUnitX.RegisterTestFixture(TMacroBodySynTests);
         TDUnitX.RegisterTestFixture(TMacroSchemeRegexTests);
+        TDUnitX.RegisterTestFixture(TLocalizationDiagnosticsTests);
         Runner := TDUnitX.CreateRunner([TDUnitXConsoleLogger.Create(False)]);
         Runner.UseRTTI := True;
         Results := Runner.Execute;

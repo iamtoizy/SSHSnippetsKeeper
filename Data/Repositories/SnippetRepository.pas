@@ -15,6 +15,7 @@ uses
 type
     TSnippetRepository = class(TRepositoryBase, ISnippetRepository)
     private
+        procedure InternalUpdateTags(SnippetID: Integer; const TagIDs: TArray<Integer>);
         function InternalLoadSnippets(const SQL: string; const Params: array of Variant): TArray<TSnippetDTO>;
         function GetSnippetTagsBatch(const SnippetIDs: TArray<Integer>): TDictionary<Integer, TArray<TTagDTO>>;
     public
@@ -34,6 +35,8 @@ type
         function SearchByMaskSimple(const Mask: string; UserID: Integer = 0): TArray<TSnippetDTO>;
         function SearchAdvanced(const Query: TStructuredQuery; UseFTS: Boolean; UserID: Integer = 0): TArray<TSnippetDTO>;
         procedure UpdateTags(SnippetID: Integer; const TagIDs: TArray<Integer>);
+        function AddWithTags(const Snippet: TSnippetDTO; const TagIDs: TArray<Integer>): Integer;
+        procedure UpdateWithTags(const Snippet: TSnippetDTO; const TagIDs: TArray<Integer>);
         procedure MoveToWorkspace(SnippetID, NewUserID, NewCategoryID: Integer);
         function GetRecentSnippets(UserID: Integer; Limit: Integer): TArray<TSnippetDTO>;
         function GetTopSnippets(UserID: Integer; Limit: Integer): TArray<TSnippetDTO>;
@@ -537,7 +540,7 @@ begin
     end;
 end;
 
-procedure TSnippetRepository.UpdateTags(SnippetID: Integer; const TagIDs: TArray<Integer>);
+procedure TSnippetRepository.InternalUpdateTags(SnippetID: Integer; const TagIDs: TArray<Integer>);
 var
     Q, QTags: TFDQuery;
     TagID: Integer;
@@ -567,6 +570,46 @@ begin
         finally
             QTags.Free;
         end;
+    end;
+end;
+
+procedure TSnippetRepository.UpdateTags(SnippetID: Integer; const TagIDs: TArray<Integer>);
+begin
+    // Удаление старых и вставка новых связей - один атомарный шаг: сбой
+    // в середине иначе оставляет сниппет вообще без тегов
+    FConnection.StartTransaction;
+    try
+        InternalUpdateTags(SnippetID, TagIDs);
+        FConnection.Commit;
+    except
+        FConnection.Rollback;
+        raise;
+    end;
+end;
+
+function TSnippetRepository.AddWithTags(const Snippet: TSnippetDTO; const TagIDs: TArray<Integer>): Integer;
+begin
+    FConnection.StartTransaction;
+    try
+        Result := Add(Snippet);
+        InternalUpdateTags(Result, TagIDs);
+        FConnection.Commit;
+    except
+        FConnection.Rollback;
+        raise;
+    end;
+end;
+
+procedure TSnippetRepository.UpdateWithTags(const Snippet: TSnippetDTO; const TagIDs: TArray<Integer>);
+begin
+    FConnection.StartTransaction;
+    try
+        Update(Snippet);
+        InternalUpdateTags(Snippet.ID, TagIDs);
+        FConnection.Commit;
+    except
+        FConnection.Rollback;
+        raise;
     end;
 end;
 

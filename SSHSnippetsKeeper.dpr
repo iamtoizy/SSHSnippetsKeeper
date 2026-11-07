@@ -73,6 +73,7 @@ uses
   HintTextMemo in 'UI\Controls\HintTextMemo.pas',
   BaseFormUI in 'UI\Forms\BaseFormUI.pas',
   UI.Services.AppStateManager in 'UI\Services\UI.Services.AppStateManager.pas',
+  UI.Services.LocalizationDiagnostics in 'UI\Services\UI.Services.LocalizationDiagnostics.pas',
   UI.AppStatusBar in 'UI\Helpers\UI.AppStatusBar.pas',
   UI.BusyIndicator in 'UI\Helpers\UI.BusyIndicator.pas',
   UI.Helpers in 'UI\Helpers\UI.Helpers.pas',
@@ -326,7 +327,16 @@ FastMM_EnterDebugMode;
     end;
     MainForm.Show;
 
+    // Отчёт о промахах локализации: строки копит Common.Localization,
+    // показывает этот класс из главного потока (лог всегда, тост и окно -
+    // в DEBUG или по флагу)
+    TLocalizationDiagnostics.Initialize;
+
     Application.Run;
+
+    // Останавливаем опрос до разрушения VCL: таймер не должен сработать
+    // на уничтоженных формах
+    TLocalizationDiagnostics.Shutdown;
 
     // Останавливаем макропоток, пока VCL и очередь Synchronize ещё живы:
     // освобождение в финализации Core.Shutdown происходит слишком поздно -
