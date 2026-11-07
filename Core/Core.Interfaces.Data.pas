@@ -35,6 +35,10 @@ type
         procedure Update(const Snippet: TSnippetDTO);
         procedure Delete(SnippetID: Integer);
         procedure UpdateTags(SnippetID: Integer; const TagIDs: TArray<Integer>);
+        // Сниппет и его теги пишутся одной транзакцией: при сбое не остаётся
+        // ни новой строки без тегов, ни сниппета с потерянными связями
+        function AddWithTags(const Snippet: TSnippetDTO; const TagIDs: TArray<Integer>): Integer;
+        procedure UpdateWithTags(const Snippet: TSnippetDTO; const TagIDs: TArray<Integer>);
         // Перенос сниппета в другое пространство: user_id + category_id + миграция избранного
         procedure MoveToWorkspace(SnippetID, NewUserID, NewCategoryID: Integer);
         function GetById(SnippetID: Integer): TSnippetDTO;
