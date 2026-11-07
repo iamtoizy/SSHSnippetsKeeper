@@ -54,12 +54,10 @@ object SecurityReportForm: TSecurityReportForm
         Width = 90
       end>
     DoubleBuffered = True
-    GridLines = True
     HideSelection = False
-    ParentDoubleBuffered = False
     ReadOnly = True
     RowSelect = True
-    ShowHint = False
+    ParentDoubleBuffered = False
     TabOrder = 1
     ViewStyle = vsReport
     OnDblClick = lvFindingsDblClick
@@ -78,7 +76,7 @@ object SecurityReportForm: TSecurityReportForm
     object lbFilter: TLabel
       Left = 12
       Top = 9
-      Width = 71
+      Width = 36
       Height = 15
       Caption = 'lbFilter'
       Layout = tlCenter
