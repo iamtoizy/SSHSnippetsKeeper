@@ -131,6 +131,7 @@ type
         procedure mContentChange(Sender: TObject);
         procedure mContentKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
         procedure mContentProcessCommand(Sender: TObject; var Command: TSynEditorCommand; var Char: WideChar; Data: Pointer);
+        procedure mContentProcessUserCommand(Sender: TObject; var Command: TSynEditorCommand; var Char: WideChar; Data: Pointer);
         procedure mContentStatusChange(Sender: TObject; Changes: TSynStatusChanges);
         procedure mContentMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
         procedure mContentMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
@@ -289,6 +290,12 @@ uses
     ;
 
 {$R *.dfm}
+
+const
+    ecCardNext = ecUserFirst;
+    ecCardPrev = ecUserFirst + 1;
+    ecCardNextLine = ecUserFirst + 2;
+    ecCardPrevLine = ecUserFirst + 3;
 
 constructor TAddEditSnippetForm.Create(Owner: TComponent);
 begin
@@ -1644,9 +1651,24 @@ procedure TAddEditSnippetForm.SetupMacroCards;
         pmMacroInsert.Items.Add(Item);
     end;
 
+    procedure AddCardNavKey(AKey: Word; AShift: TShiftState; ACommand: TSynEditorCommand);
+    var
+        Stroke: TSynEditKeyStroke;
+    begin
+        Stroke := mContent.Keystrokes.Add;
+        Stroke.Key := AKey;
+        Stroke.Shift := AShift;
+        Stroke.Command := ACommand;
+    end;
+
 begin
     FMacroCards := TMacroCardController.Create(mContent.Lines);
     FCardPlugin := TMacroCardPlugin.Create(mContent, FMacroCards);
+    mContent.OnProcessUserCommand := mContentProcessUserCommand;
+    AddCardNavKey(VK_RIGHT, [ssCtrl, ssAlt], ecCardNext);
+    AddCardNavKey(VK_LEFT, [ssCtrl, ssAlt], ecCardPrev);
+    AddCardNavKey(VK_DOWN, [ssCtrl, ssAlt], ecCardNextLine);
+    AddCardNavKey(VK_UP, [ssCtrl, ssAlt], ecCardPrevLine);
     // Красные подчёркивания под секретами, найденными сканером
     FSecurityPlugin := TSecurityMarkerPlugin.Create(mContent);
     mContent.OnMouseCursor := mContentMouseCursor;
@@ -2063,30 +2085,33 @@ begin
             Command := ecNone;
         end;
     end;
+end;
 
-    if Assigned(FMacroCards) and (FMacroCards.CardCount > 0) then
-    begin
-        case Command of
-            ecWordRight:
-            begin
-                Command := ecNone;
-                GotoMacroCard(FMacroCards.Navigate(FCardPlugin.SelectedCard, 1));
-            end;
-            ecWordLeft:
-            begin
-                Command := ecNone;
-                GotoMacroCard(FMacroCards.Navigate(FCardPlugin.SelectedCard, -1));
-            end;
-            ecScrollDown:
-            begin
-                Command := ecNone;
-                GotoMacroCard(FMacroCards.NavigateLine(FCardPlugin.SelectedCard, 1));
-            end;
-            ecScrollUp:
-            begin
-                Command := ecNone;
-                GotoMacroCard(FMacroCards.NavigateLine(FCardPlugin.SelectedCard, -1));
-            end;
+procedure TAddEditSnippetForm.mContentProcessUserCommand(Sender: TObject; var Command: TSynEditorCommand; var Char: WideChar; Data: Pointer);
+begin
+    if (not Assigned(FMacroCards)) or (FMacroCards.CardCount = 0) then
+        Exit;
+
+    case Command of
+        ecCardNext:
+        begin
+            Command := ecNone;
+            GotoMacroCard(FMacroCards.Navigate(FCardPlugin.SelectedCard, 1));
+        end;
+        ecCardPrev:
+        begin
+            Command := ecNone;
+            GotoMacroCard(FMacroCards.Navigate(FCardPlugin.SelectedCard, -1));
+        end;
+        ecCardNextLine:
+        begin
+            Command := ecNone;
+            GotoMacroCard(FMacroCards.NavigateLine(FCardPlugin.SelectedCard, 1));
+        end;
+        ecCardPrevLine:
+        begin
+            Command := ecNone;
+            GotoMacroCard(FMacroCards.NavigateLine(FCardPlugin.SelectedCard, -1));
         end;
     end;
 end;
