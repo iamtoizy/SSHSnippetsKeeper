@@ -8,6 +8,12 @@ uses
     ;
 
 type
+    // Два уровня сканирования:
+    // scanStrict  – отчёт аудита: старая токенизация, допускает ложные
+    //               срабатывания (лучше лишний раз показать, чем пропустить);
+    // scanTolerant – run-time (запуск/сохранение): не отвлекает пользователя.
+    TSecurityScanMode = (scanTolerant, scanStrict);
+
     ISecurityScanner = interface
         ['{4BE7DF73-F059-4F22-B05D-330D07B6E655}']
         function HasSensitiveData(const Text: string; out Reason: string): Boolean;
@@ -21,13 +27,16 @@ type
     TSecurityScanner = class(TInterfacedObject, ISecurityScanner)
     private
         FPatterns: TArray<TSecretPattern>;
+        FMode: TSecurityScanMode;
         procedure InitializePatterns;
         function CalculateEntropy(const S: string): Double;
         function IsValidSecretCandidate(const S: string): Boolean;
         function ScanByRegex(const Text: string; out Reason: string): Boolean;
         function ScanByEntropy(const Text: string; out Reason: string): Boolean;
     public
-        constructor Create;
+        constructor Create(AMode: TSecurityScanMode = scanTolerant);
+        // Маппинг настройки "Строгая проверка секретов" в режим сканера
+        class function ScanModeFromSetting(AStrict: Boolean): TSecurityScanMode; static;
         function HasSensitiveData(const Text: string; out Reason: string): Boolean;
     end;
 
@@ -40,10 +49,19 @@ uses
 
 { TSecurityScanner }
 
-constructor TSecurityScanner.Create;
+constructor TSecurityScanner.Create(AMode: TSecurityScanMode);
 begin
     inherited Create;
+    FMode := AMode;
     InitializePatterns;
+end;
+
+class function TSecurityScanner.ScanModeFromSetting(AStrict: Boolean): TSecurityScanMode;
+begin
+    if AStrict then
+        Result := scanStrict
+    else
+        Result := scanTolerant;
 end;
 
 procedure TSecurityScanner.InitializePatterns;
@@ -143,7 +161,20 @@ var
     Entropy: Double;
 begin
     Result := False;
-    Words := Text.Split([' ', #13, #10, #9, '=', ':', '"', '''']);
+    if FMode = scanStrict then
+        // Строгий режим (отчёт аудита): классическая токенизация по пробелам
+        // и базовой пунктуации; спецсимволы кода остаются в токене, поэтому
+        // ложные срабатывания возможны – здесь это осознанный компромисс.
+        Words := Text.Split([' ', #13, #10, #9, '=', ':', '"', ''''])
+    else
+        // Терпимый режим (run-time): пунктуация кода – тоже разделитель: иначе
+        // склеенный вызов вида ROUND(SUM(data_length+index_length)/1024/1024,2)
+        // образует один длинный токен с высокой энтропией и даёт ложное
+        // срабатывание. Символы алфавита кодирования (+ / = . _ -) разделителями
+        // не являются, чтобы не разрывать настоящие секреты (Base64, JWT, ключи).
+        Words := Text.Split([' ', #13, #10, #9, '=', ':', '"', '''',
+            '(', ')', ',', ';', '<', '>', '[', ']', '{', '}',
+            '|', '&', '%', '!', '?', '#', '~', '^', '@', '*']);
 
     for WordStr in Words do
     begin
@@ -167,6 +198,10 @@ begin
 end;
 
 function TSecurityScanner.IsValidSecretCandidate(const S: string): Boolean;
+const
+    // Алфавит настоящих секретов (Base64, JWT, hex, API-ключи).
+    // Всё, что выходит за него ($, скобки, % и т.п.), – код или переменная.
+    AllowedSecretChars = ['A'..'Z', 'a'..'z', '0'..'9', '_', '-', '+', '/', '=', '.'];
 var
     C: Char;
     HasDigit, HasAlpha: Boolean;
@@ -181,13 +216,20 @@ begin
         if Ord(C) > 127 then
             Exit(False);
 
+        // 2. Проверка чистоты состава: настоящий секрет состоит только
+        // из букв, цифр и символов алфавита кодирования ($, скобки, % и т.п.
+        // выдают код или переменную). Только в терпимом режиме: строгий
+        // сканер аудита сознательно допускает срабатывания на спецсимволах.
+        if (FMode = scanTolerant) and (not CharInSet(C, AllowedSecretChars)) then
+            Exit(False);
+
         if CharInSet(C, ['0'..'9']) then
             HasDigit := True
         else if CharInSet(C, ['a'..'z', 'A'..'Z']) then
             HasAlpha := True;
     end;
 
-    // 2. Токены и секреты высокой энтропии практически всегда состоят
+    // 3. Токены и секреты высокой энтропии практически всегда состоят
     // из комбинации букв И цифр (Base64, API keys, Hashes).
     // Это исключает ложные срабатывания на длинные последовательности из одних спецсимволов или слов.
     Result := HasDigit and HasAlpha;

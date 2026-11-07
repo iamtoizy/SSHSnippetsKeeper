@@ -1096,6 +1096,9 @@
     "cbTagsMatchAll": {
       "Caption": "Show only snippets containing all selected tags"
     },
+    "cbSecurityStrict": {
+      "Caption": "Strict secret scanning on run and save of snippets"
+    },
     "lbVCLStyle": {
       "Caption": "Interface style:"
     },

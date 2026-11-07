@@ -50,6 +50,8 @@ type
         FHotkeyService: IHotkeyService;
         FLocalAIService: ILocalAIService;
         FSecurityScanner: ISecurityScanner;
+        // Режим, в котором сейчас создан FSecurityScanner
+        FSecurityScanMode: TSecurityScanMode;
         FHistoryService: ISnippetHistoryService;
         FChainService: IChainService;
         FSavedQueryService: ISavedQueryService;
@@ -67,6 +69,7 @@ type
         function GetEpochService: IEpochService;
         function GetHotkeyService: IHotkeyService;
         function GetLocalAIService: ILocalAIService;
+        function DesiredScanMode: TSecurityScanMode;
         function GetSecurityScanner: ISecurityScanner;
         function GetHistoryService: ISnippetHistoryService;
         function GetChainService: IChainService;
@@ -166,7 +169,8 @@ begin
     // Локальные сервисы, создающиеся в AppContext
     FPasswordService := TPasswordService.Create;
     FEpochService := TEpochService.Create;
-    FSecurityScanner := TSecurityScanner.Create;
+    FSecurityScanMode := DesiredScanMode;
+    FSecurityScanner := TSecurityScanner.Create(FSecurityScanMode);
 
     // Создаем сервис ИИ
     if Assigned(LocalAIFactory) then
@@ -194,6 +198,7 @@ begin
     FSettingsManager := BaseContext.SettingsManager;
     FMessagesHandler := BaseContext.MessagesHandler;
     FSecurityScanner := BaseContext.SecurityScanner;
+    FSecurityScanMode := DesiredScanMode;
 
     // ВАЖНО: Оставляем nil, чтобы деструктор их не трогал и не сломал UI!
     FWindowHelper := nil;
@@ -330,8 +335,23 @@ begin
     Result := FWindowHelper;
 end;
 
-function TAppContext.GetSecurityScanner: ISecurityScanner;
+function TAppContext.DesiredScanMode: TSecurityScanMode;
 begin
+    Result := TSecurityScanner.ScanModeFromSetting(FSettingsManager.Data.SecurityScanStrict);
+end;
+
+function TAppContext.GetSecurityScanner: ISecurityScanner;
+var
+    Desired: TSecurityScanMode;
+begin
+    // Ленивое применение настройки: после сохранения настроек в форме
+    // настроек следующий доступ пересоздает сканер в актуальном режиме
+    Desired := DesiredScanMode;
+    if Desired <> FSecurityScanMode then
+    begin
+        FSecurityScanMode := Desired;
+        FSecurityScanner := TSecurityScanner.Create(Desired);
+    end;
     Result := FSecurityScanner;
 end;
 

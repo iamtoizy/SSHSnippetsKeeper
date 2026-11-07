@@ -64,6 +64,7 @@ type
         cbSyncOnStart: TCheckBox;
         cbSyncOnExit: TCheckBox;
         cbTagsMatchAll: TCheckBox;
+        cbSecurityStrict: TCheckBox;
         lbVCLStyle: TLabel;
         cbVCLStyle: TComboBox;
         gbSnippetColumns: TGroupBox;
@@ -224,6 +225,7 @@ begin
     // -----------------------------------
 
     cbTagsMatchAll.Checked := Setts.TagsMatchAll;
+    cbSecurityStrict.Checked := Setts.SecurityScanStrict;
 
     // Видимость колонок списка сниппетов (битовая маска)
     cbColLanguage.Checked := (Setts.UISettings.SnippetListColumns and 1) <> 0;
@@ -834,6 +836,7 @@ begin
     // -----------------------------------------
 
     Setts.TagsMatchAll := cbTagsMatchAll.Checked;
+    Setts.SecurityScanStrict := cbSecurityStrict.Checked;
 
     Setts.UISettings.SnippetListColumns := 0;
     if cbColLanguage.Checked then
@@ -942,6 +945,7 @@ begin
             .Append(cbSyncOnStart.Checked).Append('|')
             .Append(cbSyncOnExit.Checked).Append('|')
             .Append(cbTagsMatchAll.Checked).Append('|')
+            .Append(cbSecurityStrict.Checked).Append('|')
             .Append(cbColLanguage.Checked).Append('|')
             .Append(cbColLastRun.Checked).Append('|')
             .Append(cbColUpdated.Checked).Append('|')

@@ -6,7 +6,9 @@ uses
     DUnitX.TestFramework,
     SecurityScanner,
     SecurityReport,
-    Core.Entities.Snippet
+    Core.Entities.Snippet,
+    Core.Interfaces.Settings,
+    JSONSerializer
     ;
 
 type
@@ -29,6 +31,42 @@ type
         procedure Filter_HideTrusted_HidesIgnoredSnippets;
         [Test]
         procedure Filter_ShowAll_EmptyInputStaysEmpty;
+    end;
+
+    [TestFixture]
+    TSecurityScannerEntropyTests = class(TObject)
+    public
+        [Test]
+        procedure SqlAggregation_NotFlaggedByEntropy;
+        [Test]
+        procedure AwsSecretStyle_StillFlaggedByEntropy;
+        [Test]
+        procedure Base64Secret_StillFlaggedByEntropy;
+        [Test]
+        procedure JwtToken_StillFlaggedByRegex;
+        [Test]
+        procedure NonAlphabetChar_RejectedByComposition;
+        [Test]
+        procedure StrictMode_SpecialCharPassword_FlaggedByDesign;
+        [Test]
+        procedure TolerantMode_SamePassword_NotFlagged;
+        [Test]
+        procedure StrictMode_SqlAggregation_FlaggedByDesign;
+        [Test]
+        procedure StrictMode_Base64Secret_StillFlagged;
+    end;
+
+    [TestFixture]
+    TSecuritySettingsTests = class(TObject)
+    public
+        [Test]
+        procedure DefaultSettings_AreTolerant;
+        [Test]
+        procedure StrictSetting_SurvivesRoundtrip;
+        [Test]
+        procedure LegacyJson_WithoutField_IsTolerant;
+        [Test]
+        procedure ScanModeFromSetting_MapsBothWays;
     end;
 
 implementation
@@ -176,6 +214,169 @@ begin
 
     Assert.AreEqual(0, Integer(Length(FilterSecurityReport(Findings, True))));
     Assert.AreEqual(0, Integer(Length(FilterSecurityReport(Findings, False))));
+end;
+
+{ TSecurityScannerEntropyTests }
+
+procedure TSecurityScannerEntropyTests.SqlAggregation_NotFlaggedByEntropy;
+var
+    Scanner: ISecurityScanner;
+    Reason: string;
+begin
+    Scanner := TSecurityScanner.Create;
+
+    // Реальный SQL-сниппет из практики: вызов функции со скобками и делением.
+    // Пунктуация кода разбивает токены, энтропия ни одного не превышает порог.
+    Assert.IsFalse(Scanner.HasSensitiveData(
+        'SELECT table_schema, ROUND(SUM(data_length+index_length)/1024/1024,2) AS mb ' +
+        'FROM information_schema.tables GROUP BY table_schema;', Reason));
+end;
+
+procedure TSecurityScannerEntropyTests.AwsSecretStyle_StillFlaggedByEntropy;
+var
+    Scanner: ISecurityScanner;
+    Reason: string;
+begin
+    Scanner := TSecurityScanner.Create;
+
+    // AWS secret access key: Base64-подобный, содержит '/', не разрывается
+    Assert.IsTrue(Scanner.HasSensitiveData('wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY', Reason));
+end;
+
+procedure TSecurityScannerEntropyTests.Base64Secret_StillFlaggedByEntropy;
+var
+    Scanner: ISecurityScanner;
+    Reason: string;
+begin
+    Scanner := TSecurityScanner.Create;
+
+    Assert.IsTrue(Scanner.HasSensitiveData('kM5tX9wQ2vR7bN4yJ6hF3cL1zP8sD0gEaUoTiq=', Reason));
+end;
+
+procedure TSecurityScannerEntropyTests.JwtToken_StillFlaggedByRegex;
+var
+    Scanner: ISecurityScanner;
+    Reason: string;
+begin
+    Scanner := TSecurityScanner.Create;
+
+    Assert.IsTrue(Scanner.HasSensitiveData(
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0.' +
+        'SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c', Reason));
+end;
+
+procedure TSecurityScannerEntropyTests.NonAlphabetChar_RejectedByComposition;
+var
+    Scanner: ISecurityScanner;
+    Reason: string;
+begin
+    Scanner := TSecurityScanner.Create;
+
+    // Строка достаточно случайная (энтропия ~5.1 > порога 4.5), но '$' –
+    // признак переменной/кода, а не секрета: отсеивается проверкой состава.
+    Assert.IsFalse(Scanner.HasSensitiveData('Kx7$mQ2vB9nR4tZ8yW3cF6hJ1pL5sD0gEa', Reason));
+end;
+
+procedure TSecurityScannerEntropyTests.StrictMode_SpecialCharPassword_FlaggedByDesign;
+var
+    Scanner: ISecurityScanner;
+    Reason: string;
+begin
+    Scanner := TSecurityScanner.Create(scanStrict);
+
+    // Спецсимвольный пароль (H~4.96, каждый фрагмент короче 16):
+    // строгий сканер аудита должен его поймать, ложное срабатывание приемлемо.
+    Assert.IsTrue(Scanner.HasSensitiveData('Qw7!Xr2#Km9@Tb4%Vn6^Zc8*He3!Jp5@Ls7', Reason));
+end;
+
+procedure TSecurityScannerEntropyTests.TolerantMode_SamePassword_NotFlagged;
+var
+    Scanner: ISecurityScanner;
+    Reason: string;
+begin
+    Scanner := TSecurityScanner.Create(scanTolerant);
+
+    // Тот же пароль в run-time: фрагменты < 16 символов – не отвлекаем пользователя.
+    Assert.IsFalse(Scanner.HasSensitiveData('Qw7!Xr2#Km9@Tb4%Vn6^Zc8*He3!Jp5@Ls7', Reason));
+end;
+
+procedure TSecurityScannerEntropyTests.StrictMode_SqlAggregation_FlaggedByDesign;
+var
+    Scanner: ISecurityScanner;
+    Reason: string;
+begin
+    Scanner := TSecurityScanner.Create(scanStrict);
+
+    // SQL, который терпимый режим пропускает: в строгом остаётся одним токеном
+    // с энтропией выше порога – задокументированное ложное срабатывание аудита.
+    Assert.IsTrue(Scanner.HasSensitiveData(
+        'SELECT table_schema, ROUND(SUM(data_length+index_length)/1024/1024,2) AS mb ' +
+        'FROM information_schema.tables GROUP BY table_schema;', Reason));
+end;
+
+procedure TSecurityScannerEntropyTests.StrictMode_Base64Secret_StillFlagged;
+var
+    Scanner: ISecurityScanner;
+    Reason: string;
+begin
+    Scanner := TSecurityScanner.Create(scanStrict);
+
+    Assert.IsTrue(Scanner.HasSensitiveData('kM5tX9wQ2vR7bN4yJ6hF3cL1zP8sD0gEaUoTiq=', Reason));
+end;
+
+{ TSecuritySettingsTests }
+
+// Спецсимвольный пароль: строгий режим флагает, терпимый нет
+const
+    MODE_PROBE_SECRET = 'Qw7!Xr2#Km9@Tb4%Vn6^Zc8*He3!Jp5@Ls7';
+
+procedure TSecuritySettingsTests.DefaultSettings_AreTolerant;
+var
+    Setts: TAppSettings;
+    Scanner: ISecurityScanner;
+    Reason: string;
+begin
+    Setts := Default(TAppSettings);
+
+    Assert.IsFalse(Setts.SecurityScanStrict);
+    Scanner := TSecurityScanner.Create(TSecurityScanner.ScanModeFromSetting(Setts.SecurityScanStrict));
+    Assert.IsFalse(Scanner.HasSensitiveData(MODE_PROBE_SECRET, Reason));
+end;
+
+procedure TSecuritySettingsTests.StrictSetting_SurvivesRoundtrip;
+var
+    Setts: TAppSettings;
+    Scanner: ISecurityScanner;
+    Reason: string;
+begin
+    Setts := Default(TAppSettings);
+    Setts.SecurityScanStrict := True;
+
+    Setts := DSON.fromJson<TAppSettings>(DSON.toJson<TAppSettings>(Setts));
+
+    Assert.IsTrue(Setts.SecurityScanStrict);
+    Scanner := TSecurityScanner.Create(TSecurityScanner.ScanModeFromSetting(Setts.SecurityScanStrict));
+    Assert.IsTrue(Scanner.HasSensitiveData(MODE_PROBE_SECRET, Reason));
+end;
+
+procedure TSecuritySettingsTests.LegacyJson_WithoutField_IsTolerant;
+var
+    Setts: TAppSettings;
+    Scanner: ISecurityScanner;
+    Reason: string;
+begin
+    // Старый settings.json без нового поля: терпимый режим = прежнее поведение
+    Setts := DSON.fromJson<TAppSettings>('{"TagsMatchAll": true}');
+
+    Assert.IsFalse(Setts.SecurityScanStrict);
+    Scanner := TSecurityScanner.Create(TSecurityScanner.ScanModeFromSetting(Setts.SecurityScanStrict));
+    Assert.IsFalse(Scanner.HasSensitiveData(MODE_PROBE_SECRET, Reason));
+end;
+
+procedure TSecuritySettingsTests.ScanModeFromSetting_MapsBothWays;
+begin
+    Assert.IsTrue(TSecurityScanner.ScanModeFromSetting(False) = scanTolerant);
+    Assert.IsTrue(TSecurityScanner.ScanModeFromSetting(True) = scanStrict);
 end;
 
 end.

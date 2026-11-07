@@ -2324,7 +2324,8 @@ var
 begin
     tmrSecurityScan.Enabled := False; // Выключаем таймер, чтобы он не циклил
 
-    Security := TSecurityScanner.Create;
+    // Общий сканер из контекста: его режим определяется настройкой SecurityScanStrict
+    Security := AppContext.SecurityScanner;
     // Проверяем текст из нашего Memo
     IsSafe := not Security.HasSensitiveData(mContent.Text, WarningReason);
 

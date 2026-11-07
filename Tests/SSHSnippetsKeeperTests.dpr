@@ -68,6 +68,8 @@ begin
         TDUnitX.RegisterTestFixture(TSnippetLastRunTests);
         TDUnitX.RegisterTestFixture(TAutoBackupTests);
         TDUnitX.RegisterTestFixture(TSecurityReportTests);
+        TDUnitX.RegisterTestFixture(TSecurityScannerEntropyTests);
+        TDUnitX.RegisterTestFixture(TSecuritySettingsTests);
         TDUnitX.RegisterTestFixture(TCustomBashSynTests);
         TDUnitX.RegisterTestFixture(TMacroInputTypesTests);
         TDUnitX.RegisterTestFixture(TSnippetLanguagesTests);

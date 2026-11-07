@@ -218,8 +218,10 @@ begin
                         Exit;
 
                     // Сканер создаётся локально в потоке: он не имеет
-                    // состояния, делиться экземпляром из AppContext незачем
-                    BgScanner := TSecurityScanner.Create;
+                    // состояния, делиться экземпляром из AppContext незачем.
+                    // Для аудита – строгий режим: ложные срабатывания здесь
+                    // приемлемы, пропустить настоящий секрет – нет.
+                    BgScanner := TSecurityScanner.Create(scanStrict);
 
                     SW := TStopwatch.StartNew;
                     Snippets := BgService.GetAllSnippets(0);

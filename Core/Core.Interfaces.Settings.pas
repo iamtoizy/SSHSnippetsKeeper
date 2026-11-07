@@ -177,6 +177,11 @@ type
         TerminalChooserWidth: Integer;
         TerminalChooserHeight: Integer;
         TerminalChooserPreviewHeight: Integer;
+
+        // Сканирование секретов при запуске/сохранении сниппетов:
+        // True = строгий режим аудита (больше ложных срабатываний),
+        // False = терпимый режим (по умолчанию)
+        SecurityScanStrict: Boolean;
     end;
 
     // Интерфейс менеджера
