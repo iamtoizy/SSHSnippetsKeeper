@@ -72,6 +72,7 @@ begin
         TDUnitX.RegisterTestFixture(TSecurityScannerEntropyTests);
         TDUnitX.RegisterTestFixture(TSecuritySettingsTests);
         TDUnitX.RegisterTestFixture(TSecurityScanDeltaTests);
+        TDUnitX.RegisterTestFixture(TSecurityRangesTests);
         TDUnitX.RegisterTestFixture(TCustomBashSynTests);
         TDUnitX.RegisterTestFixture(TMacroInputTypesTests);
         TDUnitX.RegisterTestFixture(TSnippetLanguagesTests);

@@ -69,6 +69,23 @@ type
         procedure ScanModeFromSetting_MapsBothWays;
     end;
 
+    [TestFixture]
+    TSecurityRangesTests = class(TObject)
+    public
+        [Test]
+        procedure Ranges_EmptyText_NoRanges;
+        [Test]
+        procedure Ranges_RegexHit_OffsetsMatch;
+        [Test]
+        procedure Ranges_EntropyHit_OffsetsMatch;
+        [Test]
+        procedure NewPrefixes_AIProviders_Detected;
+        [Test]
+        procedure NewPrefixes_DevPlatforms_Detected;
+        [Test]
+        procedure Boundary_AKIAInsideWord_NotMatched;
+    end;
+
 implementation
 
 { TSecurityReportTests }
@@ -377,6 +394,99 @@ procedure TSecuritySettingsTests.ScanModeFromSetting_MapsBothWays;
 begin
     Assert.IsTrue(TSecurityScanner.ScanModeFromSetting(False) = scanTolerant);
     Assert.IsTrue(TSecurityScanner.ScanModeFromSetting(True) = scanStrict);
+end;
+
+{ TSecurityRangesTests }
+
+procedure TSecurityRangesTests.Ranges_EmptyText_NoRanges;
+var
+    Scanner: ISecurityScanner;
+begin
+    Scanner := TSecurityScanner.Create;
+
+    Assert.AreEqual(0, Integer(Length(Scanner.FindSensitiveRanges(''))));
+    Assert.AreEqual(0, Integer(Length(Scanner.FindSensitiveRanges('   '))));
+end;
+
+procedure TSecurityRangesTests.Ranges_RegexHit_OffsetsMatch;
+var
+    Scanner: ISecurityScanner;
+    Ranges: TArray<TSecretRange>;
+begin
+    Scanner := TSecurityScanner.Create;
+    Ranges := Scanner.FindSensitiveRanges('apikey: supersecret1234');
+
+    // ExplicitPasswordKey: ключ + значение целиком
+    Assert.IsTrue(Length(Ranges) >= 1);
+    Assert.AreEqual(0, Ranges[0].StartOffset);
+    Assert.AreEqual(Length('apikey: supersecret1234'), Ranges[0].Length);
+end;
+
+procedure TSecurityRangesTests.Ranges_EntropyHit_OffsetsMatch;
+var
+    Scanner: ISecurityScanner;
+    Ranges: TArray<TSecretRange>;
+begin
+    Scanner := TSecurityScanner.Create;
+    Ranges := Scanner.FindSensitiveRanges('echo ' + 'kM5tX9wQ2vR7bN4yJ6hF3cL1zP8sD0gEaUoTiq=');
+
+    // Единственная находка - base64-токен с точным офсетом; завершающий
+    // '=' в токен не входит: он разделитель в обоих режимах токенизации
+    Assert.AreEqual(1, Integer(Length(Ranges)));
+    Assert.AreEqual(5, Ranges[0].StartOffset);
+    Assert.AreEqual(38, Ranges[0].Length);
+end;
+
+procedure TSecurityRangesTests.NewPrefixes_AIProviders_Detected;
+var
+    Scanner: ISecurityScanner;
+    Reason: string;
+begin
+    Scanner := TSecurityScanner.Create;
+
+    // OpenAI legacy: sk- + 48 алнум
+    Assert.IsTrue(Scanner.HasSensitiveData(
+        'sk-' + StringOfChar('a', 24) + StringOfChar('1', 24), Reason));
+    // OpenAI project key
+    Assert.IsTrue(Scanner.HasSensitiveData(
+        'sk-proj-' + StringOfChar('b', 25), Reason));
+    // Anthropic: sk-ant-api03-...
+    Assert.IsTrue(Scanner.HasSensitiveData(
+        'sk-ant-api03-' + StringOfChar('c', 22), Reason));
+    // HuggingFace
+    Assert.IsTrue(Scanner.HasSensitiveData('hf_' + StringOfChar('d', 34), Reason));
+end;
+
+procedure TSecurityRangesTests.NewPrefixes_DevPlatforms_Detected;
+var
+    Scanner: ISecurityScanner;
+    Reason: string;
+begin
+    Scanner := TSecurityScanner.Create;
+
+    Assert.IsTrue(Scanner.HasSensitiveData('glpat-' + StringOfChar('a', 20), Reason));
+    Assert.IsTrue(Scanner.HasSensitiveData('github_pat_' + StringOfChar('b', 20), Reason));
+    Assert.IsTrue(Scanner.HasSensitiveData('npm_' + StringOfChar('1', 36), Reason));
+    Assert.IsTrue(Scanner.HasSensitiveData('pypi-' + StringOfChar('2', 40), Reason));
+    Assert.IsTrue(Scanner.HasSensitiveData('dop_v1_' + StringOfChar('0', 64), Reason));
+    Assert.IsTrue(Scanner.HasSensitiveData(
+        'SG.' + StringOfChar('a', 16) + '.' + StringOfChar('b', 16), Reason));
+end;
+
+procedure TSecurityRangesTests.Boundary_AKIAInsideWord_NotMatched;
+var
+    Scanner: ISecurityScanner;
+begin
+    Scanner := TSecurityScanner.Create;
+
+    // Самостоятельный ключ - ровно один regex-диапазон (энтропия ниже порога)
+    Assert.AreEqual(1, Integer(Length(
+        Scanner.FindSensitiveRanges('AKIAIOSFODNN7EXAMPLE'))));
+
+    // Тот же ключ внутри более длинного токена: \b не даёт совпадения,
+    // энтропия тоже не дотягивает - ноль находок
+    Assert.AreEqual(0, Integer(Length(
+        Scanner.FindSensitiveRanges('XAKIAIOSFODNN7EXAMPLEZ'))));
 end;
 
 end.

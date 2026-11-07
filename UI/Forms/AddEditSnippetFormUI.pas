@@ -17,6 +17,7 @@ uses
     MacroCardController,
     MacroCardPlugin,
     MacroSyn,
+    SecurityMarkerPlugin,
     SynCompletionProposal,
     SynEdit,
     SynEditHighlighter,
@@ -182,6 +183,7 @@ type
         FRestoredInDB: Boolean;
         FMacroCards: TMacroCardController;
         FCardPlugin: TMacroCardPlugin;
+        FSecurityPlugin: TSecurityMarkerPlugin;
         FInsertTemplates: TStringList;
         FSecurityStatusText: string;
         FDragCard: Integer;
@@ -358,6 +360,7 @@ begin
     if mAIPrompt.HandleAllocated then RevokeDragDrop(mAIPrompt.Handle);
 
     FreeAndNil(FCardPlugin);
+    FreeAndNil(FSecurityPlugin);
     FreeAndNil(FMacroCards);
     FreeAndNil(FInsertTemplates);
     FreeAndNil(FDraftStore);
@@ -1644,6 +1647,8 @@ procedure TAddEditSnippetForm.SetupMacroCards;
 begin
     FMacroCards := TMacroCardController.Create(mContent.Lines);
     FCardPlugin := TMacroCardPlugin.Create(mContent, FMacroCards);
+    // Красные подчёркивания под секретами, найденными сканером
+    FSecurityPlugin := TSecurityMarkerPlugin.Create(mContent);
     mContent.OnMouseCursor := mContentMouseCursor;
     FInsertTemplates := TStringList.Create;
 
@@ -2319,6 +2324,7 @@ end;
 procedure TAddEditSnippetForm.tmrSecurityScanTimer(Sender: TObject);
 var
     Security: ISecurityScanner;
+    Ranges: TArray<TSecretRange>;
     WarningReason: string;
     IsSafe: Boolean;
 begin
@@ -2326,8 +2332,14 @@ begin
 
     // Общий сканер из контекста: его режим определяется настройкой SecurityScanStrict
     Security := AppContext.SecurityScanner;
-    // Проверяем текст из нашего Memo
-    IsSafe := not Security.HasSensitiveData(mContent.Text, WarningReason);
+    Ranges := Security.FindSensitiveRanges(mContent.Text);
+    IsSafe := Length(Ranges) = 0;
+    if not IsSafe then
+        WarningReason := Ranges[0].Reason;
+
+    // Подчёркивания под находками; при "Доверенный" - скрыты
+    FSecurityPlugin.Visible := not cbIgnoreSecurityChecks.Checked;
+    FSecurityPlugin.SetRanges(Ranges);
 
     // Обновляем визуальное состояние UI
     UpdateSecurityStatusUI(IsSafe, WarningReason);

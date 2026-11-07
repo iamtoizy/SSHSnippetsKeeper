@@ -1831,6 +1831,8 @@
         "TelegramBotToken": "Telegram Bot token",
         "JWTToken": "JWT token",
         "SlackToken": "Slack token",
+        "AIToken": "AI provider token (OpenAI/Anthropic)",
+        "DevPlatformToken": "Developer platform token (GitLab/npm/PyPI etc.)",
         "BearerToken": "Authorization Bearer token",
         "URLConnectionString": "Credentials in URL (Connection string)",
         "ExplicitPasswordKey": "Explicit password or key",

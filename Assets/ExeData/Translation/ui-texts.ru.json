@@ -1831,6 +1831,8 @@
         "TelegramBotToken": "Токен Telegram Bot",
         "JWTToken": "Токен JWT",
         "SlackToken": "Токен Slack",
+        "AIToken": "Токен AI-провайдера (OpenAI/Anthropic)",
+        "DevPlatformToken": "Токен сервиса разработки (GitLab/npm/PyPI и др.)",
         "BearerToken": "Авторизационный Bearer токен",
         "URLConnectionString": "Учетные данные в URL (Connection String)",
         "ExplicitPasswordKey": "Явное указание пароля/ключа",

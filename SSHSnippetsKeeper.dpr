@@ -96,6 +96,7 @@ uses
   MacroCardEditorFormUI in 'UI\Forms\MacroCardEditorFormUI.pas' {MacroCardEditorForm},
   MacroCardController in 'UI\Controllers\MacroCardController.pas',
   MacroCardPlugin in 'UI\Controls\MacroCardPlugin.pas',
+  SecurityMarkerPlugin in 'UI\Controls\SecurityMarkerPlugin.pas',
   MacroInputTypes in 'MacroEngine\MacroInputTypes.pas',
   TagEditorFormUI in 'UI\Forms\TagEditorFormUI.pas' {TagEditorForm},
   WorkspaceManagerFormUI in 'UI\Forms\WorkspaceManagerFormUI.pas' {WorkspaceManagerForm},
