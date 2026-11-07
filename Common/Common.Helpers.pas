@@ -7,6 +7,7 @@ uses
     System.Classes,
     System.Generics.Collections,
     System.Generics.Defaults,
+    System.Notification,
     Vcl.ComCtrls,
     Vcl.Controls,
     Vcl.Menus,
@@ -22,7 +23,16 @@ type
     end;
 
 { Показать тост-уведомление }
-procedure ShowSimpleToast(const Text: string; const Title: string = '');
+procedure ShowSimpleToast(const Text: string; const Title: string = ''; const AName: string = 'SnippetNotification');
+{ Поддерживает ли система тост-уведомления }
+function SimpleToastSupported: Boolean;
+{ Снимает все показанные тосты и чистит кэш WinRT-уведомлений. Вызывать
+  при закрытии приложения: классовый деструктор TNotificationCenterWinRT
+  освобождает словарь тостов на финализации, когда Release-вызовы уже
+  падают AV внутри WinRT-окружения }
+procedure ShutdownToasts;
+{ Подписка на клики по тост-уведомлениям (обработчик один на приложение) }
+procedure SetToastNotificationHandler(Handler: TOnReceiveLocalNotification);
 { Поиск конкретного файла конфигурации или БД (Для TUIStateLoader и SQLite) }
 function ResolvePath(const PathName: string; IsDirectory: Boolean = False): string;
 { Получение базовой папки для диалогов открытия/сохранения }
@@ -59,7 +69,6 @@ uses
     System.IOUtils,
     System.Hash,
     System.NetEncoding,
-    System.Notification,
     System.SyncObjs,
     Common.Localization,
     Vcl.Clipbrd,
@@ -70,7 +79,7 @@ var
     GNotificationCenter: TNotificationCenter;
     GLogLock: TCriticalSection;
 
-procedure ShowSimpleToast(const Text: string; const Title: string = '');
+procedure ShowSimpleToast(const Text: string; const Title: string = ''; const AName: string = 'SnippetNotification');
 var
     Notification: TNotification;
 begin
@@ -78,7 +87,7 @@ begin
     begin
         Notification := GNotificationCenter.CreateNotification;
         try
-            Notification.Name := 'SnippetNotification';
+            Notification.Name := AName;
             if (Title.IsEmpty) then
                 Notification.Title := TUIStateLoader.GetMessage('Common.NotificationDefaultCaption')
             else
@@ -89,6 +98,26 @@ begin
             Notification.Free;
         end;
     end;
+end;
+
+function SimpleToastSupported: Boolean;
+begin
+    Result := GNotificationCenter.Supported;
+end;
+
+procedure SetToastNotificationHandler(Handler: TOnReceiveLocalNotification);
+begin
+    GNotificationCenter.OnReceiveLocalNotification := Handler;
+end;
+
+procedure ShutdownToasts;
+begin
+    // На системах без поддержки тостов кэш пуст по определению,
+    // а CancelAll на несозданном нотифаере безопаснее не вызывать
+    if not SimpleToastSupported then
+        Exit;
+
+    GNotificationCenter.CancelAll;
 end;
 
 function ResolvePath(const PathName: string; IsDirectory: Boolean = False): string;

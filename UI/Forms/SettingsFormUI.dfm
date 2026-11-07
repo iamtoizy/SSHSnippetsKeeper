@@ -335,14 +335,6 @@ object SettingsForm: TSettingsForm
         Caption = #1055#1086#1082#1072#1079#1099#1074#1072#1090#1100#32#1090#1086#1083#1100#1082#1086#32#1089#1085#1080#1087#1087#1077#1090#1099#44#32#1089#1086#1076#1077#1088#1078#1072#1097#1080#1077#32#1074#1089#1077#32#1074#1099#1073#1088#1072#1085#1085#1099#1077#32#1090#1077#1075#1080
         TabOrder = 0
       end
-      object cbSecurityStrict: TCheckBox
-        Left = 3
-        Top = 350
-        Width = 610
-        Height = 17
-        Caption = #1057#1090#1088#1086#1075#1072#1103' '#1087#1088#1086#1074#1077#1088#1082#1072' '#1089#1077#1082#1088#1077#1090#1086#1074' '#1087#1088#1080' '#1079#1072#1087#1091#1089#1082#1077' '#1080' '#1089#1086#1093#1088#1072#1085#1077#1085#1080#1080
-        TabOrder = 4
-      end
       object lbVCLStyle: TLabel
         Left = 3
         Top = 32
@@ -464,6 +456,56 @@ object SettingsForm: TSettingsForm
           Caption = #1057#1086#1079#1076#1072#1090#1100#32#1082#1086#1087#1080#1102#32#1089#1077#1081#1095#1072#1089
           TabOrder = 3
           OnClick = bBackupCreateNowClick
+        end
+      end
+    end
+    object tsSecurity: TTabSheet
+      Caption = #1041#1077#1079#1086#1087#1072#1089#1085#1086#1089#1090#1100
+      object gbSecurityScan: TGroupBox
+        Left = 3
+        Top = 3
+        Width = 610
+        Height = 148
+        Caption = #1055#1088#1086#1074#1077#1088#1082#1072' '#1089#1077#1082#1088#1077#1090#1086#1074
+        TabOrder = 0
+        object cbSecurityStrict: TCheckBox
+          Left = 12
+          Top = 22
+          Width = 590
+          Height = 17
+          Caption = #1057#1090#1088#1086#1075#1072#1103' '#1087#1088#1086#1074#1077#1088#1082#1072' '#1089#1077#1082#1088#1077#1090#1086#1074' '#1087#1088#1080' '#1079#1072#1087#1091#1089#1082#1077' '#1080' '#1089#1086#1093#1088#1072#1085#1077#1085#1080#1080
+          TabOrder = 0
+        end
+        object cbSecurityBackground: TCheckBox
+          Left = 12
+          Top = 45
+          Width = 590
+          Height = 17
+          Caption = #1055#1077#1088#1080#1086#1076#1080#1095#1077#1089#1082#1072#1103' '#1087#1088#1086#1074#1077#1088#1082#1072' '#1074#1089#1077#1093' '#1089#1085#1080#1087#1087#1077#1090#1086#1074' '#1074' '#1092#1086#1085#1077
+          TabOrder = 1
+        end
+        object lbSecurityInterval: TLabel
+          Left = 12
+          Top = 73
+          Width = 63
+          Height = 15
+          Caption = #1048#1085#1090#1077#1088#1074#1072#1083#58
+        end
+        object cbSecurityInterval: TComboBox
+          Left = 120
+          Top = 69
+          Width = 180
+          Height = 23
+          Style = csDropDownList
+          ItemIndex = 1
+          TabOrder = 2
+          Items.Strings = (
+            '10 minutes'
+            '30 minutes'
+            '1 hour'
+            '3 hours'
+            '12 hours'
+            '24 hours')
         end
       end
     end

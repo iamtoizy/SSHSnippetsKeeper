@@ -1068,6 +1068,18 @@
     "cbSecurityStrict": {
       "Caption": "Строгая проверка секретов при запуске и сохранении сниппетов"
     },
+    "tsSecurity": {
+      "Caption": "Безопасность"
+    },
+    "gbSecurityScan": {
+      "Caption": "Проверка секретов"
+    },
+    "cbSecurityBackground": {
+      "Caption": "Периодическая проверка всех сниппетов в фоне"
+    },
+    "lbSecurityInterval": {
+      "Caption": "Интервал:"
+    },
     "lbVCLStyle": {
       "Caption": "Стиль интерфейса:"
     },
@@ -1499,6 +1511,16 @@
       "BackupInterval24h": "24 часа",
       "BackupInterval3d": "3 дня",
       "BackupInterval7d": "7 дней",
+      "ScanInterval10m": "10 минут",
+      "ScanInterval30m": "30 минут",
+      "ScanInterval1h": "1 час",
+      "ScanInterval3h": "3 часа",
+      "ScanInterval12h": "12 часов",
+      "ScanInterval24h": "24 часа",
+      "ScanFindingsOne": "Проверка секретов: %d новый сниппет с находками (всего: %d)",
+      "ScanFindingsFew": "Проверка секретов: %d новых сниппета с находками (всего: %d)",
+      "ScanFindingsMany": "Проверка секретов: %d новых сниппетов с находками (всего: %d)",
+      "ScanFindingsBaseline": "Проверка секретов: сниппетов с находками в базе: %d",
       "BackupKeep": "Хранить копий:",
       "BackupCreateNow": "Создать копию сейчас",
       "BackupLastCopy": "Последняя копия: %s",

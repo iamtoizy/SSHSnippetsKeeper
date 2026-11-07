@@ -378,6 +378,11 @@ begin
     FSettings.Backup.Keep := 3;
     FSettings.BackupDefined := True;
 
+    // Фоновая проверка секретов: включена, раз в полчаса
+    FSettings.SecurityBackgroundScanEnabled := True;
+    FSettings.SecurityBackgroundScanIntervalMinutes := 30;
+    FSettings.SecurityBackgroundScanDefined := True;
+
     // Дефолты для глобальных горячих клавиш
     FSettings.Hotkeys.QuickSearch.Modifiers := MOD_ALT;
     FSettings.Hotkeys.QuickSearch.Key := Ord('Q');
@@ -492,11 +497,22 @@ begin
             FSettings.BackupDefined := True;
         end;
 
+        // Узел фоновой проверки секретов: в старом settings.json его нет —
+        // восстанавливаем дефолты (проверка включена, раз в полчаса)
+        if not FSettings.SecurityBackgroundScanDefined then
+        begin
+            FSettings.SecurityBackgroundScanEnabled := True;
+            FSettings.SecurityBackgroundScanIntervalMinutes := 30;
+            FSettings.SecurityBackgroundScanDefined := True;
+        end;
+
         // Битые значения не должны отключать бэкап или ротацию
         if FSettings.Backup.IntervalSeconds <= 0 then
             FSettings.Backup.IntervalSeconds := 86400;
         if FSettings.Backup.Keep <= 0 then
             FSettings.Backup.Keep := 3;
+        if FSettings.SecurityBackgroundScanIntervalMinutes <= 0 then
+            FSettings.SecurityBackgroundScanIntervalMinutes := 30;
 
         // 2. Глобальные горячие клавиши
         if FSettings.Hotkeys.QuickSearch.Key = 0 then

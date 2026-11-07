@@ -182,6 +182,14 @@ type
         // True = строгий режим аудита (больше ложных срабатываний),
         // False = терпимый режим (по умолчанию)
         SecurityScanStrict: Boolean;
+
+        // Периодическая фоновая проверка всех сниппетов сканером:
+        // тост при появлении новых находок + подсветка проблемных строк
+        SecurityBackgroundScanEnabled: Boolean;
+        // Минуты между проверками (типовое значение 30)
+        SecurityBackgroundScanIntervalMinutes: Integer;
+        // Маркер инициализации: False = старый settings.json без этих полей
+        SecurityBackgroundScanDefined: Boolean;
     end;
 
     // Интерфейс менеджера

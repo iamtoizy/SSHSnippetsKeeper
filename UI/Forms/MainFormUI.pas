@@ -22,6 +22,7 @@ uses
     GlobalHotkeyManager,
     LanguageMenuController,
     SearchController,
+    SecurityScanController,
     SynHighlighterFactory,
     SyncController,
     TagListController,
@@ -31,6 +32,7 @@ uses
     System.DateUtils,
     System.Generics.Collections,
     System.ImageList,
+    System.Notification,
     System.SysUtils,
     System.Threading,
     System.Types,
@@ -298,6 +300,7 @@ type
         FSync: TSyncController;
         FStatus: TAppStatusBar;
         FSearch: TMainSearchController;
+        FSecurityScan: TSecurityScanController;
         FUsersCache: TArray<TUserDTO>;
         FAllTagsCache: TArray<TTagDTO>;
         FCategoryTree: TCategoryTreeController;
@@ -307,6 +310,7 @@ type
         procedure MarkDataChanged;
         function GetSyncEngine: TSyncController;
         function GetSearchEngine: TMainSearchController;
+        function GetSecurityScan: TSecurityScanController;
         procedure FillSnippetListView(const Snippets: TArray<TSnippetDTO>);
         procedure UpdateSnippetLastRunRow(SnippetID: Integer);
         procedure SizeSnippetListColumns;
@@ -366,6 +370,8 @@ type
         procedure PerformSearchAsync(const Mask: string);
         procedure DisplaySearchResults(const Results: TArray<TSnippetDTO>);
         procedure LanguageMenuItemClick(Sender: TObject);
+        // Клик по тосту фоновой проверки секретов - открыть отчёт аудита
+        procedure SecurityToastNotification(Sender: TObject; ANotification: TNotification);
         // Синхронизация Markdown
         procedure PerformSync(IsAsync: Boolean; ShowToastOnDone: Boolean = False);
         function ListViewHelpOffset(LV: TListView): Integer;
@@ -545,6 +551,15 @@ begin
     TSecurityReportForm.Execute(Self, AppContext);
 end;
 
+// Клик по тосту фоновой проверки секретов: открываем отчёт аудита.
+// База могла быть закрыта после показа тоста - тогда молча игнорируем
+procedure TMainForm.SecurityToastNotification(Sender: TObject; ANotification: TNotification);
+begin
+    if (ANotification.Name = SECURITY_TOAST_NAME) and
+        AppContext.DatabaseManager.IsConnected then
+        actSecurityReportExecute(Self);
+end;
+
 procedure TMainForm.actOpenDatabaseExecute(Sender: TObject);
 begin
     OpenDialog.InitialDir := GetDefaultDataDir;
@@ -566,6 +581,11 @@ begin
         // фоновый поток на отдельном соединении, UI не блокируется.
         // Сбой бэкапа не мешает работе с БД - сообщаем и продолжаем
         RunAutoBackupInBackground;
+
+        // Фоновая проверка секретов: первый скан с задержкой 10 секунд
+        // (тост об открытии базы должен уйти из центра уведомлений),
+        // затем периодика по настройкам
+        GetSecurityScan.Start;
 
         LoadUsersToComboBox;  // Сначала загружаем выпадающий список
         cbUserChange(cbUser); // Вызываем OnChange, что инициирует ReloadUI с правильным ID
@@ -791,6 +811,10 @@ end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
 begin
+    // Убираем тосты и очищаем кэш WinRT-уведомлений, пока COM-окружение
+    // живо: финализационное освобождение словаря тостов в RTL падает AV
+    ShutdownToasts;
+
     // VCL не вызывает OnDeletion при уничтожении самого списка,
     // поэтому данные строк освобождаем явно, пока список ещё существует
     FreeSnippetListData;
@@ -806,6 +830,9 @@ begin
         FSync.WaitForCompletion;
     FreeAndNil(FSync);
     FreeAndNil(FSearch);
+    if Assigned(FSecurityScan) then
+        FSecurityScan.Stop;
+    FreeAndNil(FSecurityScan);
     FreeAndNil(FStatus);
     FHotkeyMgr.Free;
 end;
@@ -1567,6 +1594,9 @@ begin
     FStatus.Layout;
     FStatus.SetDatabase('');
 
+    // Клик по тосту фоновой проверки секретов маршрутизируется сюда
+    SetToastNotificationHandler(SecurityToastNotification);
+
     // Контроллеры областей формы: дерево категорий, теги, меню языков
     FCategoryTree := TCategoryTreeController.Create(tvCategories, FStatus, AppContext,
         procedure(PreserveCategoryID: Integer)
@@ -1778,6 +1808,10 @@ begin
         // уже восстановил выделение в отфильтрованном списке
         lvSnippetsClick(lvSnippets);
 
+        // Правка содержимого и перевод в trusted меняют статус находок:
+        // флаг подсветки должен отреагировать сразу, не дожидаясь периодики
+        GetSecurityScan.RescanSnippet(Snippet.ID);
+
         MarkDataChanged;
     end;
 
@@ -1807,6 +1841,8 @@ begin
 
         ReloadUI(SelectedCatID);
         MarkDataChanged;
+        // Восстановление версии меняет содержимое: статус находок пересчитываем
+        GetSecurityScan.RescanSnippet(Snippet.ID);
         FStatus.Flash(TUIStateLoader.GetMessage('History.RestoreDone'));
     end;
 end;
@@ -1840,6 +1876,8 @@ begin
         begin
             AppContext.SnippetService.DeleteSnippet(Snippets[I].ID);
             DeleteSnippetDraft(Snippets[I].ID);
+            // Удаленный сниппет не может иметь находок: флаг снимаем сразу
+            GetSecurityScan.RescanSnippet(Snippets[I].ID);
         end;
 
         if tvCategories.Selected <> nil then
@@ -2382,6 +2420,18 @@ begin
             FgColor := clWindowText;
         end;
     end;
+
+    // Проблемный сниппет (текущие находки фоновой проверки секретов):
+    // подмешиваем красный к фону строки. Выделенную строку не трогаем -
+    // она уже подсвечена системой, и флаг снова будет виден после снятия
+    // выделения. Подсветка сохраняется при рестарте: флаги восстанавливает
+    // тихий первый скан сессии
+    if (not Item.Selected) and Assigned(Item.Data) and Assigned(FSecurityScan)
+        and FSecurityScan.IsFlagged(TSnippetViewData(Item.Data).ID) then
+        BgColor := RGB(
+            GetRValue(BgColor) + ((255 - GetRValue(BgColor)) * 15) div 100,
+            GetGValue(BgColor) - (GetGValue(BgColor) * 15) div 100,
+            GetBValue(BgColor) - (GetBValue(BgColor) * 15) div 100);
 
     Sender.Canvas.Brush.Color := BgColor;
     Sender.Canvas.Brush.Style := bsSolid;
@@ -2956,6 +3006,19 @@ begin
     Result := FSearch;
 end;
 
+function TMainForm.GetSecurityScan: TSecurityScanController;
+begin
+    if not Assigned(FSecurityScan) then
+        FSecurityScan := TSecurityScanController.Create(AppContext, FStatus,
+            procedure
+            begin
+                // Флаги читаются при отрисовке строк: инвалидация
+                // перерисовывает список с новой подсветкой
+                lvSnippets.Invalidate;
+            end);
+    Result := FSecurityScan;
+end;
+
 procedure TMainForm.ebSearchChange(Sender: TObject);
 begin
     tmrSearchTimer.Enabled := False;
@@ -2966,6 +3029,9 @@ procedure TMainForm.CloseDatabase;
 begin
     if Assigned(AppContext.DatabaseManager) and AppContext.DatabaseManager.IsConnected then
     begin
+        // Останавливаем периодику и снимаем подсветку проблемных строк
+        GetSecurityScan.Stop;
+
         GetSyncEngine.WaitForCompletion;
 
         // Авто-синхронизация при закрытии

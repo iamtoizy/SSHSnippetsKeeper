@@ -65,6 +65,11 @@ type
         cbSyncOnExit: TCheckBox;
         cbTagsMatchAll: TCheckBox;
         cbSecurityStrict: TCheckBox;
+        tsSecurity: TTabSheet;
+        gbSecurityScan: TGroupBox;
+        cbSecurityBackground: TCheckBox;
+        lbSecurityInterval: TLabel;
+        cbSecurityInterval: TComboBox;
         lbVCLStyle: TLabel;
         cbVCLStyle: TComboBox;
         gbSnippetColumns: TGroupBox;
@@ -130,9 +135,12 @@ type
         procedure PopulateApplicationsList;
         procedure PopulateCountersList;
         procedure FillBackupIntervalCombo;
+        procedure FillSecurityIntervalCombo;
         procedure UpdateBackupLastCopyLabel;
         function IntervalToIndex(ASeconds: Integer): Integer;
         function IndexToInterval(AIndex: Integer): Integer;
+        function ScanIntervalToIndex(AMinutes: Integer): Integer;
+        function IndexToScanInterval(AIndex: Integer): Integer;
         function TryNormalizeAppName(var AName: string; const AIgnoreExisting: string): Boolean;
         function BuildUISnapshot: string;
         procedure CaptureSnapshot;
@@ -239,6 +247,12 @@ begin
     seBackupKeep.Value := Setts.Backup.Keep;
     UpdateBackupLastCopyLabel;
     // --------------------------------
+
+    // --- Проверка секретов ---
+    FillSecurityIntervalCombo;
+    cbSecurityBackground.Checked := Setts.SecurityBackgroundScanEnabled;
+    cbSecurityInterval.ItemIndex := ScanIntervalToIndex(Setts.SecurityBackgroundScanIntervalMinutes);
+    // -------------------------
 
     TVCLStyleService.FillStyleList(cbVCLStyle.Items);
     cbVCLStyle.ItemIndex := cbVCLStyle.Items.IndexOf(Setts.UISettings.VCLStyle);
@@ -507,6 +521,48 @@ begin
         Result := 86400
     else
         Result := BACKUP_INTERVAL_SECONDS[AIndex];
+end;
+
+const
+    // Пункты комбобокса периодики фоновой проверки: значения в минутах
+    // и суффиксы ключей локализации Settings.ScanInterval<суффикс>
+    SECURITY_SCAN_INTERVAL_MINUTES: array [0..5] of Integer =
+        (10, 30, 60, 180, 720, 1440);
+    SECURITY_SCAN_INTERVAL_KEYS: array [0..5] of string =
+        ('10m', '30m', '1h', '3h', '12h', '24h');
+
+procedure TSettingsForm.FillSecurityIntervalCombo;
+var
+    I: Integer;
+begin
+    cbSecurityInterval.Items.BeginUpdate;
+    try
+        cbSecurityInterval.Items.Clear;
+        for I := Low(SECURITY_SCAN_INTERVAL_MINUTES) to High(SECURITY_SCAN_INTERVAL_MINUTES) do
+            cbSecurityInterval.Items.Add(TUIStateLoader.GetMessage(
+                'Settings.ScanInterval' + SECURITY_SCAN_INTERVAL_KEYS[I]));
+    finally
+        cbSecurityInterval.Items.EndUpdate;
+    end;
+end;
+
+function TSettingsForm.ScanIntervalToIndex(AMinutes: Integer): Integer;
+var
+    I: Integer;
+begin
+    Result := 1; // Неизвестное значение - дефолт (30 минут)
+    for I := Low(SECURITY_SCAN_INTERVAL_MINUTES) to High(SECURITY_SCAN_INTERVAL_MINUTES) do
+        if SECURITY_SCAN_INTERVAL_MINUTES[I] = AMinutes then
+            Exit(I);
+end;
+
+function TSettingsForm.IndexToScanInterval(AIndex: Integer): Integer;
+begin
+    if (AIndex < Low(SECURITY_SCAN_INTERVAL_MINUTES)) or
+        (AIndex > High(SECURITY_SCAN_INTERVAL_MINUTES)) then
+        Result := 30
+    else
+        Result := SECURITY_SCAN_INTERVAL_MINUTES[AIndex];
 end;
 
 procedure TSettingsForm.UpdateBackupLastCopyLabel;
@@ -838,6 +894,12 @@ begin
     Setts.TagsMatchAll := cbTagsMatchAll.Checked;
     Setts.SecurityScanStrict := cbSecurityStrict.Checked;
 
+    // --- Настройки фоновой проверки секретов ---
+    Setts.SecurityBackgroundScanEnabled := cbSecurityBackground.Checked;
+    Setts.SecurityBackgroundScanIntervalMinutes := IndexToScanInterval(cbSecurityInterval.ItemIndex);
+    Setts.SecurityBackgroundScanDefined := True;
+    // -------------------------------------------
+
     Setts.UISettings.SnippetListColumns := 0;
     if cbColLanguage.Checked then
         Setts.UISettings.SnippetListColumns := Setts.UISettings.SnippetListColumns or 1;
@@ -946,6 +1008,8 @@ begin
             .Append(cbSyncOnExit.Checked).Append('|')
             .Append(cbTagsMatchAll.Checked).Append('|')
             .Append(cbSecurityStrict.Checked).Append('|')
+            .Append(cbSecurityBackground.Checked).Append('|')
+            .Append(cbSecurityInterval.ItemIndex).Append('|')
             .Append(cbColLanguage.Checked).Append('|')
             .Append(cbColLastRun.Checked).Append('|')
             .Append(cbColUpdated.Checked).Append('|')

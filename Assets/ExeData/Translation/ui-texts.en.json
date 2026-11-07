@@ -1099,6 +1099,18 @@
     "cbSecurityStrict": {
       "Caption": "Strict secret scanning on run and save of snippets"
     },
+    "tsSecurity": {
+      "Caption": "Security"
+    },
+    "gbSecurityScan": {
+      "Caption": "Secret scanning"
+    },
+    "cbSecurityBackground": {
+      "Caption": "Periodically scan all snippets in the background"
+    },
+    "lbSecurityInterval": {
+      "Caption": "Interval:"
+    },
     "lbVCLStyle": {
       "Caption": "Interface style:"
     },
@@ -1559,6 +1571,16 @@
       "BackupInterval24h": "24 hours",
       "BackupInterval3d": "3 days",
       "BackupInterval7d": "7 days",
+      "ScanInterval10m": "10 minutes",
+      "ScanInterval30m": "30 minutes",
+      "ScanInterval1h": "1 hour",
+      "ScanInterval3h": "3 hours",
+      "ScanInterval12h": "12 hours",
+      "ScanInterval24h": "24 hours",
+      "ScanFindingsOne": "Secret scan: %d new snippet with findings (total: %d)",
+      "ScanFindingsFew": "Secret scan: %d new snippets with findings (total: %d)",
+      "ScanFindingsMany": "Secret scan: %d new snippets with findings (total: %d)",
+      "ScanFindingsBaseline": "Secret scan: snippets with findings in the database: %d",
       "BackupKeep": "Copies to keep:",
       "BackupCreateNow": "Create copy now",
       "BackupLastCopy": "Last copy: %s",
