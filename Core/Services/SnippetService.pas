@@ -108,9 +108,9 @@ begin
             TUIStateLoader.GetMessage('Category.AccessDenied')
         );
 
-    Result := FSnippetRepo.Add(Snippet);
-    if Length(TagIDs) > 0 then
-        FSnippetRepo.UpdateTags(Result, TagIDs);
+    // Сниппет и теги - одна транзакция: иначе при сбое во вставке тегов
+    // остаётся сниппет вообще без них
+    Result := FSnippetRepo.AddWithTags(Snippet, TagIDs);
 end;
 
 procedure TSnippetService.UpdateSnippet(const Snippet: TSnippetDTO; const TagIDs: TArray<Integer>);
@@ -127,8 +127,7 @@ begin
             TUIStateLoader.GetMessage('Category.AccessDenied')
         );
 
-    FSnippetRepo.Update(Snippet);
-    FSnippetRepo.UpdateTags(Snippet.ID, TagIDs);
+    FSnippetRepo.UpdateWithTags(Snippet, TagIDs);
 end;
 
 procedure TSnippetService.MoveSnippet(SnippetID, NewCategoryID: Integer);
