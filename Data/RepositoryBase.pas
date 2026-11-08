@@ -8,6 +8,8 @@ uses
     ;
 
 type
+    EDatabaseBusy = class(Exception);
+
     TRepositoryBase = class(TInterfacedObject)
     protected
         FConnection: TFDConnection;
@@ -108,7 +110,7 @@ begin
                 if (Attempt < BUSY_RETRY_COUNT) and IsTransientLockError(E) then
                     TThread.Sleep(BUSY_RETRY_DELAY_MS)
                 else if IsTransientLockError(E) then
-                    raise Exception.Create(TUIStateLoader.GetMessage('Common.DatabaseBusy', [E.Message]))
+                    raise EDatabaseBusy.Create(TUIStateLoader.GetMessage('Common.DatabaseBusy', [E.Message]))
                 else
                     raise;
         end;
@@ -128,7 +130,7 @@ begin
                 if (Attempt < BUSY_RETRY_COUNT) and IsTransientLockError(E) then
                     TThread.Sleep(BUSY_RETRY_DELAY_MS)
                 else if IsTransientLockError(E) then
-                    raise Exception.Create(TUIStateLoader.GetMessage('Common.DatabaseBusy', [E.Message]))
+                    raise EDatabaseBusy.Create(TUIStateLoader.GetMessage('Common.DatabaseBusy', [E.Message]))
                 else
                     raise;
         end;

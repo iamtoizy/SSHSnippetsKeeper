@@ -51,6 +51,7 @@ type
 implementation
 
 uses
+    Common.Helpers,
     Common.Localization,
     Common.SnippetLanguages
     ;
@@ -231,7 +232,8 @@ begin
                     if not TDirectory.Exists(QuarantineDir) then TDirectory.CreateDirectory(QuarantineDir);
                     TFile.Move(OldFile, QuarantinePath(OldFile));
                 except
-                    on E: Exception do ;
+                    on E: Exception do
+                        LogException('TMarkdownExporter.ExportDatabase.Quarantine', E);
                 end;
             end;
         end;

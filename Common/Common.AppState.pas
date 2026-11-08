@@ -66,7 +66,8 @@ begin
             Json.Free;
         end;
     except
-        ;
+        on E: Exception do
+            LogException('MigrateLegacyCounters', E);
     end;
 end;
 
@@ -106,7 +107,11 @@ begin
     try
         Json := TJSONObject.ParseJSONValue(TFile.ReadAllText(FFilePath, TEncoding.UTF8));
     except
-        Json := nil;
+        on E: Exception do
+        begin
+            LogException('TAppStateStore.LoadLocked', E);
+            Json := nil;
+        end;
     end;
     if Json = nil then
         Exit;
@@ -135,7 +140,8 @@ begin
             if TFile.Exists(TmpPath) then
                 TFile.Delete(TmpPath);
     except
-        ;
+        on E: Exception do
+            LogException('TAppStateStore.SaveLocked', E);
     end;
 end;
 
