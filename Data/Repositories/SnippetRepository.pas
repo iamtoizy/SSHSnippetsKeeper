@@ -92,10 +92,6 @@ const
     SQL_SELECT_SNIPPET_TAGS = 'SELECT t.id, t.name FROM tags t JOIN snippet_tags st ON t.id = st.tag_id WHERE st.snippet_id = :SnippetID ORDER BY t.name';
     SQL_SNIPPET_SEARCH = 'SELECT s.id, s.title, s.category_id, snippet_fts.rank ' + 'FROM snippet_fts ' + 'JOIN snippets s ON s.id = snippet_fts.rowid ' +
         'WHERE snippet_fts MATCH :search ' + 'ORDER BY rank DESC';
-//    SQL_SEARCH_BY_MASK_FTS = 'SELECT s.id, s.user_id, s.title, s.content, s.category_id, s.created_at, s.updated_at, snippet_fts.rank ' +
-//        'FROM snippet_fts ' +
-//        'JOIN snippets s ON s.rowid = snippet_fts.rowid ' + // В FTS5 rowid совпадает с ID сниппета
-//        'WHERE snippet_fts MATCH :term ' + 'ORDER BY rank ASC'; // Чем меньше rank, тем точнее совпадение;
     SQL_RECORD_RUN = 'INSERT INTO snippet_runs (snippet_id, run_at, executed_by_user_id) VALUES (?, strftime(''%s'', ''now''), ?)';
     SQL_RECORD_RUN_NO_USER = 'INSERT INTO snippet_runs (snippet_id, run_at, executed_by_user_id) VALUES (?, strftime(''%s'', ''now''), NULL)';
     SQL_GET_SNIPPET_BY_CATEGORY_ID_WITH_USER_ID = 'SELECT category_id, COUNT(*) AS cnt FROM snippets WHERE user_id = ? GROUP BY category_id';

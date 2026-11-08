@@ -83,7 +83,6 @@ begin
             begin
                 if InCodeBlock then
                 begin
-//                    InCodeBlock := False;
                     Break;
                 end
                 else
