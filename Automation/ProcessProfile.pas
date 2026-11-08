@@ -8,6 +8,10 @@ uses
     ;
 
 type
+    // Результат проверки заголовка окна фильтрами профиля:
+    // превью в диалоге профиля показывает причину блокировки
+    TTitleFilterResult = (tfrPass, tfrBlockedByInclude, tfrBlockedByExclude);
+
     TProcessProfile = class
     private
         FExeName: string;
@@ -26,6 +30,9 @@ type
         procedure SetWindowClasses(const AClasses: TArray<string>);
         function MatchesWindowClass(const AWinClass: string): Boolean;
         function MatchesTitle(const Title: string): Boolean;
+        // Проверка заголовка фильтрами без привязки к профилю - единая
+        // семантика для монитора окон и превью в диалоге профиля
+        class function EvaluateTitleFilter(const ATitle, AIncludeRegex, AExcludeRegex: string): TTitleFilterResult; static;
         // Полная проверка окна. Выключенный профиль = без фильтров (только exe-список)
         function MatchesWindow(const AWinClass, ATitle: string): Boolean;
     end;
@@ -110,32 +117,27 @@ begin
     Result := False;
 end;
 
-function TProcessProfile.MatchesTitle(const Title: string): Boolean;
-var
-    IncludeMatch, ExcludeMatch: Boolean;
+class function TProcessProfile.EvaluateTitleFilter(const ATitle, AIncludeRegex, AExcludeRegex: string): TTitleFilterResult;
 begin
-    Result := False;
+    Result := tfrPass;
 
+    // Include: заголовок обязан совпасть с regex
+    if AIncludeRegex <> '' then
+        if not TRegEx.IsMatch(ATitle, AIncludeRegex, [roIgnoreCase]) then
+            Exit(tfrBlockedByInclude);
+
+    // Exclude: совпавший с regex заголовок блокируется
+    if AExcludeRegex <> '' then
+        if TRegEx.IsMatch(ATitle, AExcludeRegex, [roIgnoreCase]) then
+            Exit(tfrBlockedByExclude);
+end;
+
+function TProcessProfile.MatchesTitle(const Title: string): Boolean;
+begin
     if not FEnabled then
-        Exit;
+        Exit(False);
 
-    // Проверяем Include regex
-    if FTitleIncludeRegex <> '' then
-    begin
-        IncludeMatch := TRegEx.IsMatch(Title, FTitleIncludeRegex, [roIgnoreCase]);
-        if not IncludeMatch then
-            Exit;
-    end;
-
-    // Проверяем Exclude regex
-    if FTitleExcludeRegex <> '' then
-    begin
-        ExcludeMatch := TRegEx.IsMatch(Title, FTitleExcludeRegex, [roIgnoreCase]);
-        if ExcludeMatch then
-            Exit(False);
-    end;
-
-    Result := True;
+    Result := EvaluateTitleFilter(Title, FTitleIncludeRegex, FTitleExcludeRegex) = tfrPass;
 end;
 
 function TProcessProfile.MatchesWindow(const AWinClass, ATitle: string): Boolean;

@@ -1508,6 +1508,14 @@
       "ApplicationsProfileClasses": "Классы окон (через запятую, пусто = все):",
       "ApplicationsProfileHint": "Фильтры действуют на окна разрешённого процесса при активации и при выборе терминала. Класс окна можно посмотреть в менеджере терминалов.",
       "ApplicationsProfileInvalidRegex": "Некорректное регулярное выражение «%s».",
+      "ProfilePickClassesButton": "Классы из открытых окон...",
+      "ProfilePreviewColumnTitle": "Заголовок окна",
+      "ProfilePreviewColumnStatus": "Статус",
+      "ProfilePreviewPass": "пройдёт",
+      "ProfilePreviewBlockedInclude": "блокируется include",
+      "ProfilePreviewBlockedExclude": "блокируется exclude",
+      "ProfilePreviewNoWindows": "Нет открытых окон этого процесса - превью недоступно.",
+      "ProfilePreviewBlocksAll": "Текущий \"include\" блокирует все окна процесса - ввод будет невозможен.",
       "BackupGroup": "Резервное копирование базы данных",
       "BackupEnabled": "Автоматически создавать резервные копии",
       "BackupInterval": "Интервал:",
@@ -1540,6 +1548,15 @@
       "RunningFound": "Запущенных приложений: %d",
       "RecentEmpty": "Список недавних приложений пуст.",
       "RecentFound": "Недавних приложений: %d"
+    },
+    "WindowClassPicker": {
+      "Title": "Классы открытых окон",
+      "FilterHint": "Фильтр по процессу, классу или заголовку...",
+      "ColumnProcess": "Процесс",
+      "ColumnClass": "Класс окна",
+      "ColumnTitle": "Заголовок",
+      "AddChecked": "Добавить выбранные",
+      "Found": "Найдено окон: %d"
     },
     "Category": {
       "SelectPrompt": "Сначала выбери пространство или категорию.",

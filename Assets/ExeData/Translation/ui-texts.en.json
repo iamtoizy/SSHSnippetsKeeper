@@ -1568,6 +1568,14 @@
       "ApplicationsProfileClasses": "Window classes (comma-separated, empty = all):",
       "ApplicationsProfileHint": "Filters apply to windows of the allowed process on activation and in the terminal chooser. The window class can be checked in the terminal manager.",
       "ApplicationsProfileInvalidRegex": "Invalid regular expression \"%s\".",
+      "ProfilePickClassesButton": "Classes of open windows...",
+      "ProfilePreviewColumnTitle": "Window title",
+      "ProfilePreviewColumnStatus": "Status",
+      "ProfilePreviewPass": "passes",
+      "ProfilePreviewBlockedInclude": "blocked by include",
+      "ProfilePreviewBlockedExclude": "blocked by exclude",
+      "ProfilePreviewNoWindows": "No open windows of this process - preview unavailable.",
+      "ProfilePreviewBlocksAll": "The current include blocks all windows of the process - typing will be impossible.",
       "BackupGroup": "Database backup",
       "BackupEnabled": "Create backup copies automatically",
       "BackupInterval": "Interval:",
@@ -1600,6 +1608,15 @@
       "RunningFound": "Running applications: %d",
       "RecentEmpty": "The recent applications list is empty.",
       "RecentFound": "Recent applications: %d"
+    },
+    "WindowClassPicker": {
+      "Title": "Open window classes",
+      "FilterHint": "Filter by process, class, or title...",
+      "ColumnProcess": "Process",
+      "ColumnClass": "Window class",
+      "ColumnTitle": "Title",
+      "AddChecked": "Add selected",
+      "Found": "Windows found: %d"
     },
     "TermManager": {
       "NoOpenWindows": "No open windows of allowed applications.",

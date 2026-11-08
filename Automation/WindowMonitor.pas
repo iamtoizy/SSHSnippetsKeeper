@@ -37,6 +37,7 @@ type
         function GetLastAllowedWindow: TWindowMonitorInfo;
         function GetAllowedWindowsHistory: TArray<TWindowMonitorInfo>;
         function GetOpenAllowedWindows: TArray<TWindowMonitorInfo>;
+        function GetVisibleWindowsInfo: TArray<TWindowMonitorInfo>;
         function GetCurrentForegroundWindow: TWindowMonitorInfo;
         function CanAutoType: Boolean;
         function ActivateWindow(AWindowInfo: TWindowMonitorInfo): Boolean;
@@ -411,6 +412,56 @@ begin
         Result := GOpenList.ToArray;
     finally
         GOpenList.Free;
+    end;
+end;
+
+var
+    GVisibleList: TList<TWindowMonitorInfo>;
+
+{ Все видимые окна верхнего уровня (не только разрешённых процессов):
+  видимое, не toolwindow, с непустым заголовком и классом; без окон
+  собственного процесса. Используется пикером классов окон в настройках }
+procedure AddVisibleWindow(Wnd: HWND);
+var
+    Info: TWindowMonitorInfo;
+begin
+    if not IsWindowVisible(Wnd) then
+        Exit;
+
+    if (GetWindowLong(Wnd, GWL_EXSTYLE) and WS_EX_TOOLWINDOW) <> 0 then
+        Exit;
+
+    if GetWindowTextLength(Wnd) <= 0 then
+        Exit;
+
+    if not Assigned(GWinMonitor) then
+        Exit;
+
+    Info := GWinMonitor.GetWindowInfo(Wnd);
+    if (Info.ExeName = '') or (Info.WindowClass = '') then
+        Exit;
+
+    if SameText(Info.ExeName, ExtractFileName(ParamStr(0))) then
+        Exit;
+
+    GVisibleList.Add(Info);
+end;
+
+function EnumVisibleProc(Wnd: HWND; LParam: LPARAM): BOOL; stdcall;
+begin
+    AddVisibleWindow(Wnd);
+    Result := True;
+end;
+
+function TWindowMonitor.GetVisibleWindowsInfo: TArray<TWindowMonitorInfo>;
+begin
+    Result := nil;
+    GVisibleList := TList<TWindowMonitorInfo>.Create;
+    try
+        EnumWindows(@EnumVisibleProc, 0);
+        Result := GVisibleList.ToArray;
+    finally
+        GVisibleList.Free;
     end;
 end;
 

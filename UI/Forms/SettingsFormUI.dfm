@@ -278,6 +278,8 @@ object SettingsForm: TSettingsForm
         RowSelect = True
         TabOrder = 0
         ViewStyle = vsReport
+        OnSelectItem = lvApplicationsSelectItem
+        OnDblClick = lvApplicationsDblClick
       end
       object pApplicationsButtons: TPanel
         Left = 0

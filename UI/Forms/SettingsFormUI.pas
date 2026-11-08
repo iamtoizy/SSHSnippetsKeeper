@@ -115,6 +115,8 @@ type
         procedure bAppDeleteClick(Sender: TObject);
         procedure bAppPickClick(Sender: TObject);
         procedure bAppProfileClick(Sender: TObject);
+        procedure lvApplicationsSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
+        procedure lvApplicationsDblClick(Sender: TObject);
         procedure cbVCLStyleChange(Sender: TObject);
         procedure lvCountersSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
         procedure bCounterResetClick(Sender: TObject);
@@ -146,6 +148,7 @@ type
         function IndexToScanInterval(AIndex: Integer): Integer;
         function TryNormalizeAppName(var AName: string; const AIgnoreExisting: string): Boolean;
         function GetAppProfile(const AExeName: string): TAllowedApplicationsItem;
+        procedure UpdateProfileButtonState;
         function BuildUISnapshot: string;
         procedure CaptureSnapshot;
         function IsUIChanged: Boolean;
@@ -673,6 +676,24 @@ begin
     finally
         lvApplications.Items.EndUpdate;
     end;
+
+    UpdateProfileButtonState;
+end;
+
+procedure TSettingsForm.UpdateProfileButtonState;
+begin
+    bAppProfile.Visible := lvApplications.Selected <> nil;
+end;
+
+procedure TSettingsForm.lvApplicationsSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
+begin
+    UpdateProfileButtonState;
+end;
+
+procedure TSettingsForm.lvApplicationsDblClick(Sender: TObject);
+begin
+    if lvApplications.Selected <> nil then
+        bAppProfileClick(Sender);
 end;
 
 function TSettingsForm.GetAppProfile(const AExeName: string): TAllowedApplicationsItem;
@@ -781,6 +802,7 @@ begin
 
     FAppProfiles.Remove(Item.Caption.ToLower);
     Item.Delete;
+    UpdateProfileButtonState;
 end;
 
 procedure TSettingsForm.bAppPickClick(Sender: TObject);
