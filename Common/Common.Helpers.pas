@@ -75,6 +75,7 @@ uses
 var
     GNotificationCenter: TNotificationCenter;
     GLogLock: TCriticalSection;
+    GLogWriteCount: Integer;
 
 procedure ShowSimpleToast(const Text: string; const Title: string = ''; const AName: string = 'SnippetNotification');
 var
@@ -231,14 +232,42 @@ begin
 end;
 
 procedure LogMsg(const Msg: string);
+const
+    // Ротация: размер файла проверяем не на каждой записи, а раз в N записей
+    LOG_ROTATION_CHECK_INTERVAL = 256;
+    // Порог ротации: 1 МБ
+    LOG_ROTATION_SIZE_LIMIT = 1 * 1024 * 1024;
+var
+    LogPath, OldPath: string;
 begin
     if not Assigned(GLogLock) then
         Exit;
     try
         GLogLock.Enter;
         try
+            LogPath := ResolvePath('SSHSnippetsKeeper.log');
+            // Раз в LOG_ROTATION_CHECK_INTERVAL записей проверяем размер и
+            // при превышении порога переименовываем .log в .log.old
+            // (старый .log.old перезаписывается)
+            Inc(GLogWriteCount);
+            if GLogWriteCount >= LOG_ROTATION_CHECK_INTERVAL then
+            begin
+                GLogWriteCount := 0;
+                try
+                    if TFile.Exists(LogPath) and
+                        (TFile.GetSize(LogPath) > LOG_ROTATION_SIZE_LIMIT) then
+                    begin
+                        OldPath := ChangeFileExt(LogPath, '.log.old');
+                        if TFile.Exists(OldPath) then
+                            TFile.Delete(OldPath);
+                        TFile.Move(LogPath, OldPath);
+                    end;
+                except
+                    // Не удалось проверить размер или повернуть - пишем дальше
+                end;
+            end;
             TFile.AppendAllText(
-                ResolvePath('SSHSnippetsKeeper.log'),
+                LogPath,
                 FormatDateTime('yyyy-mm-dd hh:nn:ss.zzz', Now) + ' [TID ' +
                 IntToStr(GetCurrentThreadId) + '] ' + Msg + sLineBreak,
                 TEncoding.UTF8);
