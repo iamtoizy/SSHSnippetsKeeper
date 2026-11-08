@@ -29,20 +29,23 @@ type
         SnippetListColumnsDefined: Boolean;
     end;
 
-    TWindowsNode = record
-        Name: string;
-        WinClass: string;
-    end;
-
     TWindowHelperNode = record
         ActivationDelay: Integer;
         SetFocusDelay: Integer;
         KeyPressInterval: Integer;
     end;
 
+    // Профиль разрешения приложения: exe-имя плюс опциональные фильтры окон.
+    // Пустые фильтры = пропускаются любые окна процесса (старое поведение)
     TAllowedApplicationsItem = record
         ExeName: string;
         Enabled: Boolean;
+        // Окно разрешено, только если заголовок совпадает с этим regex (пусто = любой)
+        TitleIncludeRegex: string;
+        // Окно блокируется, если заголовок совпадает с этим regex
+        TitleExcludeRegex: string;
+        // Классы окон (GetClassName), которые разрешено вводить (пусто = любые)
+        WindowClasses: TArray<string>;
     end;
 
     TAIParams = record
@@ -122,7 +125,6 @@ type
 
     TAppSettings = record
         UISettings: TUISettings;
-        AllowedWindows: TArrayRecord<TWindowsNode>;
         WindowHelper: TWindowHelperNode;
         AllowedApplications: TArrayRecord<TAllowedApplicationsItem>;
         AISettings: TArrayRecord<TAIHub>;

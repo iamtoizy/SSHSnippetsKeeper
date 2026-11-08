@@ -7,18 +7,6 @@
             }
         }
     },
-    "AllowedWindows": {
-        "Items": [
-            {
-                "Name": "XShell",
-                "WinClass": "AfxFrameOrView140u"
-            },
-            {
-                "Name": "MobaXTerm",
-                "WinClass": "CMoTTY"
-            }
-        ]
-    },
     "WindowHelper": {
         "ActivationDelay": 100,
         "SetFocusDelay": 50,
@@ -28,15 +16,24 @@
         "Items": [
             {
                 "ExeName": "mobaxterm.exe",
-                "Enabled": true
+                "Enabled": true,
+                "TitleIncludeRegex": "",
+                "TitleExcludeRegex": "",
+                "WindowClasses": ["CMoTTY"]
             },
             {
                 "ExeName": "xshell.exe",
-                "Enabled": true
+                "Enabled": true,
+                "TitleIncludeRegex": "",
+                "TitleExcludeRegex": "",
+                "WindowClasses": ["AfxFrameOrView140u"]
             },
             {
                 "ExeName": "putty.exe",
-                "Enabled": true
+                "Enabled": true,
+                "TitleIncludeRegex": "",
+                "TitleExcludeRegex": "",
+                "WindowClasses": ["PuTTY"]
             },
             {
                 "ExeName": "tabby.exe",

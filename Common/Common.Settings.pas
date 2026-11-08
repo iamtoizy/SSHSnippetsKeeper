@@ -257,14 +257,19 @@ procedure TSettingsManager.InitDefaultAllowedApplications;
 begin
     SetLength(FSettings.AllowedApplications.Items, 6);
 
+    // Классы окон из дефолтных профилей заведомо известны только для
+    // части терминалов; пустой список = разрешены все окна процесса
     FSettings.AllowedApplications.Items[0].ExeName := 'mobaxterm.exe';
     FSettings.AllowedApplications.Items[0].Enabled := True;
+    FSettings.AllowedApplications.Items[0].WindowClasses := ['CMoTTY'];
 
     FSettings.AllowedApplications.Items[1].ExeName := 'xshell.exe';
     FSettings.AllowedApplications.Items[1].Enabled := True;
+    FSettings.AllowedApplications.Items[1].WindowClasses := ['AfxFrameOrView140u'];
 
     FSettings.AllowedApplications.Items[2].ExeName := 'putty.exe';
     FSettings.AllowedApplications.Items[2].Enabled := True;
+    FSettings.AllowedApplications.Items[2].WindowClasses := ['PuTTY'];
 
     FSettings.AllowedApplications.Items[3].ExeName := 'tabby.exe';
     FSettings.AllowedApplications.Items[3].Enabled := True;

@@ -14,6 +14,7 @@ type
         ExePath: string;
         ExeName: string;
         WindowTitle: string;
+        WindowClass: string;
         ActivatedAt: TDateTime;
     end;
 
@@ -25,6 +26,7 @@ type
 
         function GetWindowInfo(HWND: THandle): TWindowMonitorInfo;
         function IsProcessAllowed(const ExeName: string): Boolean;
+        function IsWindowAllowed(const ExeName, WindowClass, WindowTitle: string): Boolean;
         procedure AddToHistory(WindowInfo: TWindowMonitorInfo);
         procedure CleanupInvalidWindows;
         function GetAllowedWindowCount: Integer;
@@ -64,7 +66,8 @@ implementation
 uses
     System.SysUtils,
     System.Generics.Collections,
-    Common.Localization
+    Common.Localization,
+    ProcessProfile
     ;
 
 const
@@ -118,21 +121,22 @@ begin
     if ExeName = '' then
         Exit;
 
-    // Добавляем в историю ТОЛЬКО разрешённые процессы
-    if Assigned(GWinMonitor) and GWinMonitor.IsProcessAllowed(ExeName) then
+    WindowMonitorInfo := GWinMonitor.GetWindowInfo(HWND);
+
+    // Добавляем в историю ТОЛЬКО окна, разрешённые профилями приложений
+    if Assigned(GWinMonitor) and GWinMonitor.IsWindowAllowed(ExeName, WindowMonitorInfo.WindowClass, WindowMonitorInfo.WindowTitle) then
     begin
-        WindowMonitorInfo := GWinMonitor.GetWindowInfo(HWND);
         WindowMonitorInfo.ActivatedAt := Now;
         GWinMonitor.AddToHistory(WindowMonitorInfo);
 
         {$IFDEF DEBUG}
-        OutputDebugString(PChar(Format('[WinMonitor] Added to history: HWND=%d, Exe=%s, Title=%s', [HWND, ExeName, WindowMonitorInfo.WindowTitle])));
+        OutputDebugString(PChar(Format('[WinMonitor] Added to history: HWND=%d, Exe=%s, Class=%s, Title=%s', [HWND, ExeName, WindowMonitorInfo.WindowClass, WindowMonitorInfo.WindowTitle])));
         {$ENDIF}
     end
     else
     begin
         {$IFDEF DEBUG}
-        OutputDebugString(PChar(Format('[WinMonitor] Ignored: HWND=%d, Exe=%s', [HWND, ExeName])));
+        OutputDebugString(PChar(Format('[WinMonitor] Ignored: HWND=%d, Exe=%s, Class=%s', [HWND, ExeName, WindowMonitorInfo.WindowClass])));
         {$ENDIF}
     end;
 end;
@@ -214,9 +218,21 @@ begin
     end;
 end;
 
+{ exe-список плюс фильтры профиля приложения: класс окна и заголовок.
+  Профиля нет - действует только exe-список (старое поведение) }
+function TWindowMonitor.IsWindowAllowed(const ExeName, WindowClass, WindowTitle: string): Boolean;
+begin
+    Result := IsProcessAllowed(ExeName);
+    if not Result then
+        Exit;
+
+    if Assigned(GProfileManager) then
+        Result := GProfileManager.IsWindowAllowed(ExeName, WindowClass, WindowTitle);
+end;
+
 { Ручная регистрация окна в истории (менеджер терминалов).
   Проверки те же, что в WinEventProc: окно живое, видимое,
-  процесс разрешён. Возвращает True, если окно добавлено }
+  процесс и окно разрешены. Возвращает True, если окно добавлено }
 function TWindowMonitor.RegisterWindow(AHWND: THandle): Boolean;
 var
     WindowInfo: TWindowMonitorInfo;
@@ -226,10 +242,10 @@ begin
     if (AHWND = 0) or (not IsWindow(AHWND)) or (not IsWindowVisible(AHWND)) then
         Exit;
 
-    if not IsProcessAllowed(GetExeNameFromHWND(AHWND)) then
+    WindowInfo := GetWindowInfo(AHWND);
+    if not IsWindowAllowed(WindowInfo.ExeName, WindowInfo.WindowClass, WindowInfo.WindowTitle) then
         Exit;
 
-    WindowInfo := GetWindowInfo(AHWND);
     WindowInfo.ActivatedAt := Now;
     AddToHistory(WindowInfo);
 
@@ -273,6 +289,7 @@ var
     hProcess: THandle;
     Buffer: array[0..MAX_PATH] of Char;
     TitleBuffer: array[0..1023] of Char;
+    ClassBuffer: array[0..255] of Char;
     dwSize: DWORD;
 begin
     Result.HWND := HWND;
@@ -280,10 +297,14 @@ begin
     Result.ExePath := '';
     Result.ExeName := '';
     Result.WindowTitle := '';
+    Result.WindowClass := '';
     Result.ActivatedAt := 0;
 
     if (HWND = 0) or (not IsWindow(HWND)) then
         Exit;
+
+    if GetClassName(HWND, ClassBuffer, SizeOf(ClassBuffer) div SizeOf(Char)) > 0 then
+        Result.WindowClass := ClassBuffer;
 
     GetWindowText(HWND, TitleBuffer, SizeOf(TitleBuffer) div SizeOf(Char));
     Result.WindowTitle := TitleBuffer;
@@ -324,6 +345,7 @@ begin
         Result.ExePath := '';
         Result.ExeName := '';
         Result.WindowTitle := '';
+        Result.WindowClass := '';
         Result.ActivatedAt := 0;
     end;
 end;
@@ -340,10 +362,12 @@ var
 
 { Фильтры те же, что у перечисления приложений: видимое, не toolwindow,
   с непустым заголовком; но БЕЗ дедупликации по exe - менеджеру нужны
-  все окна каждого разрешённого процесса (десяток окон putty и т.п.) }
+  все окна каждого разрешённого процесса (десяток окон putty и т.п.).
+  Дополнительно действуют фильтры профиля: класс окна и заголовок }
 procedure AddOpenAllowedWindow(Wnd: HWND);
 var
     ExeName: string;
+    WindowInfo: TWindowMonitorInfo;
 begin
     if not IsWindowVisible(Wnd) then
         Exit;
@@ -362,10 +386,14 @@ begin
     if SameText(ExeName, ExtractFileName(ParamStr(0))) then
         Exit;
 
-    if (not Assigned(GWinMonitor)) or (not GWinMonitor.IsProcessAllowed(ExeName)) then
+    if not Assigned(GWinMonitor) then
         Exit;
 
-    GOpenList.Add(GWinMonitor.GetWindowInfo(Wnd));
+    WindowInfo := GWinMonitor.GetWindowInfo(Wnd);
+    if not GWinMonitor.IsWindowAllowed(ExeName, WindowInfo.WindowClass, WindowInfo.WindowTitle) then
+        Exit;
+
+    GOpenList.Add(WindowInfo);
 end;
 
 function EnumOpenAllowedProc(Wnd: HWND; LParam: LPARAM): BOOL; stdcall;
@@ -484,9 +512,9 @@ begin
         );
 
     // Добавляем текущее окно в историю, если оно разрешено
-    if IsProcessAllowed(GetExeNameFromHWND(GetForegroundWindow)) then
+    var WindowMonitorInfo := GetWindowInfo(GetForegroundWindow);
+    if IsWindowAllowed(WindowMonitorInfo.ExeName, WindowMonitorInfo.WindowClass, WindowMonitorInfo.WindowTitle) then
     begin
-        var WindowMonitorInfo := GetWindowInfo(GetForegroundWindow);
         WindowMonitorInfo.ActivatedAt := Now;
         AddToHistory(WindowMonitorInfo);
     end;

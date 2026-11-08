@@ -3,6 +3,7 @@
 interface
 
 uses
+    Core.Interfaces.Settings,
     System.Generics.Collections
     ;
 
@@ -12,6 +13,7 @@ type
         FExeName: string;
         FTitleIncludeRegex: string;
         FTitleExcludeRegex: string;
+        FWindowClasses: TArray<string>;
         FEnabled: Boolean;
     public
         constructor Create(const ExeName: string);
@@ -19,9 +21,13 @@ type
         property ExeName: string read FExeName write FExeName;
         property TitleIncludeRegex: string read FTitleIncludeRegex write FTitleIncludeRegex;
         property TitleExcludeRegex: string read FTitleExcludeRegex write FTitleExcludeRegex;
-        property Enabled: Boolean read FEnabled write FEnabled;
+        property WindowClasses: TArray<string> read FWindowClasses;
 
+        procedure SetWindowClasses(const AClasses: TArray<string>);
+        function MatchesWindowClass(const AWinClass: string): Boolean;
         function MatchesTitle(const Title: string): Boolean;
+        // Полная проверка окна. Выключенный профиль = без фильтров (только exe-список)
+        function MatchesWindow(const AWinClass, ATitle: string): Boolean;
     end;
 
     TProfileManager = class
@@ -35,7 +41,10 @@ type
         procedure RemoveProfile(AProfile: TProcessProfile);
         function FindProfile(const AExeName: string): TProcessProfile;
 
-        function IsWindowAllowed(const AExeName: string; const AWindowTitle: string): Boolean;
+        // Пересобирает профили из списка разрешённых приложений настроек
+        procedure SyncFromApplications(const AApps: TArray<TAllowedApplicationsItem>);
+
+        function IsWindowAllowed(const AExeName, AWinClass, AWindowTitle: string): Boolean;
 
         property Profiles: TObjectList<TProcessProfile> read FProfiles;
     end;
@@ -59,6 +68,46 @@ begin
     FTitleIncludeRegex := '.*'; // По умолчанию разрешаем все заголовки
     FTitleExcludeRegex := '';
     FEnabled := True;
+end;
+
+procedure TProcessProfile.SetWindowClasses(const AClasses: TArray<string>);
+var
+    I, Count: Integer;
+    S: string;
+    Trimmed: TArray<string>;
+begin
+    SetLength(Trimmed, Length(AClasses));
+    Count := 0;
+    for I := 0 to High(AClasses) do
+    begin
+        S := Trim(AClasses[I]);
+        if S <> '' then
+        begin
+            Trimmed[Count] := S;
+            Inc(Count);
+        end;
+    end;
+
+    SetLength(FWindowClasses, Count);
+    for I := 0 to Count - 1 do
+        FWindowClasses[I] := Trimmed[I];
+end;
+
+function TProcessProfile.MatchesWindowClass(const AWinClass: string): Boolean;
+var
+    C: string;
+begin
+    Result := True;
+
+    // Пустой список классов = разрешены любые окна процесса
+    if Length(FWindowClasses) = 0 then
+        Exit;
+
+    for C in FWindowClasses do
+        if SameText(C, AWinClass) then
+            Exit(True);
+
+    Result := False;
 end;
 
 function TProcessProfile.MatchesTitle(const Title: string): Boolean;
@@ -89,6 +138,16 @@ begin
     Result := True;
 end;
 
+function TProcessProfile.MatchesWindow(const AWinClass, ATitle: string): Boolean;
+begin
+    if not FEnabled then
+        Exit(True);
+
+    Result := MatchesTitle(ATitle);
+    if Result then
+        Result := MatchesWindowClass(AWinClass);
+end;
+
 { TProfileManager }
 
 constructor TProfileManager.Create;
@@ -114,6 +173,24 @@ begin
     FProfiles.Remove(AProfile);
 end;
 
+procedure TProfileManager.SyncFromApplications(const AApps: TArray<TAllowedApplicationsItem>);
+var
+    App: TAllowedApplicationsItem;
+    Profile: TProcessProfile;
+begin
+    FProfiles.Clear;
+    for App in AApps do
+    begin
+        if not App.Enabled then
+            Continue;
+
+        Profile := AddProfile(App.ExeName);
+        Profile.TitleIncludeRegex := App.TitleIncludeRegex;
+        Profile.TitleExcludeRegex := App.TitleExcludeRegex;
+        Profile.SetWindowClasses(App.WindowClasses);
+    end;
+end;
+
 function TProfileManager.FindProfile(const AExeName: string): TProcessProfile;
 var
     Profile: TProcessProfile;
@@ -129,14 +206,15 @@ begin
     end;
 end;
 
-function TProfileManager.IsWindowAllowed(const AExeName: string; const AWindowTitle: string): Boolean;
+function TProfileManager.IsWindowAllowed(const AExeName, AWinClass, AWindowTitle: string): Boolean;
 var
     Profile: TProcessProfile;
 begin
-    Result := False;
+    Result := True;
+
     Profile := FindProfile(AExeName);
     if Profile <> nil then
-        Result := Profile.MatchesTitle(AWindowTitle);
+        Result := Profile.MatchesWindow(AWinClass, AWindowTitle);
 end;
 
 initialization

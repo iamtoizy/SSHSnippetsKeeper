@@ -323,6 +323,15 @@ object SettingsForm: TSettingsForm
           TabOrder = 3
           OnClick = bAppPickClick
         end
+        object bAppProfile: TButton
+          Left = 427
+          Top = 5
+          Width = 100
+          Height = 25
+          Caption = #1055#1088#1086#1092#1080#1083#1100'...'
+          TabOrder = 4
+          OnClick = bAppProfileClick
+        end
       end
     end
     object tsGeneral: TTabSheet

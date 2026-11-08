@@ -90,6 +90,7 @@ uses
   ChooseTerminalWindowUI in 'UI\Forms\ChooseTerminalWindowUI.pas' {ChooseTerminalWindow},
   AppEnumerator in 'Automation\AppEnumerator.pas',
    AppPickerFormUI in 'UI\Forms\AppPickerFormUI.pas' {AppPickerForm},
+   WindowProfileDialogUI in 'UI\Forms\WindowProfileDialogUI.pas' {WindowProfileDialog},
    TerminalManagerFormUI in 'UI\Forms\TerminalManagerFormUI.pas' {TerminalManagerForm},
   InputFormUI in 'UI\Forms\InputFormUI.pas' {InputForm},
   ParamsFormUI in 'UI\Forms\ParamsFormUI.pas' {ParamsForm},
