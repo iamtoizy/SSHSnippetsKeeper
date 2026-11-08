@@ -1098,8 +1098,8 @@ begin
     begin
         // Чистим зашифрованную RAM
         FPasswordService.ClearHistory;
-        // Безопасно стираем таблицу с экрана и из памяти
-        WipeListViewPasswords(lvHistory);
+        // Очищаем таблицу с экрана
+        lvHistory.Items.Clear;
         // Безопасно чистим поле ввода
         WipeVCLControlText(ebPassword);
         ShowSimpleToast(TUIStateLoader.GetMessage('PasswordGenForm.MemoryCleared'));
@@ -1122,7 +1122,7 @@ begin
         // Физически затираем текст в полях ввода VCL
         WipeVCLControlText(ebPassword);
         WipeVCLControlText(mBulkResult);
-        WipeListViewPasswords(lvHistory);
+        lvHistory.Items.Clear;
     end;
 
     // Главное: Очищаем сам крипто-буфер истории в сервисе.

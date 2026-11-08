@@ -37,8 +37,6 @@ procedure SetToastNotificationHandler(Handler: TOnReceiveLocalNotification);
 function ResolvePath(const PathName: string; IsDirectory: Boolean = False): string;
 { Получение базовой папки для диалогов открытия/сохранения }
 function GetDefaultDataDir: string;
-{ Безопасное удаление содержимого TListView }
-procedure WipeListViewPasswords(ListView: TListView);
 { Безопасное удаление содержимого TCustomEdit }
 procedure WipeVCLControlText(Control: TCustomEdit);
 { Затирание блока памяти нулями }
@@ -173,39 +171,6 @@ begin
         Result := DevPath
     else
         Result := ExePath; // Если папки нет, возвращаем директорию с .exe
-end;
-
-procedure WipeListViewPasswords(ListView: TListView);
-var
-    I: Integer;
-    S: string;
-    P: Pointer;
-begin
-    if not Assigned(ListView) then Exit;
-
-    // Пробегаемся по всем строкам таблицы
-    for I := 0 to ListView.Items.Count - 1 do
-    begin
-        // Пароль хранится во второй колонке (индекс 1)
-        if ListView.Items[I].SubItems.Count > 1 then
-        begin
-            // Получаем прямую ссылку на блок памяти со строкой
-            S := ListView.Items[I].SubItems[1];
-            if S <> '' then
-            begin
-                // Берем прямой указатель на первый символ
-                P := PChar(S);
-                // Физически затираем байты в куче (heap) нулями.
-                // Поскольку мы обращаемся по указателю, мы "ломаем" строку
-                // прямо внутри самой структуры TListView!
-                SecureZeroMemory(P, Length(S) * SizeOf(Char));
-            end;
-        end;
-    end;
-
-    // Теперь, когда в памяти таблицы лежат только нули, можно безопасно
-    // отдать эти блоки обратно системе
-    ListView.Items.Clear;
 end;
 
 procedure WipeVCLControlText(Control: TCustomEdit);
