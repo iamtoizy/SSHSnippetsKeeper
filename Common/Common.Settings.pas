@@ -574,6 +574,7 @@ var
     JsonString: string;
     TmpPath: string;
     SafeSettings: TAppSettings;
+    Err: DWORD;
 begin
     try
         // Шифруем копию настроек: в памяти FSettings остается с открытыми ключами
@@ -582,12 +583,16 @@ begin
 
         JsonString := DSON.toJson<TAppSettings>(SafeSettings);
 
-        // Атомарная запись: сначала во временный файл, затем переименование
+        // Атомарная замена: целевой файл не исчезает с диска ни на мгновение
         TmpPath := GetSettingsPath + '.tmp';
         TFile.WriteAllText(TmpPath, JsonString, TEncoding.UTF8);
-        if TFile.Exists(GetSettingsPath) then
-            TFile.Delete(GetSettingsPath);
-        TFile.Move(TmpPath, GetSettingsPath);
+        if not MoveFileEx(PChar(TmpPath), PChar(GetSettingsPath), MOVEFILE_REPLACE_EXISTING) then
+        begin
+            Err := GetLastError;
+            if TFile.Exists(TmpPath) then
+                TFile.Delete(TmpPath);
+            raise Exception.Create(SysErrorMessage(Err));
+        end;
     except
         // Без логирования пользователь молча потерял бы все изменения
         on E: Exception do

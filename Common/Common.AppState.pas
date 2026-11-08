@@ -29,7 +29,7 @@ function AppState: TAppStateStore;
 implementation
 
 uses
-    Common.Helpers, System.IOUtils
+    Common.Helpers, System.IOUtils, Winapi.Windows
     ;
 
 var
@@ -131,9 +131,9 @@ begin
     TmpPath := FFilePath + '.tmp';
     try
         TFile.WriteAllText(TmpPath, FDoc.ToJSON, TEncoding.UTF8);
-        if TFile.Exists(FFilePath) then
-            TFile.Delete(FFilePath);
-        TFile.Move(TmpPath, FFilePath);
+        if not MoveFileEx(PChar(TmpPath), PChar(FFilePath), MOVEFILE_REPLACE_EXISTING) then
+            if TFile.Exists(TmpPath) then
+                TFile.Delete(TmpPath);
     except
         ;
     end;
