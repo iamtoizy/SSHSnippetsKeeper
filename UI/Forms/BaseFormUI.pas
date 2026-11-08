@@ -524,7 +524,7 @@ procedure TBaseForm.Initialize(AppContext: IAppContext);
 begin
     // Гарантируем, что контекст не пустой
     if not Assigned(AppContext) then
-        raise EArgumentNilException.Create('AppContext can not be nil!');  // TODO: Локализовать!
+        raise EArgumentNilException.Create('AppContext can not be nil!');
 
     FAppContext := AppContext;
 

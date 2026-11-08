@@ -1598,6 +1598,7 @@
       "TitleEmptyError": "Введи заголовок сниппета.",
       "NoContentError": "Текст сниппета пуст.",
       "InvalidIdError": "Некорректный идентификатор сниппета.",
+      "NotFoundByID": "Сниппет с ID %s не найден.",
       "DiffTitle": "заголовок",
       "DiffTags": "теги",
       "DiffLanguage": "язык",

@@ -54,6 +54,7 @@ implementation
 
 uses
     Common.Consts,
+    Common.Localization,
     Common.SnippetLanguages,
     Data.DB,
     FireDAC.Stan.Param,
@@ -620,7 +621,7 @@ var
 begin
     OldUserID := FConnection.ExecSQLScalar('SELECT user_id FROM snippets WHERE id = ?', [SnippetID]);
     if VarIsNull(OldUserID) or (Integer(OldUserID) = 0) then
-        raise Exception.Create('Snippet not found: ' + SnippetID.ToString);
+        raise Exception.Create(TUIStateLoader.GetMessage('Snippet.NotFoundByID', [SnippetID.ToString]));
 
     FConnection.StartTransaction;
     try
