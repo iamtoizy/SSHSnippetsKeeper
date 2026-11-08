@@ -2020,6 +2020,7 @@
       "HtPasswdLoginPrompt": "Введи логин для Basic Auth:",
       "HtPasswdLoginError": "Логин не может быть пустым.",
       "HtPasswdBcryptCopied": "Строка Bcrypt скопирована в буфер обмена. Буфер будет очищен через 15 сек.",
+      "BcryptInProgress": "Вычисляю BCrypt-хеш...",
       "NoPasswordGenerated": "Сначала сгенерируй пароль",
       "StatusSummary": "Длина: %d · Энтропия: %s бит · %s",
       "StatusStrengthWeak": "слабый",
