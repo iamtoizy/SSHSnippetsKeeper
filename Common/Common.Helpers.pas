@@ -45,6 +45,8 @@ procedure SecureZeroMemory(Ptr: Pointer; Size: NativeUInt);
 procedure CopyToClipboardSecure(const Text: string);
 { Безопасное уничтожение локальных строк в RAM }
 procedure WipeString(var S: string);
+{ Криптостойкое целое в диапазоне [0..Max-1]: RtlGenRandom + канонический Lemire }
+function SecureRandom(Max: Integer): Integer;
 { Конвертация из Win32 (RegisterHotKey) в VCL (THotKey) }
 procedure Win32HotkeyToVCL(const Config: THotkeyConfig; HotKeyCtrl: THotKey);
 { Конвертация из VCL (THotKey) в Win32 (RegisterHotKey) }
@@ -229,6 +231,37 @@ begin
         SecureZeroMemory(PChar(S), Length(S) * SizeOf(Char));
     end;
     S := ''; // Обнуляем указатель
+end;
+
+// Криптографический ГСЧ ОС (advapi32, SystemFunction036)
+function RtlGenRandom(RandomBuffer: Pointer; RandomBufferLength: ULONG): BOOLEAN; stdcall;
+    external 'advapi32.dll' name 'SystemFunction036';
+
+function SecureRandom(Max: Integer): Integer;
+var
+    Buffer: Cardinal;
+    UMax: Cardinal;
+    AcceptThreshold: Cardinal;
+    Guid: TGUID;
+    HashBytes: TBytes;
+    Product: UInt64;
+begin
+    if Max <= 0 then Exit(0);
+    UMax := Cardinal(Max);
+    // Канонический Lemire: порог отбраковки = 2^32 mod UMax. Отбраковка
+    // по младшим словам < UMax даёт небольшое смещение распределения
+    AcceptThreshold := Cardinal(UInt64($100000000) mod UInt64(UMax));
+    repeat
+        if not RtlGenRandom(@Buffer, SizeOf(Buffer)) then
+        begin
+            // Аварийный источник, если системный ГСЧ недоступен
+            CreateGUID(Guid);
+            HashBytes := THashSHA2.GetHashBytes(Guid.ToString);
+            Move(HashBytes[0], Buffer, SizeOf(Buffer));
+        end;
+        Product := UInt64(Buffer) * UInt64(UMax);
+    until Cardinal(Product) >= AcceptThreshold;
+    Result := Integer(Product shr 32);
 end;
 
 procedure LogMsg(const Msg: string);

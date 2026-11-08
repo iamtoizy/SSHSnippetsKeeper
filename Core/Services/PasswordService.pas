@@ -17,7 +17,6 @@ const
 // Импорт криптографических функций для шифрования и очистки памяти
 function CryptProtectMemory(pDataIn: Pointer; cbDataIn: Cardinal; dwFlags: Cardinal): BOOL; stdcall; external 'Crypt32.dll';
 function CryptUnprotectMemory(pDataIn: Pointer; cbDataIn: Cardinal; dwFlags: Cardinal): BOOL; stdcall; external 'Crypt32.dll';
-function RtlGenRandom(RandomBuffer: Pointer; RandomBufferLength: ULONG): BOOLEAN; stdcall; external 'advapi32.dll' name 'SystemFunction036';
 
 type
     // Внутренняя структура: пароль надежно зашифрован в RAM
@@ -105,32 +104,9 @@ implementation
 uses
     Common.Helpers,
     System.Generics.Collections,
-    System.Hash,
     System.Math,
     Common.Localization
     ;
-
-function SecureRandom(Max: Integer): Integer;
-var
-    Buffer: Cardinal;
-    UMax: Cardinal;
-    Guid: TGUID;
-    HashBytes: TBytes;
-    Product: UInt64;
-begin
-    if Max <= 0 then Exit(0);
-    UMax := Cardinal(Max);
-    repeat
-        if not RtlGenRandom(@Buffer, SizeOf(Buffer)) then
-        begin
-            CreateGUID(Guid);
-            HashBytes := THashSHA2.GetHashBytes(Guid.ToString);
-            Move(HashBytes[0], Buffer, SizeOf(Buffer));
-        end;
-        Product := UInt64(Buffer) * UInt64(UMax);
-    until Cardinal(Product) >= UMax;
-    Result := Integer(Product shr 32);
-end;
 
 { TPasswordService }
 
