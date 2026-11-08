@@ -260,6 +260,10 @@ begin
         if Parsed.Title = '' then
             Parsed.Title := TPath.GetFileNameWithoutExtension(FilePath);
 
+        // Файл не ограничен редактором UI - срезаем длину до допустимой
+        Parsed.Title := Copy(Parsed.Title, 1, MAX_SNIPPET_TITLE_LENGTH);
+        Parsed.Comment := Copy(Parsed.Comment, 1, MAX_SNIPPET_COMMENT_LENGTH);
+
         // Язык: YAML или тег ограждения; неизвестные значения -> 'bash'
         if Parsed.Language = '' then
             Parsed.Language := FenceTag;

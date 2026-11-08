@@ -597,15 +597,21 @@ begin
     Context := TMacroContext.Create;
     Context.Executor := Self;
 
-    Actions := FMacroEngine.Parse(Text, Context);
+    try
+        Actions := FMacroEngine.Parse(Text, Context);
 
-    TotalUnits := 0;
-    for I := 0 to High(Actions) do
-        Inc(TotalUnits, Actions[I].ProgressUnits);
-    TInterlocked.Exchange(Context.ProgressTotal, TotalUnits);
+        TotalUnits := 0;
+        for I := 0 to High(Actions) do
+            Inc(TotalUnits, Actions[I].ProgressUnits);
+        TInterlocked.Exchange(Context.ProgressTotal, TotalUnits);
 
-    FMacroThread := TMacroThread.Create(Actions, Context, Context.OnRecordRun, True);
-    FMacroThread.Start;
+        FMacroThread := TMacroThread.Create(Actions, Context, Context.OnRecordRun, True);
+        FMacroThread.Start;
+    except
+        FreeAndNil(FMacroThread);
+        Context.Free; // Гарантированно освобождаем при сбое парсинга
+        raise;
+    end;
 end;
 
 function TWindowHelper._AddRef: Integer;

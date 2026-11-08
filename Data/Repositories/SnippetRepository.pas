@@ -546,7 +546,7 @@ end;
 procedure TSnippetRepository.InternalUpdateTags(SnippetID: Integer; const TagIDs: TArray<Integer>);
 var
     Q, QTags: TFDQuery;
-    TagID: Integer;
+    I: Integer;
 begin
     // Удаляем все старые связи
     Q := CreateQuery;
@@ -558,18 +558,19 @@ begin
         Q.Free;
     end;
 
-    // Добавляем новые связи
+    // Добавляем новые связи одним пакетом Array DML вместо N отдельных вставок
     if Length(TagIDs) > 0 then
     begin
         QTags := CreateQuery;
         try
             QTags.SQL.Text := SQL_UPDATE_TAGS_INSERT_QUERY;
-            for TagID in TagIDs do
+            QTags.Params.ArraySize := Length(TagIDs);
+            for I := 0 to High(TagIDs) do
             begin
-                QTags.ParamByName('snip_id').AsInteger := SnippetID;
-                QTags.ParamByName('tag_id').AsInteger := TagID;
-                QTags.ExecSQL;
+                QTags.ParamByName('snip_id').AsIntegers[I] := SnippetID;
+                QTags.ParamByName('tag_id').AsIntegers[I] := TagIDs[I];
             end;
+            QTags.Execute(QTags.Params.ArraySize);
         finally
             QTags.Free;
         end;
