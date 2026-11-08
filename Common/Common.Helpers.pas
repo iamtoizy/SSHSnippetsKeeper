@@ -57,8 +57,7 @@ function HotkeyToString(const Config: THotkeyConfig): string;
 { Функция для генерации заголовка Basic Auth }
 function GenerateHtpasswdString(const Username, Password: string): string;
 { Запуск git }
-function RunCmdCommand(const WorkingDir, Command: string; out Output: string; TimeoutMs: Cardinal = 300000): Boolean;
-{ Логирование простых сообщений }
+function RunCmdCommand(const WorkingDir, Command: string; out Output: string; TimeoutMs: Cardinal = 300000): Boolean;{ Логирование простых сообщений }
 procedure LogMsg(const Msg: string);
 { Логирование исключений (class + message) + контекст }
 procedure LogException(const Context: string; E: Exception);
@@ -417,15 +416,37 @@ begin
     Result := Format('%s:{SHA}%s', [Username, Base64Str]);
 end;
 
+const
+    // В Winapi.Windows отсутствуют
+    PROC_THREAD_ATTRIBUTE_HANDLE_LIST = $20002;
+    CREATE_EXTENDED_STARTUPINFO_PRESENT = $00080000;
+
+type
+    // Расширенный STARTUPINFO с указателем на список атрибутов потока
+    TStartupInfoExW = record
+        StartupInfo: TStartupInfoW;
+        lpAttributeList: Pointer;
+    end;
+
+// Обход обертки Winapi.Windows: ее var-параметр lpReturnSize не дает
+// передать NULL, а вызов с ненулевым lpReturnSize на текущих сборках
+// Windows возвращает ERROR_INVALID_PARAMETER
+function UpdateProcThreadAttributeRaw(lpAttributeList: Pointer; dwFlags: DWORD; Attribute: UInt64;
+    lpValue: Pointer; cbSize: NativeUInt; lpPreviousValue: Pointer; lpReturnSize: Pointer): BOOL; stdcall;
+    external kernel32 name 'UpdateProcThreadAttribute';
+
 function RunCmdCommand(const WorkingDir, Command: string; out Output: string; TimeoutMs: Cardinal): Boolean;
 var
     SecurityAttr: TSecurityAttributes;
     ReadPipe, WritePipe: THandle;
-    StartInfo: TStartupInfo;
+    StartInfoEx: TStartupInfoExW;
     ProcInfo: TProcessInformation;
+    AttrList: PProcThreadAttributeList;
+    AttrListSize: NativeUInt;
+    InheritList: array[0..0] of THandle;
     Buffer: array[0..2047] of AnsiChar;
     BytesRead, BytesAvail: DWORD;
-    FullCommand: string;
+    FullCommand, CmdPath: string;
     WorkDirPtr: PChar;
     StartTime: DWORD;
     WaitResult: DWORD;
@@ -443,90 +464,132 @@ begin
         if not CreatePipe(ReadPipe, WritePipe, @SecurityAttr, 0) then
             Exit;
 
-        FillChar(StartInfo, SizeOf(StartInfo), 0);
-        StartInfo.cb := SizeOf(StartInfo);
-        StartInfo.dwFlags := STARTF_USESHOWWINDOW or STARTF_USESTDHANDLES;
-        StartInfo.wShowWindow := SW_HIDE; // Скрываем окно
-        StartInfo.hStdOutput := WritePipe;
-        StartInfo.hStdError := WritePipe; // Перенаправляем ошибки в тот же поток
+        // Абсолютный путь к системному cmd.exe: CreateProcess не должен
+        // искать исполняемый файл по CWD и PATH
+        CmdPath := GetEnvironmentVariable('SystemRoot');
+        if CmdPath = '' then
+            CmdPath := 'C:\Windows';
+        CmdPath := CmdPath + '\System32\cmd.exe';
 
-        // Формируем команду для cmd
-        FullCommand := 'cmd.exe /c ' + Command;
+        FillChar(StartInfoEx, SizeOf(StartInfoEx), 0);
+        StartInfoEx.StartupInfo.cb := SizeOf(StartInfoEx);
+        StartInfoEx.StartupInfo.dwFlags := STARTF_USESHOWWINDOW or STARTF_USESTDHANDLES;
+        StartInfoEx.StartupInfo.wShowWindow := SW_HIDE; // Скрываем окно
+        StartInfoEx.StartupInfo.hStdOutput := WritePipe;
+        StartInfoEx.StartupInfo.hStdError := WritePipe; // Перенаправляем ошибки в тот же поток
 
-        // Устанавливаем рабочую директорию
-        if WorkingDir <> '' then
-            WorkDirPtr := PChar(WorkingDir)
-        else
-            WorkDirPtr := nil;
-
-        // 2. Запускаем процесс
-        if CreateProcess(nil, PChar(FullCommand), nil, nil, True, CREATE_NO_WINDOW, nil, WorkDirPtr, StartInfo, ProcInfo) then
-        begin
-            // Обязательно закрываем WritePipe со стороны родителя, иначе ReadFile может заблокироваться
-            CloseHandle(WritePipe);
-
-            StartTime := GetTickCount;
-            Result := True;
-
-            // 3. Главный цикл: чтение + проверка таймаута + проверка состояния процесса
-            while True do
+        // Ребенку наследуется только пайп вывода: остальные наследуемые
+        // хендлы процесса (пайпы движка Python, сокеты) дочернему процессу
+        // больше не достаются
+        AttrList := nil;
+        AttrListSize := 0;
+        InitializeProcThreadAttributeList(nil, 1, 0, AttrListSize);
+        GetMem(AttrList, AttrListSize);
+        try
+            if not InitializeProcThreadAttributeList(AttrList, 1, 0, AttrListSize) then
             begin
-                // Проверка таймаута (Cardinal-арифметика защищает от переполнения GetTickCount)
-                if (TimeoutMs <> INFINITE) and (Cardinal(GetTickCount - StartTime) > TimeoutMs) then
-                begin
-                    TerminateProcess(ProcInfo.hProcess, UINT(1));
-                    WaitForSingleObject(ProcInfo.hProcess, 1000); // Даем время на завершение
-                    Result := False;
-                    Break;
-                end;
-
-                // Проверяем наличие данных в пайпе без блокировки потока
-                BytesAvail := 0;
-                if PeekNamedPipe(ReadPipe, nil, 0, nil, @BytesAvail, nil) and (BytesAvail > 0) then
-                begin
-                    // Читаем доступные данные
-                    if ReadFile(ReadPipe, Buffer, SizeOf(Buffer) - 1, BytesRead, nil) and (BytesRead > 0) then
-                    begin
-                        Buffer[BytesRead] := #0;
-                        // Конвертируем вывод CMD (обычно CP866) в системную ANSI
-                        OemToCharA(Buffer, Buffer);
-                        SB.Append(string(AnsiString(Buffer)));
-                    end;
-                end
-                else
-                begin
-                    // Если данных пока нет, проверяем, жив ли процесс (ждем 50 мс, чтобы не грузить CPU)
-                    WaitResult := WaitForSingleObject(ProcInfo.hProcess, 50);
-
-                    if WaitResult = WAIT_OBJECT_0 then
-                    begin
-                        // Процесс завершился, дочитываем остатки из пайпа, если они есть
-                        while PeekNamedPipe(ReadPipe, nil, 0, nil, @BytesAvail, nil) and (BytesAvail > 0) do
-                        begin
-                            if ReadFile(ReadPipe, Buffer, SizeOf(Buffer) - 1, BytesRead, nil) and (BytesRead > 0) then
-                            begin
-                                Buffer[BytesRead] := #0;
-                                OemToCharA(Buffer, Buffer);
-                                SB.Append(string(AnsiString(Buffer)));
-                            end
-                            else
-                                Break;
-                        end;
-
-                        Break; // Выходим из главного цикла
-                    end;
-                end;
+                CloseHandle(WritePipe);
+                Exit;
             end;
 
-            CloseHandle(ProcInfo.hProcess);
-            CloseHandle(ProcInfo.hThread);
-        end
-        else
-        begin
-            // Если процесс не запустился, нужно закрыть WritePipe для предотвращения утечек
-            CloseHandle(WritePipe);
-        end;
+            InheritList[0] := WritePipe;
+            if not UpdateProcThreadAttributeRaw(AttrList, 0, PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
+                @InheritList, SizeOf(InheritList), nil, nil) then
+            begin
+                CloseHandle(WritePipe);
+                Exit;
+            end;
 
+            // Список атрибутов передается внутри расширенного StartupInfo
+            StartInfoEx.lpAttributeList := AttrList;
+
+            // /s /c с внешними кавычками вокруг Command: cmd не вырезает
+            // внутренние кавычки команды, спецсимволы пути (& и т.п.)
+            // остаются литералами. Контракт: Command закавыччен вызывающей стороной
+            FullCommand := '"' + CmdPath + '" /s /c "' + Command + '"';
+
+            // Устанавливаем рабочую директорию
+            if WorkingDir <> '' then
+                WorkDirPtr := PChar(WorkingDir)
+            else
+                WorkDirPtr := nil;
+
+            // 2. Запускаем процесс
+            if CreateProcess(PChar(CmdPath), PChar(FullCommand), nil, nil, True,
+                CREATE_NO_WINDOW or CREATE_EXTENDED_STARTUPINFO_PRESENT, nil, WorkDirPtr,
+                StartInfoEx.StartupInfo, ProcInfo) then
+            begin
+                // Обязательно закрываем WritePipe со стороны родителя, иначе ReadFile может заблокироваться
+                CloseHandle(WritePipe);
+
+                StartTime := GetTickCount;
+                Result := True;
+
+                // 3. Главный цикл: чтение + проверка таймаута + проверка состояния процесса
+                while True do
+                begin
+                    // Проверка таймаута (Cardinal-арифметика защищает от переполнения GetTickCount)
+                    if (TimeoutMs <> INFINITE) and (Cardinal(GetTickCount - StartTime) > TimeoutMs) then
+                    begin
+                        TerminateProcess(ProcInfo.hProcess, UINT(1));
+                        WaitForSingleObject(ProcInfo.hProcess, 1000); // Даем время на завершение
+                        Result := False;
+                        Break;
+                    end;
+
+                    // Проверяем наличие данных в пайпе без блокировки потока
+                    BytesAvail := 0;
+                    if PeekNamedPipe(ReadPipe, nil, 0, nil, @BytesAvail, nil) and (BytesAvail > 0) then
+                    begin
+                        // Читаем доступные данные
+                        if ReadFile(ReadPipe, Buffer, SizeOf(Buffer) - 1, BytesRead, nil) and (BytesRead > 0) then
+                        begin
+                            Buffer[BytesRead] := #0;
+                            // Конвертируем вывод CMD (обычно CP866) в системную ANSI
+                            OemToCharA(Buffer, Buffer);
+                            SB.Append(string(AnsiString(Buffer)));
+                        end;
+                    end
+                    else
+                    begin
+                        // Если данных пока нет, проверяем, жив ли процесс (ждем 50 мс, чтобы не грузить CPU)
+                        WaitResult := WaitForSingleObject(ProcInfo.hProcess, 50);
+
+                        if WaitResult = WAIT_OBJECT_0 then
+                        begin
+                            // Процесс завершился, дочитываем остатки из пайпа, если они есть
+                            while PeekNamedPipe(ReadPipe, nil, 0, nil, @BytesAvail, nil) and (BytesAvail > 0) do
+                            begin
+                                if ReadFile(ReadPipe, Buffer, SizeOf(Buffer) - 1, BytesRead, nil) and (BytesRead > 0) then
+                                begin
+                                    Buffer[BytesRead] := #0;
+                                    OemToCharA(Buffer, Buffer);
+                                    SB.Append(string(AnsiString(Buffer)));
+                                end
+                                else
+                                    Break;
+                            end;
+
+                            Break; // Выходим из главного цикла
+                        end;
+                    end;
+                end;
+
+                CloseHandle(ProcInfo.hProcess);
+                CloseHandle(ProcInfo.hThread);
+            end
+            else
+            begin
+                // Если процесс не запустился, нужно закрыть WritePipe для предотвращения утечек
+                CloseHandle(WritePipe);
+            end;
+        finally
+            if AttrList <> nil then
+            begin
+                DeleteProcThreadAttributeList(AttrList);
+                FreeMem(AttrList);
+            end;
+        end;
         CloseHandle(ReadPipe);
         Output := SB.ToString;
     finally
