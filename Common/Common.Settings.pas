@@ -80,6 +80,12 @@ begin
     ABytes := nil;
 end;
 
+// Детерминированная энтропия DPAPI. Это КОНСТАНТА приложения, а НЕ секрет:
+// она выводится из бинарника. Модель угроз: CryptProtectData привязывает
+// данные к пользователю Windows, энтропия дополнительно - к приложению,
+// поэтому скопированный settings.json не расшифровывается на другой машине
+// или под другим пользователем. От процессов того же пользователя защиты
+// нет - иначе приложение само не смогло бы читать ключи
 function BuildSecretEntropy: TBytes;
 var
     Raw: TBytes;
@@ -134,7 +140,10 @@ begin
         EntropyBlob.cbData := Length(Entropy);
         EntropyBlob.pbData := @Entropy[0];
 
-        if not CryptProtectData(@InBlob, nil, @EntropyBlob, nil, nil, CRYPTPROTECT_UI_FORBIDDEN, @OutBlob) then Exit;
+        // Сбой DPAPI - не повод писать открытый текст на диск, падаем громко
+        if not CryptProtectData(@InBlob, nil, @EntropyBlob, nil, nil, CRYPTPROTECT_UI_FORBIDDEN, @OutBlob) then
+            raise Exception.Create(
+                'CryptProtectData failed - refusing to store the secret as plain text');
 
         try
             SetLength(RawBytes, OutBlob.cbData);

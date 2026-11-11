@@ -247,7 +247,7 @@ var
     ColonPos, PrefixIndex, I: Integer;
     IsKnown, HadQuote: Boolean;
 begin
-    Result := Default (TStructuredQuery);
+    Result := Default(TStructuredQuery);
     Tags := TList<string>.Create;
     Categories := TList<string>.Create;
     Titles := TList<string>.Create;
@@ -333,7 +333,7 @@ begin
                         5: if HadQuote then ContentPhrases.Add(Value) else Contents.Add(Value);
                         6, 7:
                             begin
-                                DF := Default (TQueryDateFilter);
+                                DF := Default(TQueryDateFilter);
                                 if PrefixIndex = 6 then
                                     DF.Field := qdfCreated
                                 else

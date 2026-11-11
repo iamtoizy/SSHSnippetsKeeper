@@ -16,6 +16,7 @@ type
         FConn: TFDConnection;
         function MigrationsDir: string;
         function LoadMigrationSQL(const AResourceName: string): string;
+        function SchemaFilePath(const AFilename: string): string;
         procedure ExecFile(AConn: TFDConnection; const AFilename: string);
         function ObjectNames(AConn: TFDConnection): TStringList;
     public
@@ -44,6 +45,12 @@ type
 
         [Test]
         procedure Backup_WhileAnotherConnectionWrites;
+
+        [Test]
+        procedure BaselineScript_AppliesInSingleTransaction;
+
+        [Test]
+        procedure FailedScript_RollsBackWholeTransaction;
     end;
 
 implementation
@@ -93,23 +100,29 @@ begin
     Result := TFile.ReadAllText(Files[0], TEncoding.UTF8);
 end;
 
-procedure TDbMigrationTests.ExecFile(AConn: TFDConnection; const AFilename: string);
+function TDbMigrationTests.SchemaFilePath(const AFilename: string): string;
 var
-    Dir, Path: string;
-    Script: TFDScript;
+    Dir: string;
 begin
     Dir := TPath.GetDirectoryName(ParamStr(0));
     repeat
-        Path := TPath.Combine(Dir, TPath.Combine('Database', 'Schema', AFilename));
-        if TFile.Exists(Path) then
-            Break;
+        Result := TPath.Combine(Dir, TPath.Combine('Database', 'Schema', AFilename));
+        if TFile.Exists(Result) then
+            Exit;
         Dir := TPath.GetDirectoryName(Dir);
     until Dir = '';
+    raise Exception.Create('Schema file not found: ' + AFilename);
+end;
 
+procedure TDbMigrationTests.ExecFile(AConn: TFDConnection; const AFilename: string);
+var
+    Script: TFDScript;
+begin
     Script := TFDScript.Create(nil);
     try
         Script.Connection := AConn;
-        Script.SQLScripts.Add.SQL.Text := TFile.ReadAllText(Path, TEncoding.UTF8);
+        Script.SQLScripts.Add.SQL.Text :=
+            TFile.ReadAllText(SchemaFilePath(AFilename), TEncoding.UTF8);
         Script.ExecuteAll;
     finally
         Script.Free;
@@ -420,6 +433,74 @@ begin
         ConnA.Free;
         TDirectory.Delete(TempDir, True);
     end;
+end;
+
+procedure TDbMigrationTests.BaselineScript_AppliesInSingleTransaction;
+var
+    Script: TFDScript;
+begin
+    // Как в TAppDatabase.InitializeDatabase и ExecuteNewDbCommand:
+    // BreakOnError=True, baseline (схема+seed) в BEGIN...COMMIT,
+    // foreign_keys отключается снаружи (внутри транзакции - no-op)
+    Script := TFDScript.Create(nil);
+    try
+        Script.Connection := FConn;
+        Script.ScriptOptions.BreakOnError := True;
+        Script.SQLScripts.Add.SQL.Text :=
+            'BEGIN;' + sLineBreak +
+            TFile.ReadAllText(SchemaFilePath('000_schema_init.sql'), TEncoding.UTF8) +
+            TFile.ReadAllText(SchemaFilePath('000_seed_data_full.sql'), TEncoding.UTF8) +
+            sLineBreak + 'COMMIT;';
+        FConn.ExecSQL('PRAGMA foreign_keys = OFF');
+        try
+            Script.ExecuteAll;
+        finally
+            FConn.ExecSQL('PRAGMA foreign_keys = ON');
+        end;
+    finally
+        Script.Free;
+    end;
+
+    Assert.AreEqual(Integer(APP_DB_VERSION),
+        Integer(FConn.ExecSQLScalar('PRAGMA user_version')));
+    Assert.AreEqual('ok', string(FConn.ExecSQLScalar('PRAGMA integrity_check')));
+    Assert.IsTrue(Integer(FConn.ExecSQLScalar('SELECT COUNT(*) FROM users')) > 0);
+end;
+
+procedure TDbMigrationTests.FailedScript_RollsBackWholeTransaction;
+var
+    Script: TFDScript;
+    Threw: Boolean;
+begin
+    // Сбой посреди скрипта (BreakOnError=True, как в проде) прерывает
+    // выполнение, а незавершённая транзакция откатывается целиком:
+    // таблица-маркер не должна остаться
+    Threw := False;
+    Script := TFDScript.Create(nil);
+    try
+        Script.Connection := FConn;
+        Script.ScriptOptions.BreakOnError := True;
+        Script.SQLScripts.Add.SQL.Text :=
+            'BEGIN;' + sLineBreak +
+            'CREATE TABLE rollback_probe (v INTEGER);' + sLineBreak +
+            'INSERT INTO no_such_table VALUES (1);' + sLineBreak +
+            'COMMIT;';
+        try
+            Script.ExecuteAll;
+        except
+            Threw := True;
+        end;
+    finally
+        Script.Free;
+    end;
+
+    Assert.IsTrue(Threw);
+    // Откат незавершённой транзакции: маркерная таблица исчезает
+    if FConn.InTransaction then
+        FConn.Rollback;
+    Assert.AreEqual(0, Integer(FConn.ExecSQLScalar(
+        'SELECT COUNT(*) FROM sqlite_master ' +
+        'WHERE type = ''table'' AND name = ''rollback_probe''')));
 end;
 
 initialization

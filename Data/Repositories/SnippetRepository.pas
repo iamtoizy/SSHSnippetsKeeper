@@ -213,7 +213,7 @@ begin
     Arr := InternalLoadSnippets(SQL_SELECT_SNIPPETS_BY_ID, [ID]);
     if Length(Arr) > 0 then
         Exit(Arr[0]);
-    Result := Default (TSnippetDTO);
+    Result := Default(TSnippetDTO);
 end;
 
 function TSnippetRepository.GetSnippetsByTag(const TagID: Integer): TArray<TSnippetDTO>;

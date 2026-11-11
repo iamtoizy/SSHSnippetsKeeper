@@ -1,12 +1,9 @@
-PRAGMA foreign_keys = ON;
-PRAGMA journal_mode = WAL;
-PRAGMA synchronous = NORMAL;
-PRAGMA temp_store = MEMORY;
+-- Соединение настраивают вызывающие пути: ApplyPRAGMA в GUI
+-- (Data\Database.pas) и явные PRAGMA при /newdb (Data\Database.Migrations.pas).
+-- Здесь PRAGMA соединения не задаются: baseline применяется в транзакции,
+-- где synchronous/journal_mode менять нельзя, а foreign_keys - no-op.
 PRAGMA user_version = 13; -- v13: умные папки - сохранённые запросы (saved_queries)
                           -- Должно совпадать с APP_DB_VERSION в Data\Database.Migrations.pas
-PRAGMA recursive_triggers = OFF;
-PRAGMA busy_timeout = 5000;
-PRAGMA cache_size = -20000;
 
 ---------------------------------------------------------
 -- 1. USERS (Рабочие пространства / Workspaces)

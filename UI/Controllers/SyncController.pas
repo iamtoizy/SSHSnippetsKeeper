@@ -149,24 +149,15 @@ end;
 
 function TSyncController.ResolveSyncPath: string;
 var
-    BaseDir, ConnStr, DbPath, DbName: string;
-    Strings: TStringList;
+    BaseDir, DbPath, DbName: string;
 begin
     BaseDir := Trim(FAppContext.SettingsManager.Data.SyncDirectory);
     if BaseDir.IsEmpty then
         BaseDir := TPath.Combine(ExtractFilePath(ParamStr(0)), 'SnippetsVault');
 
-    // Пытаемся вытащить имя базы из строки подключения FireDAC
-    ConnStr := FAppContext.DatabaseManager.GetConnectionString;
-    Strings := TStringList.Create;
-    try
-        Strings.Text := ConnStr;
-        DbPath := Strings.Values['Database'];
-    finally
-        Strings.Free;
-    end;
-
-    // Если нашли - берем имя файла без расширения (например, "snippets" или "work")
+    // Имя базы берем из guarded-аксессора DatabaseFile вместо парсинга
+    // строки подключения: '' если не подключены или :memory:
+    DbPath := FAppContext.DatabaseManager.DatabaseFile;
     if DbPath <> '' then
         DbName := TPath.GetFileNameWithoutExtension(DbPath)
     else

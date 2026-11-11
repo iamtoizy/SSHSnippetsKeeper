@@ -43,8 +43,8 @@ type
         OnRunRecorded: TProc<Integer>;
         constructor Create(UserID: Integer; AppContext: IAppContext);
         function PickTargetWindow(out TargetHWND: HWND): Boolean;
-        procedure         ExecuteSnippet(const Snippet: TSnippetDTO);
-        procedure         ExecuteSnippetInWindow(const Snippet: TSnippetDTO; TargetHWND: HWND);
+        procedure ExecuteSnippet(const Snippet: TSnippetDTO);
+        procedure ExecuteSnippetInWindow(const Snippet: TSnippetDTO; TargetHWND: HWND);
         // Предпросмотр без выбора окна и без печати
         procedure DryRunSnippet(const Snippet: TSnippetDTO);
     end;
@@ -325,7 +325,7 @@ begin
         );
 end;
 
-procedure TSnippetRunner.        ExecuteSnippet(const Snippet: TSnippetDTO);
+procedure TSnippetRunner.ExecuteSnippet(const Snippet: TSnippetDTO);
 var
     TargetWindow: TWindowMonitorInfo;
 begin
@@ -358,7 +358,7 @@ begin
     end;
 end;
 
-procedure TSnippetRunner.        ExecuteSnippetInWindow(const Snippet: TSnippetDTO; TargetHWND: HWND);
+procedure TSnippetRunner.ExecuteSnippetInWindow(const Snippet: TSnippetDTO; TargetHWND: HWND);
 begin
     CheckUIThread;
     // Защита от повторного входа: см. ExecuteSnippet
