@@ -7,6 +7,9 @@ uses
     System.Classes, System.SysUtils
     ;
 
+const
+    PLACEHOLDER_API_KEY = 'Paste-your-API-key-here';
+
 type
     // Реализация менеджера
     TSettingsManager = class(TInterfacedObject, ISettingsManager)
@@ -58,7 +61,6 @@ uses
 const
     SECRET_PREFIX = 'dpapi:';
     SECRET_PREFIX_OLD = 'dpapi2:';
-    PLACEHOLDER_API_KEY = 'Paste-your-API-key-here';
     CRYPTPROTECT_UI_FORBIDDEN = $1;
 
 type

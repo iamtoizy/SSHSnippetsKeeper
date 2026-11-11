@@ -40,7 +40,10 @@ uses
     Tests.DirtyDetection in 'Tests.DirtyDetection.pas',
     Tests.Localization in 'Tests.Localization.pas',
     Tests.MacroThread in 'Tests.MacroThread.pas',
-    Tests.RunCmdCommand in 'Tests.RunCmdCommand.pas'
+    Tests.RunCmdCommand in 'Tests.RunCmdCommand.pas',
+    Tests.Settings in 'Tests.Settings.pas',
+    Tests.WindowHelper in 'Tests.WindowHelper.pas',
+    Tests.SyncController in 'Tests.SyncController.pas'
     ;
 
 var
@@ -76,6 +79,7 @@ begin
         TDUnitX.RegisterTestFixture(TSecuritySettingsTests);
         TDUnitX.RegisterTestFixture(TSecurityScanDeltaTests);
         TDUnitX.RegisterTestFixture(TSecurityRangesTests);
+        TDUnitX.RegisterTestFixture(TSecurityRealWorldTests);
         TDUnitX.RegisterTestFixture(TCustomBashSynTests);
         TDUnitX.RegisterTestFixture(TMacroInputTypesTests);
         TDUnitX.RegisterTestFixture(TSnippetLanguagesTests);
@@ -89,6 +93,10 @@ begin
         TDUnitX.RegisterTestFixture(TLocalizationDiagnosticsTests);
         TDUnitX.RegisterTestFixture(TMacroThreadTests);
         TDUnitX.RegisterTestFixture(TRunCmdCommandTests);
+        TDUnitX.RegisterTestFixture(TSettingsDpapiTests);
+        TDUnitX.RegisterTestFixture(TSettingsManagerTests);
+        TDUnitX.RegisterTestFixture(TWindowHelperTests);
+        TDUnitX.RegisterTestFixture(TSyncControllerTests);
         Runner := TDUnitX.CreateRunner([TDUnitXConsoleLogger.Create(False)]);
         Runner.UseRTTI := True;
         Results := Runner.Execute;
