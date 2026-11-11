@@ -77,6 +77,7 @@ type
 implementation
 
 uses
+    Common.Helpers,
     MacroActions,
     System.Classes,
     System.Math,
@@ -757,8 +758,10 @@ begin
         Len := StrToIntDef(Token.DefaultValue, DEFAULT_RANDOM_LENGTH);
         Len := EnsureRange(Len, 1, MAX_RANDOM_LENGTH);
         SetLength(Result, Len);
+        // Криптостойкий источник (RtlGenRandom), не VCL Random: значения
+        // макроса используют как временные пароли
         for I := 1 to Len do
-            Result[I] := RANDOM_CHARSET[Random(Length(RANDOM_CHARSET)) + 1];
+            Result[I] := RANDOM_CHARSET[SecureRandom(Length(RANDOM_CHARSET)) + 1];
     end
     else if Token.Text = 'COUNTER' then
     begin
@@ -967,8 +970,5 @@ begin
         Lines.Free;
     end;
 end;
-
-initialization
-    Randomize;
 
 end.

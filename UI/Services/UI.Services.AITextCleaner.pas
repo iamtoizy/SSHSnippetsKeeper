@@ -67,7 +67,6 @@ begin
             begin
                 if InCodeBlock then
                 begin
-                    // InCodeBlock := False;
                     Break; // Основной блок кода собран, игнорируем всё, что после него
                 end
                 else

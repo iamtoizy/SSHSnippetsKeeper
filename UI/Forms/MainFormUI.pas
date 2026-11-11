@@ -415,6 +415,7 @@ uses
     MacroInputTypes,
     NetworkFormUI,
     PasswordGenFormUI,
+    ProcessProfile,
     QuickSearchFormUI,
     SequenceOrderDialogUI,
     SettingsFormUI,
@@ -1654,6 +1655,8 @@ begin
     for var Item in AppContext.SettingsManager.Data.AllowedApplications do
         if Item.Enabled then
             GWinMonitor.AddAllowedProcess(Item.ExeName.ToLower);
+
+    GProfileManager.SyncFromApplications(AppContext.SettingsManager.Data.AllowedApplications.Items);
 
     TStateMgr.Instance.FirstRun;
 

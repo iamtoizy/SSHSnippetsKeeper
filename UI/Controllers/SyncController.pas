@@ -26,12 +26,22 @@ type
         FSyncAction: TCustomAction;
         FStatusBar: TAppStatusBar;
         FAutoSyncTimer: TTimer;
+        // UI-confined: пишется/читается только в главном потоке
+        // (MarkDataChanged из UI-событий)
         FIsDbDirty: Boolean;
         FShowToastOnDone: Boolean;
         FPreserveCategoryID: Integer;
         FOnReloadUI: TProc<Integer>;
+        // Гвейцар синхронизации: сет на вызывающем потоке, сбросы в фоновой
+        // задаче и в QueueToUI-коллбэках - поэтому запись строго через
+        // TInterlocked (CompareExchange, Exchange). Plain-чтение из главного
+        // потока допустимо: выровненный Integer читается атомарно
         FSyncInProgress: Integer;
+        // Счётчик незавершённых QueueToUI-коллбэков: Increment из рабочего
+        // потока, Decrement в главном - строго через TInterlocked
         FPendingUIEvents: Integer;
+        // UI-confined: пишется/читается только в QueueToUI-коллбэках
+        // (они исполняются в главном потоке)
         FChangesDuringSync: Boolean;
         function ResolveSyncPath: string;
         procedure QueueToUI(const AProc: TProc);
@@ -89,6 +99,9 @@ begin
         end);
 end;
 
+// Ожидание завершения на главном потоке: plain-чтение флагов безопасно
+// (выровненные Integer/Boolean читаются атомарно), а CheckSynchronize
+// обслуживает QueueToUI-коллбэки, декрементируя FPendingUIEvents
 procedure TSyncController.WaitForCompletion;
 var
     StartTick: Cardinal;
@@ -136,24 +149,15 @@ end;
 
 function TSyncController.ResolveSyncPath: string;
 var
-    BaseDir, ConnStr, DbPath, DbName: string;
-    Strings: TStringList;
+    BaseDir, DbPath, DbName: string;
 begin
     BaseDir := Trim(FAppContext.SettingsManager.Data.SyncDirectory);
     if BaseDir.IsEmpty then
         BaseDir := TPath.Combine(ExtractFilePath(ParamStr(0)), 'SnippetsVault');
 
-    // Пытаемся вытащить имя базы из строки подключения FireDAC
-    ConnStr := FAppContext.DatabaseManager.GetConnectionString;
-    Strings := TStringList.Create;
-    try
-        Strings.Text := ConnStr;
-        DbPath := Strings.Values['Database'];
-    finally
-        Strings.Free;
-    end;
-
-    // Если нашли - берем имя файла без расширения (например, "snippets" или "work")
+    // Имя базы берем из guarded-аксессора DatabaseFile вместо парсинга
+    // строки подключения: '' если не подключены или :memory:
+    DbPath := FAppContext.DatabaseManager.DatabaseFile;
     if DbPath <> '' then
         DbName := TPath.GetFileNameWithoutExtension(DbPath)
     else
@@ -177,6 +181,9 @@ begin
     else
     begin
         WaitForCompletion;
+        // Plain-запись (не Interlocked): на синхронном пути после
+        // WaitForCompletion вызывающий поток - единственный активный писатель;
+        // все сбросы флага по-прежнему идут через TInterlocked.Exchange
         FSyncInProgress := 1;
     end;
 

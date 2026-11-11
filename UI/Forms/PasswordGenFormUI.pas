@@ -119,6 +119,7 @@ type
 
         FCancellationToken: Integer;
         FIsGenerating: Boolean;
+        FBcryptBusy: Boolean;
         FCloseRequested: Boolean;
         FClipboardCountdown: Integer;
         FLastCopiedText: string;
@@ -828,6 +829,12 @@ begin
         Caption := TUIStateLoader.GetMessage('PasswordGenForm.StopGeneratorCaption');
         bBulkGenerate.Enabled := False;
     end
+    else if FBcryptBusy then
+    begin
+        // Форму нельзя закрывать, пока идет фоновое хеширование:
+        // Synchronize должен попасть в живую форму
+        CanClose := False;
+    end
     else CanClose := True;
 end;
 
@@ -1091,8 +1098,8 @@ begin
     begin
         // Чистим зашифрованную RAM
         FPasswordService.ClearHistory;
-        // Безопасно стираем таблицу с экрана и из памяти
-        WipeListViewPasswords(lvHistory);
+        // Очищаем таблицу с экрана
+        lvHistory.Items.Clear;
         // Безопасно чистим поле ввода
         WipeVCLControlText(ebPassword);
         ShowSimpleToast(TUIStateLoader.GetMessage('PasswordGenForm.MemoryCleared'));
@@ -1115,7 +1122,7 @@ begin
         // Физически затираем текст в полях ввода VCL
         WipeVCLControlText(ebPassword);
         WipeVCLControlText(mBulkResult);
-        WipeListViewPasswords(lvHistory);
+        lvHistory.Items.Clear;
     end;
 
     // Главное: Очищаем сам крипто-буфер истории в сервисе.
@@ -1135,8 +1142,11 @@ end;
 
 procedure TPasswordGenForm.nCopyBcryptClick(Sender: TObject);
 var
-    CleanPass, Username, Hash, ResultStr: string;
+    CleanPass, Username: string;
 begin
+    // Повторный вход, пока фоновое хеширование не завершено
+    if FBcryptBusy then Exit;
+
     // Берем текущий пароль с экрана и очищаем его от визуальных пробелов
     CleanPass := StringReplace(ebPassword.Text, VISIBLE_SPACE, ' ', [rfReplaceAll]);
 
@@ -1163,22 +1173,82 @@ begin
         Exit;
     end;
 
-    // Шифруем пароль алгоритмом Bcrypt.
-    Hash := TBCrypt.HashPassword(CleanPass);
+    // Кнопки и закрытие формы блокируются: Synchronize должен попасть
+    // в живую форму (форма уничтожается сразу после закрытия)
+    FBcryptBusy := True;
+    bCopySpecial.Enabled := False;
+    bInsertAndClose.Enabled := False;
+    if not tmrClipboard.Enabled then
+        sbBottom.Panels[0].Text := TUIStateLoader.GetMessage('PasswordGenForm.BcryptInProgress');
 
-    // Склеиваем результат
-    ResultStr := Username + ':' + Hash;
+    // Адаптивный cost Bcrypt подбирается под машину и занимает 0.5-1+ сек,
+    // поэтому хешируем в фоне и не замораживаем UI
+    TThread.CreateAnonymousThread(
+        procedure
+        var
+            Pass, UName, Hash, ResultStr, ErrorMsg: string;
+        begin
+            // Переносим данные в локальные переменные потока
+            // и освобождаем захваченные ссылки
+            Pass := CleanPass;
+            UName := Username;
+            CleanPass := '';
+            Username := '';
 
-    // Безопасно кладем в буфер обмена и запускаем таймер на 15 секунд для автоочистки
-    CopyToClipboardSecure(ResultStr);
-    StartClipboardTimer(ResultStr);
+            Hash := '';
+            ResultStr := '';
+            ErrorMsg := '';
+            try
+                try
+                    // Шифруем пароль алгоритмом Bcrypt.
+                    Hash := TBCrypt.HashPassword(Pass);
 
-    // Очищаем чувствительные данные из памяти
-    WipeString(CleanPass);
-    WipeString(Hash);
+                    // Склеиваем результат
+                    ResultStr := UName + ':' + Hash;
+                except
+                    on E: Exception do
+                        ErrorMsg := E.Message;
+                end;
+            finally
+                // Затираем чувствительные данные еще в фоновом потоке
+                WipeString(Pass);
+                WipeString(Hash);
+            end;
 
-    // Показываем уведомление
-    ShowSimpleToast(TUIStateLoader.GetMessage('PasswordGenForm.HtPasswdBcryptCopied'));
+            TThread.Synchronize(nil,
+                procedure
+                begin
+                    FBcryptBusy := False;
+                    bCopySpecial.Enabled := True;
+                    bInsertAndClose.Enabled := True;
+
+                    // Возвращаем текст статусбара (не затирая обратный отсчет буфера)
+                    if tmrClipboard.Enabled then
+                        sbBottom.Panels[0].Text := TUIStateLoader.GetMessage(
+                            'PasswordGenForm.StatusClipboardCountdown', [FClipboardCountdown div 10])
+                    else
+                        sbBottom.Panels[0].Text := '';
+
+                    if ErrorMsg <> '' then
+                        MessagesHandler.ShowError(TUIStateLoader.GetMessage(
+                            'Common.GeneralError', [ErrorMsg]))
+                    else if ResultStr <> '' then
+                    begin
+                        // Безопасно кладем в буфер обмена и запускаем таймер
+                        // на 15 секунд для автоочистки
+                        CopyToClipboardSecure(ResultStr);
+                        StartClipboardTimer(ResultStr);
+
+                        // Показываем уведомление
+                        ShowSimpleToast(TUIStateLoader.GetMessage(
+                            'PasswordGenForm.HtPasswdBcryptCopied'));
+                    end;
+
+                    // При refcount > 1 WipeString не трогает общую память,
+                    // поэтому FLastCopiedText остается жив для автоочистки буфера
+                    WipeString(ResultStr);
+                end);
+        end).Start;
 end;
 
 procedure TPasswordGenForm.nCopyNormalClick(Sender: TObject);

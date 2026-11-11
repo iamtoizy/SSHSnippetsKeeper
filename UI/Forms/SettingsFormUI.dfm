@@ -278,6 +278,8 @@ object SettingsForm: TSettingsForm
         RowSelect = True
         TabOrder = 0
         ViewStyle = vsReport
+        OnSelectItem = lvApplicationsSelectItem
+        OnDblClick = lvApplicationsDblClick
       end
       object pApplicationsButtons: TPanel
         Left = 0
@@ -322,6 +324,15 @@ object SettingsForm: TSettingsForm
           Caption = #1048#1079' '#1089#1087#1080#1089#1082#1072'...'
           TabOrder = 3
           OnClick = bAppPickClick
+        end
+        object bAppProfile: TButton
+          Left = 427
+          Top = 5
+          Width = 100
+          Height = 25
+          Caption = #1055#1088#1086#1092#1080#1083#1100'...'
+          TabOrder = 4
+          OnClick = bAppProfileClick
         end
       end
     end

@@ -64,7 +64,8 @@ implementation
 
 uses
     Common.Localization,
-    Data.Database.Migrations
+    Data.Database.Migrations,
+    Winapi.Windows
     ;
 
 {$R *.dfm}
@@ -105,23 +106,52 @@ begin
 
     FDScript.Connection := FDConnection;
     FDScript.SQLScripts.Clear;
+    // Ошибка statement обязана прервать скрипт исключением: с дефолтным
+    // BreakOnError=False ExecuteAll молча продолжит и COMMIT закоммитит
+    // частичную схему
+    FDScript.ScriptOptions.BreakOnError := True;
 
-    with FDScript.SQLScripts.Add do
-        SQL.Text :=
-            LoadSQLResource('SCHEMA_INIT_SQL') +
-            LoadSQLResource('SCHEMA_SEED_SQL');
-
+    // Baseline одной транзакцией: сбой посреди скрипта откатывает всю схему.
+    // Соединение уже настроено ApplyPRAGMA; PRAGMA соединения убраны из
+    // 000_schema_init.sql, т.к. synchronous/journal_mode в транзакции менять
+    // нельзя. foreign_keys отключаем снаружи: внутри транзакции этот PRAGMA -
+    // no-op, а seed грузится без проверки связей
+    FDConnection.ExecSQL('PRAGMA foreign_keys = OFF');
     try
-        FDScript.ExecuteAll;
-    except
-        on E: Exception do
-            raise Exception.Create(
-                TUIStateLoader.GetMessage('DB.SQLExecutionError', [E.Message])
-            );
+        with FDScript.SQLScripts.Add do
+            SQL.Text :=
+                'BEGIN;' + sLineBreak +
+                LoadSQLResource('SCHEMA_INIT_SQL') +
+                LoadSQLResource('SCHEMA_SEED_SQL') +
+                sLineBreak + 'COMMIT;';
+
+        try
+            FDScript.ExecuteAll;
+        except
+            on E: Exception do
+            begin
+                // Полусозданный файл не оставляем (как в /newdb): закрытие
+                // соединения откатывает незавершённую транзакцию, а файлы
+                // SQLite держатся открытыми с FILE_SHARE_DELETE и удаляются
+                // при освобождении хендлов
+                if FDConnection.Connected then
+                    FDConnection.Close;
+                Winapi.Windows.DeleteFile(PChar(Filename));
+                Winapi.Windows.DeleteFile(PChar(Filename + '-wal'));
+                Winapi.Windows.DeleteFile(PChar(Filename + '-shm'));
+                raise Exception.Create(
+                    TUIStateLoader.GetMessage('DB.SQLExecutionError', [E.Message])
+                );
+            end;
+        end;
+    finally
+        if FDConnection.Connected then
+            FDConnection.ExecSQL('PRAGMA foreign_keys = ON');
     end;
 
-    // Базовый скрипт завершается PRAGMA user_version = APP_DB_VERSION,
-    // поэтому раннер миграций после создания БД ничего не применяет
+    // PRAGMA user_version = APP_DB_VERSION выставляется в заголовке схемы
+    // (000_schema_init.sql), поэтому раннер миграций после создания БД
+    // ничего не применяет
     FDConnection.ExecSQL('INSERT OR IGNORE INTO users (id, name) VALUES (1, ''Local User'');');
 end;
 
@@ -174,10 +204,11 @@ procedure TAppDatabase.FlushToDisk;
 begin
     if FDConnection.Connected then
     begin
-        // Принудительный checkpoint: все данные из WAL -> основной файл
+        // Принудительный checkpoint: все данные из WAL -> основной файл.
+        // Достаточно одного TRUNCATE: после него WAL уже обнулён, а при BUSY
+        // финальный checkpoint всё равно выполнит sqlite3_close
+        // (FDConnection.Close) - он же освобождает -wal и -shm
         FDConnection.ExecSQL('PRAGMA wal_checkpoint(TRUNCATE)');
-        // Освобождаем -wal и -shm файлы
-        FDConnection.ExecSQL('PRAGMA wal_checkpoint(PASSIVE)');
     end;
 end;
 

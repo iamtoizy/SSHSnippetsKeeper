@@ -210,6 +210,12 @@
         <DCCReference Include="UI\Forms\AppPickerFormUI.pas">
             <Form>AppPickerForm</Form>
         </DCCReference>
+        <DCCReference Include="UI\Forms\WindowProfileDialogUI.pas">
+            <Form>WindowProfileDialog</Form>
+        </DCCReference>
+        <DCCReference Include="UI\Forms\WindowClassPickerDialogUI.pas">
+            <Form>WindowClassPickerDialog</Form>
+        </DCCReference>
         <DCCReference Include="UI\Forms\InputFormUI.pas">
             <Form>InputForm</Form>
         </DCCReference>

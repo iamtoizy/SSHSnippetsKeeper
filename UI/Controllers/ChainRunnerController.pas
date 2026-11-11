@@ -98,24 +98,27 @@ begin
         Exit;
     end;
 
-    with TSnippetRunner.Create(Chain.UserID, AppContext) do
-    try
-        if not PickTargetWindow(TargetHWND) then
-            Exit;
-    finally
-        Free;
-    end;
-
     FRunning := True;
-    if Assigned(FOnStarted) then
-        FOnStarted;
     try
-        RunSteps(AppContext, TUIStateLoader.GetMessage('Chains.Run.PanelTitle'), Chain.Name,
-            Steps, Chain.UserID, TargetHWND);
+        with TSnippetRunner.Create(Chain.UserID, AppContext) do
+        try
+            if not PickTargetWindow(TargetHWND) then
+                Exit;
+        finally
+            Free;
+        end;
+
+        if Assigned(FOnStarted) then
+            FOnStarted;
+        try
+            RunSteps(AppContext, TUIStateLoader.GetMessage('Chains.Run.PanelTitle'), Chain.Name,
+                Steps, Chain.UserID, TargetHWND);
+        finally
+            if Assigned(FOnFinished) then
+                FOnFinished;
+        end;
     finally
         FRunning := False;
-        if Assigned(FOnFinished) then
-            FOnFinished;
     end;
 end;
 
@@ -138,33 +141,37 @@ begin
     if Length(Snippets) = 0 then
         Exit;
 
-    with TSnippetRunner.Create(Snippets[0].UserID, AppContext) do
-    try
-        if not PickTargetWindow(TargetHWND) then
-            Exit;
-    finally
-        Free;
-    end;
-
-    SetLength(Steps, Length(Snippets));
-    for I := 0 to High(Snippets) do
-    begin
-        Steps[I] := Default(TChainStepDTO);
-        Steps[I].Position := I + 1;
-        Steps[I].SnippetID := Snippets[I].ID;
-        Steps[I].PauseMs := 0;
-    end;
-
-    PanelCaption := TUIStateLoader.GetMessage('MultiSelect.RunSequence.PanelTitle');
     FRunning := True;
-    if Assigned(FOnStarted) then
-        FOnStarted;
     try
-        RunSteps(AppContext, PanelCaption, PanelCaption, Steps, 0, TargetHWND);
+        with TSnippetRunner.Create(Snippets[0].UserID, AppContext) do
+        try
+            if not PickTargetWindow(TargetHWND) then
+                Exit;
+        finally
+            Free;
+        end;
+
+        SetLength(Steps, Length(Snippets));
+        for I := 0 to High(Snippets) do
+        begin
+            Steps[I] := Default(TChainStepDTO);
+            Steps[I].Position := I + 1;
+            Steps[I].SnippetID := Snippets[I].ID;
+            Steps[I].PauseMs := 0;
+        end;
+
+        PanelCaption := TUIStateLoader.GetMessage('MultiSelect.RunSequence.PanelTitle');
+
+        if Assigned(FOnStarted) then
+            FOnStarted;
+        try
+            RunSteps(AppContext, PanelCaption, PanelCaption, Steps, 0, TargetHWND);
+        finally
+            if Assigned(FOnFinished) then
+                FOnFinished;
+        end;
     finally
         FRunning := False;
-        if Assigned(FOnFinished) then
-            FOnFinished;
     end;
 end;
 

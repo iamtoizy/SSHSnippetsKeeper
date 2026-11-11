@@ -91,6 +91,7 @@ type
         bAppRename: TButton;
         bAppDelete: TButton;
         bAppPick: TButton;
+        bAppProfile: TButton;
         tsCounters: TTabSheet;
         lvCounters: TListView;
         pCountersButtons: TPanel;
@@ -113,6 +114,9 @@ type
         procedure bAppRenameClick(Sender: TObject);
         procedure bAppDeleteClick(Sender: TObject);
         procedure bAppPickClick(Sender: TObject);
+        procedure bAppProfileClick(Sender: TObject);
+        procedure lvApplicationsSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
+        procedure lvApplicationsDblClick(Sender: TObject);
         procedure cbVCLStyleChange(Sender: TObject);
         procedure lvCountersSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
         procedure bCounterResetClick(Sender: TObject);
@@ -121,6 +125,7 @@ type
     private
         FLocalActions: TDictionary<string, TActionHotkeyInfo>;
         FHotkeyData: TObjectList<THotkeyViewData>;
+        FAppProfiles: TDictionary<string, TAllowedApplicationsItem>;
         FSnapshottedUI: string;
         FFirstShowDone: Boolean;
         FStyleSavedPage: TTabSheet;
@@ -142,6 +147,8 @@ type
         function ScanIntervalToIndex(AMinutes: Integer): Integer;
         function IndexToScanInterval(AIndex: Integer): Integer;
         function TryNormalizeAppName(var AName: string; const AIgnoreExisting: string): Boolean;
+        function GetAppProfile(const AExeName: string): TAllowedApplicationsItem;
+        procedure UpdateProfileButtonState;
         function BuildUISnapshot: string;
         procedure CaptureSnapshot;
         function IsUIChanged: Boolean;
@@ -171,7 +178,9 @@ uses
     Vcl.FileCtrl,
     Vcl.Menus,
     Common.VCLStyleService,
-    WindowMonitor
+    ProcessProfile,
+    WindowMonitor,
+    WindowProfileDialogUI
     ;
 
 constructor TSettingsForm.Create(AOwner: TComponent);
@@ -179,12 +188,14 @@ begin
     inherited Create(AOwner);
     FLocalActions := TDictionary<string, TActionHotkeyInfo>.Create;
     FHotkeyData := TObjectList<THotkeyViewData>.Create;
+    FAppProfiles := TDictionary<string, TAllowedApplicationsItem>.Create;
 end;
 
 destructor TSettingsForm.Destroy;
 begin
     FHotkeyData.Free;
     FLocalActions.Free;
+    FAppProfiles.Free;
     inherited Destroy;
 end;
 
@@ -648,19 +659,52 @@ end;
 procedure TSettingsForm.PopulateApplicationsList;
 var
     Item: TListItem;
+    App: TAllowedApplicationsItem;
 begin
     lvApplications.Items.BeginUpdate;
     try
         lvApplications.Items.Clear;
+        FAppProfiles.Clear;
 
-        for var App in AppContext.SettingsManager.Data.AllowedApplications do
+        for App in AppContext.SettingsManager.Data.AllowedApplications do
         begin
             Item := lvApplications.Items.Add;
             Item.Caption := App.ExeName;
             Item.Checked := App.Enabled;
+            FAppProfiles.AddOrSetValue(App.ExeName.ToLower, App);
         end;
     finally
         lvApplications.Items.EndUpdate;
+    end;
+
+    UpdateProfileButtonState;
+end;
+
+procedure TSettingsForm.UpdateProfileButtonState;
+begin
+    bAppProfile.Visible := lvApplications.Selected <> nil;
+end;
+
+procedure TSettingsForm.lvApplicationsSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
+begin
+    UpdateProfileButtonState;
+end;
+
+procedure TSettingsForm.lvApplicationsDblClick(Sender: TObject);
+begin
+    if lvApplications.Selected <> nil then
+        bAppProfileClick(Sender);
+end;
+
+function TSettingsForm.GetAppProfile(const AExeName: string): TAllowedApplicationsItem;
+begin
+    if not FAppProfiles.TryGetValue(AExeName.ToLower, Result) then
+    begin
+        Result.ExeName := AExeName;
+        Result.Enabled := True;
+        Result.TitleIncludeRegex := '';
+        Result.TitleExcludeRegex := '';
+        Result.WindowClasses := nil;
     end;
 end;
 
@@ -716,22 +760,31 @@ end;
 procedure TSettingsForm.bAppRenameClick(Sender: TObject);
 var
     Item: TListItem;
-    NewName: string;
+    NewName, OldName: string;
+    Profile: TAllowedApplicationsItem;
 begin
     Item := lvApplications.Selected;
     if Item = nil then
         Exit;
 
-    NewName := Item.Caption;
+    OldName := Item.Caption;
+    NewName := OldName;
     if not InputQuery(
         Caption,
         TUIStateLoader.GetMessage('Settings.ApplicationsRenamePrompt'),
         NewName
     ) then Exit;
 
-    if not TryNormalizeAppName(NewName, Item.Caption) then Exit;
+    if not TryNormalizeAppName(NewName, OldName) then Exit;
 
     Item.Caption := NewName;
+
+    if not SameText(OldName, NewName) then
+        if FAppProfiles.TryGetValue(OldName.ToLower, Profile) then
+        begin
+            FAppProfiles.Remove(OldName.ToLower);
+            FAppProfiles.AddOrSetValue(NewName.ToLower, Profile);
+        end;
 end;
 
 procedure TSettingsForm.bAppDeleteClick(Sender: TObject);
@@ -747,7 +800,9 @@ begin
         TUIStateLoader.GetMessage('Common.Warning')
     ) then Exit;
 
+    FAppProfiles.Remove(Item.Caption.ToLower);
     Item.Delete;
+    UpdateProfileButtonState;
 end;
 
 procedure TSettingsForm.bAppPickClick(Sender: TObject);
@@ -785,6 +840,20 @@ begin
         Item.Caption := Name;
         Item.Checked := True;
     end;
+end;
+
+procedure TSettingsForm.bAppProfileClick(Sender: TObject);
+var
+    Item: TListItem;
+    Profile: TAllowedApplicationsItem;
+begin
+    Item := lvApplications.Selected;
+    if Item = nil then
+        Exit;
+
+    Profile := GetAppProfile(Item.Caption);
+    if TWindowProfileDialog.Execute(Self, AppContext, Item.Caption, Profile) then
+        FAppProfiles.AddOrSetValue(Item.Caption.ToLower, Profile);
 end;
 
 procedure TSettingsForm.cbVCLStyleChange(Sender: TObject);
@@ -877,6 +946,7 @@ procedure TSettingsForm.bSaveClick(Sender: TObject);
 var
     Setts: TAppSettings;
     I: Integer;
+    AppProfile: TAllowedApplicationsItem;
     Info: TActionHotkeyInfo;
 begin
     Setts := AppContext.SettingsManager.Data;
@@ -921,6 +991,13 @@ begin
     begin
         Setts.AllowedApplications.Items[I].ExeName := lvApplications.Items[I].Caption;
         Setts.AllowedApplications.Items[I].Enabled := lvApplications.Items[I].Checked;
+
+        if FAppProfiles.TryGetValue(lvApplications.Items[I].Caption.ToLower, AppProfile) then
+        begin
+            Setts.AllowedApplications.Items[I].TitleIncludeRegex := AppProfile.TitleIncludeRegex;
+            Setts.AllowedApplications.Items[I].TitleExcludeRegex := AppProfile.TitleExcludeRegex;
+            Setts.AllowedApplications.Items[I].WindowClasses := AppProfile.WindowClasses;
+        end;
     end;
 
     for Info in FLocalActions.Values do
@@ -935,6 +1012,8 @@ begin
     for I := 0 to lvApplications.Items.Count - 1 do
         if lvApplications.Items[I].Checked then
             GWinMonitor.AddAllowedProcess(lvApplications.Items[I].Caption.ToLower);
+
+    GProfileManager.SyncFromApplications(AppContext.SettingsManager.Data.AllowedApplications.Items);
 
     for I := 0 to Screen.FormCount - 1 do
         AppContext.HotkeyService.ApplySettingsToForm(Screen.Forms[I]);
@@ -991,7 +1070,10 @@ var
     SB: TStringBuilder;
     KeyName: string;
     KeyNames: TArray<string>;
+    ProfileKeys: TArray<string>;
     Item: TListItem;
+    AppProfile: TAllowedApplicationsItem;
+    C: string;
 begin
     SB := TStringBuilder.Create;
     try
@@ -1020,6 +1102,21 @@ begin
         for Item in lvApplications.Items do
             SB.Append(Item.Caption).Append(':')
                 .Append(Item.Checked).Append(';');
+
+        SB.Append('|');
+
+        ProfileKeys := FAppProfiles.Keys.ToArray;
+        TArray.Sort<string>(ProfileKeys);
+        for KeyName in ProfileKeys do
+        begin
+            AppProfile := FAppProfiles[KeyName];
+            SB.Append(KeyName).Append('=')
+                .Append(AppProfile.TitleIncludeRegex).Append('>')
+                .Append(AppProfile.TitleExcludeRegex).Append('>');
+            for C in AppProfile.WindowClasses do
+                SB.Append(C).Append(',');
+            SB.Append(';');
+        end;
 
         SB.Append('|');
 

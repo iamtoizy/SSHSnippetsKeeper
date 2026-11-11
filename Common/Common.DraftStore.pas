@@ -55,6 +55,7 @@ type
 implementation
 
 uses
+    Common.Helpers,
     Common.Settings,
     System.Classes,
     System.DateUtils,
@@ -375,9 +376,13 @@ begin
                 TFile.Delete(FileEntry);
                 Inc(Result);
             except
+                on E: Exception do
+                    LogException('TDraftStore.PurgeStale(tmp)', E);
             end;
         end;
     except
+        on E: Exception do
+            LogException('TDraftStore.PurgeStale', E);
     end;
 end;
 

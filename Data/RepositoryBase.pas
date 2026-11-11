@@ -8,6 +8,8 @@ uses
     ;
 
 type
+    EDatabaseBusy = class(Exception);
+
     TRepositoryBase = class(TInterfacedObject)
     protected
         FConnection: TFDConnection;
@@ -16,8 +18,6 @@ type
         procedure SetQueryParams(Query: TFDQuery; const Params: array of Variant);
         function IsTransientLockError(E: Exception): Boolean;
 
-        // Централизованный метод для выполнения запросов с автоочисткой памяти
-        procedure ExecuteQuery(const SQL: string; const Params: array of Variant; Proc: TProc<TFDQuery>);
         function ExecuteSQL(const SQL: string; const Params: array of Variant): Integer;
         function ExecuteSQLScalar(const SQL: string; const Params: array of Variant): Variant;
     public
@@ -60,6 +60,14 @@ procedure TRepositoryBase.SetQueryParams(Query: TFDQuery; const Params: array of
 var
     I: Integer;
 begin
+    // Позиционная привязка: при несовпадении количества EListError или
+    // ошибка FireDAC всплывают без контекста, а перестановка значений в
+    // массиве рассинхронизирует параметры вообще тихо. Падаем сразу
+    // и с точными числами.
+    if Length(Params) <> Query.Params.Count then
+        raise Exception.CreateFmt(
+            'SetQueryParams: в SQL %d параметров, передано %d',
+            [Query.Params.Count, Length(Params)]);
     for I := 0 to High(Params) do
         Query.Params[I].Value := Params[I];
 end;
@@ -79,21 +87,6 @@ begin
         end;
 end;
 
-procedure TRepositoryBase.ExecuteQuery(const SQL: string; const Params: array of Variant; Proc: TProc<TFDQuery>);
-var
-    Query: TFDQuery;
-begin
-    // Единая точка настройки запроса - CreateQuery, заполнение параметров - SetQueryParams
-    Query := CreateQuery;
-    try
-        Query.SQL.Text := SQL;
-        SetQueryParams(Query, Params);
-        Proc(Query);
-    finally
-        Query.Free;
-    end;
-end;
-
 function TRepositoryBase.ExecuteSQL(const SQL: string; const Params: array of Variant): Integer;
 var
     Attempt: Integer;
@@ -108,7 +101,7 @@ begin
                 if (Attempt < BUSY_RETRY_COUNT) and IsTransientLockError(E) then
                     TThread.Sleep(BUSY_RETRY_DELAY_MS)
                 else if IsTransientLockError(E) then
-                    raise Exception.Create(TUIStateLoader.GetMessage('Common.DatabaseBusy', [E.Message]))
+                    raise EDatabaseBusy.Create(TUIStateLoader.GetMessage('Common.DatabaseBusy', [E.Message]))
                 else
                     raise;
         end;
@@ -128,7 +121,7 @@ begin
                 if (Attempt < BUSY_RETRY_COUNT) and IsTransientLockError(E) then
                     TThread.Sleep(BUSY_RETRY_DELAY_MS)
                 else if IsTransientLockError(E) then
-                    raise Exception.Create(TUIStateLoader.GetMessage('Common.DatabaseBusy', [E.Message]))
+                    raise EDatabaseBusy.Create(TUIStateLoader.GetMessage('Common.DatabaseBusy', [E.Message]))
                 else
                     raise;
         end;

@@ -24,6 +24,10 @@ type
         // Suspended = True позволяет привязать OnTerminate до фактического запуска потока
         constructor Create(const Actions: TArray<IScriptAction>; Context: TMacroContext; OnRecordRun: TRecordRunCallback = nil; Suspended: Boolean = False);
         procedure Cancel;
+        // Аварийный разрыв связей с владельцем: поток продолжает работать,
+        // но уже не может звать Executor и коллбэки, указывающие на объекты,
+        // которые вот-вот будут освобождены
+        procedure Detach;
         function IsFinished: Boolean;
     end;
 
@@ -55,6 +59,29 @@ procedure TMacroThread.Cancel;
 begin
     TInterlocked.Exchange(FCanceled, 1);
     Terminate;
+end;
+
+procedure TMacroThread.Detach;
+begin
+    TInterlocked.Exchange(FCanceled, 1);
+    Terminate;
+
+    // FOnRecordRun - копия коллбэка контекста: снимаем и её
+    FOnRecordRun := nil;
+
+    if Assigned(FContext) then
+    begin
+        TInterlocked.Exchange(FContext.Canceled, 1);
+        // nil у поля Executor безопасен: все действия проверяют
+        // Assigned(FContext.Executor) перед вызовом
+        FContext.Executor := nil;
+        FContext.OnInput := nil;
+        FContext.OnConfirm := nil;
+        FContext.OnBatchInput := nil;
+        FContext.OnRecordRun := nil;
+        FContext.OnFocusLost := nil;
+        FContext.OnTypingFinished := nil;
+    end;
 end;
 
 function TMacroThread.IsFinished: Boolean;

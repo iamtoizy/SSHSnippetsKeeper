@@ -527,19 +527,12 @@ begin
 end;
 
 function TCategoryTreeController.GetDbScopeKey: string;
-var
-    ConnParts: TStringList;
 begin
     Result := '';
     if (FContext.DatabaseManager = nil) or (not FContext.DatabaseManager.IsConnected) then
         Exit;
-    ConnParts := TStringList.Create;
-    try
-        ConnParts.Text := FContext.DatabaseManager.GetConnectionString;
-        Result := LowerCase(Trim(ConnParts.Values['Database']));
-    finally
-        ConnParts.Free;
-    end;
+    // DatabaseFile вместо парсинга строки подключения
+    Result := LowerCase(Trim(FContext.DatabaseManager.DatabaseFile));
 end;
 
 function TCategoryTreeController.FindDbState(Databases: TJSONObject; const AScope: string): TJSONObject;

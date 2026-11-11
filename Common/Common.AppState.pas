@@ -29,7 +29,7 @@ function AppState: TAppStateStore;
 implementation
 
 uses
-    Common.Helpers, System.IOUtils
+    Common.Helpers, System.IOUtils, Winapi.Windows
     ;
 
 var
@@ -66,7 +66,8 @@ begin
             Json.Free;
         end;
     except
-        ;
+        on E: Exception do
+            LogException('MigrateLegacyCounters', E);
     end;
 end;
 
@@ -106,7 +107,11 @@ begin
     try
         Json := TJSONObject.ParseJSONValue(TFile.ReadAllText(FFilePath, TEncoding.UTF8));
     except
-        Json := nil;
+        on E: Exception do
+        begin
+            LogException('TAppStateStore.LoadLocked', E);
+            Json := nil;
+        end;
     end;
     if Json = nil then
         Exit;
@@ -131,11 +136,12 @@ begin
     TmpPath := FFilePath + '.tmp';
     try
         TFile.WriteAllText(TmpPath, FDoc.ToJSON, TEncoding.UTF8);
-        if TFile.Exists(FFilePath) then
-            TFile.Delete(FFilePath);
-        TFile.Move(TmpPath, FFilePath);
+        if not MoveFileEx(PChar(TmpPath), PChar(FFilePath), MOVEFILE_REPLACE_EXISTING) then
+            if TFile.Exists(TmpPath) then
+                TFile.Delete(TmpPath);
     except
-        ;
+        on E: Exception do
+            LogException('TAppStateStore.SaveLocked', E);
     end;
 end;
 

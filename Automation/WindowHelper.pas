@@ -7,6 +7,7 @@ uses
     MacroEngine,
     MacroInputTypes,
     MacroThread,
+    System.Generics.Collections,
     Winapi.Windows
     ;
 
@@ -16,6 +17,9 @@ type
         FWindowHelperInfo: TWindowHelperInfo;
         FMacroEngine: TMacroEngine;
         FMacroThread: TMacroThread;
+        // Потоки, не успевшие завершиться за дедлайн: оторваны от этого
+        // объекта (Executor = nil) и добираются по мере завершения
+        FAbandoned: TList<TMacroThread>;
         FSettingsManager: ISettingsManager;
         FActiveSettings: TAppSettings;
 
@@ -23,6 +27,9 @@ type
         procedure SendUnicodeChar(CharCode: Word);
         procedure ActivateTargetWindow;
         procedure StopActiveThread;
+        // AWait = False: только уже завершившиеся; True: подождать остальных
+        procedure ReapAbandoned(AWait: Boolean);
+        function HasLiveAbandonedThread: Boolean;
         procedure AbortMacro(Context: TMacroContext);
         function WaitForTargetFocus(Context: TMacroContext): Boolean;
         class function IsMacroCanceled(Context: TMacroContext): Boolean; static;
@@ -72,6 +79,7 @@ begin
     // могут вызваться до первого TypeTextIntoWindowWithContext
     FActiveSettings := FSettingsManager.Data;
     FMacroEngine := TMacroEngine.Create;
+    FAbandoned := TList<TMacroThread>.Create;
 end;
 
 destructor TWindowHelper.Destroy;
@@ -80,6 +88,11 @@ begin
     // Synchronize, поэтому дедлока с OnTypingFinished не возникает.
     // FreeOnTerminate = False: дескриптор жив до нашего Thread.Free
     StopActiveThread;
+
+    // Последний шанс для отставших потоков: их Executor указывает сюда,
+    // поэтому ждём завершения, пока объект ещё жив
+    ReapAbandoned(True);
+    FAbandoned.Free;
 
     FMacroEngine.Free;
     inherited;
@@ -132,8 +145,60 @@ end;
 
 function TWindowHelper.IsTypingBusy: Boolean;
 begin
-    // Указатель живёт до reap-а в StopActiveThread, занятость определяет флаг
-    Result := Assigned(FMacroThread) and not FMacroThread.IsFinished;
+    // Указатель живёт до reap-а в StopActiveThread, занятость определяет флаг.
+    // Отставшие потоки тоже печатают: без них новый макрос стартовал бы
+    // параллельно со старым
+    Result := (Assigned(FMacroThread) and not FMacroThread.IsFinished) or
+        HasLiveAbandonedThread;
+end;
+
+function TWindowHelper.HasLiveAbandonedThread: Boolean;
+var
+    Thread: TMacroThread;
+begin
+    for Thread in FAbandoned do
+        if WaitForSingleObject(Thread.Handle, 0) = WAIT_TIMEOUT then
+            Exit(True);
+    Result := False;
+end;
+
+procedure TWindowHelper.ReapAbandoned(AWait: Boolean);
+var
+    I: Integer;
+    Thread: TMacroThread;
+    LDeadline: DWORD;
+begin
+    I := 0;
+    while I < FAbandoned.Count do
+    begin
+        Thread := FAbandoned[I];
+
+        if AWait then
+        begin
+            LDeadline := GetTickCount + 3000;
+            while WaitForSingleObject(Thread.Handle, 100) = WAIT_TIMEOUT do
+            begin
+                CheckSynchronize;
+                if GetTickCount >= LDeadline then
+                begin
+                    // Не успел и здесь: связи уже разорваны, поток
+                    // завершится сам и утечёт - лучше утечка, чем вызов
+                    // Executor на освобождённой памяти
+                    Thread.Detach;
+                    Break;
+                end;
+            end;
+        end;
+
+        if WaitForSingleObject(Thread.Handle, 0) = WAIT_OBJECT_0 then
+        begin
+            FAbandoned.Delete(I);
+            Thread.Free;
+            Continue;
+        end;
+
+        Inc(I);
+    end;
 end;
 
 procedure TWindowHelper.StopActiveThread;
@@ -144,6 +209,9 @@ begin
     // Единственный владелец жизненного цикла потока - этот метод: pointer
     // забираем сразу, Cancel+WaitFor+Free. При FreeOnTerminate=False
     // дескриптор остаётся валидным, гонки с самоосвобождением нет
+    // Завершившиеся отставшие потоки предыдущих отмен забираем здесь же
+    ReapAbandoned(False);
+
     Thread := FMacroThread;
     if Thread = nil then
         Exit;
@@ -156,8 +224,14 @@ begin
         CheckSynchronize;
         if GetTickCount >= LDeadline then
         begin
+            // Поток не успел: отрываем его от этого объекта (Executor и
+            // коллбэки = nil, Canceled взведён) и оставляем доживать в списке.
+            // Раньше он просто бросался и мог вызвать Executor после
+            // разрушения TWindowHelper, а IsTypingBusy считал печать свободной
+            Thread.Detach;
+            FAbandoned.Add(Thread);
             {$IFDEF DEBUG}
-            OutputDebugString('[WinHelper] StopActiveThread: worker did not finish in 3s, thread abandoned (leak, no Free on running thread)');
+            OutputDebugString('[WinHelper] StopActiveThread: worker did not finish in 3s, detached (executor severed)');
             {$ENDIF}
             Exit;
         end;
@@ -523,15 +597,21 @@ begin
     Context := TMacroContext.Create;
     Context.Executor := Self;
 
-    Actions := FMacroEngine.Parse(Text, Context);
+    try
+        Actions := FMacroEngine.Parse(Text, Context);
 
-    TotalUnits := 0;
-    for I := 0 to High(Actions) do
-        Inc(TotalUnits, Actions[I].ProgressUnits);
-    TInterlocked.Exchange(Context.ProgressTotal, TotalUnits);
+        TotalUnits := 0;
+        for I := 0 to High(Actions) do
+            Inc(TotalUnits, Actions[I].ProgressUnits);
+        TInterlocked.Exchange(Context.ProgressTotal, TotalUnits);
 
-    FMacroThread := TMacroThread.Create(Actions, Context, Context.OnRecordRun, True);
-    FMacroThread.Start;
+        FMacroThread := TMacroThread.Create(Actions, Context, Context.OnRecordRun, True);
+        FMacroThread.Start;
+    except
+        FreeAndNil(FMacroThread);
+        Context.Free; // Гарантированно освобождаем при сбое парсинга
+        raise;
+    end;
 end;
 
 function TWindowHelper._AddRef: Integer;

@@ -86,6 +86,27 @@ type
         procedure Boundary_AKIAInsideWord_NotMatched;
     end;
 
+    [TestFixture]
+    TSecurityRealWorldTests = class(TObject)
+    public
+        [Test]
+        procedure DockerEnv_OpenAIKey_Detected;
+        [Test]
+        procedure DockerEnv_DbPasswordVar_Detected;
+        [Test]
+        procedure CurlBearerJwt_Detected;
+        [Test]
+        procedure BearerKeyword_IgnoreCase_Detected;
+        [Test]
+        procedure GhpPrefix_Uppercase_IgnoreCase_Detected;
+        [Test]
+        procedure MongoSrvUrl_Credentials_Detected;
+        [Test]
+        procedure EnvFile_Multiline_MultipleSecrets_Offsets;
+        [Test]
+        procedure SshpassPassword_NotFlagged_KnownLimitation;
+    end;
+
 implementation
 
 { TSecurityReportTests }
@@ -487,6 +508,149 @@ begin
     // энтропия тоже не дотягивает - ноль находок
     Assert.AreEqual(0, Integer(Length(
         Scanner.FindSensitiveRanges('XAKIAIOSFODNN7EXAMPLEZ'))));
+end;
+
+{ TSecurityRealWorldTests }
+
+procedure TSecurityRealWorldTests.DockerEnv_OpenAIKey_Detected;
+var
+    Scanner: ISecurityScanner;
+    Text, Reason: string;
+    Ranges: TArray<TSecretRange>;
+begin
+    Scanner := TSecurityScanner.Create;
+    Text := 'docker run -d -e OPENAI_API_KEY=sk-proj-' +
+        StringOfChar('a', 24) + ' nginx:latest';
+
+    Assert.IsTrue(Scanner.HasSensitiveData(Text, Reason));
+    Ranges := Scanner.FindSensitiveRanges(Text);
+
+    // Два точных хита: AI-префикс sk-proj- и ExplicitPasswordKey (API_KEY=...);
+    // сам ключ без цифр порог энтропии не проходит
+    Assert.AreEqual(2, Integer(Length(Ranges)));
+    Assert.AreEqual(Pos('sk-proj-', Text) - 1, Ranges[0].StartOffset);
+end;
+
+procedure TSecurityRealWorldTests.DockerEnv_DbPasswordVar_Detected;
+var
+    Scanner: ISecurityScanner;
+    Text, Reason: string;
+    Ranges: TArray<TSecretRange>;
+begin
+    Scanner := TSecurityScanner.Create;
+    Text := 'docker run -d -e DB_PASSWORD=CorrectHorseBatteryStaple42 nginx:latest';
+
+    Assert.IsTrue(Scanner.HasSensitiveData(Text, Reason));
+    Ranges := Scanner.FindSensitiveRanges(Text);
+
+    // Один хит: match ExplicitPasswordKey начинается со слова PASSWORD внутри DB_PASSWORD
+    Assert.AreEqual(1, Integer(Length(Ranges)));
+    Assert.AreEqual(Pos('PASSWORD', Text) - 1, Ranges[0].StartOffset);
+end;
+
+procedure TSecurityRealWorldTests.CurlBearerJwt_Detected;
+var
+    Scanner: ISecurityScanner;
+    Text, Reason: string;
+    Ranges: TArray<TSecretRange>;
+begin
+    Scanner := TSecurityScanner.Create;
+    Text := 'curl -s -H "Authorization: Bearer ' +
+        'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.' +
+        'SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV" https://api.example.com/v1';
+
+    Assert.IsTrue(Scanner.HasSensitiveData(Text, Reason));
+    Ranges := Scanner.FindSensitiveRanges(Text);
+
+    // Минимум два хита: JWT-regex (добавлен раньше Bearer) и Bearer-ключевое
+    // слово; энтропия JWT может добавить третий
+    Assert.IsTrue(Length(Ranges) >= 2);
+    Assert.AreEqual(Pos('eyJhbGciOiJIUzI1NiJ9', Text) - 1, Ranges[0].StartOffset);
+end;
+
+procedure TSecurityRealWorldTests.BearerKeyword_IgnoreCase_Detected;
+var
+    Scanner: ISecurityScanner;
+    Reason: string;
+begin
+    Scanner := TSecurityScanner.Create;
+
+    // roIgnoreCase: регистр ключевого слова Bearer не влияет на детект
+    Assert.IsTrue(Scanner.HasSensitiveData('BEARER ' + StringOfChar('z', 30), Reason));
+    Assert.IsTrue(Scanner.HasSensitiveData('bearer ' + StringOfChar('z', 30), Reason));
+    Assert.IsTrue(Scanner.HasSensitiveData('Bearer ' + StringOfChar('z', 30), Reason));
+end;
+
+procedure TSecurityRealWorldTests.GhpPrefix_Uppercase_IgnoreCase_Detected;
+var
+    Scanner: ISecurityScanner;
+    Text, Reason: string;
+begin
+    Scanner := TSecurityScanner.Create;
+    Text := 'GHP_' + StringOfChar('A', 36);
+
+    // Префикс ghp_ тоже регистронезависим; буквенный токен энтропию не проходит,
+    // поэтому находка ровно одна
+    Assert.IsTrue(Scanner.HasSensitiveData(Text, Reason));
+    Assert.AreEqual(1, Integer(Length(Scanner.FindSensitiveRanges(Text))));
+end;
+
+procedure TSecurityRealWorldTests.MongoSrvUrl_Credentials_Detected;
+var
+    Scanner: ISecurityScanner;
+    Text, Reason: string;
+    Ranges: TArray<TSecretRange>;
+begin
+    Scanner := TSecurityScanner.Create;
+    Text := 'mongosh mongodb+srv://admin:P%40ssw0rd@cluster0.abcde.mongodb.net/db?retryWrites=true';
+
+    Assert.IsTrue(Scanner.HasSensitiveData(Text, Reason));
+    Ranges := Scanner.FindSensitiveRanges(Text);
+
+    // Строка подключения scheme://user:pass@host - один regex-хит; хост без
+    // достаточной энтропии, пароль разорван '%' (разделитель в терпимом режиме)
+    Assert.AreEqual(1, Integer(Length(Ranges)));
+    Assert.AreEqual(Pos('mongodb+srv://', Text) - 1, Ranges[0].StartOffset);
+end;
+
+procedure TSecurityRealWorldTests.EnvFile_Multiline_MultipleSecrets_Offsets;
+var
+    Scanner: ISecurityScanner;
+    Text: string;
+    Ranges: TArray<TSecretRange>;
+begin
+    Scanner := TSecurityScanner.Create;
+    Text :=
+        '# production' + sLineBreak +
+        'DB_HOST=db.prod.internal' + sLineBreak +
+        'DB_PASSWORD=Kx9mQvR2wT7yZ4bN6jF' + sLineBreak +
+        'AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE' + sLineBreak +
+        'STRIPE_KEY=sk_live_' + StringOfChar('X', 24) + sLineBreak;
+
+    Ranges := Scanner.FindSensitiveRanges(Text);
+
+    // Ровно три находки в порядке паттернов: AWS, Stripe, ExplicitPasswordKey;
+    // имена переменных без цифр энтропию не поднимают, offт каждой находки точен
+    Assert.AreEqual(3, Integer(Length(Ranges)));
+    Assert.AreEqual(Pos('AKIAIOSFODNN7EXAMPLE', Text) - 1, Ranges[0].StartOffset);
+    Assert.AreEqual(20, Ranges[0].Length);
+    Assert.AreEqual(Pos('sk_live_', Text) - 1, Ranges[1].StartOffset);
+    // match ExplicitPasswordKey начинается со слова PASSWORD (DB пропускает)
+    Assert.AreEqual(Pos('DB_PASSWORD', Text) - 1 + 3, Ranges[2].StartOffset);
+end;
+
+procedure TSecurityRealWorldTests.SshpassPassword_NotFlagged_KnownLimitation;
+var
+    Scanner: ISecurityScanner;
+    Text, Reason: string;
+begin
+    Text := 'sshpass -p ''Hunt3r2Secret!'' scp -r /data backup@10.0.0.5:/srv';
+
+    // Задокументированное ограничение: пароль в аргументе sshpass не содержит
+    // ключевых слов password/token, короче 16 символов и в терпимом режиме
+    // разорван спецсимволами - не ловится ни в одном режиме
+    Assert.IsFalse(TSecurityScanner.Create.HasSensitiveData(Text, Reason));
+    Assert.IsFalse(TSecurityScanner.Create(scanStrict).HasSensitiveData(Text, Reason));
 end;
 
 end.

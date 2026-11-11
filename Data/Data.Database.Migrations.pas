@@ -553,6 +553,14 @@ begin
 
     BackupFile := ADatabaseFile + '.auto_' +
         FormatDateTime('yyyymmdd_hhnnsszzz', Now) + '.bak';
+    // Now имеет миллисекундную точность: две копии подряд могут попасть
+    // в одну миллисекунду, а VACUUM INTO в существующий файл не работает
+    while TFile.Exists(BackupFile) do
+    begin
+        Sleep(2);
+        BackupFile := ADatabaseFile + '.auto_' +
+            FormatDateTime('yyyymmdd_hhnnsszzz', Now) + '.bak';
+    end;
 
     // Снапшот выполняется вне транзакций: VACUUM INTO нельзя выполнять
     // в активной транзакции на том же соединении
@@ -901,8 +909,12 @@ begin
             Connection.Params.Add('LockingMode=Normal');
             Connection.Params.Add('CharacterSet=utf8');
             Connection.Connected := True;
+            // Прагмы соединения - до транзакции: внутри неё synchronous
+            // менять нельзя, а foreign_keys - no-op. busy_timeout - как
+            // в ApplyPRAGMA в GUI (Data.Database.pas)
             Connection.ExecSQL('PRAGMA foreign_keys = ON');
             Connection.ExecSQL('PRAGMA synchronous = NORMAL');
+            Connection.ExecSQL('PRAGMA busy_timeout = 1000');
 
             // Baseline-схема: тот же набор ресурсов, что и при создании БД
             // из GUI (TAppDatabase.InitializeDatabase); завершается
@@ -910,10 +922,24 @@ begin
             Script := TFDScript.Create(nil);
             try
                 Script.Connection := Connection;
+                // Ошибка statement обязана прервать скрипт исключением,
+                // иначе ExecuteAll молча продолжит и закоммитит частичную
+                // схему
+                Script.ScriptOptions.BreakOnError := True;
+                // Baseline одной транзакцией - как в GUI. foreign_keys
+                // отключаем снаружи: внутри транзакции этот PRAGMA - no-op,
+                // а seed грузится без проверки связей
                 Script.SQLScripts.Add.SQL.Text :=
+                    'BEGIN;' + sLineBreak +
                     LoadSQLResource('SCHEMA_INIT_SQL') +
-                    LoadSQLResource('SCHEMA_SEED_SQL');
-                Script.ExecuteAll;
+                    LoadSQLResource('SCHEMA_SEED_SQL') +
+                    sLineBreak + 'COMMIT;';
+                Connection.ExecSQL('PRAGMA foreign_keys = OFF');
+                try
+                    Script.ExecuteAll;
+                finally
+                    Connection.ExecSQL('PRAGMA foreign_keys = ON');
+                end;
             finally
                 Script.Free;
             end;

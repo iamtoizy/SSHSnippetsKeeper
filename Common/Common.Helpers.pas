@@ -37,8 +37,6 @@ procedure SetToastNotificationHandler(Handler: TOnReceiveLocalNotification);
 function ResolvePath(const PathName: string; IsDirectory: Boolean = False): string;
 { Получение базовой папки для диалогов открытия/сохранения }
 function GetDefaultDataDir: string;
-{ Безопасное удаление содержимого TListView }
-procedure WipeListViewPasswords(ListView: TListView);
 { Безопасное удаление содержимого TCustomEdit }
 procedure WipeVCLControlText(Control: TCustomEdit);
 { Затирание блока памяти нулями }
@@ -47,6 +45,8 @@ procedure SecureZeroMemory(Ptr: Pointer; Size: NativeUInt);
 procedure CopyToClipboardSecure(const Text: string);
 { Безопасное уничтожение локальных строк в RAM }
 procedure WipeString(var S: string);
+{ Криптостойкое целое в диапазоне [0..Max-1]: RtlGenRandom + канонический Lemire }
+function SecureRandom(Max: Integer): Integer;
 { Конвертация из Win32 (RegisterHotKey) в VCL (THotKey) }
 procedure Win32HotkeyToVCL(const Config: THotkeyConfig; HotKeyCtrl: THotKey);
 { Конвертация из VCL (THotKey) в Win32 (RegisterHotKey) }
@@ -57,8 +57,7 @@ function HotkeyToString(const Config: THotkeyConfig): string;
 { Функция для генерации заголовка Basic Auth }
 function GenerateHtpasswdString(const Username, Password: string): string;
 { Запуск git }
-function RunCmdCommand(const WorkingDir, Command: string; out Output: string; TimeoutMs: Cardinal = 300000): Boolean;
-{ Логирование простых сообщений }
+function RunCmdCommand(const WorkingDir, Command: string; out Output: string; TimeoutMs: Cardinal = 300000): Boolean;{ Логирование простых сообщений }
 procedure LogMsg(const Msg: string);
 { Логирование исключений (class + message) + контекст }
 procedure LogException(const Context: string; E: Exception);
@@ -78,6 +77,7 @@ uses
 var
     GNotificationCenter: TNotificationCenter;
     GLogLock: TCriticalSection;
+    GLogWriteCount: Integer;
 
 procedure ShowSimpleToast(const Text: string; const Title: string = ''; const AName: string = 'SnippetNotification');
 var
@@ -176,39 +176,6 @@ begin
         Result := ExePath; // Если папки нет, возвращаем директорию с .exe
 end;
 
-procedure WipeListViewPasswords(ListView: TListView);
-var
-    I: Integer;
-    S: string;
-    P: Pointer;
-begin
-    if not Assigned(ListView) then Exit;
-
-    // Пробегаемся по всем строкам таблицы
-    for I := 0 to ListView.Items.Count - 1 do
-    begin
-        // Пароль хранится во второй колонке (индекс 1)
-        if ListView.Items[I].SubItems.Count > 1 then
-        begin
-            // Получаем прямую ссылку на блок памяти со строкой
-            S := ListView.Items[I].SubItems[1];
-            if S <> '' then
-            begin
-                // Берем прямой указатель на первый символ
-                P := PChar(S);
-                // Физически затираем байты в куче (heap) нулями.
-                // Поскольку мы обращаемся по указателю, мы "ломаем" строку
-                // прямо внутри самой структуры TListView!
-                SecureZeroMemory(P, Length(S) * SizeOf(Char));
-            end;
-        end;
-    end;
-
-    // Теперь, когда в памяти таблицы лежат только нули, можно безопасно
-    // отдать эти блоки обратно системе
-    ListView.Items.Clear;
-end;
-
 procedure WipeVCLControlText(Control: TCustomEdit);
 var
     S: string;
@@ -266,15 +233,74 @@ begin
     S := ''; // Обнуляем указатель
 end;
 
+// Криптографический ГСЧ ОС (advapi32, SystemFunction036)
+function RtlGenRandom(RandomBuffer: Pointer; RandomBufferLength: ULONG): BOOLEAN; stdcall;
+    external 'advapi32.dll' name 'SystemFunction036';
+
+function SecureRandom(Max: Integer): Integer;
+var
+    Buffer: Cardinal;
+    UMax: Cardinal;
+    AcceptThreshold: Cardinal;
+    Guid: TGUID;
+    HashBytes: TBytes;
+    Product: UInt64;
+begin
+    if Max <= 0 then Exit(0);
+    UMax := Cardinal(Max);
+    // Канонический Lemire: порог отбраковки = 2^32 mod UMax. Отбраковка
+    // по младшим словам < UMax даёт небольшое смещение распределения
+    AcceptThreshold := Cardinal(UInt64($100000000) mod UInt64(UMax));
+    repeat
+        if not RtlGenRandom(@Buffer, SizeOf(Buffer)) then
+        begin
+            // Аварийный источник, если системный ГСЧ недоступен
+            CreateGUID(Guid);
+            HashBytes := THashSHA2.GetHashBytes(Guid.ToString);
+            Move(HashBytes[0], Buffer, SizeOf(Buffer));
+        end;
+        Product := UInt64(Buffer) * UInt64(UMax);
+    until Cardinal(Product) >= AcceptThreshold;
+    Result := Integer(Product shr 32);
+end;
+
 procedure LogMsg(const Msg: string);
+const
+    // Ротация: размер файла проверяем не на каждой записи, а раз в N записей
+    LOG_ROTATION_CHECK_INTERVAL = 256;
+    // Порог ротации: 1 МБ
+    LOG_ROTATION_SIZE_LIMIT = 1 * 1024 * 1024;
+var
+    LogPath, OldPath: string;
 begin
     if not Assigned(GLogLock) then
         Exit;
     try
         GLogLock.Enter;
         try
+            LogPath := ResolvePath('SSHSnippetsKeeper.log');
+            // Раз в LOG_ROTATION_CHECK_INTERVAL записей проверяем размер и
+            // при превышении порога переименовываем .log в .log.old
+            // (старый .log.old перезаписывается)
+            Inc(GLogWriteCount);
+            if GLogWriteCount >= LOG_ROTATION_CHECK_INTERVAL then
+            begin
+                GLogWriteCount := 0;
+                try
+                    if TFile.Exists(LogPath) and
+                        (TFile.GetSize(LogPath) > LOG_ROTATION_SIZE_LIMIT) then
+                    begin
+                        OldPath := ChangeFileExt(LogPath, '.log.old');
+                        if TFile.Exists(OldPath) then
+                            TFile.Delete(OldPath);
+                        TFile.Move(LogPath, OldPath);
+                    end;
+                except
+                    // Не удалось проверить размер или повернуть - пишем дальше
+                end;
+            end;
             TFile.AppendAllText(
-                ResolvePath('SSHSnippetsKeeper.log'),
+                LogPath,
                 FormatDateTime('yyyy-mm-dd hh:nn:ss.zzz', Now) + ' [TID ' +
                 IntToStr(GetCurrentThreadId) + '] ' + Msg + sLineBreak,
                 TEncoding.UTF8);
@@ -417,15 +443,37 @@ begin
     Result := Format('%s:{SHA}%s', [Username, Base64Str]);
 end;
 
+const
+    // В Winapi.Windows отсутствуют
+    PROC_THREAD_ATTRIBUTE_HANDLE_LIST = $20002;
+    CREATE_EXTENDED_STARTUPINFO_PRESENT = $00080000;
+
+type
+    // Расширенный STARTUPINFO с указателем на список атрибутов потока
+    TStartupInfoExW = record
+        StartupInfo: TStartupInfoW;
+        lpAttributeList: Pointer;
+    end;
+
+// Обход обертки Winapi.Windows: ее var-параметр lpReturnSize не дает
+// передать NULL, а вызов с ненулевым lpReturnSize на текущих сборках
+// Windows возвращает ERROR_INVALID_PARAMETER
+function UpdateProcThreadAttributeRaw(lpAttributeList: Pointer; dwFlags: DWORD; Attribute: UInt64;
+    lpValue: Pointer; cbSize: NativeUInt; lpPreviousValue: Pointer; lpReturnSize: Pointer): BOOL; stdcall;
+    external kernel32 name 'UpdateProcThreadAttribute';
+
 function RunCmdCommand(const WorkingDir, Command: string; out Output: string; TimeoutMs: Cardinal): Boolean;
 var
     SecurityAttr: TSecurityAttributes;
     ReadPipe, WritePipe: THandle;
-    StartInfo: TStartupInfo;
+    StartInfoEx: TStartupInfoExW;
     ProcInfo: TProcessInformation;
+    AttrList: PProcThreadAttributeList;
+    AttrListSize: NativeUInt;
+    InheritList: array[0..0] of THandle;
     Buffer: array[0..2047] of AnsiChar;
     BytesRead, BytesAvail: DWORD;
-    FullCommand: string;
+    FullCommand, CmdPath: string;
     WorkDirPtr: PChar;
     StartTime: DWORD;
     WaitResult: DWORD;
@@ -443,90 +491,132 @@ begin
         if not CreatePipe(ReadPipe, WritePipe, @SecurityAttr, 0) then
             Exit;
 
-        FillChar(StartInfo, SizeOf(StartInfo), 0);
-        StartInfo.cb := SizeOf(StartInfo);
-        StartInfo.dwFlags := STARTF_USESHOWWINDOW or STARTF_USESTDHANDLES;
-        StartInfo.wShowWindow := SW_HIDE; // Скрываем окно
-        StartInfo.hStdOutput := WritePipe;
-        StartInfo.hStdError := WritePipe; // Перенаправляем ошибки в тот же поток
+        // Абсолютный путь к системному cmd.exe: CreateProcess не должен
+        // искать исполняемый файл по CWD и PATH
+        CmdPath := GetEnvironmentVariable('SystemRoot');
+        if CmdPath = '' then
+            CmdPath := 'C:\Windows';
+        CmdPath := CmdPath + '\System32\cmd.exe';
 
-        // Формируем команду для cmd
-        FullCommand := 'cmd.exe /c ' + Command;
+        FillChar(StartInfoEx, SizeOf(StartInfoEx), 0);
+        StartInfoEx.StartupInfo.cb := SizeOf(StartInfoEx);
+        StartInfoEx.StartupInfo.dwFlags := STARTF_USESHOWWINDOW or STARTF_USESTDHANDLES;
+        StartInfoEx.StartupInfo.wShowWindow := SW_HIDE; // Скрываем окно
+        StartInfoEx.StartupInfo.hStdOutput := WritePipe;
+        StartInfoEx.StartupInfo.hStdError := WritePipe; // Перенаправляем ошибки в тот же поток
 
-        // Устанавливаем рабочую директорию
-        if WorkingDir <> '' then
-            WorkDirPtr := PChar(WorkingDir)
-        else
-            WorkDirPtr := nil;
-
-        // 2. Запускаем процесс
-        if CreateProcess(nil, PChar(FullCommand), nil, nil, True, CREATE_NO_WINDOW, nil, WorkDirPtr, StartInfo, ProcInfo) then
-        begin
-            // Обязательно закрываем WritePipe со стороны родителя, иначе ReadFile может заблокироваться
-            CloseHandle(WritePipe);
-
-            StartTime := GetTickCount;
-            Result := True;
-
-            // 3. Главный цикл: чтение + проверка таймаута + проверка состояния процесса
-            while True do
+        // Ребенку наследуется только пайп вывода: остальные наследуемые
+        // хендлы процесса (пайпы движка Python, сокеты) дочернему процессу
+        // больше не достаются
+        AttrList := nil;
+        AttrListSize := 0;
+        InitializeProcThreadAttributeList(nil, 1, 0, AttrListSize);
+        GetMem(AttrList, AttrListSize);
+        try
+            if not InitializeProcThreadAttributeList(AttrList, 1, 0, AttrListSize) then
             begin
-                // Проверка таймаута (Cardinal-арифметика защищает от переполнения GetTickCount)
-                if (TimeoutMs <> INFINITE) and (Cardinal(GetTickCount - StartTime) > TimeoutMs) then
-                begin
-                    TerminateProcess(ProcInfo.hProcess, UINT(1));
-                    WaitForSingleObject(ProcInfo.hProcess, 1000); // Даем время на завершение
-                    Result := False;
-                    Break;
-                end;
-
-                // Проверяем наличие данных в пайпе без блокировки потока
-                BytesAvail := 0;
-                if PeekNamedPipe(ReadPipe, nil, 0, nil, @BytesAvail, nil) and (BytesAvail > 0) then
-                begin
-                    // Читаем доступные данные
-                    if ReadFile(ReadPipe, Buffer, SizeOf(Buffer) - 1, BytesRead, nil) and (BytesRead > 0) then
-                    begin
-                        Buffer[BytesRead] := #0;
-                        // Конвертируем вывод CMD (обычно CP866) в системную ANSI
-                        OemToCharA(Buffer, Buffer);
-                        SB.Append(string(AnsiString(Buffer)));
-                    end;
-                end
-                else
-                begin
-                    // Если данных пока нет, проверяем, жив ли процесс (ждем 50 мс, чтобы не грузить CPU)
-                    WaitResult := WaitForSingleObject(ProcInfo.hProcess, 50);
-
-                    if WaitResult = WAIT_OBJECT_0 then
-                    begin
-                        // Процесс завершился, дочитываем остатки из пайпа, если они есть
-                        while PeekNamedPipe(ReadPipe, nil, 0, nil, @BytesAvail, nil) and (BytesAvail > 0) do
-                        begin
-                            if ReadFile(ReadPipe, Buffer, SizeOf(Buffer) - 1, BytesRead, nil) and (BytesRead > 0) then
-                            begin
-                                Buffer[BytesRead] := #0;
-                                OemToCharA(Buffer, Buffer);
-                                SB.Append(string(AnsiString(Buffer)));
-                            end
-                            else
-                                Break;
-                        end;
-
-                        Break; // Выходим из главного цикла
-                    end;
-                end;
+                CloseHandle(WritePipe);
+                Exit;
             end;
 
-            CloseHandle(ProcInfo.hProcess);
-            CloseHandle(ProcInfo.hThread);
-        end
-        else
-        begin
-            // Если процесс не запустился, нужно закрыть WritePipe для предотвращения утечек
-            CloseHandle(WritePipe);
-        end;
+            InheritList[0] := WritePipe;
+            if not UpdateProcThreadAttributeRaw(AttrList, 0, PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
+                @InheritList, SizeOf(InheritList), nil, nil) then
+            begin
+                CloseHandle(WritePipe);
+                Exit;
+            end;
 
+            // Список атрибутов передается внутри расширенного StartupInfo
+            StartInfoEx.lpAttributeList := AttrList;
+
+            // /s /c с внешними кавычками вокруг Command: cmd не вырезает
+            // внутренние кавычки команды, спецсимволы пути (& и т.п.)
+            // остаются литералами. Контракт: Command закавыччен вызывающей стороной
+            FullCommand := '"' + CmdPath + '" /s /c "' + Command + '"';
+
+            // Устанавливаем рабочую директорию
+            if WorkingDir <> '' then
+                WorkDirPtr := PChar(WorkingDir)
+            else
+                WorkDirPtr := nil;
+
+            // 2. Запускаем процесс
+            if CreateProcess(PChar(CmdPath), PChar(FullCommand), nil, nil, True,
+                CREATE_NO_WINDOW or CREATE_EXTENDED_STARTUPINFO_PRESENT, nil, WorkDirPtr,
+                StartInfoEx.StartupInfo, ProcInfo) then
+            begin
+                // Обязательно закрываем WritePipe со стороны родителя, иначе ReadFile может заблокироваться
+                CloseHandle(WritePipe);
+
+                StartTime := GetTickCount;
+                Result := True;
+
+                // 3. Главный цикл: чтение + проверка таймаута + проверка состояния процесса
+                while True do
+                begin
+                    // Проверка таймаута (Cardinal-арифметика защищает от переполнения GetTickCount)
+                    if (TimeoutMs <> INFINITE) and (Cardinal(GetTickCount - StartTime) > TimeoutMs) then
+                    begin
+                        TerminateProcess(ProcInfo.hProcess, UINT(1));
+                        WaitForSingleObject(ProcInfo.hProcess, 1000); // Даем время на завершение
+                        Result := False;
+                        Break;
+                    end;
+
+                    // Проверяем наличие данных в пайпе без блокировки потока
+                    BytesAvail := 0;
+                    if PeekNamedPipe(ReadPipe, nil, 0, nil, @BytesAvail, nil) and (BytesAvail > 0) then
+                    begin
+                        // Читаем доступные данные
+                        if ReadFile(ReadPipe, Buffer, SizeOf(Buffer) - 1, BytesRead, nil) and (BytesRead > 0) then
+                        begin
+                            Buffer[BytesRead] := #0;
+                            // Конвертируем вывод CMD (обычно CP866) в системную ANSI
+                            OemToCharA(Buffer, Buffer);
+                            SB.Append(string(AnsiString(Buffer)));
+                        end;
+                    end
+                    else
+                    begin
+                        // Если данных пока нет, проверяем, жив ли процесс (ждем 50 мс, чтобы не грузить CPU)
+                        WaitResult := WaitForSingleObject(ProcInfo.hProcess, 50);
+
+                        if WaitResult = WAIT_OBJECT_0 then
+                        begin
+                            // Процесс завершился, дочитываем остатки из пайпа, если они есть
+                            while PeekNamedPipe(ReadPipe, nil, 0, nil, @BytesAvail, nil) and (BytesAvail > 0) do
+                            begin
+                                if ReadFile(ReadPipe, Buffer, SizeOf(Buffer) - 1, BytesRead, nil) and (BytesRead > 0) then
+                                begin
+                                    Buffer[BytesRead] := #0;
+                                    OemToCharA(Buffer, Buffer);
+                                    SB.Append(string(AnsiString(Buffer)));
+                                end
+                                else
+                                    Break;
+                            end;
+
+                            Break; // Выходим из главного цикла
+                        end;
+                    end;
+                end;
+
+                CloseHandle(ProcInfo.hProcess);
+                CloseHandle(ProcInfo.hThread);
+            end
+            else
+            begin
+                // Если процесс не запустился, нужно закрыть WritePipe для предотвращения утечек
+                CloseHandle(WritePipe);
+            end;
+        finally
+            if AttrList <> nil then
+            begin
+                DeleteProcThreadAttributeList(AttrList);
+                FreeMem(AttrList);
+            end;
+        end;
         CloseHandle(ReadPipe);
         Output := SB.ToString;
     finally

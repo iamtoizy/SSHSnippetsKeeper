@@ -7,6 +7,9 @@ uses
     System.Classes, System.SysUtils
     ;
 
+const
+    PLACEHOLDER_API_KEY = 'Paste-your-API-key-here';
+
 type
     // Реализация менеджера
     TSettingsManager = class(TInterfacedObject, ISettingsManager)
@@ -58,7 +61,6 @@ uses
 const
     SECRET_PREFIX = 'dpapi:';
     SECRET_PREFIX_OLD = 'dpapi2:';
-    PLACEHOLDER_API_KEY = 'Paste-your-API-key-here';
     CRYPTPROTECT_UI_FORBIDDEN = $1;
 
 type
@@ -78,6 +80,12 @@ begin
     ABytes := nil;
 end;
 
+// Детерминированная энтропия DPAPI. Это КОНСТАНТА приложения, а НЕ секрет:
+// она выводится из бинарника. Модель угроз: CryptProtectData привязывает
+// данные к пользователю Windows, энтропия дополнительно - к приложению,
+// поэтому скопированный settings.json не расшифровывается на другой машине
+// или под другим пользователем. От процессов того же пользователя защиты
+// нет - иначе приложение само не смогло бы читать ключи
 function BuildSecretEntropy: TBytes;
 var
     Raw: TBytes;
@@ -132,7 +140,10 @@ begin
         EntropyBlob.cbData := Length(Entropy);
         EntropyBlob.pbData := @Entropy[0];
 
-        if not CryptProtectData(@InBlob, nil, @EntropyBlob, nil, nil, CRYPTPROTECT_UI_FORBIDDEN, @OutBlob) then Exit;
+        // Сбой DPAPI - не повод писать открытый текст на диск, падаем громко
+        if not CryptProtectData(@InBlob, nil, @EntropyBlob, nil, nil, CRYPTPROTECT_UI_FORBIDDEN, @OutBlob) then
+            raise Exception.Create(
+                'CryptProtectData failed - refusing to store the secret as plain text');
 
         try
             SetLength(RawBytes, OutBlob.cbData);
@@ -215,9 +226,34 @@ const
     // Системный промпт для всех моделей ИИ
     AI_SYSTEM_PROMPT = 'Твоя роль - инструмент выполнения кода. ОТВЕЧАЙ ТОЛЬКО ЧИСТЫМ КОДОМ. ' +
                        'ЗАПРЕЩЕНО: писать объяснения, вступления, заключения, markdown-теги ```bash, ```delphi или другие. ' +
-                       'ВЫДАВАЙ ТОЛЬКО СИМВОЛЫ КОДА. Если пользователь просит команду - выдай только эту команду.' +
+                       'ВЫДАВАТЬ ТОЛЬКО СИМВОЛЫ КОДА. Если пользователь просит команду - выдай только эту команду.' +
                        'ПРИМЕР ТВОЕГО ОТВЕТА (всегда в таком формате): ls -la /var/www/html, systemctl restart nginx ' +
                        'Никакого текста вокруг, только код. Команда должна умещаться в одну строку, если пользователь не попросил иначе.';
+
+    // Единый источник значений дефолтов настроек. Безусловное заполнение
+    // (ApplyDefaults) и восстановление отсутствующего после DSON.fromJson
+    // (Load) ссылаются на одни константы, чтобы значения не разъезжались
+    // при правках. Guard-условия у блоков разные по замыслу: ApplyDefaults
+    // перезаписывает всё, Load подставляет только отсутствующее/битое.
+    DEFAULT_HOVER_DELAY = 1500;
+    DEFAULT_FADE_DURATION = 500;
+    DEFAULT_ACTIVATION_DELAY = 100;
+    DEFAULT_SETFOCUS_DELAY = 50;
+    DEFAULT_KEYPRESS_INTERVAL = 10;
+    DEFAULT_LANGUAGE = 'ru';
+    // Маска видимости колонок списка сниппетов: все 3 бита
+    DEFAULT_SNIPPET_COLUMNS_MASK = 7;
+    DEFAULT_BACKUP_INTERVAL_SECONDS = 86400;
+    DEFAULT_BACKUP_KEEP = 3;
+    DEFAULT_SCAN_INTERVAL_MINUTES = 30;
+    DEFAULT_QS_MODIFIERS = MOD_ALT;
+    DEFAULT_QS_KEY = Ord('Q');
+    DEFAULT_PG_MODIFIERS = MOD_CONTROL or MOD_ALT;
+    DEFAULT_PG_KEY = Ord('G');
+    DEFAULT_RL_MODIFIERS = MOD_ALT;
+    DEFAULT_RL_KEY = Ord('V');
+    DEFAULT_FS_MODIFIERS = MOD_ALT;
+    DEFAULT_FS_KEY = Ord('1');
 
 { TSettingsManager }
 
@@ -257,14 +293,19 @@ procedure TSettingsManager.InitDefaultAllowedApplications;
 begin
     SetLength(FSettings.AllowedApplications.Items, 6);
 
+    // Классы окон из дефолтных профилей заведомо известны только для
+    // части терминалов; пустой список = разрешены все окна процесса
     FSettings.AllowedApplications.Items[0].ExeName := 'mobaxterm.exe';
     FSettings.AllowedApplications.Items[0].Enabled := True;
+    FSettings.AllowedApplications.Items[0].WindowClasses := ['CMoTTY'];
 
     FSettings.AllowedApplications.Items[1].ExeName := 'xshell.exe';
     FSettings.AllowedApplications.Items[1].Enabled := True;
+    FSettings.AllowedApplications.Items[1].WindowClasses := ['AfxFrameOrView140u'];
 
     FSettings.AllowedApplications.Items[2].ExeName := 'putty.exe';
     FSettings.AllowedApplications.Items[2].Enabled := True;
+    FSettings.AllowedApplications.Items[2].WindowClasses := ['PuTTY'];
 
     FSettings.AllowedApplications.Items[3].ExeName := 'tabby.exe';
     FSettings.AllowedApplications.Items[3].Enabled := True;
@@ -361,43 +402,43 @@ end;
 procedure TSettingsManager.ApplyDefaults;
 begin
     // Заполняем критичные скалярные значения
-    FSettings.WindowHelper.ActivationDelay := 100;
-    FSettings.WindowHelper.SetFocusDelay := 50;
-    FSettings.WindowHelper.KeyPressInterval := 10;
-    FSettings.UISettings.Help.HelpButton.HoverDelay := 1500;
-    FSettings.UISettings.Help.HelpButton.FadeDuration := 500;
-    FSettings.CurrentLanguage := 'ru';
+    FSettings.WindowHelper.ActivationDelay := DEFAULT_ACTIVATION_DELAY;
+    FSettings.WindowHelper.SetFocusDelay := DEFAULT_SETFOCUS_DELAY;
+    FSettings.WindowHelper.KeyPressInterval := DEFAULT_KEYPRESS_INTERVAL;
+    FSettings.UISettings.Help.HelpButton.HoverDelay := DEFAULT_HOVER_DELAY;
+    FSettings.UISettings.Help.HelpButton.FadeDuration := DEFAULT_FADE_DURATION;
+    FSettings.CurrentLanguage := DEFAULT_LANGUAGE;
 
     // Все колонки списка сниппетов видимы по умолчанию
-    FSettings.UISettings.SnippetListColumns := 7;
+    FSettings.UISettings.SnippetListColumns := DEFAULT_SNIPPET_COLUMNS_MASK;
     FSettings.UISettings.SnippetListColumnsDefined := True;
 
     // Автобэкап БД: включён, раз в сутки, хранить 3 копии
     FSettings.Backup.Enabled := True;
-    FSettings.Backup.IntervalSeconds := 86400;
-    FSettings.Backup.Keep := 3;
+    FSettings.Backup.IntervalSeconds := DEFAULT_BACKUP_INTERVAL_SECONDS;
+    FSettings.Backup.Keep := DEFAULT_BACKUP_KEEP;
     FSettings.BackupDefined := True;
 
     // Фоновая проверка секретов: включена, раз в полчаса
     FSettings.SecurityBackgroundScanEnabled := True;
-    FSettings.SecurityBackgroundScanIntervalMinutes := 30;
+    FSettings.SecurityBackgroundScanIntervalMinutes := DEFAULT_SCAN_INTERVAL_MINUTES;
     FSettings.SecurityBackgroundScanDefined := True;
 
     // Дефолты для глобальных горячих клавиш
-    FSettings.Hotkeys.QuickSearch.Modifiers := MOD_ALT;
-    FSettings.Hotkeys.QuickSearch.Key := Ord('Q');
+    FSettings.Hotkeys.QuickSearch.Modifiers := DEFAULT_QS_MODIFIERS;
+    FSettings.Hotkeys.QuickSearch.Key := DEFAULT_QS_KEY;
     FSettings.Hotkeys.QuickSearch.Enabled := True;
 
-    FSettings.Hotkeys.PasswordGen.Modifiers := MOD_CONTROL or MOD_ALT;
-    FSettings.Hotkeys.PasswordGen.Key := Ord('G');
+    FSettings.Hotkeys.PasswordGen.Modifiers := DEFAULT_PG_MODIFIERS;
+    FSettings.Hotkeys.PasswordGen.Key := DEFAULT_PG_KEY;
     FSettings.Hotkeys.PasswordGen.Enabled := True;
 
-    FSettings.Hotkeys.RepeatLast.Modifiers := MOD_ALT;
-    FSettings.Hotkeys.RepeatLast.Key := Ord('V');
+    FSettings.Hotkeys.RepeatLast.Modifiers := DEFAULT_RL_MODIFIERS;
+    FSettings.Hotkeys.RepeatLast.Key := DEFAULT_RL_KEY;
     FSettings.Hotkeys.RepeatLast.Enabled := True;
 
-    FSettings.Hotkeys.FavoriteSlots.Modifiers := MOD_ALT;
-    FSettings.Hotkeys.FavoriteSlots.Key := Ord('1');
+    FSettings.Hotkeys.FavoriteSlots.Modifiers := DEFAULT_FS_MODIFIERS;
+    FSettings.Hotkeys.FavoriteSlots.Key := DEFAULT_FS_KEY;
     FSettings.Hotkeys.FavoriteSlots.Enabled := True;
 
     // Инициализируем массивы-справочники
@@ -468,23 +509,23 @@ begin
 
         // 1. Скалярные настройки UI и поведения
         if FSettings.UISettings.Help.HelpButton.HoverDelay <= 0 then
-            FSettings.UISettings.Help.HelpButton.HoverDelay := 1500;
+            FSettings.UISettings.Help.HelpButton.HoverDelay := DEFAULT_HOVER_DELAY;
         if FSettings.UISettings.Help.HelpButton.FadeDuration <= 0 then
-            FSettings.UISettings.Help.HelpButton.FadeDuration := 500;
+            FSettings.UISettings.Help.HelpButton.FadeDuration := DEFAULT_FADE_DURATION;
         if FSettings.WindowHelper.ActivationDelay <= 0 then
-            FSettings.WindowHelper.ActivationDelay := 100;
+            FSettings.WindowHelper.ActivationDelay := DEFAULT_ACTIVATION_DELAY;
         if FSettings.WindowHelper.SetFocusDelay <= 0 then
-            FSettings.WindowHelper.SetFocusDelay := 50;
+            FSettings.WindowHelper.SetFocusDelay := DEFAULT_SETFOCUS_DELAY;
         if FSettings.WindowHelper.KeyPressInterval <= 0 then
-            FSettings.WindowHelper.KeyPressInterval := 10;
+            FSettings.WindowHelper.KeyPressInterval := DEFAULT_KEYPRESS_INTERVAL;
         if Trim(FSettings.CurrentLanguage) = '' then
-            FSettings.CurrentLanguage := 'ru';
+            FSettings.CurrentLanguage := DEFAULT_LANGUAGE;
 
         // Маска видимости колонок списка сниппетов: в старом файле настроек
         // поля нет — считаем все колонки видимыми; маску чистим от лишних битов
         if not FSettings.UISettings.SnippetListColumnsDefined then
-            FSettings.UISettings.SnippetListColumns := 7;
-        FSettings.UISettings.SnippetListColumns := FSettings.UISettings.SnippetListColumns and 7;
+            FSettings.UISettings.SnippetListColumns := DEFAULT_SNIPPET_COLUMNS_MASK;
+        FSettings.UISettings.SnippetListColumns := FSettings.UISettings.SnippetListColumns and DEFAULT_SNIPPET_COLUMNS_MASK;
         FSettings.UISettings.SnippetListColumnsDefined := True;
 
         // Узел бэкапа: в старом settings.json его нет — восстанавливаем
@@ -492,8 +533,8 @@ begin
         if not FSettings.BackupDefined then
         begin
             FSettings.Backup.Enabled := True;
-            FSettings.Backup.IntervalSeconds := 86400;
-            FSettings.Backup.Keep := 3;
+            FSettings.Backup.IntervalSeconds := DEFAULT_BACKUP_INTERVAL_SECONDS;
+            FSettings.Backup.Keep := DEFAULT_BACKUP_KEEP;
             FSettings.BackupDefined := True;
         end;
 
@@ -502,44 +543,44 @@ begin
         if not FSettings.SecurityBackgroundScanDefined then
         begin
             FSettings.SecurityBackgroundScanEnabled := True;
-            FSettings.SecurityBackgroundScanIntervalMinutes := 30;
+            FSettings.SecurityBackgroundScanIntervalMinutes := DEFAULT_SCAN_INTERVAL_MINUTES;
             FSettings.SecurityBackgroundScanDefined := True;
         end;
 
         // Битые значения не должны отключать бэкап или ротацию
         if FSettings.Backup.IntervalSeconds <= 0 then
-            FSettings.Backup.IntervalSeconds := 86400;
+            FSettings.Backup.IntervalSeconds := DEFAULT_BACKUP_INTERVAL_SECONDS;
         if FSettings.Backup.Keep <= 0 then
-            FSettings.Backup.Keep := 3;
+            FSettings.Backup.Keep := DEFAULT_BACKUP_KEEP;
         if FSettings.SecurityBackgroundScanIntervalMinutes <= 0 then
-            FSettings.SecurityBackgroundScanIntervalMinutes := 30;
+            FSettings.SecurityBackgroundScanIntervalMinutes := DEFAULT_SCAN_INTERVAL_MINUTES;
 
         // 2. Глобальные горячие клавиши
         if FSettings.Hotkeys.QuickSearch.Key = 0 then
         begin
-            FSettings.Hotkeys.QuickSearch.Modifiers := MOD_ALT;
-            FSettings.Hotkeys.QuickSearch.Key := Ord('Q');
+            FSettings.Hotkeys.QuickSearch.Modifiers := DEFAULT_QS_MODIFIERS;
+            FSettings.Hotkeys.QuickSearch.Key := DEFAULT_QS_KEY;
             FSettings.Hotkeys.QuickSearch.Enabled := True;
         end;
 
         if FSettings.Hotkeys.PasswordGen.Key = 0 then
         begin
-            FSettings.Hotkeys.PasswordGen.Modifiers := MOD_CONTROL or MOD_ALT;
-            FSettings.Hotkeys.PasswordGen.Key := Ord('G');
+            FSettings.Hotkeys.PasswordGen.Modifiers := DEFAULT_PG_MODIFIERS;
+            FSettings.Hotkeys.PasswordGen.Key := DEFAULT_PG_KEY;
             FSettings.Hotkeys.PasswordGen.Enabled := True;
         end;
 
         if FSettings.Hotkeys.RepeatLast.Key = 0 then
         begin
-            FSettings.Hotkeys.RepeatLast.Modifiers := MOD_ALT;
-            FSettings.Hotkeys.RepeatLast.Key := Ord('V');
+            FSettings.Hotkeys.RepeatLast.Modifiers := DEFAULT_RL_MODIFIERS;
+            FSettings.Hotkeys.RepeatLast.Key := DEFAULT_RL_KEY;
             FSettings.Hotkeys.RepeatLast.Enabled := True;
         end;
 
         if FSettings.Hotkeys.FavoriteSlots.Modifiers = 0 then
         begin
-            FSettings.Hotkeys.FavoriteSlots.Modifiers := MOD_ALT;
-            FSettings.Hotkeys.FavoriteSlots.Key := Ord('1');
+            FSettings.Hotkeys.FavoriteSlots.Modifiers := DEFAULT_FS_MODIFIERS;
+            FSettings.Hotkeys.FavoriteSlots.Key := DEFAULT_FS_KEY;
             FSettings.Hotkeys.FavoriteSlots.Enabled := True;
         end;
 
@@ -569,6 +610,7 @@ var
     JsonString: string;
     TmpPath: string;
     SafeSettings: TAppSettings;
+    Err: DWORD;
 begin
     try
         // Шифруем копию настроек: в памяти FSettings остается с открытыми ключами
@@ -577,12 +619,16 @@ begin
 
         JsonString := DSON.toJson<TAppSettings>(SafeSettings);
 
-        // Атомарная запись: сначала во временный файл, затем переименование
+        // Атомарная замена: целевой файл не исчезает с диска ни на мгновение
         TmpPath := GetSettingsPath + '.tmp';
         TFile.WriteAllText(TmpPath, JsonString, TEncoding.UTF8);
-        if TFile.Exists(GetSettingsPath) then
-            TFile.Delete(GetSettingsPath);
-        TFile.Move(TmpPath, GetSettingsPath);
+        if not MoveFileEx(PChar(TmpPath), PChar(GetSettingsPath), MOVEFILE_REPLACE_EXISTING) then
+        begin
+            Err := GetLastError;
+            if TFile.Exists(TmpPath) then
+                TFile.Delete(TmpPath);
+            raise Exception.Create(SysErrorMessage(Err));
+        end;
     except
         // Без логирования пользователь молча потерял бы все изменения
         on E: Exception do

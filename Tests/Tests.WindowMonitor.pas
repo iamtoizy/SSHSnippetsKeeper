@@ -25,6 +25,15 @@ type
         procedure RegisterWindow_AcceptsVisibleAllowedWindow;
 
         [Test]
+        procedure RegisterWindow_ProfileClassFilter_BlocksOtherClass;
+
+        [Test]
+        procedure RegisterWindow_ProfileClassFilter_AcceptsKnownClass;
+
+        [Test]
+        procedure RegisterWindow_ProfileTitleFilters_BlockedTitles;
+
+        [Test]
         procedure RegisterWindow_DoesNotDuplicateEntries;
 
         [Test]
@@ -48,6 +57,7 @@ implementation
 uses
     System.SysUtils,
     Winapi.Windows,
+    ProcessProfile,
     WindowMonitor
     ;
 
@@ -126,12 +136,14 @@ procedure TWindowMonitorTests.Setup;
 begin
     GWinMonitor.ClearAllowedProcesses;
     GWinMonitor.ClearHistory;
+    GProfileManager.Profiles.Clear;
 end;
 
 procedure TWindowMonitorTests.TearDown;
 begin
     GWinMonitor.ClearAllowedProcesses;
     GWinMonitor.ClearHistory;
+    GProfileManager.Profiles.Clear;
 end;
 
 procedure TWindowMonitorTests.RegisterWindow_RejectsInvalidHandles;
@@ -170,6 +182,76 @@ begin
         Assert.IsTrue(SameText(ExtractFileName(ParamStr(0)), Info.ExeName),
             'ExeName does not match test process');
         Assert.IsTrue(Info.ActivatedAt <> 0, 'ActivatedAt must be set');
+    finally
+        DestroyWindow(Wnd);
+    end;
+end;
+
+procedure TWindowMonitorTests.RegisterWindow_ProfileClassFilter_BlocksOtherClass;
+var
+    Wnd: HWND;
+    Profile: TProcessProfile;
+begin
+    GWinMonitor.AddAllowedProcess(ExtractFileName(ParamStr(0)));
+    Profile := GProfileManager.AddProfile(ExtractFileName(ParamStr(0)));
+    Profile.SetWindowClasses(['PuTTY']);
+
+    Wnd := CreateVisibleWindow('SSK Test Window');
+    try
+        Assert.IsFalse(GWinMonitor.RegisterWindow(Wnd));
+        Assert.AreEqual(0, GWinMonitor.AllowedWindowCount);
+    finally
+        DestroyWindow(Wnd);
+    end;
+end;
+
+procedure TWindowMonitorTests.RegisterWindow_ProfileClassFilter_AcceptsKnownClass;
+var
+    Wnd: HWND;
+    Info: TWindowMonitorInfo;
+    Profile: TProcessProfile;
+begin
+    GWinMonitor.AddAllowedProcess(ExtractFileName(ParamStr(0)));
+    Profile := GProfileManager.AddProfile(ExtractFileName(ParamStr(0)));
+    Profile.SetWindowClasses(['STATIC']);
+
+    Wnd := CreateVisibleWindow('SSK Test Window');
+    try
+        Assert.IsTrue(GWinMonitor.RegisterWindow(Wnd));
+        Assert.AreEqual(1, GWinMonitor.AllowedWindowCount);
+
+        Info := GWinMonitor.GetLastAllowedWindow;
+        Assert.AreEqual('STATIC', Info.WindowClass);
+    finally
+        DestroyWindow(Wnd);
+    end;
+end;
+
+procedure TWindowMonitorTests.RegisterWindow_ProfileTitleFilters_BlockedTitles;
+var
+    Wnd: HWND;
+    Profile: TProcessProfile;
+begin
+    GWinMonitor.AddAllowedProcess(ExtractFileName(ParamStr(0)));
+    Profile := GProfileManager.AddProfile(ExtractFileName(ParamStr(0)));
+
+    // Exclude по заголовку
+    Profile.TitleExcludeRegex := 'SSK';
+    Wnd := CreateVisibleWindow('SSK Test Window');
+    try
+        Assert.IsFalse(GWinMonitor.RegisterWindow(Wnd));
+        Assert.AreEqual(0, GWinMonitor.AllowedWindowCount);
+    finally
+        DestroyWindow(Wnd);
+    end;
+
+    // Include, которому заголовок не соответствует
+    Profile.TitleExcludeRegex := '';
+    Profile.TitleIncludeRegex := 'NoMatchHere';
+    Wnd := CreateVisibleWindow('SSK Test Window');
+    try
+        Assert.IsFalse(GWinMonitor.RegisterWindow(Wnd));
+        Assert.AreEqual(0, GWinMonitor.AllowedWindowCount);
     finally
         DestroyWindow(Wnd);
     end;
