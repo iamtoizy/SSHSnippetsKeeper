@@ -25,7 +25,18 @@ type
         procedure TypeIntoWindow(const Snippet: TSnippetDTO; TargetHWND: HWND);
         procedure DoExecuteInWindow(const Snippet: TSnippetDTO; TargetHWND: HWND);
         function IsTypingBlocked: Boolean;
+        // DEBUG-страж контракта IsExecuting; в RELEASE вырождается в NOP
+        class procedure CheckUIThread; static;
     public
+        // Глобальный флаг «идёт интерактивная прелюдия макроса» (диалоги,
+        // валидация, выбор окна). class var - чтобы сигнал был виден всем
+        // читателям: WM_ACTIVATEAPP в MainForm, цепочкам, диагностике
+        // локализации и быстрому поиску. Контракт: доступ только из главного
+        // потока - все точки входа (клики UI, хоткеи через AllocateHWnd,
+        // цепочки) уже там, поэтому без Interlocked; нарушение ловит
+        // CheckUIThread в DEBUG. Саму фазу печати флаг не покрывает: её
+        // гвардят WindowHelper.IsTypingBusy (см. IsTypingBlocked) и
+        // TChainRunner.IsChainRunning
         class var IsExecuting: Boolean;
         // Коллбэк «запуск записан»: вызывается в главном потоке
         // (TMacroThread зовёт OnRecordRun через Synchronize)
@@ -61,6 +72,14 @@ constructor TSnippetRunner.Create(UserID: Integer; AppContext: IAppContext);
 begin
     FUserID := UserID;
     FAppContext := AppContext;
+end;
+
+class procedure TSnippetRunner.CheckUIThread;
+begin
+    {$IFDEF DEBUG}
+    Assert(TThread.CurrentThread.ThreadID = MainThreadID,
+        'TSnippetRunner: IsExecuting доступен только из главного потока');
+    {$ENDIF}
 end;
 
 function TSnippetRunner.SelectTargetWindow(out TargetWindow: TWindowMonitorInfo): Boolean;
@@ -310,6 +329,7 @@ procedure TSnippetRunner.        ExecuteSnippet(const Snippet: TSnippetDTO);
 var
     TargetWindow: TWindowMonitorInfo;
 begin
+    CheckUIThread;
     // Защита от повторного входа: диалоги ниже прокачивают очередь сообщений,
     // так что второй вызов возможен, пока предыдущий макрос ещё печатается
     if IsExecuting then
@@ -340,6 +360,7 @@ end;
 
 procedure TSnippetRunner.        ExecuteSnippetInWindow(const Snippet: TSnippetDTO; TargetHWND: HWND);
 begin
+    CheckUIThread;
     // Защита от повторного входа: см. ExecuteSnippet
     if IsExecuting then
     begin
@@ -380,6 +401,7 @@ procedure TSnippetRunner.DryRunSnippet(const Snippet: TSnippetDTO);
 var
     TargetWindow: TWindowMonitorInfo;
 begin
+    CheckUIThread;
     // Защита от повторного входа: см. ExecuteSnippet
     if IsExecuting then
     begin
