@@ -268,7 +268,7 @@ begin
 
                 QUpd.ParamByName('ord').AsInteger := i;
                 QUpd.ParamByName('id').AsInteger := SiblingIDs[i];
-                QUpd.ExecSQL;
+                ExecSQLWithRetry(QUpd);
             end;
             FConnection.Commit;
         except
@@ -335,7 +335,7 @@ begin
         Q.SQL.Text := 'UPDATE snippet_categories SET name = :name WHERE id = :id';
         Q.ParamByName('name').AsString := NewName;
         Q.ParamByName('id').AsInteger := ID;
-        Q.ExecSQL;
+        ExecSQLWithRetry(Q);
     finally
         Q.Free;
     end;
@@ -350,7 +350,7 @@ begin
         // Благодаря ON DELETE CASCADE в БД, удалятся вложенные категории и сниппеты
         Q.SQL.Text := 'DELETE FROM snippet_categories WHERE id = :id';
         Q.ParamByName('id').AsInteger := ID;
-        Q.ExecSQL;
+        ExecSQLWithRetry(Q);
     finally
         Q.Free;
     end;

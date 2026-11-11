@@ -62,6 +62,16 @@ type
         procedure Advanced_DateFilters;
         [Test]
         procedure Advanced_ExcludeFavorites;
+        [Test]
+        procedure SimpleMask_EscapesWildcards;
+        [Test]
+        procedure Advanced_TitleValue_EscapesWildcards;
+        [Test]
+        procedure TagGetByName_EscapesWildcards;
+        [Test]
+        procedure UserGetByName_EscapesWildcards;
+        [Test]
+        procedure FTS_Optimize_Statement;
     end;
 
 implementation
@@ -79,7 +89,9 @@ uses
     FireDAC.Stan.ExprFuncs,
     FireDAC.ConsoleUI.Wait,
     Common.QueryLanguage,
-    Core.Entities.Snippet
+    Core.Entities.Snippet,
+    TagRepository,
+    UserRepository
     ;
 
 var
@@ -474,6 +486,74 @@ begin
 
     Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('-fav'), False, 2);
     Assert.AreEqual(0, Integer(Length(Found)));
+end;
+
+procedure TSearchTagsTests.SimpleMask_EscapesWildcards;
+begin
+    AddSnippet('Rate 100% done', 'echo percent');
+    AddSnippet('Rate 100X done', 'echo x');
+    AddSnippet('my_file backup', 'echo underscore');
+    AddSnippet('myfile backup', 'echo none');
+
+    Assert.AreEqual(1, Integer(Length(FRepo.SearchByMaskSimple('100%', 1))));
+    Assert.AreEqual('Rate 100% done', FRepo.SearchByMaskSimple('100%', 1)[0].Title);
+    Assert.AreEqual(1, Integer(Length(FRepo.SearchByMaskSimple('my_file', 1))));
+    Assert.AreEqual('my_file backup', FRepo.SearchByMaskSimple('my_file', 1)[0].Title);
+end;
+
+procedure TSearchTagsTests.Advanced_TitleValue_EscapesWildcards;
+var
+    Found: TArray<TSnippetDTO>;
+begin
+    AddSnippet('alpha_beta command', 'echo one');
+    AddSnippet('alphaXbeta command', 'echo two');
+
+    Found := FRepo.SearchAdvanced(TQueryLanguageParser.Parse('title:alpha_beta'), False, 1);
+    Assert.AreEqual(1, Integer(Length(Found)));
+    Assert.AreEqual('alpha_beta command', Found[0].Title);
+end;
+
+procedure TSearchTagsTests.TagGetByName_EscapesWildcards;
+var
+    Repo: TTagRepository;
+begin
+    FConn.ExecSQL('INSERT OR IGNORE INTO tags (name) VALUES (''net_5'')');
+    FConn.ExecSQL('INSERT OR IGNORE INTO tags (name) VALUES (''netX5'')');
+
+    Repo := TTagRepository.Create(FConn);
+    try
+        Assert.AreEqual(1, Integer(Length(Repo.GetByName('net_5'))));
+        Assert.AreEqual('net_5', Repo.GetByName('net_5')[0].Name);
+    finally
+        Repo.Free;
+    end;
+end;
+
+procedure TSearchTagsTests.UserGetByName_EscapesWildcards;
+var
+    Repo: TUserRepository;
+begin
+    FConn.ExecSQL('INSERT OR IGNORE INTO users (id, name) VALUES (3, ''jo_ne'')');
+    FConn.ExecSQL('INSERT OR IGNORE INTO users (id, name) VALUES (4, ''joXne'')');
+
+    Repo := TUserRepository.Create(FConn);
+    try
+        Assert.AreEqual(1, Integer(Length(Repo.GetByName('jo_ne'))));
+    finally
+        Repo.Free;
+    end;
+end;
+
+procedure TSearchTagsTests.FTS_Optimize_Statement;
+var
+    ID: Integer;
+begin
+    ID := AddSnippet('optimize me', 'fts maintenance');
+    AddTag(ID, 'maintenance');
+
+    Assert.AreEqual(1, Integer(FConn.ExecSQLScalar('SELECT COUNT(*) FROM snippet_fts')));
+    FConn.ExecSQL('INSERT INTO snippet_fts(snippet_fts) VALUES(''optimize'')');
+    Assert.AreEqual(1, Integer(FConn.ExecSQLScalar('SELECT COUNT(*) FROM snippet_fts')));
 end;
 
 end.

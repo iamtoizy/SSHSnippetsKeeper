@@ -189,7 +189,7 @@ begin
         // FTS записи (благодаря триггерам и ON DELETE CASCADE)
         Q.SQL.Text := SQL_DELETE_SNIPPET;
         Q.ParamByName('id').AsInteger := ID;
-        Q.ExecSQL;
+        ExecSQLWithRetry(Q);
     finally
         Q.Free;
     end;
@@ -535,7 +535,7 @@ begin
         Q.ParamByName('category_id').AsInteger := Snippet.CategoryID;
         Q.ParamByName('updated_at').AsLargeInt := Snippet.UpdatedAt;
         Q.ParamByName('id').AsInteger := Snippet.ID;
-        Q.ExecSQL;
+        ExecSQLWithRetry(Q);
     finally
         Q.Free;
     end;
@@ -551,7 +551,7 @@ begin
     try
         Q.SQL.Text := SQL_UPDATE_TAGS_DELETE_QUERY;
         Q.ParamByName('id').AsInteger := SnippetID;
-        Q.ExecSQL;
+        ExecSQLWithRetry(Q);
     finally
         Q.Free;
     end;
@@ -568,7 +568,7 @@ begin
                 QTags.ParamByName('snip_id').AsIntegers[I] := SnippetID;
                 QTags.ParamByName('tag_id').AsIntegers[I] := TagIDs[I];
             end;
-            QTags.Execute(QTags.Params.ArraySize);
+            ExecuteArrayWithRetry(QTags);
         finally
             QTags.Free;
         end;
@@ -625,13 +625,13 @@ begin
 
     FConnection.StartTransaction;
     try
-        FConnection.ExecSQL('UPDATE snippets SET user_id = ?, category_id = ? WHERE id = ?',
+        ExecuteSQL('UPDATE snippets SET user_id = ?, category_id = ? WHERE id = ?',
             [NewUserID, NewCategoryID, SnippetID]);
 
-        FConnection.ExecSQL('UPDATE OR IGNORE snippet_favorites SET user_id = ? WHERE snippet_id = ? AND user_id = ?',
+        ExecuteSQL('UPDATE OR IGNORE snippet_favorites SET user_id = ? WHERE snippet_id = ? AND user_id = ?',
             [NewUserID, SnippetID, Integer(OldUserID)]);
 
-        FConnection.ExecSQL('DELETE FROM snippet_favorites WHERE snippet_id = ? AND user_id = ?',
+        ExecuteSQL('DELETE FROM snippet_favorites WHERE snippet_id = ? AND user_id = ?',
             [SnippetID, Integer(OldUserID)]);
 
         FConnection.Commit;
@@ -666,7 +666,7 @@ begin
         else
             Q.ParamByName('updated_at').Clear;
 
-        Q.ExecSQL;
+        ExecSQLWithRetry(Q);
 
         Q.SQL.Text := 'SELECT last_insert_rowid()';
         Q.Open;
@@ -749,13 +749,13 @@ begin
     if Trim(Mask) = '' then
         Exit(nil);
 
-    SearchStr := '%' + Trim(Mask) + '%';
+    SearchStr := '%' + EscapeLike(Trim(Mask)) + '%';
 
     SQL := 'SELECT ' + SQL_SNIPPET_COLS + ' ' +
            'FROM snippets ' +
-           'WHERE (title LIKE ? COLLATE NOCASE OR content LIKE ? COLLATE NOCASE ' +
+           'WHERE (title LIKE ? COLLATE NOCASE ESCAPE ''\'' OR content LIKE ? COLLATE NOCASE ESCAPE ''\'' ' +
            'OR EXISTS (SELECT 1 FROM snippet_tags st JOIN tags t ON t.id = st.tag_id ' +
-           'WHERE st.snippet_id = snippets.id AND t.name LIKE ? COLLATE NOCASE)) ';
+           'WHERE st.snippet_id = snippets.id AND t.name LIKE ? COLLATE NOCASE ESCAPE ''\'')) ';
 
     if UserID > 0 then
     begin
@@ -844,12 +844,12 @@ begin
             end
             else
             begin
-                Sb.Append('AND NOT (s.title LIKE ? COLLATE NOCASE OR s.content LIKE ? COLLATE NOCASE ' +
+                Sb.Append('AND NOT (s.title LIKE ? COLLATE NOCASE ESCAPE ''\'' OR s.content LIKE ? COLLATE NOCASE ESCAPE ''\'' ' +
                     'OR EXISTS (SELECT 1 FROM snippet_tags st JOIN tags t ON t.id = st.tag_id ' +
-                    'WHERE st.snippet_id = s.id AND t.name LIKE ? COLLATE NOCASE)) ');
-                Params.Add('%' + Word + '%');
-                Params.Add('%' + Word + '%');
-                Params.Add('%' + Word + '%');
+                    'WHERE st.snippet_id = s.id AND t.name LIKE ? COLLATE NOCASE ESCAPE ''\'')) ');
+                Params.Add('%' + EscapeLike(Word) + '%');
+                Params.Add('%' + EscapeLike(Word) + '%');
+                Params.Add('%' + EscapeLike(Word) + '%');
             end;
         end;
 
@@ -865,30 +865,30 @@ begin
             end
             else
             begin
-                Sb.Append('AND NOT (s.title LIKE ? COLLATE NOCASE OR s.content LIKE ? COLLATE NOCASE ' +
+                Sb.Append('AND NOT (s.title LIKE ? COLLATE NOCASE ESCAPE ''\'' OR s.content LIKE ? COLLATE NOCASE ESCAPE ''\'' ' +
                     'OR EXISTS (SELECT 1 FROM snippet_tags st JOIN tags t ON t.id = st.tag_id ' +
-                    'WHERE st.snippet_id = s.id AND t.name LIKE ? COLLATE NOCASE)) ');
-                Params.Add('%' + Phrase + '%');
-                Params.Add('%' + Phrase + '%');
-                Params.Add('%' + Phrase + '%');
+                    'WHERE st.snippet_id = s.id AND t.name LIKE ? COLLATE NOCASE ESCAPE ''\'')) ');
+                Params.Add('%' + EscapeLike(Phrase) + '%');
+                Params.Add('%' + EscapeLike(Phrase) + '%');
+                Params.Add('%' + EscapeLike(Phrase) + '%');
             end;
         end;
 
         for Word in Query.TagValues do
         begin
             Sb.Append('AND EXISTS (SELECT 1 FROM snippet_tags st JOIN tags t ON t.id = st.tag_id ' +
-                'WHERE st.snippet_id = s.id AND t.name LIKE ? COLLATE NOCASE) ');
-            Params.Add('%' + Word + '%');
+                'WHERE st.snippet_id = s.id AND t.name LIKE ? COLLATE NOCASE ESCAPE ''\'') ');
+            Params.Add('%' + EscapeLike(Word) + '%');
         end;
 
         if Length(Query.CategoryValues) > 0 then
         begin
-            Sb.Append('AND s.category_id IN (SELECT id FROM snippet_categories WHERE (name LIKE ? COLLATE NOCASE) ');
-            Params.Add('%' + Query.CategoryValues[0] + '%');
+            Sb.Append('AND s.category_id IN (SELECT id FROM snippet_categories WHERE (name LIKE ? COLLATE NOCASE ESCAPE ''\'') ');
+            Params.Add('%' + EscapeLike(Query.CategoryValues[0]) + '%');
             for I := 1 to High(Query.CategoryValues) do
             begin
-                Sb.Append('OR (name LIKE ? COLLATE NOCASE) ');
-                Params.Add('%' + Query.CategoryValues[I] + '%');
+                Sb.Append('OR (name LIKE ? COLLATE NOCASE ESCAPE ''\'') ');
+                Params.Add('%' + EscapeLike(Query.CategoryValues[I]) + '%');
             end;
             Sb.Append(') ');
         end;
@@ -896,61 +896,61 @@ begin
         // Язык у сниппета один, поэтому несколько lang: объединяются через OR
         if Length(Query.LanguageValues) > 0 then
         begin
-            Sb.Append('AND (s.language LIKE ? COLLATE NOCASE ');
-            Params.Add('%' + Query.LanguageValues[0] + '%');
+            Sb.Append('AND (s.language LIKE ? COLLATE NOCASE ESCAPE ''\'' ');
+            Params.Add('%' + EscapeLike(Query.LanguageValues[0]) + '%');
             for I := 1 to High(Query.LanguageValues) do
             begin
-                Sb.Append('OR s.language LIKE ? COLLATE NOCASE ');
-                Params.Add('%' + Query.LanguageValues[I] + '%');
+                Sb.Append('OR s.language LIKE ? COLLATE NOCASE ESCAPE ''\'' ');
+                Params.Add('%' + EscapeLike(Query.LanguageValues[I]) + '%');
             end;
             Sb.Append(') ');
         end;
 
         for Word in Query.TitleValues do
         begin
-            Sb.Append('AND s.title LIKE ? COLLATE NOCASE ');
-            Params.Add('%' + Word + '%');
+            Sb.Append('AND s.title LIKE ? COLLATE NOCASE ESCAPE ''\'' ');
+            Params.Add('%' + EscapeLike(Word) + '%');
         end;
 
         for Phrase in Query.TitlePhrases do
         begin
-            Sb.Append('AND s.title LIKE ? COLLATE NOCASE ');
-            Params.Add('%' + Phrase + '%');
+            Sb.Append('AND s.title LIKE ? COLLATE NOCASE ESCAPE ''\'' ');
+            Params.Add('%' + EscapeLike(Phrase) + '%');
         end;
 
         for Word in Query.CommentValues do
         begin
-            Sb.Append('AND s.comment LIKE ? COLLATE NOCASE ');
-            Params.Add('%' + Word + '%');
+            Sb.Append('AND s.comment LIKE ? COLLATE NOCASE ESCAPE ''\'' ');
+            Params.Add('%' + EscapeLike(Word) + '%');
         end;
 
         for Phrase in Query.CommentPhrases do
         begin
-            Sb.Append('AND s.comment LIKE ? COLLATE NOCASE ');
-            Params.Add('%' + Phrase + '%');
+            Sb.Append('AND s.comment LIKE ? COLLATE NOCASE ESCAPE ''\'' ');
+            Params.Add('%' + EscapeLike(Phrase) + '%');
         end;
 
         for Word in Query.ContentValues do
         begin
-            Sb.Append('AND s.content LIKE ? COLLATE NOCASE ');
-            Params.Add('%' + Word + '%');
+            Sb.Append('AND s.content LIKE ? COLLATE NOCASE ESCAPE ''\'' ');
+            Params.Add('%' + EscapeLike(Word) + '%');
         end;
 
         for Phrase in Query.ContentPhrases do
         begin
-            Sb.Append('AND s.content LIKE ? COLLATE NOCASE ');
-            Params.Add('%' + Phrase + '%');
+            Sb.Append('AND s.content LIKE ? COLLATE NOCASE ESCAPE ''\'' ');
+            Params.Add('%' + EscapeLike(Phrase) + '%');
         end;
 
         if (not UseFTS) and (Length(Query.BareWords) > 0) then
             for Word in Query.BareWords do
             begin
-                Sb.Append('AND (s.title LIKE ? COLLATE NOCASE OR s.content LIKE ? COLLATE NOCASE ' +
+                Sb.Append('AND (s.title LIKE ? COLLATE NOCASE ESCAPE ''\'' OR s.content LIKE ? COLLATE NOCASE ESCAPE ''\'' ' +
                     'OR EXISTS (SELECT 1 FROM snippet_tags st JOIN tags t ON t.id = st.tag_id ' +
-                    'WHERE st.snippet_id = s.id AND t.name LIKE ? COLLATE NOCASE)) ');
-                Params.Add('%' + Word + '%');
-                Params.Add('%' + Word + '%');
-                Params.Add('%' + Word + '%');
+                    'WHERE st.snippet_id = s.id AND t.name LIKE ? COLLATE NOCASE ESCAPE ''\'')) ');
+                Params.Add('%' + EscapeLike(Word) + '%');
+                Params.Add('%' + EscapeLike(Word) + '%');
+                Params.Add('%' + EscapeLike(Word) + '%');
             end;
 
         for Phrase in Query.BarePhrases do
@@ -965,12 +965,12 @@ begin
             end
             else
             begin
-                Sb.Append('AND (s.title LIKE ? COLLATE NOCASE OR s.content LIKE ? COLLATE NOCASE ' +
+                Sb.Append('AND (s.title LIKE ? COLLATE NOCASE ESCAPE ''\'' OR s.content LIKE ? COLLATE NOCASE ESCAPE ''\'' ' +
                     'OR EXISTS (SELECT 1 FROM snippet_tags st JOIN tags t ON t.id = st.tag_id ' +
-                    'WHERE st.snippet_id = s.id AND t.name LIKE ? COLLATE NOCASE)) ');
-                Params.Add('%' + Phrase + '%');
-                Params.Add('%' + Phrase + '%');
-                Params.Add('%' + Phrase + '%');
+                    'WHERE st.snippet_id = s.id AND t.name LIKE ? COLLATE NOCASE ESCAPE ''\'')) ');
+                Params.Add('%' + EscapeLike(Phrase) + '%');
+                Params.Add('%' + EscapeLike(Phrase) + '%');
+                Params.Add('%' + EscapeLike(Phrase) + '%');
             end;
         end;
 
@@ -1185,7 +1185,7 @@ begin
             begin
                 Q.Params[0].AsInteger := I;
                 Q.Params[1].AsInteger := Order[I];
-                Q.ExecSQL;
+                ExecSQLWithRetry(Q);
             end;
             FConnection.Commit;
         except
