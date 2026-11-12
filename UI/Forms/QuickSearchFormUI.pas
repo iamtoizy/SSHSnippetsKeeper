@@ -362,9 +362,16 @@ var
     ClsName: string;
 begin
     if not Self.Visible then Exit;
-    if TSnippetRunner.IsExecuting then Exit;
-    // Пока открыта модальная форма (например, справка), панель не прячем
-    if Application.ModalLevel > 0 then Exit;
+    // Свою модальную справку панель пережидает: она открыта из неё самой, и
+    // после закрытия панель снова нужна. Под чужой модальной формой панель
+    // остаётся рабочей, поэтому прячем её по общему правилу потери форграунда
+    if IsOwnHelpModalActive then Exit;
+
+    // Чужая модальная форма могла открыться при уже видимой панели: VCL в этот
+    // момент отключает её окно через DisableTaskWindows. Возвращаем ввод,
+    // панель обязана оставаться рабочей и рядом с модальным окном
+    if (Application.ModalLevel > 0) and not IsWindowEnabled(Handle) then
+        EnableWindow(Handle, True);
 
     ForeWnd := GetForegroundWindow;
     if (ForeWnd <> 0) and (ForeWnd <> FTargetHWND) and (ForeWnd <> Self.Handle) then
@@ -668,6 +675,11 @@ begin
     end;
 
     Show;
+    // Под чужой модальной формой VCL отключает окно панели (DisableTaskWindows).
+    // Возвращаем окну ввод: быстрый поиск должен работать и рядом с модальным
+    // окном, иначе он остаётся мёртвым оверлеем без клавиатуры и мыши
+    if Application.ModalLevel > 0 then
+        EnableWindow(Handle, True);
     FDeactivateTimer.Enabled := True;
 
     ForegroundThread := GetWindowThreadProcessId(GetForegroundWindow, nil);
@@ -833,13 +845,19 @@ begin
 end;
 
 procedure TQuickSearchForm.WMActivate(var Msg: TWMActivate);
+var
+    ForeWnd: HWND;
 begin
     inherited;
     if Msg.Active = WA_INACTIVE then
     begin
-        // Модальная справка забирает активацию — панель при этом не закрываем
-        if Application.ModalLevel > 0 then Exit;
-        if not TSnippetRunner.IsExecuting then
+        // Свою модальную справку не считаем потерей активации: панель нужна
+        // под ней и вернётся в работу после её закрытия. Во всех остальных
+        // случаях гасим по общему правилу: форграунд ушёл чужому окну, а не
+        // целевому терминалу и не самой панели
+        if IsOwnHelpModalActive then Exit;
+        ForeWnd := GetForegroundWindow;
+        if (ForeWnd <> 0) and (ForeWnd <> FTargetHWND) and (ForeWnd <> Self.Handle) then
             Close;
     end;
 end;
