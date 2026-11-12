@@ -117,7 +117,7 @@ begin
         Q.SQL.Text := 'UPDATE snippet_chains SET name = :name WHERE id = :id';
         Q.ParamByName('name').AsString := NewName;
         Q.ParamByName('id').AsInteger := ID;
-        Q.ExecSQL;
+        ExecSQLWithRetry(Q);
     finally
         Q.Free;
     end;
@@ -131,7 +131,7 @@ begin
     try
         Q.SQL.Text := 'DELETE FROM snippet_chains WHERE id = :id';
         Q.ParamByName('id').AsInteger := ID;
-        Q.ExecSQL;
+        ExecSQLWithRetry(Q);
     finally
         Q.Free;
     end;
@@ -187,7 +187,7 @@ begin
         try
             Q.SQL.Text := 'DELETE FROM snippet_chain_steps WHERE chain_id = :cid';
             Q.ParamByName('cid').AsInteger := ChainID;
-            Q.ExecSQL;
+            ExecSQLWithRetry(Q);
 
             Q.SQL.Text := 'INSERT INTO snippet_chain_steps (chain_id, position, snippet_id, pause_ms) VALUES (:cid, :pos, :sid, :pause)';
             for I := 0 to High(Steps) do
@@ -196,7 +196,7 @@ begin
                 Q.ParamByName('pos').AsInteger := I;
                 Q.ParamByName('sid').AsInteger := Steps[I].SnippetID;
                 Q.ParamByName('pause').AsInteger := Steps[I].PauseMs;
-                Q.ExecSQL;
+                ExecSQLWithRetry(Q);
             end;
 
             FConnection.Commit;

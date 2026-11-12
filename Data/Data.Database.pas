@@ -46,6 +46,7 @@ type
         procedure InitializeDatabase(Filename: string);
         procedure ApplyPRAGMA;
         procedure ApplySchemaMigrations;
+        procedure OptimizeFTS;
         procedure FlushToDisk;
     public
         procedure CreateDatabase(const Filename: string);
@@ -79,6 +80,7 @@ procedure TAppDatabase.OpenDatabase(const Filename: string);
 begin
     Connect(Filename);
     ApplySchemaMigrations;
+    OptimizeFTS;
 end;
 
 procedure TAppDatabase.Connect(const Filename: string);
@@ -153,6 +155,7 @@ begin
     // (000_schema_init.sql), поэтому раннер миграций после создания БД
     // ничего не применяет
     FDConnection.ExecSQL('INSERT OR IGNORE INTO users (id, name) VALUES (1, ''Local User'');');
+    OptimizeFTS;
 end;
 
 function TAppDatabase.IsConnected: Boolean;
@@ -179,6 +182,17 @@ begin
     FDConnection.ExecSQL('PRAGMA recursive_triggers = OFF;');
     FDConnection.ExecSQL('PRAGMA busy_timeout = 1000;');
     FDConnection.ExecSQL('PRAGMA cache_size = -20000;');
+end;
+
+procedure TAppDatabase.OptimizeFTS;
+begin
+    try
+        FDConnection.ExecSQL('INSERT INTO snippet_fts(snippet_fts) VALUES(''optimize'')');
+    except
+        on E: EFDDBEngineException do
+        begin
+        end;
+    end;
 end;
 
 procedure TAppDatabase.ApplySchemaMigrations;

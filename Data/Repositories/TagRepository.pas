@@ -96,7 +96,7 @@ end;
 
 function TTagRepository.GetByName(const Name: string): TArray<TTagDTO>;
 begin
-    Result := InternalLoadTags('SELECT id, name FROM tags WHERE name LIKE ? ORDER BY name', ['%' + Name + '%']);
+    Result := InternalLoadTags('SELECT id, name FROM tags WHERE name LIKE ? ESCAPE ''\'' ORDER BY name', ['%' + EscapeLike(Name) + '%']);
 end;
 
 function TTagRepository.Add(const Tag: TTagDTO): Integer;
@@ -186,7 +186,7 @@ begin
         end;
 
         // 3. Выполняем весь пакет одним разом
-        Q.Execute(Q.Params.ArraySize);
+        ExecuteArrayWithRetry(Q);
     finally
         Q.Free;
     end;

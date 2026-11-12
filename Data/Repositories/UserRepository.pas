@@ -96,7 +96,7 @@ end;
 
 function TUserRepository.GetByName(const Name: string): TArray<TUserDTO>;
 begin
-    Result := InternalLoadUsers('SELECT id, name, created_at ' + 'FROM users ' + 'WHERE name LIKE ? ' + 'ORDER BY name', ['%' + Name + '%']);
+    Result := InternalLoadUsers('SELECT id, name, created_at ' + 'FROM users ' + 'WHERE name LIKE ? ESCAPE ''\'' ' + 'ORDER BY name', ['%' + EscapeLike(Name) + '%']);
 end;
 
 function TUserRepository.Add(const User: TUserDTO): Integer;

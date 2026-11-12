@@ -17,11 +17,14 @@ type
         function CreateQuery: TFDQuery;
         procedure SetQueryParams(Query: TFDQuery; const Params: array of Variant);
         function IsTransientLockError(E: Exception): Boolean;
+        procedure ExecSQLWithRetry(Query: TFDQuery);
+        procedure ExecuteArrayWithRetry(Query: TFDQuery);
 
         function ExecuteSQL(const SQL: string; const Params: array of Variant): Integer;
         function ExecuteSQLScalar(const SQL: string; const Params: array of Variant): Variant;
     public
         constructor Create(Connection: TFDConnection);
+        class function EscapeLike(const Value: string): string;
     end;
 
 implementation
@@ -115,6 +118,52 @@ begin
     for Attempt := 1 to BUSY_RETRY_COUNT do
         try
             Result := FConnection.ExecSQLScalar(SQL, Params);
+            Exit;
+        except
+            on E: Exception do
+                if (Attempt < BUSY_RETRY_COUNT) and IsTransientLockError(E) then
+                    TThread.Sleep(BUSY_RETRY_DELAY_MS)
+                else if IsTransientLockError(E) then
+                    raise EDatabaseBusy.Create(TUIStateLoader.GetMessage('Common.DatabaseBusy', [E.Message]))
+                else
+                    raise;
+        end;
+end;
+
+procedure TRepositoryBase.ExecSQLWithRetry(Query: TFDQuery);
+var
+    Attempt: Integer;
+begin
+    for Attempt := 1 to BUSY_RETRY_COUNT do
+        try
+            Query.ExecSQL;
+            Exit;
+        except
+            on E: Exception do
+                if (Attempt < BUSY_RETRY_COUNT) and IsTransientLockError(E) then
+                    TThread.Sleep(BUSY_RETRY_DELAY_MS)
+                else if IsTransientLockError(E) then
+                    raise EDatabaseBusy.Create(TUIStateLoader.GetMessage('Common.DatabaseBusy', [E.Message]))
+                else
+                    raise;
+        end;
+end;
+
+class function TRepositoryBase.EscapeLike(const Value: string): string;
+begin
+    Result := Value;
+    Result := Result.Replace('\', '\\', [rfReplaceAll]);
+    Result := Result.Replace('%', '\%', [rfReplaceAll]);
+    Result := Result.Replace('_', '\_', [rfReplaceAll]);
+end;
+
+procedure TRepositoryBase.ExecuteArrayWithRetry(Query: TFDQuery);
+var
+    Attempt: Integer;
+begin
+    for Attempt := 1 to BUSY_RETRY_COUNT do
+        try
+            Query.Execute(Query.Params.ArraySize);
             Exit;
         except
             on E: Exception do

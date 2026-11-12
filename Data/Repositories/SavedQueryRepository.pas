@@ -118,7 +118,7 @@ begin
         Q.SQL.Text := 'UPDATE saved_queries SET name = :name WHERE id = :id';
         Q.ParamByName('name').AsString := NewName;
         Q.ParamByName('id').AsInteger := ID;
-        Q.ExecSQL;
+        ExecSQLWithRetry(Q);
     finally
         Q.Free;
     end;
@@ -133,7 +133,7 @@ begin
         Q.SQL.Text := 'UPDATE saved_queries SET query_text = :query WHERE id = :id';
         Q.ParamByName('query').AsString := NewQueryText;
         Q.ParamByName('id').AsInteger := ID;
-        Q.ExecSQL;
+        ExecSQLWithRetry(Q);
     finally
         Q.Free;
     end;
@@ -147,7 +147,7 @@ begin
     try
         Q.SQL.Text := 'DELETE FROM saved_queries WHERE id = :id';
         Q.ParamByName('id').AsInteger := ID;
-        Q.ExecSQL;
+        ExecSQLWithRetry(Q);
     finally
         Q.Free;
     end;

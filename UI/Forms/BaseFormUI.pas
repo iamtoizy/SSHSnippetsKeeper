@@ -76,6 +76,11 @@ type
         // Переопределяем закрытие окна в базовом классе
         procedure DoClose(var Action: TCloseAction); override;
 
+        // Открыта ли модальная справка, принадлежащая именно этой форме.
+        // Плавающим панелям (QuickSearchForm) это нужно, чтобы отличать свою
+        // модальную справку от чужих модальных форм приложения
+        function IsOwnHelpModalActive: Boolean;
+
         property MessagesHandler: IUIMessagesHandler read GetMessagesHandler;
         property AppContext: IAppContext read GetAppContext;
     public
@@ -239,6 +244,11 @@ begin
         if FInstances.ContainsKey(Self.ClassType) then
             FInstances.Remove(Self.ClassType);
     end;
+end;
+
+function TBaseForm.IsOwnHelpModalActive: Boolean;
+begin
+    Result := (FCustomHelpForm <> nil) and (fsModal in FCustomHelpForm.FormState);
 end;
 
 procedure TBaseForm.DoInitialize;
