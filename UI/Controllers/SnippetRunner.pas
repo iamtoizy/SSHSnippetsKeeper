@@ -60,7 +60,8 @@ uses
     MacroStopPanelUI,
     ParamsFormUI,
     System.Classes,
-    Vcl.Controls
+    Vcl.Controls,
+    Vcl.Forms
     ;
 
 const
@@ -266,7 +267,14 @@ begin
             (WindowHelper.EstimateTypingMs(Snippet.Content) > MIN_TYPING_STOP_PANEL_MS);
         if ShowPanel then
         begin
-            Panel := TMacroStopPanel.Create(nil);
+            // Владелец - Application, а не nil: при закрытии приложения
+            // посреди печати MacroThread пропускает OnTypingFinished
+            // (guard Application.Terminated), и Release из замыкания
+            // не выполняется - панель без владельца утекала целиком
+            // (форма + замыкание $ActRec). Application освободит её в
+            // DestroyComponents при финализации, когда WindowHelper.Shutdown
+            // уже остановил поток, поэтому гонок нет
+            Panel := TMacroStopPanel.Create(Application);
             // Кнопка сработает после освобождения TSnippetRunner: замыканию
             // нельзя захватывать Self (FAppContext) - только локальный интерфейс
             Panel.Initialize(Snippet.Title,

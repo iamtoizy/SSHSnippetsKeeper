@@ -291,6 +291,8 @@ type
         FFilterUserID: Integer;
         FIgnoreCategoryChange: Boolean;
         FCloseAfterChainStop: Boolean;
+        FCloseAfterTypingStop: Boolean;
+        tmrCloseAfterTyping: TTimer;
         FNoSyncMode: Boolean;
         FCmdProcessed: Boolean;
         FPurgedStaleDrafts: Boolean;
@@ -308,6 +310,7 @@ type
         FLangMenu: TLanguageMenuController;
 
         procedure MarkDataChanged;
+        procedure tmrCloseAfterTypingTimer(Sender: TObject);
         function GetSyncEngine: TSyncController;
         function GetSearchEngine: TMainSearchController;
         function GetSecurityScan: TSecurityScanController;
@@ -804,6 +807,12 @@ begin
     FHotItemIndex := -1;
     FFilterUserID := 0;
 
+    // Опрос остановки печати для отложенного закрытия (см. FormCloseQuery)
+    tmrCloseAfterTyping := TTimer.Create(Self);
+    tmrCloseAfterTyping.Interval := 100;
+    tmrCloseAfterTyping.Enabled := False;
+    tmrCloseAfterTyping.OnTimer := tmrCloseAfterTypingTimer;
+
     lvTags.OwnerData := False;
     lvSnippets.OwnerData := False;
     // Item.Data у lvSnippets - объекты TSnippetViewData, у lvTags - Integer-ID
@@ -844,6 +853,20 @@ begin
     begin
         TChainRunner.RequestStop;
         FCloseAfterChainStop := True;
+        CanClose := False;
+        Exit;
+    end;
+
+    // Закрытие посреди печати сниппета - как у цепочек: мягко отменяем
+    // печать (CancelTyping ждёт поток с прокачкой CheckSynchronize, так что
+    // OnTypingFinished успевает освободить панель Stop через Release) и
+    // откладываем закрытие до фактической остановки. Без этого Application
+    // завершается, MacroThread пропускает OnTypingFinished и панель утекает
+    if AppContext.WindowHelper.IsTypingBusy then
+    begin
+        AppContext.WindowHelper.CancelTyping;
+        FCloseAfterTypingStop := True;
+        tmrCloseAfterTyping.Enabled := True;
         CanClose := False;
         Exit;
     end;
@@ -1494,6 +1517,21 @@ begin
         Close;
     end;
     UpdateMenuState;
+end;
+
+procedure TMainForm.tmrCloseAfterTypingTimer(Sender: TObject);
+begin
+    // Отставший (detached) поток держит IsTypingBusy до своего финала -
+    // ждём его, чтобы повторный Close пошёл по чистому WindowHelper
+    if AppContext.WindowHelper.IsTypingBusy then
+        Exit;
+
+    tmrCloseAfterTyping.Enabled := False;
+    if FCloseAfterTypingStop then
+    begin
+        FCloseAfterTypingStop := False;
+        Close;
+    end;
 end;
 
 procedure TMainForm.tvCategoriesChange(Sender: TObject; Node: TTreeNode);
