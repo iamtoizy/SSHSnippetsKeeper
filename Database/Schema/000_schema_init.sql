@@ -2,7 +2,7 @@
 -- (Data\Database.pas) и явные PRAGMA при /newdb (Data\Database.Migrations.pas).
 -- Здесь PRAGMA соединения не задаются: baseline применяется в транзакции,
 -- где synchronous/journal_mode менять нельзя, а foreign_keys - no-op.
-PRAGMA user_version = 13; -- v13: умные папки - сохранённые запросы (saved_queries)
+PRAGMA user_version = 14; -- v14: авто-Enter в конце шага цепочки (snippet_chains.auto_enter)
                           -- Должно совпадать с APP_DB_VERSION в Data\Database.Migrations.pas
 
 ---------------------------------------------------------
@@ -173,6 +173,7 @@ CREATE TABLE IF NOT EXISTS snippet_chains (
   user_id    INTEGER NOT NULL,
   name       TEXT NOT NULL COLLATE NOCASE,
   created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+  auto_enter INTEGER NOT NULL DEFAULT 0, -- v14: 1 = жать Enter после шага, если сниппет сам им не кончается
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 

@@ -16,6 +16,7 @@ type
         function GetByID(ID: Integer): TChainDTO;
         function Add(const Chain: TChainDTO): Integer;
         procedure UpdateName(ID: Integer; const NewName: string);
+        procedure UpdateAutoEnter(ID: Integer; AutoEnter: Boolean);
         procedure Delete(ID: Integer);
         function GetSteps(ChainID: Integer): TArray<TChainStepDTO>;
         procedure ReplaceSteps(ChainID: Integer; const Steps: TArray<TChainStepDTO>);
@@ -45,9 +46,9 @@ begin
     Query := CreateQuery;
     try
         if UserID > 0 then
-            Query.Open('SELECT id, user_id, name, created_at FROM snippet_chains WHERE user_id = ? ORDER BY name COLLATE NOCASE', [UserID])
+            Query.Open('SELECT id, user_id, name, created_at, auto_enter FROM snippet_chains WHERE user_id = ? ORDER BY name COLLATE NOCASE', [UserID])
         else
-            Query.Open('SELECT id, user_id, name, created_at FROM snippet_chains ORDER BY user_id, name COLLATE NOCASE');
+            Query.Open('SELECT id, user_id, name, created_at, auto_enter FROM snippet_chains ORDER BY user_id, name COLLATE NOCASE');
 
         while not Query.Eof do
         begin
@@ -55,6 +56,7 @@ begin
             Chain.UserID := Query.FieldByName('user_id').AsInteger;
             Chain.Name := Query.FieldByName('name').AsString;
             Chain.CreatedAt := Query.FieldByName('created_at').AsLargeInt;
+            Chain.AutoEnter := Query.FieldByName('auto_enter').AsInteger <> 0;
 
             List.Add(Chain);
             Query.Next;
@@ -76,7 +78,7 @@ begin
 
     Q := CreateQuery;
     try
-        Q.SQL.Text := 'SELECT id, user_id, name, created_at FROM snippet_chains WHERE id = :id';
+        Q.SQL.Text := 'SELECT id, user_id, name, created_at, auto_enter FROM snippet_chains WHERE id = :id';
         Q.ParamByName('id').AsInteger := ID;
         Q.Open;
 
@@ -86,6 +88,7 @@ begin
             Result.UserID := Q.FieldByName('user_id').AsInteger;
             Result.Name := Q.FieldByName('name').AsString;
             Result.CreatedAt := Q.FieldByName('created_at').AsLargeInt;
+            Result.AutoEnter := Q.FieldByName('auto_enter').AsInteger <> 0;
         end;
     finally
         Q.Free;
@@ -116,6 +119,21 @@ begin
     try
         Q.SQL.Text := 'UPDATE snippet_chains SET name = :name WHERE id = :id';
         Q.ParamByName('name').AsString := NewName;
+        Q.ParamByName('id').AsInteger := ID;
+        ExecSQLWithRetry(Q);
+    finally
+        Q.Free;
+    end;
+end;
+
+procedure TChainRepository.UpdateAutoEnter(ID: Integer; AutoEnter: Boolean);
+var
+    Q: TFDQuery;
+begin
+    Q := CreateQuery;
+    try
+        Q.SQL.Text := 'UPDATE snippet_chains SET auto_enter = :ae WHERE id = :id';
+        Q.ParamByName('ae').AsInteger := Ord(AutoEnter);
         Q.ParamByName('id').AsInteger := ID;
         ExecSQLWithRetry(Q);
     finally

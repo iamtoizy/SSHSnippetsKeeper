@@ -25,6 +25,10 @@ type
         function GetWindowInfo: TWindowHelperInfo;
         function IsTypingBusy: Boolean;
         procedure CancelTyping;
+        // True: последнее печатаемое действие фрагмента - Enter
+        function EndsTypingWithEnter(const Text: string): Boolean;
+        // Снимок прогресса живой печати; False - печать не идёт
+        function GetTypingSnapshot(out Paused, SleepRemainingMs, TypedChars, TotalChars, KeyDelayMs: Integer): Boolean;
         function EstimateTypingMs(const Text: string): Integer;
         function FindUnknownCommands(const Text: string): TArray<string>;
     end;

@@ -15,7 +15,7 @@ const
     //   3) добавить шаг в реестр MIGRATIONS (implementation)
     //   4) увеличить APP_DB_VERSION
     //   5) синхронизировать "PRAGMA user_version" в Database\Schema\000_schema_init.sql
-    APP_DB_VERSION = 13;
+    APP_DB_VERSION = 14;
 
     // Сколько последних резервных копий хранится рядом с файлом БД
     MIGRATION_BACKUP_KEEP = 3;
@@ -60,6 +60,7 @@ type
         function TableExists(const ATableName: string): Boolean;
         function ColumnExists(const ATableName, AColumnName: string): Boolean;
         procedure EnsureSnippetColumn(const AColumnName, ADDL: string);
+        procedure EnsureChainColumn(const AColumnName, ADDL: string);
         procedure ApplyColumnGuards(AVersion: Integer);
         procedure ApplyStep(AVersion: Integer; const AResourceName: string);
     public
@@ -157,7 +158,7 @@ const
     // Реестр применяемых миграций, по возрастанию версии.
     // v2..v6 в истории не выделялись отдельными шагами - их изменения
     // включены в базовый скрипт V001 (все шаги идемпотентны).
-    MIGRATIONS: array [0..7] of TMigrationStep = (
+    MIGRATIONS: array [0..8] of TMigrationStep = (
         (Version: 1;  ResourceName: 'SCHEMA_MIGRATION_001'),
         (Version: 7;  ResourceName: 'SCHEMA_MIGRATION_007'),
         (Version: 8;  ResourceName: 'SCHEMA_MIGRATION_008'),
@@ -165,7 +166,8 @@ const
         (Version: 10; ResourceName: 'SCHEMA_MIGRATION_010'),
         (Version: 11; ResourceName: 'SCHEMA_MIGRATION_011'),
         (Version: 12; ResourceName: 'SCHEMA_MIGRATION_012'),
-        (Version: 13; ResourceName: 'SCHEMA_MIGRATION_013')
+        (Version: 13; ResourceName: 'SCHEMA_MIGRATION_013'),
+        (Version: 14; ResourceName: 'SCHEMA_MIGRATION_014')
     );
 
 function LoadSQLResource(const ResourceName: string): string;
@@ -281,6 +283,7 @@ begin
         7:  EnsureSnippetColumn('is_security_ignored', 'INTEGER NOT NULL DEFAULT 0');
         11: EnsureSnippetColumn('language', 'TEXT NOT NULL DEFAULT ''bash''');
         12: EnsureSnippetColumn('language_locked', 'INTEGER NOT NULL DEFAULT 0');
+        14: EnsureChainColumn('auto_enter', 'INTEGER NOT NULL DEFAULT 0');
     end;
 end;
 
@@ -290,6 +293,14 @@ begin
         Exit;
 
     FConnection.ExecSQL(Format('ALTER TABLE snippets ADD COLUMN %s %s', [AColumnName, ADDL]));
+end;
+
+procedure TDatabaseMigrator.EnsureChainColumn(const AColumnName, ADDL: string);
+begin
+    if (not TableExists('snippet_chains')) or ColumnExists('snippet_chains', AColumnName) then
+        Exit;
+
+    FConnection.ExecSQL(Format('ALTER TABLE snippet_chains ADD COLUMN %s %s', [AColumnName, ADDL]));
 end;
 
 function TDatabaseMigrator.TableExists(const ATableName: string): Boolean;

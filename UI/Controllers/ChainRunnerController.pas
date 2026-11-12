@@ -20,12 +20,13 @@ type
         FOnStarted: TProc;
         FOnFinished: TProc;
     private
-        class procedure RunSteps(
-            AppContext: IAppContext;
-            const PanelCaption, SequenceName: string;
-            const Steps: TArray<TChainStepDTO>;
-            RunnerUserID: Integer;
-            TargetHWND: HWND); static;
+    class procedure RunSteps(
+        AppContext: IAppContext;
+        const PanelCaption, SequenceName: string;
+        const Steps: TArray<TChainStepDTO>;
+        RunnerUserID: Integer;
+        TargetHWND: HWND;
+        AutoEnter: Boolean); static;
     public
         class function IsChainRunning: Boolean; static;
         class procedure RequestStop; static;
@@ -43,8 +44,17 @@ uses
     ChainRunPanelUI,
     Common.Localization,
     SnippetRunner,
+    System.Classes,
     System.Math
     ;
+
+const
+    // Сколько мс шаг может не подавать признаков жизни (не пауза фокуса,
+    // не остаток SLEEP, не огромный KEYDELAY), прежде чем он считается
+    // зависшим и его печать отменяется
+    STEP_STALL_TIMEOUT_MS = 20000;
+    // После CancelTyping даём потоку ограниченное время на выход
+    STEP_STALL_KILL_WAIT_MS = 5000;
 
 { TChainRunner }
 
@@ -112,7 +122,7 @@ begin
             FOnStarted;
         try
             RunSteps(AppContext, TUIStateLoader.GetMessage('Chains.Run.PanelTitle'), Chain.Name,
-                Steps, Chain.UserID, TargetHWND);
+                Steps, Chain.UserID, TargetHWND, Chain.AutoEnter);
         finally
             if Assigned(FOnFinished) then
                 FOnFinished;
@@ -165,7 +175,7 @@ begin
         if Assigned(FOnStarted) then
             FOnStarted;
         try
-            RunSteps(AppContext, PanelCaption, PanelCaption, Steps, 0, TargetHWND);
+            RunSteps(AppContext, PanelCaption, PanelCaption, Steps, 0, TargetHWND, True);
         finally
             if Assigned(FOnFinished) then
                 FOnFinished;
@@ -180,14 +190,18 @@ class procedure TChainRunner.RunSteps(
     const PanelCaption, SequenceName: string;
     const Steps: TArray<TChainStepDTO>;
     RunnerUserID: Integer;
-    TargetHWND: HWND);
+    TargetHWND: HWND;
+    AutoEnter: Boolean);
 var
     Panel: TChainRunPanel;
     I: Integer;
     Snippet: TSnippetDTO;
     RunnerID: Integer;
     StopReason: string;
-    RemainingPause: Integer;
+    RemainingPause, PauseShownSec: Integer;
+    SnapPaused, SnapSleepMs, SnapTyped, SnapTotal, SnapKeyDelay: Integer;
+    LastTyped: Integer;
+    LastChangedTick, StallDeadline: DWORD;
 begin
     Panel := TChainRunPanel.Create(nil);
     try
@@ -222,6 +236,12 @@ begin
             if RunnerID <= 0 then
                 RunnerID := Snippet.UserID;
 
+            // Авто-Enter - одиночный #10, НЕ sLineBreak: TypeRawText жмёт
+            // PressEnter на каждый #13/#10, CRLF дал бы двойной Enter
+            if AutoEnter and (Snippet.Content <> '') and
+                (not AppContext.WindowHelper.EndsTypingWithEnter(Snippet.Content)) then
+                Snippet.Content := Snippet.Content + #10;
+
             with TSnippetRunner.Create(RunnerID, AppContext) do
             try
                 ExecuteSnippetInWindow(Snippet, TargetHWND);
@@ -229,37 +249,101 @@ begin
                 Free;
             end;
 
+            LastTyped := -1;
+            LastChangedTick := GetTickCount;
+            Panel.SetTypingStatus(0, 0, 0, 0);
             while AppContext.WindowHelper.IsTypingBusy and not (Panel.StopRequested or FStopRequested) do
             begin
                 Sleep(30);
                 Application.ProcessMessages;
+                CheckSynchronize;
+
+                // Снимок живой печати: индикация в панели + детектор зависания
+                if AppContext.WindowHelper.GetTypingSnapshot(
+                    SnapPaused, SnapSleepMs, SnapTyped, SnapTotal, SnapKeyDelay) then
+                begin
+                    Panel.SetTypingStatus(SnapPaused, SnapSleepMs, SnapTyped, SnapTotal);
+
+                    // Прогресс = растущий TypedChars; пауза фокуса, остаток
+                    // SLEEP и KEYDELAY больше таймаута зависанием не считаются
+                    if (SnapPaused = 0) and (SnapSleepMs <= 0) and
+                        (SnapKeyDelay < STEP_STALL_TIMEOUT_MS) and (SnapTyped <> LastTyped) then
+                    begin
+                        LastTyped := SnapTyped;
+                        LastChangedTick := GetTickCount;
+                    end;
+
+                    if GetTickCount - LastChangedTick > STEP_STALL_TIMEOUT_MS then
+                    begin
+                        StopReason := TUIStateLoader.GetMessage('Chains.Run.ErrorStalledStep', [I + 1]);
+                        AppContext.WindowHelper.CancelTyping;
+                        StallDeadline := GetTickCount + STEP_STALL_KILL_WAIT_MS;
+                        while AppContext.WindowHelper.IsTypingBusy do
+                        begin
+                            Sleep(20);
+                            Application.ProcessMessages;
+                            CheckSynchronize;
+                            if GetTickCount >= StallDeadline then
+                                Break;
+                        end;
+                        Break;
+                    end;
+                end
+                else
+                begin
+                    // Снимок False = наш поток уже допечатал и освободил
+                    // контекст; занятость держит отставший detached-поток
+                    // (Executor отрезан - печатать он не может), шаг готов
+                    Break;
+                end;
             end;
+
+            if StopReason <> '' then
+                Break;
 
             if Panel.StopRequested or FStopRequested then
             begin
                 AppContext.WindowHelper.CancelTyping;
+                StallDeadline := GetTickCount + STEP_STALL_KILL_WAIT_MS;
                 while AppContext.WindowHelper.IsTypingBusy do
                 begin
                     Sleep(20);
                     Application.ProcessMessages;
+                    CheckSynchronize;
+                    if GetTickCount >= StallDeadline then
+                        Break;
                 end;
                 Break;
             end;
 
             RemainingPause := Max(0, Steps[I].PauseMs);
-            while (RemainingPause > 0) and not (Panel.StopRequested or FStopRequested) do
+            if RemainingPause > 0 then
             begin
-                Sleep(30);
-                Dec(RemainingPause, 30);
-                Application.ProcessMessages;
+                Panel.SetTypingStatus(0, RemainingPause, 0, 0);
+                PauseShownSec := RemainingPause div 1000;
+                while (RemainingPause > 0) and not (Panel.StopRequested or FStopRequested) do
+                begin
+                    Sleep(30);
+                    Dec(RemainingPause, 30);
+                    if RemainingPause < 0 then
+                        RemainingPause := 0;
+                    if RemainingPause div 1000 <> PauseShownSec then
+                    begin
+                        PauseShownSec := RemainingPause div 1000;
+                        Panel.SetTypingStatus(0, RemainingPause, 0, 0);
+                    end;
+                    Application.ProcessMessages;
+                end;
             end;
         end;
 
-        if StopReason <> '' then
-            AppContext.MessagesHandler.ShowError(StopReason);
     finally
         Panel.Free;
     end;
+
+    // Диалог ошибки - после Panel.Free: панель TopMost и перекрыла бы его
+    if StopReason <> '' then
+        AppContext.MessagesHandler.ShowError(StopReason);
 end;
 
 end.

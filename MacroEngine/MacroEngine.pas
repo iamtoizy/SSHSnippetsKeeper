@@ -67,6 +67,8 @@ type
 
         function GetTokens(const Text: string): TArray<TMacroToken>;
         function ValidateCommands(const Text: string): TArray<string>;
+        // True: последнее печатаемое действие фрагмента - Enter
+        function EndsTypingWithEnter(const Text: string): Boolean;
         function InputDescriptors(const Text: string): TArray<TMacroParamDescriptor>;
         function Parse(const Text: string; Context: TMacroContext): TArray<IScriptAction>;
         procedure PreCollectInputs(const Actions: TArray<IScriptAction>; Context: TMacroContext);
@@ -648,6 +650,31 @@ begin
     finally
         List.Free;
     end;
+end;
+
+function TMacroEngine.EndsTypingWithEnter(const Text: string): Boolean;
+var
+    I: Integer;
+    Tokens: TArray<TMacroToken>;
+begin
+    // Смотрим с конца: SLEEP/KEYDELAY не печатают - ищем левее;
+    // tkValue/tkInput подставляют значение неизвестной формы - False
+    Tokens := GetTokens(Text);
+    for I := High(Tokens) downto 0 do
+    begin
+        case Tokens[I].Kind of
+            tkEnter:
+                Exit(True);
+            tkSleep, tkKeyDelay:
+                Continue;
+            tkText:
+                Exit((Tokens[I].Text <> '') and
+                    CharInSet(Tokens[I].Text[Length(Tokens[I].Text)], [#13, #10]));
+        else
+            Exit(False);
+        end;
+    end;
+    Result := False;
 end;
 
 procedure TMacroEngine.PreCollectInputs(const Actions: TArray<IScriptAction>; Context: TMacroContext);

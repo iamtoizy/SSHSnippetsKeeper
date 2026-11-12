@@ -98,6 +98,7 @@ type
         function GetChainByID(ID: Integer): TChainDTO;
         function CreateChain(UserID: Integer; const Name: string): Integer;
         procedure RenameChain(ID: Integer; const NewName: string);
+        procedure SetAutoEnter(ID: Integer; AutoEnter: Boolean);
         procedure DeleteChain(ID: Integer);
         function GetSteps(ChainID: Integer): TArray<TChainStepDTO>;
         procedure SaveSteps(ChainID: Integer; const Steps: TArray<TChainStepDTO>);

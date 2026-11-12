@@ -5,6 +5,7 @@ interface
 uses
     MacroInputTypes,
     System.Classes,
+    System.SyncObjs,
     System.SysUtils
     ;
 
@@ -13,6 +14,9 @@ type
     private
         FActions: TArray<IScriptAction>;
         FContext: TMacroContext;
+        // FreeAndNil(FContext) в Execute и снимок прогресса из главного
+        // потока разнесены по потокам - под замком
+        FContextLock: TCriticalSection;
         FCanceled: Integer;
         FDone: Boolean;
         // Добавляем поле для коллбэка
@@ -23,12 +27,15 @@ type
         // Внедряем коллбэк через конструктор (по умолчанию nil, чтобы не ломать старый код, если где-то он вызывается без него)
         // Suspended = True позволяет привязать OnTerminate до фактического запуска потока
         constructor Create(const Actions: TArray<IScriptAction>; Context: TMacroContext; OnRecordRun: TRecordRunCallback = nil; Suspended: Boolean = False);
+        destructor Destroy; override;
         procedure Cancel;
         // Аварийный разрыв связей с владельцем: поток продолжает работать,
         // но уже не может звать Executor и коллбэки, указывающие на объекты,
         // которые вот-вот будут освобождены
         procedure Detach;
         function IsFinished: Boolean;
+        // Снимок прогресса живого контекста; False - контекста уже нет
+        function GetContextSnapshot(out APaused, ASleepRemainingMs, ATypedChars, ATotalChars, AKeyDelayMs: Integer): Boolean;
     end;
 
 implementation
@@ -36,7 +43,6 @@ implementation
 uses
     Common.Helpers,
     System.StrUtils,
-    System.SyncObjs,
     Vcl.Forms,
     Winapi.Windows
     ;
@@ -45,6 +51,7 @@ constructor TMacroThread.Create(const Actions: TArray<IScriptAction>; Context: T
 begin
     FActions := Actions;
     FContext := Context;
+    FContextLock := TCriticalSection.Create;
     FOnRecordRun := OnRecordRun; // Сохраняем коллбэк
 
     // FreeOnTerminate обязан быть False: объектом владеет TWindowHelper -
@@ -87,6 +94,39 @@ end;
 function TMacroThread.IsFinished: Boolean;
 begin
     Result := FDone;
+end;
+
+destructor TMacroThread.Destroy;
+begin
+    FContextLock.Free;
+    inherited;
+end;
+
+function TMacroThread.GetContextSnapshot(out APaused, ASleepRemainingMs, ATypedChars, ATotalChars, AKeyDelayMs: Integer): Boolean;
+begin
+    Result := False;
+    APaused := 0;
+    ASleepRemainingMs := 0;
+    ATypedChars := 0;
+    ATotalChars := 0;
+    AKeyDelayMs := 0;
+    if FDone then
+        Exit;
+    FContextLock.Enter;
+    try
+        if not Assigned(FContext) then
+            Exit;
+        APaused := TInterlocked.CompareExchange(FContext.Paused, 0, 0);
+        ASleepRemainingMs := TInterlocked.CompareExchange(FContext.SleepRemainingMs, 0, 0);
+        ATypedChars := TInterlocked.CompareExchange(FContext.TypedChars, 0, 0);
+        ATotalChars := TInterlocked.CompareExchange(FContext.ProgressTotal, 0, 0);
+        // Обычное поле без Interlocked: выровненный 32-битный Integer
+        // читается без разрыва, замок защищает от FreeAndNil(FContext)
+        AKeyDelayMs := FContext.KeyDelayMs;
+        Result := True;
+    finally
+        FContextLock.Leave;
+    end;
 end;
 
 procedure TMacroThread.Execute;
@@ -170,8 +210,17 @@ begin
             );
         end;
 
+        // Освобождение под тем же замком, что и снимок прогресса:
+        // иначе главный поток может читать уже освобождённый контекст
         if Assigned(FContext) then
-            FreeAndNil(FContext);
+        begin
+            FContextLock.Enter;
+            try
+                FreeAndNil(FContext);
+            finally
+                FContextLock.Leave;
+            end;
+        end;
 
         FDone := True;
     end;

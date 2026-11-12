@@ -12,6 +12,8 @@ type
         UserID: Integer;
         Name: string;
         CreatedAt: Int64;
+        // v14: после шага жмётся Enter, если сниппет сам им не кончается
+        AutoEnter: Boolean;
     end;
 
     TChainStepDTO = record

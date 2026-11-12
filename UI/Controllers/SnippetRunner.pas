@@ -167,12 +167,22 @@ begin
             Result := ShowParamsForm(Params, AppContext, Values);
         end;
 
-    // Коллбэк для подтверждения
+    // Коллбэк для подтверждения. MessageBox показывается в главном потоке:
+    // из рабочего он качает чужую очередь сообщений и может остаться невидимым
+    // за topmost-панелью цепочки, а главный поток в цикле ожидания цепочки
+    // обслуживает Synchronize через ProcessMessages (как OnFocusLost ниже)
     Context.OnConfirm :=
         function(const Prompt: string): Boolean
+        var
+            Confirmed: Boolean;
         begin
-            // Здесь Result - это возвращаемое значение (Boolean) для OnConfirm
-            Result := MessageBox(0, PChar(Prompt), PChar(TUIStateLoader.GetMessage('Common.Confirmation')), MB_YESNO or MB_ICONQUESTION or MB_TOPMOST or MB_DEFBUTTON2) = IDYES;
+            Confirmed := False;
+            TThread.Synchronize(nil,
+                procedure
+                begin
+                    Confirmed := MessageBox(0, PChar(Prompt), PChar(TUIStateLoader.GetMessage('Common.Confirmation')), MB_YESNO or MB_ICONQUESTION or MB_TOPMOST or MB_DEFBUTTON2) = IDYES;
+                end);
+            Result := Confirmed;
             if not Result then
                 Context.UserCanceled := True;
         end;

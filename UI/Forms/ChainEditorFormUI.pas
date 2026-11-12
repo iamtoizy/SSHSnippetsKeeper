@@ -40,6 +40,7 @@ type
         lblLibraryHint: TLabel;
         btnOK: TButton;
         btnCancel: TButton;
+        chkAutoEnter: TCheckBox;
         procedure btnAddStepClick(Sender: TObject);
         procedure btnRemoveStepClick(Sender: TObject);
         procedure btnMoveUpClick(Sender: TObject);
@@ -103,6 +104,7 @@ begin
     lblLibrary.Caption := TUIStateLoader.GetMessage('Chains.Editor.Library');
     edSearch.TextHint := TUIStateLoader.GetMessage('Chains.Editor.Search');
     lblLibraryHint.Caption := TUIStateLoader.GetMessage('Chains.Editor.LibraryHint');
+    chkAutoEnter.Caption := TUIStateLoader.GetMessage('Chains.Editor.AutoEnter');
     lvSteps.Columns[0].Caption := TUIStateLoader.GetMessage('Chains.Editor.ColStep');
     lvSteps.Columns[1].Caption := TUIStateLoader.GetMessage('Chains.Editor.ColSnippet');
     lvSteps.Columns[2].Caption := TUIStateLoader.GetMessage('Chains.Editor.ColPause');
@@ -153,12 +155,15 @@ begin
     FUserID := DefaultUserID;
     FChainID := ChainID;
 
+    chkAutoEnter.Checked := False;
+
     if ChainID > 0 then
     begin
         Chain := AppContext.ChainService.GetChainByID(ChainID);
         FUserID := Chain.UserID;
         Caption := TUIStateLoader.GetMessage('Chains.Editor.CaptionEdit');
         edName.Text := Chain.Name;
+        chkAutoEnter.Checked := Chain.AutoEnter;
         FSteps.AddRange(AppContext.ChainService.GetSteps(ChainID));
     end
     else if InitialSnippetID > 0 then
@@ -464,6 +469,7 @@ begin
             else
                 AppContext.ChainService.RenameChain(FChainID, ChainName);
 
+            AppContext.ChainService.SetAutoEnter(FChainID, chkAutoEnter.Checked);
             AppContext.ChainService.SaveSteps(FChainID, FSteps.ToArray);
             ModalResult := mrOk;
         except

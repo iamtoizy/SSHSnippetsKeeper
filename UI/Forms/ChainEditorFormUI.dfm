@@ -209,4 +209,12 @@ object ChainEditorForm: TChainEditorForm
     ModalResult = 2
     TabOrder = 10
   end
+  object chkAutoEnter: TCheckBox
+    Left = 352
+    Top = 402
+    Width = 336
+    Height = 17
+    Caption = 'Auto Enter after step'
+    TabOrder = 11
+  end
 end

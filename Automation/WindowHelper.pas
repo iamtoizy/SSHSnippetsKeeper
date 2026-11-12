@@ -49,6 +49,8 @@ type
         function GetWindowInfo: TWindowHelperInfo;
         function IsTypingBusy: Boolean;
         procedure CancelTyping;
+        function EndsTypingWithEnter(const Text: string): Boolean;
+        function GetTypingSnapshot(out Paused, SleepRemainingMs, TypedChars, TotalChars, KeyDelayMs: Integer): Boolean;
         procedure Shutdown;
         function EstimateTypingMs(const Text: string): Integer;
         function FindUnknownCommands(const Text: string): TArray<string>;
@@ -150,6 +152,25 @@ begin
     // параллельно со старым
     Result := (Assigned(FMacroThread) and not FMacroThread.IsFinished) or
         HasLiveAbandonedThread;
+end;
+
+function TWindowHelper.EndsTypingWithEnter(const Text: string): Boolean;
+begin
+    Result := FMacroEngine.EndsTypingWithEnter(Text);
+end;
+
+function TWindowHelper.GetTypingSnapshot(out Paused, SleepRemainingMs, TypedChars, TotalChars, KeyDelayMs: Integer): Boolean;
+begin
+    Paused := 0;
+    SleepRemainingMs := 0;
+    TypedChars := 0;
+    TotalChars := 0;
+    KeyDelayMs := 0;
+    // FMacroThread принадлежит главному потоку: снимок снимаем отсюда;
+    // отставшие (abandoned) потоки прогресс не отдают - их не ждём
+    if (not Assigned(FMacroThread)) or FMacroThread.IsFinished then
+        Exit(False);
+    Result := FMacroThread.GetContextSnapshot(Paused, SleepRemainingMs, TypedChars, TotalChars, KeyDelayMs);
 end;
 
 function TWindowHelper.HasLiveAbandonedThread: Boolean;

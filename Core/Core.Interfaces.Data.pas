@@ -124,6 +124,7 @@ type
         function GetByID(ID: Integer): TChainDTO;
         function Add(const Chain: TChainDTO): Integer;
         procedure UpdateName(ID: Integer; const NewName: string);
+        procedure UpdateAutoEnter(ID: Integer; AutoEnter: Boolean);
         procedure Delete(ID: Integer);
         function GetSteps(ChainID: Integer): TArray<TChainStepDTO>;
         procedure ReplaceSteps(ChainID: Integer; const Steps: TArray<TChainStepDTO>);

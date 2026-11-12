@@ -1753,6 +1753,7 @@
         "Library": "Snippet library",
         "Search": "Search...",
         "LibraryHint": "Or double-click a snippet",
+        "AutoEnter": "Press Enter after a step unless it ends with one",
         "ColStep": "No",
         "ColSnippet": "Snippet",
         "ColPause": "Pause, sec",
@@ -1766,6 +1767,7 @@
         "Empty": "Chain \"%s\" has no steps.",
         "ErrorActive": "A chain is already running.",
         "ErrorMissingSnippet": "Step %d: snippet not found, chain stopped.",
+        "ErrorStalledStep": "Step %d: typing is unresponsive, step aborted, chain stopped.",
         "ErrorWindow": "Target window is unavailable, chain stopped."
       },
       "DeleteConfirm": "Delete chain \"%s\"?",
