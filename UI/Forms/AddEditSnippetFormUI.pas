@@ -6,7 +6,7 @@ uses
     UI.Services.AIService,
     BaseFormUI,
     Common.DraftStore,
-    Core.BashCompletionEngine,
+    Core.CompletionEngine,
     Core.Entities.Snippet,
     Core.Interfaces.App,
     Core.Interfaces.Services,
@@ -164,7 +164,6 @@ type
         FCategoryID: Integer;
         FUserID: Integer;
         FIsEditMode: Boolean;
-        FBasicCommands: TStringList;
         FBlockEnter: Boolean;
         FCurrentHighlighter: TSynCustomHighlighter;
         FCurrentMulti: TSynMultiSyn;
@@ -176,7 +175,7 @@ type
         FSuppressDetect: Boolean;
         FSuppressSecurityConfirm: Boolean;
         FDetectBaselineText: string;
-        FCompletionEngine: TBashCompletionEngine;
+        FCompletionEngine: TCompletionEngine;
         FAIService: IAIService;
         FAIThread: TThread;
         FAIInProgress: Boolean;
@@ -300,18 +299,6 @@ const
 constructor TAddEditSnippetForm.Create(Owner: TComponent);
 begin
     inherited Create(Owner);
-//    if Assigned(FSettingsManager) then
-//        FBasicCommands := FSettingsManager.BashAutocomplete;
-//
-//    // Теперь VCL может безопасно создавать форму и вызывать FormCreate/Loaded
-//    inherited Create(Owner);
-//
-//    // Создаем движок автокомплита
-//    FCompletionEngine := TBashCompletionEngine.Create(FBasicCommands);
-//    FCompletionEngine.LoadFromJsonFile(ResolvePath('extra-commands.json'));
-//
-//    // Сразу применяем подсветку синтаксиса до показа формы (не ждем таймер)
-//    SetSyntax;
 end;
 
 procedure TAddEditSnippetForm.actConfigureAIExecute(Sender: TObject);
@@ -398,11 +385,9 @@ end;
 
 procedure TAddEditSnippetForm.DoInitialize;
 begin
-    FBasicCommands := AppContext.SettingsManager.BashAutocomplete;
-
-    // Создаем движок автокомплита
-    FCompletionEngine := TBashCompletionEngine.Create(FBasicCommands);
-    FCompletionEngine.LoadFromJsonFile(ResolvePath('bash.autocomplete.json'));
+    // Создаем движок автокомплита: единый файл с секциями по языкам
+    FCompletionEngine := TCompletionEngine.Create;
+    FCompletionEngine.LoadFromJsonFile(ResolvePath('autocomplete.json'));
 
     // Схема подсветки макросов: одна на все языки
     FMacroBodySyn := TMacroBodySyn.Create(nil);
@@ -2265,6 +2250,10 @@ var
 begin
     NewBase := TSynHighlighterFactory.CreateHighlighter(FCurrentLanguage);
 
+    // Активная секция автодополнения переключается вместе с языком
+    if Assigned(FCompletionEngine) then
+        FCompletionEngine.SetLanguage(FCurrentLanguage);
+
     // Plaintext: подсветки нет вообще - редактор рисует текст одним цветом.
     // Обёртка TSynMultiSyn не создаётся; карточки макросов при этом остаются
     // (их отрисовывает TMacroCardPlugin, он от Highlighter не зависит).
@@ -2280,9 +2269,6 @@ begin
 
     if NewBase is TCustomBashSyn then
     begin
-        if Assigned(FBasicCommands) then
-            TCustomBashSyn(NewBase).ExtraKeywords.AddStrings(FBasicCommands);
-
         if Assigned(FCompletionEngine) then
             FCompletionEngine.ExportKeywords(TCustomBashSyn(NewBase).ExtraKeywords);
     end;

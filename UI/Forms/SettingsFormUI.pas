@@ -135,6 +135,7 @@ type
         procedure bCounterResetClick(Sender: TObject);
         procedure bCounterResetAllClick(Sender: TObject);
         procedure bBackupCreateNowClick(Sender: TObject);
+        procedure bCompletionManagerClick(Sender: TObject);
         procedure bDbApplyClick(Sender: TObject);
         procedure bDbExportClick(Sender: TObject);
         procedure bDbImportClick(Sender: TObject);
@@ -203,6 +204,7 @@ implementation
 uses
     AppEnumerator,
     AppPickerFormUI,
+    CompletionManagerFormUI,
     Common.Helpers,
     HotkeyService,
     InputFormUI,
@@ -755,6 +757,13 @@ begin
                     UpdateBackupLastCopyLabel;
                 end);
         end).Start;
+end;
+
+// Менеджер автодополнения: единый файл секций bash/bat/powershell.
+// Модальный диалог: правки применяются только по явному «Сохранить»
+procedure TSettingsForm.bCompletionManagerClick(Sender: TObject);
+begin
+    TCompletionManagerForm.ExecuteModal(Self, AppContext);
 end;
 
 procedure TSettingsForm.FillDbModeCombo;

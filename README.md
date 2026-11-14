@@ -194,7 +194,7 @@ SSHSnippetsKeeper/
 |---|---|
 | `settings.json` | Пользовательские настройки (создаётся из `settings.template.json`; в git не попадает) |
 | `Translation\ui-texts.ru.json`, `ui-texts.en.json` | Локализация |
-| `bash.autocomplete.json` | База автодополнения bash: команды и дерево подкоманд |
+| `autocomplete.json` | База автодополнения: секции `bash`, `bat`, `powershell` (команды и дерево подкоманд); редактируется через *Настройки → Общие → Менеджер автодополнения...* |
 | `sqlite3mc_x64.dll` | Опционально: шифрование базы данных (см. [Шифрование базы данных](#шифрование-базы-данных)) |
 | `Python\` | Встраиваемый Python (см. выше) |
 | `Styles\` | VCL-стили интерфейса (.vsf); без них доступен только стандартный стиль Windows |
@@ -398,7 +398,7 @@ sudo systemctl restart nginx
 
 ## Тесты
 
-Юнит-тесты на DUnitX (консольный раннер): 52 группы / 548 тестов — консольные ключи (`Tests.CmdLine`), миграции БД и резервные копии (`Tests.DbMigrations`), репозитории и сервисы на in-memory SQLite через FireDAC (`Tests.Chains`, `Tests.MultiSelect`, `Tests.SearchTags`), язык запросов (`Tests.QueryLanguage`), макро-движок (`Tests.MacroEngine`, `Tests.MacroInputTypes`, `Tests.MacroCounters`, `Tests.MacroBuilder`, `Tests.MacroCardController`), подсветка синтаксиса (`Tests.MacroSyn`, `Tests.CustomBashSyn`, `Tests.SynHighlighterFactory`), определение языка сниппета (`Tests.SnippetLanguages`, `Tests.SnippetLanguageDetect`, `Tests.SnippetLanguageNB`), утилиты (`Tests.EpochService`, `Tests.HotkeyService`, `Tests.PasswordService`, `Tests.TextDiff`), настройки (`Tests.Settings`), шифрование базы (`Tests.DatabaseEncryption`).
+Юнит-тесты на DUnitX (консольный раннер): 53 группы / 555 тестов — консольные ключи (`Tests.CmdLine`), миграции БД и резервные копии (`Tests.DbMigrations`), репозитории и сервисы на in-memory SQLite через FireDAC (`Tests.Chains`, `Tests.MultiSelect`, `Tests.SearchTags`), язык запросов (`Tests.QueryLanguage`), макро-движок (`Tests.MacroEngine`, `Tests.MacroInputTypes`, `Tests.MacroCounters`, `Tests.MacroBuilder`, `Tests.MacroCardController`), подсветка синтаксиса (`Tests.MacroSyn`, `Tests.CustomBashSyn`, `Tests.SynHighlighterFactory`), определение языка сниппета (`Tests.SnippetLanguages`, `Tests.SnippetLanguageDetect`, `Tests.SnippetLanguageNB`), автодополнение (`Tests.CompletionEngine`), утилиты (`Tests.EpochService`, `Tests.HotkeyService`, `Tests.PasswordService`, `Tests.TextDiff`), настройки (`Tests.Settings`), шифрование базы (`Tests.DatabaseEncryption`).
 
 Сборка и запуск — проверенная команда (из корня репозитория):
 

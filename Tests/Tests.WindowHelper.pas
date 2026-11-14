@@ -1,4 +1,4 @@
-unit Tests.WindowHelper;
+﻿unit Tests.WindowHelper;
 
 interface
 
@@ -16,12 +16,10 @@ uses
 type
     TWinStubSettings = class(TInterfacedObject, ISettingsManager)
     private
-        FBash: TStringList;
         function GetSettings: TAppSettings;
         procedure SetSettings(const Value: TAppSettings);
         function GetCurrentLanguage: string;
         procedure SetCurrentLanguage(const Value: string);
-        function GetBashAutocomplete: TStringList;
     public
         Data: TAppSettings;
         constructor Create;
@@ -81,12 +79,10 @@ implementation
 constructor TWinStubSettings.Create;
 begin
     inherited Create;
-    FBash := TStringList.Create;
 end;
 
 destructor TWinStubSettings.Destroy;
 begin
-    FBash.Free;
     inherited;
 end;
 
@@ -108,11 +104,6 @@ end;
 procedure TWinStubSettings.SetCurrentLanguage(const Value: string);
 begin
     Data.CurrentLanguage := Value;
-end;
-
-function TWinStubSettings.GetBashAutocomplete: TStringList;
-begin
-    Result := FBash;
 end;
 
 procedure TWinStubSettings.Load;
@@ -172,10 +163,10 @@ end;
 
 procedure TWindowHelperTests.EstimateTypingMs_MeasuresTokensFromSettings;
 begin
-    // Текстовый токен: Len*KeyPressInterval + ActivationDelay + SetFocusDelay
+    // РўРµРєСЃС‚РѕРІС‹Р№ С‚РѕРєРµРЅ: Len*KeyPressInterval + ActivationDelay + SetFocusDelay
     Assert.AreEqual(170, FHelper.EstimateTypingMs('AB'));
     Assert.AreEqual(500, FHelper.EstimateTypingMs('{SLEEP 500}'));
-    // Сон + хвостовой текстовый токен 'X' (1*10 + 100 + 50)
+    // РЎРѕРЅ + С…РІРѕСЃС‚РѕРІРѕР№ С‚РµРєСЃС‚РѕРІС‹Р№ С‚РѕРєРµРЅ 'X' (1*10 + 100 + 50)
     Assert.AreEqual(660, FHelper.EstimateTypingMs('{SLEEP 500}X'));
 end;
 
@@ -194,7 +185,7 @@ begin
             Result := not FHelper.IsTypingBusy;
         end, 2000));
 
-    // 2*25 + 100 + 50: настройки перечитаны из менеджера при старте макроса
+    // 2*25 + 100 + 50: РЅР°СЃС‚СЂРѕР№РєРё РїРµСЂРµС‡РёС‚Р°РЅС‹ РёР· РјРµРЅРµРґР¶РµСЂР° РїСЂРё СЃС‚Р°СЂС‚Рµ РјР°РєСЂРѕСЃР°
     Assert.AreEqual(200, FHelper.EstimateTypingMs('AB'));
 end;
 
@@ -227,7 +218,7 @@ begin
     FHelper.TypeTextIntoWindow('{SLEEP 5000}');
     Assert.IsTrue(FHelper.IsTypingBusy);
 
-    // Второй старт гасит предыдущий поток через StopActiveThread
+    // Р’С‚РѕСЂРѕР№ СЃС‚Р°СЂС‚ РіР°СЃРёС‚ РїСЂРµРґС‹РґСѓС‰РёР№ РїРѕС‚РѕРє С‡РµСЂРµР· StopActiveThread
     FHelper.TypeTextIntoWindow('{SLEEP 100}');
     Assert.IsTrue(WaitFor(function: Boolean
         begin
@@ -260,7 +251,7 @@ begin
                 TInterlocked.Increment(FFocusLost);
             end;
 
-        // Целевое окно уничтожено: TypeRawText обязан прерваться до печати
+        // Р¦РµР»РµРІРѕРµ РѕРєРЅРѕ СѓРЅРёС‡С‚РѕР¶РµРЅРѕ: TypeRawText РѕР±СЏР·Р°РЅ РїСЂРµСЂРІР°С‚СЊСЃСЏ РґРѕ РїРµС‡Р°С‚Рё
         FHelper.TypeTextIntoWindowWithContext('AB', Ctx);
 
         Assert.IsTrue(WaitFor(function: Boolean

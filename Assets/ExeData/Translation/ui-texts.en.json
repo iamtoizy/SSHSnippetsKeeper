@@ -992,8 +992,74 @@
       "Caption": "List contents only (Dry Run/List)"
     }
   },
+  "CompletionManagerForm": {
+    "Caption": "Completion Manager",
+    "tsBash": {
+      "Caption": "Bash"
+    },
+    "tsBat": {
+      "Caption": "CMD"
+    },
+    "tsPowerShell": {
+      "Caption": "PowerShell"
+    },
+    "gbTree": {
+      "Caption": "Tree"
+    },
+    "gbCommands": {
+      "Caption": "Commands"
+    },
+    "edTreeFilter": {
+      "TextHint": "Tree filter"
+    },
+    "edCmdFilter": {
+      "TextHint": "Command filter"
+    },
+    "edName": {
+      "TextHint": "Name"
+    },
+    "edInsert": {
+      "TextHint": "Insert"
+    },
+    "edCommand": {
+      "TextHint": "New command"
+    },
+    "btnAdd": {
+      "Caption": "Add"
+    },
+    "btnAddChild": {
+      "Caption": "Add child"
+    },
+    "btnDelete": {
+      "Caption": "Delete"
+    },
+    "btnApply": {
+      "Caption": "Apply"
+    },
+    "btnCmdAdd": {
+      "Caption": "Add"
+    },
+    "btnCmdDelete": {
+      "Caption": "Delete"
+    },
+    "btnImport": {
+      "Caption": "Import"
+    },
+    "btnExport": {
+      "Caption": "Export"
+    },
+    "btnSave": {
+      "Caption": "Save"
+    },
+    "btnClose": {
+      "Caption": "Close"
+    }
+  },
   "SettingsForm": {
     "Caption": "Settings",
+    "bCompletionManager": {
+      "Caption": "Completion manager..."
+    },
     "tsHotkeys": {
       "Caption": "Hotkeys"
     },
@@ -1210,6 +1276,22 @@
     }
   },
   "Messages": {
+    "CompletionManager": {
+      "InputNameTitle": "Command name",
+      "InputNamePrompt": "Enter the command name:",
+      "DuplicateName": "A command with this name already exists at this level.",
+      "SelectNodeFirst": "Select a node in the command tree first.",
+      "CmdSelectFirst": "Select a command in the list first.",
+      "EmptyName": "Command name cannot be empty.",
+      "DeleteConfirmTitle": "Delete command",
+      "DeleteConfirm": "Delete command \"%s\" together with all its children?",
+      "SavedToast": "Completion file saved.",
+      "ImportedToast": "Section imported.",
+      "ExportedToast": "Section exported.",
+      "ImportErrorFormat": "Import error: %s",
+      "ExportErrorFormat": "Export error: %s",
+      "SaveErrorFormat": "Failed to save the completion file: %s"
+    },
     "AllDatabases": {
       "Title": "All databases",
       "Open": "Open",

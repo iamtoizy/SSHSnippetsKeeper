@@ -1,4 +1,4 @@
-unit Tests.SyncController;
+﻿unit Tests.SyncController;
 
 interface
 
@@ -28,12 +28,10 @@ uses
 type
     TSyncTestSettings = class(TInterfacedObject, ISettingsManager)
     private
-        FBash: TStringList;
         function GetSettings: TAppSettings;
         procedure SetSettings(const Value: TAppSettings);
         function GetCurrentLanguage: string;
         procedure SetCurrentLanguage(const Value: string);
-        function GetBashAutocomplete: TStringList;
     public
         Data: TAppSettings;
         constructor Create;
@@ -175,12 +173,10 @@ uses
 constructor TSyncTestSettings.Create;
 begin
     inherited Create;
-    FBash := TStringList.Create;
 end;
 
 destructor TSyncTestSettings.Destroy;
 begin
-    FBash.Free;
     inherited;
 end;
 
@@ -202,11 +198,6 @@ end;
 procedure TSyncTestSettings.SetCurrentLanguage(const Value: string);
 begin
     Data.CurrentLanguage := Value;
-end;
-
-function TSyncTestSettings.GetBashAutocomplete: TStringList;
-begin
-    Result := FBash;
 end;
 
 procedure TSyncTestSettings.Load;
@@ -613,12 +604,12 @@ procedure TSyncControllerTests.HandleAutoSyncTick_GatesByDirtyAndConnection;
 begin
     CreateController(0);
 
-    // Не dirty: тик гасит таймер, синк не запускается
+    // РќРµ dirty: С‚РёРє РіР°СЃРёС‚ С‚Р°Р№РјРµСЂ, СЃРёРЅРє РЅРµ Р·Р°РїСѓСЃРєР°РµС‚СЃСЏ
     FController.HandleAutoSyncTick;
     Assert.IsFalse(FTimer.Enabled);
     Assert.AreEqual(0, FReloadCalls);
 
-    // Dirty, но база закрыта: синк не запускается
+    // Dirty, РЅРѕ Р±Р°Р·Р° Р·Р°РєСЂС‹С‚Р°: СЃРёРЅРє РЅРµ Р·Р°РїСѓСЃРєР°РµС‚СЃСЏ
     FController.MarkDataChanged;
     FDbMgr.Connected := False;
     FController.HandleAutoSyncTick;
@@ -668,12 +659,12 @@ begin
     FController.PerformSync(True);
     FController.WaitForCompletion;
 
-    // Второй вызов вышел по CompareExchange-гарду: экспорт один
+    // Р’С‚РѕСЂРѕР№ РІС‹Р·РѕРІ РІС‹С€РµР» РїРѕ CompareExchange-РіР°СЂРґСѓ: СЌРєСЃРїРѕСЂС‚ РѕРґРёРЅ
     Assert.IsTrue(FReloadCalls = 1, 'ReloadCalls=' + IntToStr(FReloadCalls) +
         ', LastMessage=' + FMessages.LastMessage);
     Assert.IsTrue(FSyncAction.Enabled);
 
-    // После завершения гард сброшен: новый синк проходит
+    // РџРѕСЃР»Рµ Р·Р°РІРµСЂС€РµРЅРёСЏ РіР°СЂРґ СЃР±СЂРѕС€РµРЅ: РЅРѕРІС‹Р№ СЃРёРЅРє РїСЂРѕС…РѕРґРёС‚
     FController.PerformSync(True);
     FController.WaitForCompletion;
     Assert.AreEqual(2, FReloadCalls);
@@ -686,7 +677,7 @@ begin
 
     FController.MarkDataChanged;
     FController.PerformSync(True);
-    // Изменение во время фоновой синхронизации не должно потерять флаг
+    // РР·РјРµРЅРµРЅРёРµ РІРѕ РІСЂРµРјСЏ С„РѕРЅРѕРІРѕР№ СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёРё РЅРµ РґРѕР»Р¶РЅРѕ РїРѕС‚РµСЂСЏС‚СЊ С„Р»Р°Рі
     FController.MarkDataChanged;
     FController.WaitForCompletion;
     Assert.IsTrue(FController.Dirty);

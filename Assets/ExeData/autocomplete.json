@@ -1,0 +1,1953 @@
+{
+  "version": 2,
+  "bash": {
+    "version": 1,
+    "language": "bash",
+    "completion": {
+      "commands": [
+        "aa-enabled",
+        "aa-exec",
+        "aa-features-abi",
+        "aa-load",
+        "aa-remove-unknown",
+        "aa-status",
+        "aa-teardown",
+        "accessdb",
+        "acpidbg",
+        "add-apt-repository",
+        "add-shell",
+        "addgnupghome",
+        "addgroup",
+        "addpart",
+        "addr2line",
+        "adduser",
+        "agetty",
+        "alias",
+        "apparmor_parser",
+        "apparmor_status",
+        "applygnupgdefaults",
+        "apport-bug",
+        "apport-cli",
+        "apport-collect",
+        "apport-unpack",
+        "appstreamcli",
+        "apropos",
+        "apt",
+        "apt-add-repository",
+        "apt-cache",
+        "apt-cdrom",
+        "apt-config",
+        "apt-extracttemplates",
+        "apt-ftparchive",
+        "apt-get",
+        "apt-key",
+        "apt-mark",
+        "apt-sortpkgs",
+        "ar",
+        "arch",
+        "arp",
+        "arpd",
+        "arptables",
+        "arptables-nft",
+        "arptables-nft-restore",
+        "arptables-nft-save",
+        "arptables-restore",
+        "arptables-save",
+        "as",
+        "awk",
+        "b2sum",
+        "badblocks",
+        "base32",
+        "base64",
+        "basename",
+        "basenc",
+        "bash",
+        "bashbug",
+        "bc",
+        "bcache-super-show",
+        "bg",
+        "bind",
+        "biosdecode",
+        "blkdeactivate",
+        "blkdiscard",
+        "blkid",
+        "blkzone",
+        "blockdev",
+        "bpftool",
+        "break",
+        "bridge",
+        "btrfs",
+        "btrfs-convert",
+        "btrfs-find-root",
+        "btrfs-image",
+        "btrfs-map-logical",
+        "btrfs-select-super",
+        "btrfsck",
+        "btrfstune",
+        "builtin",
+        "bunzip2",
+        "busctl",
+        "bzcat",
+        "bzcmp",
+        "bzdiff",
+        "bzegrep",
+        "bzexe",
+        "bzfgrep",
+        "bzgrep",
+        "bzip2",
+        "bzip2recover",
+        "bzless",
+        "bzmore",
+        "c++",
+        "c++filt",
+        "c89",
+        "c89-gcc",
+        "c99",
+        "c99-gcc",
+        "c_rehash",
+        "caller",
+        "capsh",
+        "captoinfo",
+        "case",
+        "cat",
+        "catman",
+        "cc",
+        "cd",
+        "certbot",
+        "cfdisk",
+        "cgdisk",
+        "chage",
+        "chardet",
+        "chardetect",
+        "chattr",
+        "chcon",
+        "chcpu",
+        "chfn",
+        "chgpasswd",
+        "chgrp",
+        "chmem",
+        "chmod",
+        "choom",
+        "chown",
+        "chpasswd",
+        "chroot",
+        "chrt",
+        "chsh",
+        "chvt",
+        "ckbcomp",
+        "cksum",
+        "clear",
+        "clear_console",
+        "cloud-id",
+        "cloud-init",
+        "cloud-init-per",
+        "cmp",
+        "codepage",
+        "col",
+        "colcrt",
+        "colrm",
+        "column",
+        "comm",
+        "command",
+        "command_not_found_handle",
+        "compgen",
+        "complete",
+        "compopt",
+        "containerd",
+        "containerd-shim-runc-v2",
+        "continue",
+        "coproc",
+        "corelist",
+        "cp",
+        "cpan",
+        "cpan5.38-x86_64-linux-gnu",
+        "cpgr",
+        "cpio",
+        "cpp",
+        "cpp-13",
+        "cppw",
+        "cpupower",
+        "crontab",
+        "cryptdisks_start",
+        "cryptdisks_stop",
+        "cryptsetup",
+        "csplit",
+        "ctr",
+        "ctrlaltdel",
+        "ctstat",
+        "curl",
+        "curl-config",
+        "cut",
+        "cvtsudoers",
+        "dash",
+        "date",
+        "dbilogstrip",
+        "dbiprof",
+        "dbiproxy",
+        "dbus-cleanup-sockets",
+        "dbus-daemon",
+        "dbus-monitor",
+        "dbus-run-session",
+        "dbus-send",
+        "dbus-update-activation-environment",
+        "dbus-uuidgen",
+        "dcb",
+        "dd",
+        "deallocvt",
+        "deb-systemd-helper",
+        "deb-systemd-invoke",
+        "debconf",
+        "debconf-apt-progress",
+        "debconf-communicate",
+        "debconf-copydb",
+        "debconf-escape",
+        "debconf-set-selections",
+        "debconf-show",
+        "debugfs",
+        "declare",
+        "delgroup",
+        "delpart",
+        "deluser",
+        "delv",
+        "depmod",
+        "dequote",
+        "devlink",
+        "df",
+        "dh_bash-completion",
+        "dh_installxmlcatalogs",
+        "dh_perl_dbi",
+        "dhcpcd",
+        "dialog",
+        "diff",
+        "diff3",
+        "dig",
+        "dir",
+        "dircolors",
+        "dirmngr",
+        "dirmngr-client",
+        "dirname",
+        "dirs",
+        "disown",
+        "dmesg",
+        "dmeventd",
+        "dmidecode",
+        "dmsetup",
+        "dmstats",
+        "dnsdomainname",
+        "do",
+        "do-release-upgrade",
+        "docker",
+        "docker-proxy",
+        "dockerd",
+        "domainname",
+        "done",
+        "dosfsck",
+        "dosfslabel",
+        "dpkg",
+        "dpkg-architecture",
+        "dpkg-buildapi",
+        "dpkg-buildflags",
+        "dpkg-buildpackage",
+        "dpkg-buildtree",
+        "dpkg-checkbuilddeps",
+        "dpkg-deb",
+        "dpkg-distaddfile",
+        "dpkg-divert",
+        "dpkg-genbuildinfo",
+        "dpkg-genchanges",
+        "dpkg-gencontrol",
+        "dpkg-gensymbols",
+        "dpkg-maintscript-helper",
+        "dpkg-mergechangelogs",
+        "dpkg-name",
+        "dpkg-parsechangelog",
+        "dpkg-preconfigure",
+        "dpkg-query",
+        "dpkg-realpath",
+        "dpkg-reconfigure",
+        "dpkg-scanpackages",
+        "dpkg-scansources",
+        "dpkg-shlibdeps",
+        "dpkg-source",
+        "dpkg-split",
+        "dpkg-statoverride",
+        "dpkg-trigger",
+        "dpkg-vendor",
+        "dracut",
+        "dracut-catimages",
+        "du",
+        "dumpe2fs",
+        "dumpkeys",
+        "dwp",
+        "e2freefrag",
+        "e2fsck",
+        "e2image",
+        "e2label",
+        "e2mmpstatus",
+        "e2scrub",
+        "e2scrub_all",
+        "e2undo",
+        "e4crypt",
+        "e4defrag",
+        "ebtables",
+        "ebtables-nft",
+        "ebtables-nft-restore",
+        "ebtables-nft-save",
+        "ebtables-restore",
+        "ebtables-save",
+        "ebtables-translate",
+        "ec2metadata",
+        "echo",
+        "editor",
+        "egrep",
+        "elfedit",
+        "elif",
+        "else",
+        "enable",
+        "enc2xs",
+        "encguess",
+        "env",
+        "envsubst",
+        "eqn",
+        "esac",
+        "ethtool",
+        "eval",
+        "ex",
+        "exec",
+        "exit",
+        "expand",
+        "expiry",
+        "export",
+        "expr",
+        "factor",
+        "faillock",
+        "faillog",
+        "faked-sysv",
+        "faked-tcp",
+        "fakeroot",
+        "fakeroot-sysv",
+        "fakeroot-tcp",
+        "fallocate",
+        "false",
+        "fatlabel",
+        "fc",
+        "fdisk",
+        "fg",
+        "fgconsole",
+        "fgrep",
+        "fi",
+        "file",
+        "filefrag",
+        "find",
+        "findfs",
+        "findmnt",
+        "fixparts",
+        "flock",
+        "fmt",
+        "fold",
+        "for",
+        "free",
+        "fsadm",
+        "fsck",
+        "fsck.btrfs",
+        "fsck.cramfs",
+        "fsck.ext2",
+        "fsck.ext3",
+        "fsck.ext4",
+        "fsck.fat",
+        "fsck.minix",
+        "fsck.msdos",
+        "fsck.vfat",
+        "fsck.xfs",
+        "fsfreeze",
+        "fstab-decode",
+        "fstrim",
+        "function",
+        "funzip",
+        "fusermount",
+        "fusermount3",
+        "g++",
+        "g++-13",
+        "gapplication",
+        "gawk",
+        "gawkbug",
+        "gawklibpath_append",
+        "gawklibpath_default",
+        "gawklibpath_prepend",
+        "gawkpath_append",
+        "gawkpath_default",
+        "gawkpath_prepend",
+        "gcc",
+        "gcc-13",
+        "gcc-ar",
+        "gcc-ar-13",
+        "gcc-nm",
+        "gcc-nm-13",
+        "gcc-ranlib",
+        "gcc-ranlib-13",
+        "gcore",
+        "gcov",
+        "gcov-13",
+        "gcov-dump",
+        "gcov-dump-13",
+        "gcov-tool",
+        "gcov-tool-13",
+        "gdb",
+        "gdb-add-index",
+        "gdbtui",
+        "gdbus",
+        "gdisk",
+        "gencat",
+        "genl",
+        "geqn",
+        "getcap",
+        "getconf",
+        "getent",
+        "getkeycodes",
+        "getopt",
+        "getopts",
+        "getpcaps",
+        "gettext",
+        "gettext.sh",
+        "getty",
+        "ginstall-info",
+        "gio",
+        "gio-querymodules",
+        "git",
+        "git-receive-pack",
+        "git-shell",
+        "git-upload-archive",
+        "git-upload-pack",
+        "glib-compile-schemas",
+        "gmake",
+        "gold",
+        "gp-archive",
+        "gp-collect-app",
+        "gp-display-html",
+        "gp-display-src",
+        "gp-display-text",
+        "gpasswd",
+        "gpg",
+        "gpg-agent",
+        "gpg-connect-agent",
+        "gpgconf",
+        "gpgparsemail",
+        "gpgsm",
+        "gpgsplit",
+        "gpgtar",
+        "gpgv",
+        "gpic",
+        "gprof",
+        "gprofng",
+        "gpu-manager",
+        "grep",
+        "gresource",
+        "groff",
+        "grog",
+        "grops",
+        "grotty",
+        "groupadd",
+        "groupdel",
+        "groupmems",
+        "groupmod",
+        "groups",
+        "growpart",
+        "grpck",
+        "grpconv",
+        "grpunconv",
+        "grub-editenv",
+        "grub-file",
+        "grub-fstest",
+        "grub-glue-efi",
+        "grub-install",
+        "grub-kbdcomp",
+        "grub-macbless",
+        "grub-menulst2cfg",
+        "grub-mkconfig",
+        "grub-mkdevicemap",
+        "grub-mkfont",
+        "grub-mkimage",
+        "grub-mklayout",
+        "grub-mknetdir",
+        "grub-mkpasswd-pbkdf2",
+        "grub-mkrelpath",
+        "grub-mkrescue",
+        "grub-mkstandalone",
+        "grub-mount",
+        "grub-probe",
+        "grub-reboot",
+        "grub-render-label",
+        "grub-script-check",
+        "grub-set-default",
+        "grub-syslinux2cfg",
+        "gsettings",
+        "gtbl",
+        "gunzip",
+        "gzexe",
+        "gzip",
+        "h2ph",
+        "h2xs",
+        "halt",
+        "hardlink",
+        "hash",
+        "hd",
+        "head",
+        "help",
+        "helpztags",
+        "hexdump",
+        "history",
+        "host",
+        "hostid",
+        "hostname",
+        "hostnamectl",
+        "htop",
+        "i386",
+        "iconv",
+        "iconvconfig",
+        "id",
+        "if",
+        "ifconfig",
+        "ifdown",
+        "ifquery",
+        "iftop",
+        "ifup",
+        "in",
+        "inetutils-telnet",
+        "info",
+        "infobrowser",
+        "infocmp",
+        "infotocap",
+        "init",
+        "insmod",
+        "install",
+        "install-info",
+        "install-sgmlcatalog",
+        "installkernel",
+        "instmodsh",
+        "integritysetup",
+        "invoke-rc.d",
+        "ionice",
+        "ip",
+        "ip6tables",
+        "ip6tables-apply",
+        "ip6tables-legacy",
+        "ip6tables-legacy-restore",
+        "ip6tables-legacy-save",
+        "ip6tables-nft",
+        "ip6tables-nft-restore",
+        "ip6tables-nft-save",
+        "ip6tables-restore",
+        "ip6tables-restore-translate",
+        "ip6tables-save",
+        "ip6tables-translate",
+        "ipcmk",
+        "ipcrm",
+        "ipcs",
+        "ipmaddr",
+        "iptables",
+        "iptables-apply",
+        "iptables-legacy",
+        "iptables-legacy-restore",
+        "iptables-legacy-save",
+        "iptables-nft",
+        "iptables-nft-restore",
+        "iptables-nft-save",
+        "iptables-restore",
+        "iptables-restore-translate",
+        "iptables-save",
+        "iptables-translate",
+        "iptables-xml",
+        "iptunnel",
+        "ischroot",
+        "iscsi-iname",
+        "iscsi_discovery",
+        "iscsiadm",
+        "iscsid",
+        "iscsistart",
+        "isosize",
+        "iucode-tool",
+        "iucode_tool",
+        "jobs",
+        "join",
+        "journalctl",
+        "json-patch-jsondiff",
+        "json_pp",
+        "jsondiff",
+        "jsonpatch",
+        "jsonpointer",
+        "jsonschema",
+        "kbd_mode",
+        "kbdinfo",
+        "kbdrate",
+        "kbxutil",
+        "kernel-install",
+        "kill",
+        "killall5",
+        "kmod",
+        "kmodsign",
+        "kpartx",
+        "l",
+        "la",
+        "last",
+        "lastb",
+        "lastlog",
+        "lcf",
+        "ld",
+        "ld.bfd",
+        "ld.gold",
+        "ld.so",
+        "ldattach",
+        "ldconfig",
+        "ldconfig.real",
+        "ldd",
+        "less",
+        "lessecho",
+        "lessfile",
+        "lesskey",
+        "lesspipe",
+        "let",
+        "letsencrypt",
+        "lexgrog",
+        "libnetcfg",
+        "link",
+        "linux-check-removal",
+        "linux-update-symlinks",
+        "linux-version",
+        "linux32",
+        "linux64",
+        "ll",
+        "ln",
+        "lnstat",
+        "loadkeys",
+        "loadunimap",
+        "local",
+        "locale",
+        "locale-check",
+        "locale-gen",
+        "localectl",
+        "localedef",
+        "logger",
+        "login",
+        "loginctl",
+        "logname",
+        "logout",
+        "logrotate",
+        "logsave",
+        "look",
+        "losetup",
+        "ls",
+        "lsattr",
+        "lsb_release",
+        "lsblk",
+        "lscpu",
+        "lsinitramfs",
+        "lsinitrd",
+        "lsipc",
+        "lslocks",
+        "lslogins",
+        "lsmem",
+        "lsmod",
+        "lsns",
+        "lsof",
+        "lspci",
+        "lspgpot",
+        "lsusb",
+        "lto-dump",
+        "lto-dump-13",
+        "luksformat",
+        "lvchange",
+        "lvconvert",
+        "lvcreate",
+        "lvdisplay",
+        "lvextend",
+        "lvm",
+        "lvmconfig",
+        "lvmdiskscan",
+        "lvmdump",
+        "lvmpolld",
+        "lvmsadc",
+        "lvmsar",
+        "lvreduce",
+        "lvremove",
+        "lvrename",
+        "lvresize",
+        "lvs",
+        "lvscan",
+        "lzcat",
+        "lzcmp",
+        "lzdiff",
+        "lzegrep",
+        "lzfgrep",
+        "lzgrep",
+        "lzless",
+        "lzma",
+        "lzmainfo",
+        "lzmore",
+        "make",
+        "make-bcache",
+        "make-first-existing-target",
+        "man",
+        "man-recode",
+        "mandb",
+        "manpath",
+        "mapfile",
+        "mapscrn",
+        "mawk",
+        "mc",
+        "mcdiff",
+        "mcedit",
+        "mcookie",
+        "mcview",
+        "md5sum",
+        "md5sum.textutils",
+        "mdadm",
+        "mdig",
+        "mdmon",
+        "memusage",
+        "memusagestat",
+        "mesg",
+        "migrate-pubring-from-classic-gpg",
+        "mii-tool",
+        "mk_modmap",
+        "mkdir",
+        "mkdosfs",
+        "mke2fs",
+        "mkfifo",
+        "mkfs",
+        "mkfs.bfs",
+        "mkfs.btrfs",
+        "mkfs.cramfs",
+        "mkfs.ext2",
+        "mkfs.ext3",
+        "mkfs.ext4",
+        "mkfs.fat",
+        "mkfs.minix",
+        "mkfs.msdos",
+        "mkfs.vfat",
+        "mkfs.xfs",
+        "mkhomedir_helper",
+        "mkinitramfs",
+        "mklost+found",
+        "mknod",
+        "mksquashfs",
+        "mkswap",
+        "mktemp",
+        "modinfo",
+        "modprobe",
+        "mokutil",
+        "more",
+        "mount",
+        "mount.fuse",
+        "mount.fuse3",
+        "mountpoint",
+        "mpathpersist",
+        "mt",
+        "mt-gnu",
+        "mtr",
+        "mtr-packet",
+        "mtrace",
+        "multipath",
+        "multipathc",
+        "multipathd",
+        "mv",
+        "namei",
+        "nameif",
+        "nano",
+        "nawk",
+        "ncdu",
+        "neqn",
+        "netplan",
+        "netstat",
+        "networkctl",
+        "newgrp",
+        "newusers",
+        "nfnl_osf",
+        "nft",
+        "ngettext",
+        "nginx",
+        "nice",
+        "nisdomainname",
+        "nl",
+        "nm",
+        "nmap",
+        "nohup",
+        "nologin",
+        "nping",
+        "nproc",
+        "nroff",
+        "nsenter",
+        "nslookup",
+        "nstat",
+        "nsupdate",
+        "numfmt",
+        "nvidia-detector",
+        "objcopy",
+        "objdump",
+        "od",
+        "oem-getlogs",
+        "openssl",
+        "openvt",
+        "ownership",
+        "pager",
+        "pam-auth-update",
+        "pam_extrausers_chkpwd",
+        "pam_extrausers_update",
+        "pam_getenv",
+        "pam_namespace_helper",
+        "pam_timestamp_check",
+        "parted",
+        "partprobe",
+        "partx",
+        "passwd",
+        "paste",
+        "patch",
+        "pathchk",
+        "pdb3",
+        "pdb3.12",
+        "perf",
+        "perl",
+        "perl5.38-x86_64-linux-gnu",
+        "perl5.38.2",
+        "perlbug",
+        "perldoc",
+        "perlivp",
+        "perlthanks",
+        "pflags",
+        "pgrep",
+        "pic",
+        "pico",
+        "piconv",
+        "pidof",
+        "pidwait",
+        "pigz",
+        "pinentry",
+        "pinentry-curses",
+        "ping",
+        "ping4",
+        "ping6",
+        "pinky",
+        "pip",
+        "pip3",
+        "pip3.12",
+        "pivot_root",
+        "pkaction",
+        "pkcheck",
+        "pkcon",
+        "pkill",
+        "pkmon",
+        "pkttyagent",
+        "pl2pm",
+        "pldd",
+        "plipconfig",
+        "pmap",
+        "pod2html",
+        "pod2man",
+        "pod2text",
+        "pod2usage",
+        "podchecker",
+        "pollinate",
+        "popd",
+        "poweroff",
+        "pr",
+        "preconv",
+        "printenv",
+        "printf",
+        "prlimit",
+        "prove",
+        "ps",
+        "psfaddtable",
+        "psfgettable",
+        "psfstriptable",
+        "psfxtable",
+        "ptar",
+        "ptardiff",
+        "ptargrep",
+        "ptx",
+        "pushd",
+        "pvchange",
+        "pvck",
+        "pvcreate",
+        "pvdisplay",
+        "pvmove",
+        "pvremove",
+        "pvresize",
+        "pvs",
+        "pvscan",
+        "pwck",
+        "pwconv",
+        "pwd",
+        "pwdx",
+        "pwhistory_helper",
+        "pwunconv",
+        "py3clean",
+        "py3compile",
+        "py3versions",
+        "pydoc3",
+        "pydoc3.12",
+        "pygettext3",
+        "pygettext3.12",
+        "pyserial-miniterm",
+        "pyserial-ports",
+        "python3",
+        "python3-config",
+        "python3.12",
+        "python3.12-config",
+        "pzstd",
+        "qemu-ga",
+        "quirks-handler",
+        "quote",
+        "quote_readline",
+        "ranlib",
+        "rarp",
+        "rbash",
+        "rdma",
+        "read",
+        "readarray",
+        "readelf",
+        "readlink",
+        "readonly",
+        "readprofile",
+        "realpath",
+        "reboot",
+        "remove-shell",
+        "rename.ul",
+        "renice",
+        "rescan-scsi-bus.sh",
+        "reset",
+        "resize2fs",
+        "resizecons",
+        "resizepart",
+        "resolvconf",
+        "resolvectl",
+        "return",
+        "rev",
+        "rgrep",
+        "rm",
+        "rmdir",
+        "rmmod",
+        "rmt",
+        "rmt-tar",
+        "rnano",
+        "rootlesskit",
+        "route",
+        "routel",
+        "rpcgen",
+        "rrsync",
+        "rsync",
+        "rsync-ssl",
+        "rtacct",
+        "rtcwake",
+        "rtla",
+        "rtmon",
+        "rtstat",
+        "run-parts",
+        "runc",
+        "runcon",
+        "runlevel",
+        "runuser",
+        "rview",
+        "rvim",
+        "savelog",
+        "sbattach",
+        "sbkeysync",
+        "sbsiglist",
+        "sbsign",
+        "sbvarsign",
+        "sbverify",
+        "scalar",
+        "scp",
+        "screen",
+        "screendump",
+        "script",
+        "scriptlive",
+        "scriptreplay",
+        "scsi_logging_level",
+        "scsi_mandat",
+        "scsi_readcap",
+        "scsi_ready",
+        "scsi_satl",
+        "scsi_start",
+        "scsi_stop",
+        "scsi_temperature",
+        "sdiff",
+        "sed",
+        "select",
+        "select-editor",
+        "sensible-browser",
+        "sensible-editor",
+        "sensible-pager",
+        "sensible-terminal",
+        "seq",
+        "service",
+        "set",
+        "setarch",
+        "setcap",
+        "setfont",
+        "setkeycodes",
+        "setleds",
+        "setlogcons",
+        "setmetamode",
+        "setpci",
+        "setpriv",
+        "setsid",
+        "setterm",
+        "setupcon",
+        "setvesablank",
+        "setvtrgb",
+        "sfdisk",
+        "sftp",
+        "sg",
+        "sg_bg_ctl",
+        "sg_compare_and_write",
+        "sg_copy_results",
+        "sg_dd",
+        "sg_decode_sense",
+        "sg_emc_trespass",
+        "sg_format",
+        "sg_get_config",
+        "sg_get_elem_status",
+        "sg_get_lba_status",
+        "sg_ident",
+        "sg_inq",
+        "sg_logs",
+        "sg_luns",
+        "sg_map",
+        "sg_map26",
+        "sg_modes",
+        "sg_opcodes",
+        "sg_persist",
+        "sg_prevent",
+        "sg_raw",
+        "sg_rbuf",
+        "sg_rdac",
+        "sg_read",
+        "sg_read_attr",
+        "sg_read_block_limits",
+        "sg_read_buffer",
+        "sg_read_long",
+        "sg_readcap",
+        "sg_reassign",
+        "sg_referrals",
+        "sg_rep_pip",
+        "sg_rep_zones",
+        "sg_requests",
+        "sg_reset",
+        "sg_reset_wp",
+        "sg_rmsn",
+        "sg_rtpg",
+        "sg_safte",
+        "sg_sanitize",
+        "sg_sat_identify",
+        "sg_sat_phy_event",
+        "sg_sat_read_gplog",
+        "sg_sat_set_features",
+        "sg_scan",
+        "sg_seek",
+        "sg_senddiag",
+        "sg_ses",
+        "sg_ses_microcode",
+        "sg_start",
+        "sg_stpg",
+        "sg_stream_ctl",
+        "sg_sync",
+        "sg_test_rwbuf",
+        "sg_timestamp",
+        "sg_turs",
+        "sg_unmap",
+        "sg_verify",
+        "sg_vpd",
+        "sg_wr_mode",
+        "sg_write_buffer",
+        "sg_write_long",
+        "sg_write_same",
+        "sg_write_verify",
+        "sg_write_x",
+        "sg_xcopy",
+        "sg_zone",
+        "sgdisk",
+        "sginfo",
+        "sgm_dd",
+        "sgp_dd",
+        "sh",
+        "sha1sum",
+        "sha224sum",
+        "sha256sum",
+        "sha384sum",
+        "sha512sum",
+        "shadowconfig",
+        "shasum",
+        "shift",
+        "shopt",
+        "showconsolefont",
+        "showkey",
+        "shred",
+        "shuf",
+        "shutdown",
+        "size",
+        "skill",
+        "slabtop",
+        "slattach",
+        "sleep",
+        "slogin",
+        "snap",
+        "snapctl",
+        "snapfuse",
+        "snice",
+        "soelim",
+        "sort",
+        "sotruss",
+        "source",
+        "splain",
+        "split",
+        "splitfont",
+        "sprof",
+        "sqfscat",
+        "sqfstar",
+        "ss",
+        "ssh",
+        "ssh-add",
+        "ssh-agent",
+        "ssh-argv0",
+        "ssh-copy-id",
+        "ssh-keygen",
+        "ssh-keyscan",
+        "sshd",
+        "sshguard",
+        "start-stop-daemon",
+        "stat",
+        "stdbuf",
+        "streamzip",
+        "strings",
+        "strip",
+        "stty",
+        "su",
+        "sudo",
+        "sudo_logsrvd",
+        "sudo_sendlog",
+        "sudoedit",
+        "sudoreplay",
+        "sulogin",
+        "sum",
+        "suspend",
+        "swaplabel",
+        "swapoff",
+        "swapon",
+        "switch_root",
+        "sync",
+        "sysctl",
+        "systemctl",
+        "systemd",
+        "systemd-ac-power",
+        "systemd-analyze",
+        "systemd-ask-password",
+        "systemd-cat",
+        "systemd-cgls",
+        "systemd-cgtop",
+        "systemd-confext",
+        "systemd-creds",
+        "systemd-cryptenroll",
+        "systemd-cryptsetup",
+        "systemd-delta",
+        "systemd-detect-virt",
+        "systemd-escape",
+        "systemd-firstboot",
+        "systemd-hwdb",
+        "systemd-id128",
+        "systemd-inhibit",
+        "systemd-machine-id-setup",
+        "systemd-mount",
+        "systemd-notify",
+        "systemd-path",
+        "systemd-repart",
+        "systemd-run",
+        "systemd-socket-activate",
+        "systemd-stdio-bridge",
+        "systemd-sysext",
+        "systemd-sysusers",
+        "systemd-tmpfiles",
+        "systemd-tty-ask-password-agent",
+        "systemd-umount",
+        "tabs",
+        "tac",
+        "tail",
+        "tar",
+        "tarcat",
+        "taskset",
+        "tbl",
+        "tc",
+        "tcpdump",
+        "tee",
+        "telinit",
+        "telnet",
+        "tempfile",
+        "test",
+        "then",
+        "tic",
+        "time",
+        "timedatectl",
+        "timeout",
+        "times",
+        "tipc",
+        "tload",
+        "toe",
+        "top",
+        "touch",
+        "tput",
+        "tr",
+        "trap",
+        "troff",
+        "true",
+        "truncate",
+        "tset",
+        "tsort",
+        "tty",
+        "tune2fs",
+        "tuned",
+        "tuned-adm",
+        "turbostat",
+        "type",
+        "typeset",
+        "tzselect",
+        "u-d-c-print-pci-ids",
+        "ubuntu-bug",
+        "ubuntu-drivers",
+        "ucf",
+        "ucfq",
+        "ucfr",
+        "uclampset",
+        "udevadm",
+        "ufw",
+        "ul",
+        "ulimit",
+        "umask",
+        "umount",
+        "unalias",
+        "uname",
+        "unattended-upgrade",
+        "unattended-upgrades",
+        "uncompress",
+        "unexpand",
+        "unicode_start",
+        "unicode_stop",
+        "uniq",
+        "unix_chkpwd",
+        "unix_update",
+        "unlink",
+        "unlzma",
+        "unminimize",
+        "unmkinitramfs",
+        "unpigz",
+        "unset",
+        "unshare",
+        "unsquashfs",
+        "until",
+        "unxz",
+        "unzip",
+        "unzipsfx",
+        "unzstd",
+        "update-alternatives",
+        "update-ca-certificates",
+        "update-catalog",
+        "update-grub",
+        "update-grub2",
+        "update-info-dir",
+        "update-locale",
+        "update-mime-database",
+        "update-passwd",
+        "update-pciids",
+        "update-rc.d",
+        "update-secureboot-policy",
+        "update-shells",
+        "update-xmlcatalog",
+        "uptime",
+        "usb-devices",
+        "usbhid-dump",
+        "usbip",
+        "usbipd",
+        "usbreset",
+        "useradd",
+        "userdel",
+        "usermod",
+        "users",
+        "utmpdump",
+        "validlocale",
+        "varlinkctl",
+        "vcs-run",
+        "vcstime",
+        "vdir",
+        "vdpa",
+        "veritysetup",
+        "vgcfgbackup",
+        "vgcfgrestore",
+        "vgchange",
+        "vgck",
+        "vgconvert",
+        "vgcreate",
+        "vgdisplay",
+        "vgexport",
+        "vgextend",
+        "vgimport",
+        "vgimportclone",
+        "vgmerge",
+        "vgmknodes",
+        "vgreduce",
+        "vgremove",
+        "vgrename",
+        "vgs",
+        "vgscan",
+        "vgsplit",
+        "vi",
+        "view",
+        "vigr",
+        "vim",
+        "vim.basic",
+        "vimdiff",
+        "vimtutor",
+        "vipw",
+        "virt-what",
+        "visudo",
+        "vmstat",
+        "vpddecode",
+        "w",
+        "wait",
+        "wall",
+        "watch",
+        "watchgnupg",
+        "wc",
+        "wdctl",
+        "wget",
+        "whatis",
+        "whereis",
+        "which",
+        "while",
+        "who",
+        "whoami",
+        "wipefs",
+        "write",
+        "xargs",
+        "xfs_admin",
+        "xfs_bmap",
+        "xfs_copy",
+        "xfs_db",
+        "xfs_estimate",
+        "xfs_freeze",
+        "xfs_fsr",
+        "xfs_growfs",
+        "xfs_info",
+        "xfs_io",
+        "xfs_logprint",
+        "xfs_mdrestore",
+        "xfs_metadump",
+        "xfs_mkfile",
+        "xfs_ncheck",
+        "xfs_quota",
+        "xfs_repair",
+        "xfs_rtcp",
+        "xfs_scrub",
+        "xfs_scrub_all",
+        "xfs_spaceman",
+        "xsubpp",
+        "xtables-legacy-multi",
+        "xtables-monitor",
+        "xtables-nft-multi",
+        "xxd",
+        "xz",
+        "xzcat",
+        "xzcmp",
+        "xzdiff",
+        "xzegrep",
+        "xzfgrep",
+        "xzgrep",
+        "xzless",
+        "xzmore",
+        "yes",
+        "ypdomainname",
+        "zcat",
+        "zcmp",
+        "zdiff",
+        "zdump",
+        "zegrep",
+        "zfgrep",
+        "zforce",
+        "zgrep",
+        "zic",
+        "zipdetails",
+        "zipgrep",
+        "zipinfo",
+        "zless",
+        "zmore",
+        "znew",
+        "zramctl",
+        "zstd",
+        "zstdcat",
+        "zstdgrep",
+        "zstdless",
+        "zstdmt"
+      ],
+      "tree": {
+        "docker": {
+          "insert": "docker ",
+          "children": {
+            "ps": {
+              "insert": "ps ",
+              "children": {
+                "-a": {
+                  "insert": "-a "
+                },
+                "-q": {
+                  "insert": "-q "
+                },
+                "--format": {
+                  "insert": "--format \"table {{.ID}}\\t{{.Names}}\\t{{.Status}}\" "
+                }
+              }
+            },
+            "run": {
+              "insert": "run ",
+              "children": {
+                "-d": {
+                  "insert": "-d "
+                },
+                "-it": {
+                  "insert": "-it "
+                },
+                "--rm": {
+                  "insert": "--rm "
+                },
+                "--name": {
+                  "insert": "--name "
+                },
+                "-p": {
+                  "insert": "-p "
+                },
+                "-v": {
+                  "insert": "-v "
+                }
+              }
+            },
+            "exec": {
+              "insert": "exec -it ",
+              "children": {
+                "bash": {
+                  "insert": "bash "
+                },
+                "sh": {
+                  "insert": "sh "
+                }
+              }
+            },
+            "logs": {
+              "insert": "logs ",
+              "children": {
+                "-f": {
+                  "insert": "-f "
+                },
+                "--tail": {
+                  "insert": "--tail 100 "
+                },
+                "-t": {
+                  "insert": "-t "
+                }
+              }
+            },
+            "build": {
+              "insert": "build ",
+              "children": {
+                "-t": {
+                  "insert": "-t "
+                },
+                "--no-cache": {
+                  "insert": "--no-cache "
+                }
+              }
+            },
+            "images": {
+              "insert": "images "
+            },
+            "rm": {
+              "insert": "rm -f "
+            },
+            "rmi": {
+              "insert": "rmi -f "
+            },
+            "network": {
+              "insert": "network ",
+              "children": {
+                "ls": {
+                  "insert": "ls "
+                },
+                "create": {
+                  "insert": "create "
+                },
+                "inspect": {
+                  "insert": "inspect "
+                }
+              }
+            },
+            "volume": {
+              "insert": "volume ",
+              "children": {
+                "ls": {
+                  "insert": "ls "
+                },
+                "create": {
+                  "insert": "create "
+                }
+              }
+            },
+            "compose": {
+              "insert": "compose ",
+              "children": {
+                "up": {
+                  "insert": "up ",
+                  "children": {
+                    "-d": {
+                      "insert": "-d "
+                    },
+                    "--build": {
+                      "insert": "--build "
+                    }
+                  }
+                },
+                "down": {
+                  "insert": "down ",
+                  "children": {
+                    "-v": {
+                      "insert": "-v "
+                    }
+                  }
+                },
+                "logs": {
+                  "insert": "logs ",
+                  "children": {
+                    "-f": {
+                      "insert": "-f "
+                    }
+                  }
+                },
+                "ps": {
+                  "insert": "ps "
+                },
+                "pull": {
+                  "insert": "pull "
+                },
+                "restart": {
+                  "insert": "restart "
+                }
+              }
+            }
+          }
+        },
+        "docker-compose": {
+          "insert": "docker-compose ",
+          "children": {
+            "up": {
+              "insert": "up -d "
+            },
+            "down": {
+              "insert": "down "
+            },
+            "logs": {
+              "insert": "logs -f "
+            },
+            "restart": {
+              "insert": "restart "
+            }
+          }
+        },
+        "kubectl": {
+          "insert": "kubectl ",
+          "children": {
+            "get": {
+              "insert": "get ",
+              "children": {
+                "pods": {
+                  "insert": "pods "
+                },
+                "nodes": {
+                  "insert": "nodes "
+                },
+                "svc": {
+                  "insert": "svc "
+                },
+                "deployments": {
+                  "insert": "deployments "
+                },
+                "ingress": {
+                  "insert": "ingress "
+                },
+                "all": {
+                  "insert": "all "
+                },
+                "-n": {
+                  "insert": "-n "
+                },
+                "-A": {
+                  "insert": "-A "
+                },
+                "-o": {
+                  "insert": "-o ",
+                  "children": {
+                    "yaml": {
+                      "insert": "yaml "
+                    },
+                    "json": {
+                      "insert": "json "
+                    },
+                    "wide": {
+                      "insert": "wide "
+                    }
+                  }
+                }
+              }
+            },
+            "describe": {
+              "insert": "describe ",
+              "children": {
+                "pod": {
+                  "insert": "pod "
+                },
+                "node": {
+                  "insert": "node "
+                },
+                "svc": {
+                  "insert": "svc "
+                },
+                "deployment": {
+                  "insert": "deployment "
+                }
+              }
+            },
+            "apply": {
+              "insert": "apply ",
+              "children": {
+                "-f": {
+                  "insert": "-f "
+                },
+                "-k": {
+                  "insert": "-k "
+                }
+              }
+            },
+            "delete": {
+              "insert": "delete ",
+              "children": {
+                "-f": {
+                  "insert": "-f "
+                },
+                "pod": {
+                  "insert": "pod "
+                },
+                "deployment": {
+                  "insert": "deployment "
+                }
+              }
+            },
+            "logs": {
+              "insert": "logs ",
+              "children": {
+                "-f": {
+                  "insert": "-f "
+                },
+                "--tail": {
+                  "insert": "--tail=100 "
+                },
+                "-p": {
+                  "insert": "-p "
+                },
+                "-c": {
+                  "insert": "-c "
+                }
+              }
+            },
+            "exec": {
+              "insert": "exec -it ",
+              "children": {
+                "--": {
+                  "insert": "-- bash "
+                }
+              }
+            },
+            "port-forward": {
+              "insert": "port-forward ",
+              "children": {
+                "svc/": {
+                  "insert": "svc/"
+                },
+                "pod/": {
+                  "insert": "pod/"
+                }
+              }
+            },
+            "rollout": {
+              "insert": "rollout ",
+              "children": {
+                "restart": {
+                  "insert": "restart deployment/"
+                },
+                "status": {
+                  "insert": "status deployment/"
+                },
+                "undo": {
+                  "insert": "undo deployment/"
+                }
+              }
+            }
+          }
+        },
+        "systemctl": {
+          "insert": "systemctl ",
+          "children": {
+            "status": {
+              "insert": "status "
+            },
+            "start": {
+              "insert": "start "
+            },
+            "stop": {
+              "insert": "stop "
+            },
+            "restart": {
+              "insert": "restart "
+            },
+            "enable": {
+              "insert": "enable ",
+              "children": {
+                "--now": {
+                  "insert": "--now "
+                }
+              }
+            },
+            "disable": {
+              "insert": "disable "
+            },
+            "daemon-reload": {
+              "insert": "daemon-reload "
+            }
+          }
+        },
+        "journalctl": {
+          "insert": "journalctl ",
+          "children": {
+            "-u": {
+              "insert": "-u "
+            },
+            "-f": {
+              "insert": "-f "
+            },
+            "-xe": {
+              "insert": "-xe "
+            },
+            "--since": {
+              "insert": "--since ",
+              "children": {
+                "\"1 hour ago\"": {
+                  "insert": "\"1 hour ago\" "
+                },
+                "\"today\"": {
+                  "insert": "\"today\" "
+                }
+              }
+            }
+          }
+        },
+        "apt": {
+          "insert": "apt ",
+          "children": {
+            "update": {
+              "insert": "update "
+            },
+            "upgrade": {
+              "insert": "upgrade ",
+              "children": {
+                "-y": {
+                  "insert": "-y "
+                }
+              }
+            },
+            "install": {
+              "insert": "install ",
+              "children": {
+                "-y": {
+                  "insert": "-y "
+                }
+              }
+            },
+            "remove": {
+              "insert": "remove "
+            },
+            "purge": {
+              "insert": "purge "
+            },
+            "search": {
+              "insert": "search "
+            },
+            "autoremove": {
+              "insert": "autoremove -y "
+            }
+          }
+        },
+        "git": {
+          "insert": "git ",
+          "children": {
+            "clone": {
+              "insert": "clone "
+            },
+            "status": {
+              "insert": "status "
+            },
+            "add": {
+              "insert": "add ",
+              "children": {
+                ".": {
+                  "insert": ". "
+                },
+                "-p": {
+                  "insert": "-p "
+                }
+              }
+            },
+            "commit": {
+              "insert": "commit ",
+              "children": {
+                "-m": {
+                  "insert": "-m \"\" "
+                },
+                "--amend": {
+                  "insert": "--amend "
+                }
+              }
+            },
+            "push": {
+              "insert": "push ",
+              "children": {
+                "-u": {
+                  "insert": "-u origin "
+                },
+                "--force": {
+                  "insert": "--force "
+                }
+              }
+            },
+            "pull": {
+              "insert": "pull ",
+              "children": {
+                "--rebase": {
+                  "insert": "--rebase "
+                }
+              }
+            },
+            "checkout": {
+              "insert": "checkout ",
+              "children": {
+                "-b": {
+                  "insert": "-b "
+                }
+              }
+            },
+            "branch": {
+              "insert": "branch ",
+              "children": {
+                "-a": {
+                  "insert": "-a "
+                },
+                "-d": {
+                  "insert": "-d "
+                }
+              }
+            },
+            "log": {
+              "insert": "log ",
+              "children": {
+                "--oneline": {
+                  "insert": "--oneline "
+                },
+                "--graph": {
+                  "insert": "--graph --oneline --all "
+                }
+              }
+            }
+          }
+        },
+        "ip": {
+          "insert": "ip ",
+          "children": {
+            "a": {
+              "insert": "a "
+            },
+            "addr": {
+              "insert": "addr "
+            },
+            "link": {
+              "insert": "link ",
+              "children": {
+                "show": {
+                  "insert": "show "
+                },
+                "set": {
+                  "insert": "set "
+                }
+              }
+            },
+            "route": {
+              "insert": "route ",
+              "children": {
+                "show": {
+                  "insert": "show "
+                },
+                "add": {
+                  "insert": "add "
+                }
+              }
+            }
+          }
+        },
+        "tar": {
+          "insert": "tar ",
+          "children": {
+            "-czvf": {
+              "insert": "-czvf archive.tar.gz "
+            },
+            "-xzvf": {
+              "insert": "-xzvf "
+            },
+            "-cvf": {
+              "insert": "-cvf archive.tar "
+            },
+            "-xvf": {
+              "insert": "-xvf "
+            }
+          }
+        },
+        "chmod": {
+          "insert": "chmod ",
+          "children": {
+            "+x": {
+              "insert": "+x "
+            },
+            "-R": {
+              "insert": "-R "
+            },
+            "755": {
+              "insert": "755 "
+            },
+            "777": {
+              "insert": "777 "
+            }
+          }
+        },
+        "chown": {
+          "insert": "chown ",
+          "children": {
+            "-R": {
+              "insert": "-R "
+            }
+          }
+        }
+      }
+    },
+    "highlight": {}
+  },
+  "bat": { "completion": { "commands": ["ASSOC","ATTRIB","BCDEDIT","BREAK","CACLS","CALL","CD","CHCP","CHDIR","CHKDSK","CHKNTFS","CLS","CMD","COLOR","COMP","COMPACT","CONVERT","COPY","CTTY","DATE","DEL","DIR","DISKPART","DOSKEY","DRIVERQUERY","ECHO","ENDLOCAL","ERASE","EXIT","FC","FIND","FINDSTR","FOR","FORMAT","FSUTIL","FTYPE","GOTO","GPRESULT","HELP","ICACLS","IF","KEYS","LABEL","LH","LOADHIGH","MD","MKDIR","MKLINK","MODE","MORE","MOVE","OPENFILES","PATH","PAUSE","POPD","PRINT","PROMPT","PUSHD","RD","RECOVER","REM","REN","RENAME","REPLACE","RMDIR","ROBOCOPY","SC","SCHTASKS","SET","SETLOCAL","SHIFT","SHUTDOWN","SORT","START","SUBST","SYSTEMINFO","TASKKILL","TASKLIST","TIME","TITLE","TREE","TYPE","VER","VERIFY","VOL","WMIC","XCOPY"], "tree": {"git":{"insert":"git ","children":{"add":{"insert":"git add "},"backfill":{"insert":"git backfill "},"bisect":{"insert":"git bisect "},"branch":{"insert":"git branch "},"clone":{"insert":"git clone "},"commit":{"insert":"git commit "},"diff":{"insert":"git diff "},"fetch":{"insert":"git fetch "},"grep":{"insert":"git grep "},"history":{"insert":"git history "},"init":{"insert":"git init "},"log":{"insert":"git log "},"merge":{"insert":"git merge "},"mv":{"insert":"git mv "},"pull":{"insert":"git pull "},"push":{"insert":"git push "},"rebase":{"insert":"git rebase "},"reset":{"insert":"git reset "},"restore":{"insert":"git restore "},"rm":{"insert":"git rm "},"show":{"insert":"git show "},"status":{"insert":"git status "},"switch":{"insert":"git switch "},"tag":{"insert":"git tag "}}},"docker":{"insert":"docker ","children":{"attach":{"insert":"docker attach "},"bake":{"insert":"docker bake "},"build":{"insert":"docker build "},"builder":{"insert":"docker builder "},"checkpoint":{"insert":"docker checkpoint "},"commit":{"insert":"docker commit "},"config":{"insert":"docker config "},"container":{"insert":"docker container "},"context":{"insert":"docker context "},"cp":{"insert":"docker cp "},"create":{"insert":"docker create "},"diff":{"insert":"docker diff "},"events":{"insert":"docker events "},"exec":{"insert":"docker exec "},"export":{"insert":"docker export "},"history":{"insert":"docker history "},"image":{"insert":"docker image "},"images":{"insert":"docker images "},"import":{"insert":"docker import "},"info":{"insert":"docker info "},"inspect":{"insert":"docker inspect "},"kill":{"insert":"docker kill "},"load":{"insert":"docker load "},"login":{"insert":"docker login "},"logout":{"insert":"docker logout "},"logs":{"insert":"docker logs "},"manifest":{"insert":"docker manifest "},"network":{"insert":"docker network "},"node":{"insert":"docker node "},"pause":{"insert":"docker pause "},"plugin":{"insert":"docker plugin "},"port":{"insert":"docker port "},"ps":{"insert":"docker ps "},"pull":{"insert":"docker pull "},"push":{"insert":"docker push "},"rename":{"insert":"docker rename "},"restart":{"insert":"docker restart "},"rm":{"insert":"docker rm "},"rmi":{"insert":"docker rmi "},"run":{"insert":"docker run "},"save":{"insert":"docker save "},"search":{"insert":"docker search "},"secret":{"insert":"docker secret "},"service":{"insert":"docker service "},"stack":{"insert":"docker stack "},"start":{"insert":"docker start "},"stats":{"insert":"docker stats "},"stop":{"insert":"docker stop "},"swarm":{"insert":"docker swarm "},"system":{"insert":"docker system "},"tag":{"insert":"docker tag "},"top":{"insert":"docker top "},"unpause":{"insert":"docker unpause "},"update":{"insert":"docker update "},"version":{"insert":"docker version "},"volume":{"insert":"docker volume "},"wait":{"insert":"docker wait "}}},"kubectl":{"insert":"kubectl ","children":{"annotate":{"insert":"kubectl annotate "},"api-resources":{"insert":"kubectl api-resources "},"api-versions":{"insert":"kubectl api-versions "},"apply":{"insert":"kubectl apply "},"attach":{"insert":"kubectl attach "},"auth":{"insert":"kubectl auth "},"autoscale":{"insert":"kubectl autoscale "},"certificate":{"insert":"kubectl certificate "},"cluster-info":{"insert":"kubectl cluster-info "},"completion":{"insert":"kubectl completion "},"config":{"insert":"kubectl config "},"cordon":{"insert":"kubectl cordon "},"cp":{"insert":"kubectl cp "},"create":{"insert":"kubectl create "},"debug":{"insert":"kubectl debug "},"delete":{"insert":"kubectl delete "},"describe":{"insert":"kubectl describe "},"diff":{"insert":"kubectl diff "},"drain":{"insert":"kubectl drain "},"edit":{"insert":"kubectl edit "},"events":{"insert":"kubectl events "},"exec":{"insert":"kubectl exec "},"explain":{"insert":"kubectl explain "},"expose":{"insert":"kubectl expose "},"get":{"insert":"kubectl get "},"kustomize":{"insert":"kubectl kustomize "},"label":{"insert":"kubectl label "},"logs":{"insert":"kubectl logs "},"patch":{"insert":"kubectl patch "},"plugin":{"insert":"kubectl plugin "},"port-forward":{"insert":"kubectl port-forward "},"proxy":{"insert":"kubectl proxy "},"replace":{"insert":"kubectl replace "},"rollout":{"insert":"kubectl rollout "},"run":{"insert":"kubectl run "},"scale":{"insert":"kubectl scale "},"set":{"insert":"kubectl set "},"taint":{"insert":"kubectl taint "},"top":{"insert":"kubectl top "},"uncordon":{"insert":"kubectl uncordon "},"version":{"insert":"kubectl version "},"wait":{"insert":"kubectl wait "}}},"winget":{"insert":"winget ","children":{"configure":{"insert":"winget configure "},"download":{"insert":"winget download "},"dscv3":{"insert":"winget dscv3 "},"export":{"insert":"winget export "},"features":{"insert":"winget features "},"hash":{"insert":"winget hash "},"import":{"insert":"winget import "},"install":{"insert":"winget install "},"list":{"insert":"winget list "},"mcp":{"insert":"winget mcp "},"pin":{"insert":"winget pin "},"repair":{"insert":"winget repair "},"search":{"insert":"winget search "},"settings":{"insert":"winget settings "},"show":{"insert":"winget show "},"source":{"insert":"winget source "},"uninstall":{"insert":"winget uninstall "},"upgrade":{"insert":"winget upgrade "},"validate":{"insert":"winget validate "}}},"pip":{"insert":"pip ","children":{"cache":{"insert":"pip cache "},"check":{"insert":"pip check "},"completion":{"insert":"pip completion "},"config":{"insert":"pip config "},"debug":{"insert":"pip debug "},"download":{"insert":"pip download "},"freeze":{"insert":"pip freeze "},"hash":{"insert":"pip hash "},"help":{"insert":"pip help "},"index":{"insert":"pip index "},"inspect":{"insert":"pip inspect "},"install":{"insert":"pip install "},"list":{"insert":"pip list "},"lock":{"insert":"pip lock "},"search":{"insert":"pip search "},"show":{"insert":"pip show "},"uninstall":{"insert":"pip uninstall "},"wheel":{"insert":"pip wheel "}}},"dotnet":{"insert":"dotnet ","children":{"build":{"insert":"dotnet build "},"build-server":{"insert":"dotnet build-server "},"clean":{"insert":"dotnet clean "},"dev-certs":{"insert":"dotnet dev-certs "},"format":{"insert":"dotnet format "},"fsi":{"insert":"dotnet fsi "},"help":{"insert":"dotnet help "},"msbuild":{"insert":"dotnet msbuild "},"new":{"insert":"dotnet new "},"nuget":{"insert":"dotnet nuget "},"pack":{"insert":"dotnet pack "},"package":{"insert":"dotnet package "},"publish":{"insert":"dotnet publish "},"reference":{"insert":"dotnet reference "},"restore":{"insert":"dotnet restore "},"run":{"insert":"dotnet run "},"sdk":{"insert":"dotnet sdk "},"solution":{"insert":"dotnet solution "},"store":{"insert":"dotnet store "},"test":{"insert":"dotnet test "},"tool":{"insert":"dotnet tool "},"user-jwts":{"insert":"dotnet user-jwts "},"user-secrets":{"insert":"dotnet user-secrets "},"vstest":{"insert":"dotnet vstest "},"watch":{"insert":"dotnet watch "},"workload":{"insert":"dotnet workload "}}}} } },
+  "powershell": { "completion": { "commands": ["Add-AppProvisionedSharedPackageContainer","Add-AppSharedPackageContainer","Add-AppvClientConnectionGroup","Add-AppvClientPackage","Add-AppvPublishingServer","Add-AppxPackage","Add-AppxProvisionedPackage","Add-AppxVolume","Add-BitsFile","Add-CertificateEnrollmentPolicyServer","Add-Computer","Add-Content","Add-History","Add-JobTrigger","Add-KdsRootKey","Add-LocalGroupMember","Add-Member","Add-PSSnapin","Add-SignerRule","Add-Type","Add-VMAssignableDevice","Add-VMDvdDrive","Add-VMFibreChannelHba","Add-VMGpuPartitionAdapter","Add-VMGroupMember","Add-VMHardDiskDrive","Add-VMHostAssignableDevice","Add-VMKeyStorageDrive","Add-VMMigrationNetwork","Add-VMNetworkAdapter","Add-VMNetworkAdapterAcl","Add-VMNetworkAdapterExtendedAcl","Add-VMNetworkAdapterRoutingDomainMapping","Add-VMPmemController","Add-VMRemoteFx3dVideoAdapter","Add-VMScsiController","Add-VMStoragePath","Add-VMSwitch","Add-VMSwitchExtensionPortFeature","Add-VMSwitchExtensionSwitchFeature","Add-VMSwitchTeamMember","Add-WindowsCapability","Add-WindowsDriver","Add-WindowsImage","Add-WindowsPackage","Checkpoint-Computer","Checkpoint-VM","Clear-Content","Clear-EventLog","Clear-History","Clear-Item","Clear-ItemProperty","Clear-KdsCache","Clear-RecycleBin","Clear-ReFSDedupSchedule","Clear-ReFSDedupScrubSchedule","Clear-Tpm","Clear-UevAppxPackage","Clear-UevConfiguration","Clear-Variable","Clear-WindowsCorruptMountPoint","Compare-Object","Compare-VM","Complete-BitsTransfer","Complete-DtcDiagnosticTransaction","Complete-Transaction","Complete-VMFailover","Confirm-SecureBootUEFI","Connect-PSSession","Connect-VMNetworkAdapter","Connect-VMSan","Connect-WSMan","ConvertFrom-CIPolicy","ConvertFrom-Csv","ConvertFrom-Json","ConvertFrom-SecureString","ConvertFrom-String","ConvertFrom-StringData","Convert-Path","Convert-String","ConvertTo-Csv","ConvertTo-Html","ConvertTo-Json","ConvertTo-ProcessMitigationPolicy","ConvertTo-SecureString","ConvertTo-TpmOwnerAuth","ConvertTo-Xml","Convert-VHD","Copy-BcdEntry","Copy-Item","Copy-ItemProperty","Copy-UserInternationalSettingsToSystem","Copy-VMFile","Debug-Job","Debug-Process","Debug-Runspace","Debug-VM","Disable-AppBackgroundTaskDiagnosticLog","Disable-Appv","Disable-AppvClientConnectionGroup","Disable-BcdElementBootDebug","Disable-BcdElementBootEms","Disable-BcdElementDebug","Disable-BcdElementEms","Disable-BcdElementEventLogging","Disable-BcdElementHypervisorDebug","Disable-ComputerRestore","Disable-JobTrigger","Disable-LocalUser","Disable-PSBreakpoint","Disable-PSRemoting","Disable-PSSessionConfiguration","Disable-ReFSDedup","Disable-RunspaceDebug","Disable-ScheduledJob","Disable-TlsCipherSuite","Disable-TlsEccCurve","Disable-TlsSessionTicketKey","Disable-TpmAutoProvisioning","Disable-Uev","Disable-UevAppxPackage","Disable-UevTemplate","Disable-VMConsoleSupport","Disable-VMEventing","Disable-VMIntegrationService","Disable-VMMigration","Disable-VMRemoteFXPhysicalVideoAdapter","Disable-VMResourceMetering","Disable-VMSwitchExtension","Disable-VMTPM","Disable-WindowsErrorReporting","Disable-WindowsOptionalFeature","Disable-WSManCredSSP","Disconnect-PSSession","Disconnect-VMNetworkAdapter","Disconnect-VMSan","Disconnect-WSMan","Dismount-AppxVolume","Dismount-VHD","Dismount-VMHostAssignableDevice","Dismount-WindowsImage","Edit-CIPolicyRule","Enable-AppBackgroundTaskDiagnosticLog","Enable-Appv","Enable-AppvClientConnectionGroup","Enable-BcdElementBootDebug","Enable-BcdElementBootEms","Enable-BcdElementDebug","Enable-BcdElementEms","Enable-BcdElementEventLogging","Enable-BcdElementHypervisorDebug","Enable-ComputerRestore","Enable-JobTrigger","Enable-LocalUser","Enable-PSBreakpoint","Enable-PSRemoting","Enable-PSSessionConfiguration","Enable-ReFSDedup","Enable-RunspaceDebug","Enable-ScheduledJob","Enable-TlsCipherSuite","Enable-TlsEccCurve","Enable-TlsSessionTicketKey","Enable-TpmAutoProvisioning","Enable-Uev","Enable-UevAppxPackage","Enable-UevTemplate","Enable-VMConsoleSupport","Enable-VMEventing","Enable-VMIntegrationService","Enable-VMMigration","Enable-VMRemoteFXPhysicalVideoAdapter","Enable-VMReplication","Enable-VMResourceMetering","Enable-VMSwitchExtension","Enable-VMTPM","Enable-WindowsErrorReporting","Enable-WindowsOptionalFeature","Enable-WSManCredSSP","Enter-PSHostProcess","Enter-PSSession","Exit-PSHostProcess","Exit-PSSession","Expand-OsImage","Expand-WindowsCustomDataImage","Expand-WindowsImage","Export-Alias","Export-BcdStore","Export-BinaryMiLog","Export-Certificate","Export-Clixml","Export-Console","Export-Counter","Export-Csv","Export-FormatData","Export-ModuleMember","Export-OsImage","Export-PfxCertificate","Export-ProvisioningPackage","Export-PSSession","Export-StartLayout","Export-StartLayoutEdgeAssets","Export-TlsSessionTicketKey","Export-Trace","Export-UevConfiguration","Export-UevPackage","Export-VM","Export-VMSnapshot","Export-WindowsCapabilitySource","Export-WindowsDriver","Export-WindowsImage","Find-LapsADExtendedRights","Find-Package","Find-PackageProvider","ForEach-Object","Format-Custom","Format-List","Format-SecureBootUEFI","Format-Table","Format-Wide","Get-Acl","Get-Alias","Get-AppLockerFileInformation","Get-AppLockerPolicy","Get-AppProvisionedSharedPackageContainer","Get-AppSharedPackageContainer","Get-AppvClientApplication","Get-AppvClientConfiguration","Get-AppvClientConnectionGroup","Get-AppvClientMode","Get-AppvClientPackage","Get-AppvPublishingServer","Get-AppvStatus","Get-AppxDefaultVolume","Get-AppxPackage","Get-AppxPackageAutoUpdateSettings","Get-AppxPackageManifest","Get-AppxProvisionedPackage","Get-AppxVolume","Get-AuthenticodeSignature","Get-BcdEntry","Get-BcdEntryDebugSettings","Get-BcdEntryHypervisorSettings","Get-BcdStore","Get-BitsTransfer","Get-Certificate","Get-CertificateAutoEnrollmentPolicy","Get-CertificateEnrollmentPolicyServer","Get-CertificateNotificationTask","Get-ChildItem","Get-CimAssociatedInstance","Get-CimClass","Get-CimInstance","Get-CimSession","Get-CIPolicy","Get-CIPolicyIdInfo","Get-CIPolicyInfo","Get-Clipboard","Get-CmsMessage","Get-Command","Get-ComputerInfo","Get-ComputerRestorePoint","Get-Content","Get-ControlPanelItem","Get-Counter","Get-Credential","Get-Culture","Get-DAPolicyChange","Get-Date","Get-DeliveryOptimizationLog","Get-DeliveryOptimizationLogAnalysis","Get-Event","Get-EventLog","Get-EventSubscriber","Get-ExecutionPolicy","Get-FormatData","Get-Help","Get-HgsAttestationBaselinePolicy","Get-HgsTrace","Get-HgsTraceFileData","Get-History","Get-Host","Get-HotFix","Get-InstalledLanguage","Get-Item","Get-ItemProperty","Get-ItemPropertyValue","Get-Job","Get-JobTrigger","Get-KdsConfiguration","Get-KdsRootKey","Get-LapsADPassword","Get-LocalGroup","Get-LocalGroupMember","Get-LocalUser","Get-Location","Get-Member","Get-Module","Get-NonRemovableAppsPolicy","Get-OSConfiguration","Get-OsConfigurationDocument","Get-OsConfigurationDocumentContent","Get-OsConfigurationDocumentResult","Get-OsConfigurationProperty","Get-OSConfigurationScenarioDefinition","Get-OSConfigurationScenarioDefinitionInfo","Get-Package","Get-PackageProvider","Get-PackageSource","Get-PfxCertificate","Get-PfxData","Get-PmemDedicatedMemory","Get-PmemDisk","Get-PmemPhysicalDevice","Get-PmemUnusedRegion","Get-Process","Get-ProcessMitigation","Get-ProvisioningPackage","Get-PSBreakpoint","Get-PSCallStack","Get-PSDrive","Get-PSHostProcessInfo","Get-PSProvider","Get-PSReadLineKeyHandler","Get-PSReadLineOption","Get-PSSession","Get-PSSessionCapability","Get-PSSessionConfiguration","Get-PSSnapin","Get-Random","Get-RecoveryManagementPluginAltitude","Get-RecoveryManagementPluginInfo","Get-RecoveryManagementPlugins","Get-RecoveryRemoteManagementStatus","Get-ReFSDedupSchedule","Get-ReFSDedupScrubSchedule","Get-ReFSDedupStatus","Get-Runspace","Get-RunspaceDebug","Get-ScheduledJob","Get-ScheduledJobOption","Get-SecureBootPolicy","Get-SecureBootSVN","Get-SecureBootUEFI","Get-Service","Get-SystemDriver","Get-SystemPreferredUILanguage","Get-TimeZone","Get-TlsCipherSuite","Get-TlsEccCurve","Get-Tpm","Get-TpmEndorsementKeyInfo","Get-TpmSupportedFeature","Get-TraceSource","Get-Transaction","Get-TroubleshootingPack","Get-TrustedProvisioningCertificate","Get-TypeData","Get-UevAppxPackage","Get-UevConfiguration","Get-UevStatus","Get-UevTemplate","Get-UevTemplateProgram","Get-UICulture","Get-Unique","Get-Variable","Get-VHD","Get-VHDSet","Get-VHDSnapshot","Get-VM","Get-VMAssignableDevice","Get-VMBios","Get-VMComPort","Get-VMConnectAccess","Get-VMDvdDrive","Get-VMFibreChannelHba","Get-VMFirmware","Get-VMFloppyDiskDrive","Get-VMGpuPartitionAdapter","Get-VMGroup","Get-VMHardDiskDrive","Get-VMHost","Get-VMHostAssignableDevice","Get-VMHostCluster","Get-VMHostNumaNode","Get-VMHostNumaNodeStatus","Get-VMHostPartitionableGpu","Get-VMHostSupportedVersion","Get-VMIdeController","Get-VMIntegrationService","Get-VMKeyProtector","Get-VMKeyStorageDrive","Get-VMMemory","Get-VMMigrationNetwork","Get-VMNetworkAdapter","Get-VMNetworkAdapterAcl","Get-VMNetworkAdapterExtendedAcl","Get-VMNetworkAdapterFailoverConfiguration","Get-VMNetworkAdapterIsolation","Get-VMNetworkAdapterRdma","Get-VMNetworkAdapterRoutingDomainMapping","Get-VMNetworkAdapterTeamMapping","Get-VMNetworkAdapterVlan","Get-VMPartitionableGpu","Get-VMPmemController","Get-VMProcessor","Get-VMRemoteFx3dVideoAdapter","Get-VMRemoteFXPhysicalVideoAdapter","Get-VMReplication","Get-VMReplicationAuthorizationEntry","Get-VMReplicationServer","Get-VMResourcePool","Get-VMSan","Get-VMScsiController","Get-VMSecurity","Get-VMSnapshot","Get-VMStoragePath","Get-VMStorageSettings","Get-VMSwitch","Get-VMSwitchExtension","Get-VMSwitchExtensionPortData","Get-VMSwitchExtensionPortFeature","Get-VMSwitchExtensionSwitchData","Get-VMSwitchExtensionSwitchFeature","Get-VMSwitchTeam","Get-VMSystemSwitchExtension","Get-VMSystemSwitchExtensionPortFeature","Get-VMSystemSwitchExtensionSwitchFeature","Get-VMVideo","Get-WheaMemoryPolicy","Get-WIMBootEntry","Get-WinAcceptLanguageFromLanguageListOptOut","Get-WinCultureFromLanguageListOptOut","Get-WinDefaultInputMethodOverride","Get-WindowsCapability","Get-WindowsDeveloperLicense","Get-WindowsDriver","Get-WindowsEdition","Get-WindowsErrorReporting","Get-WindowsImage","Get-WindowsImageContent","Get-WindowsOptionalFeature","Get-WindowsPackage","Get-WindowsReservedStorageState","Get-WindowsSearchSetting","Get-WinEvent","Get-WinHomeLocation","Get-WinLanguageBarOption","Get-WinSystemLocale","Get-WinUILanguageOverride","Get-WinUserLanguageList","Get-WmiObject","Get-WSManCredSSP","Get-WSManInstance","Grant-VMConnectAccess","Group-Object","Import-Alias","Import-BcdStore","Import-BinaryMiLog","Import-Certificate","Import-Clixml","Import-Counter","Import-Csv","Import-LocalizedData","Import-Module","Import-PackageProvider","Import-PfxCertificate","Import-PSSession","Import-StartLayout","Import-TpmOwnerAuth","Import-UevConfiguration","Import-VM","Import-VMInitialReplication","Initialize-PmemPhysicalDevice","Initialize-Tpm","Install-Language","Install-Package","Install-PackageProvider","Install-ProvisioningPackage","Install-TrustedProvisioningCertificate","Invoke-CimMethod","Invoke-Command","Invoke-CommandInDesktopPackage","Invoke-DscResource","Invoke-Expression","Invoke-History","Invoke-Item","Invoke-LapsPolicyProcessing","Invoke-RestMethod","Invoke-TroubleshootingPack","Invoke-WebRequest","Invoke-WmiMethod","Invoke-WSManAction","Join-DtcDiagnosticResourceManager","Join-Path","Limit-EventLog","Measure-Command","Measure-Object","Measure-VM","Measure-VMReplication","Measure-VMResourcePool","Merge-CIPolicy","Merge-VHD","Mount-AppvClientConnectionGroup","Mount-AppvClientPackage","Mount-AppxVolume","Mount-VHD","Mount-VMHostAssignableDevice","Mount-WindowsImage","Move-AppxPackage","Move-Item","Move-ItemProperty","Move-VM","Move-VMStorage","New-Alias","New-AppLockerPolicy","New-BcdEntry","New-BcdStore","New-CertificateNotificationTask","New-CimInstance","New-CimSession","New-CimSessionOption","New-CIPolicy","New-CIPolicyRule","New-DtcDiagnosticTransaction","New-Event","New-EventLog","New-FileCatalog","New-HgsTraceTarget","New-Item","New-ItemProperty","New-JobTrigger","New-LocalGroup","New-LocalUser","New-Module","New-ModuleManifest","New-NetIPsecAuthProposal","New-NetIPsecMainModeCryptoProposal","New-NetIPsecQuickModeCryptoProposal","New-Object","New-PmemDedicatedMemory","New-PmemDisk","New-ProvisioningRepro","New-PSDrive","New-PSRoleCapabilityFile","New-PSSession","New-PSSessionConfigurationFile","New-PSSessionOption","New-PSTransportOption","New-PSWorkflowExecutionOption","New-ScheduledJobOption","New-SelfSignedCertificate","New-Service","New-TimeSpan","New-TlsSessionTicketKey","New-Variable","New-VFD","New-VHD","New-VM","New-VMGroup","New-VMReplicationAuthorizationEntry","New-VMResourcePool","New-VMSan","New-VMSwitch","New-WebServiceProxy","New-WindowsCustomImage","New-WindowsImage","New-WinEvent","New-WinUserLanguageList","New-WSManInstance","New-WSManSessionOption","Optimize-AppxProvisionedPackages","Optimize-VHD","Optimize-VHDSet","Optimize-WindowsImage","Out-Default","Out-File","Out-GridView","Out-Host","Out-Null","Out-Printer","Out-String","Pop-Location","Protect-CmsMessage","Publish-AppvClientPackage","Publish-DscConfiguration","Push-Location","Read-Host","Receive-DtcDiagnosticTransaction","Receive-Job","Receive-PSSession","Register-ArgumentCompleter","Register-CimIndicationEvent","Register-EngineEvent","Register-ObjectEvent","Register-PackageSource","Register-PSSessionConfiguration","Register-RecoveryManagementPlugin","Register-ScheduledJob","Register-UevTemplate","Register-WmiEvent","Remove-AppProvisionedSharedPackageContainer","Remove-AppSharedPackageContainer","Remove-AppvClientConnectionGroup","Remove-AppvClientPackage","Remove-AppvPublishingServer","Remove-AppxPackage","Remove-AppxPackageAutoUpdateSettings","Remove-AppxProvisionedPackage","Remove-AppxVolume","Remove-BcdElement","Remove-BcdEntry","Remove-BitsTransfer","Remove-CertificateEnrollmentPolicyServer","Remove-CertificateNotificationTask","Remove-CimInstance","Remove-CimSession","Remove-CIPolicyRule","Remove-Computer","Remove-Event","Remove-EventLog","Remove-Item","Remove-ItemProperty","Remove-Job","Remove-JobTrigger","Remove-LocalGroup","Remove-LocalGroupMember","Remove-LocalUser","Remove-Module","Remove-OsConfigurationDocument","Remove-OSConfigurationScenarioDefinition","Remove-PmemDedicatedMemory","Remove-PmemDisk","Remove-PSBreakpoint","Remove-PSDrive","Remove-PSReadLineKeyHandler","Remove-PSSession","Remove-PSSnapin","Remove-RecoveryManagementPluginAltitude","Remove-TypeData","Remove-Variable","Remove-VHDSnapshot","Remove-VM","Remove-VMAssignableDevice","Remove-VMDvdDrive","Remove-VMFibreChannelHba","Remove-VMGpuPartitionAdapter","Remove-VMGroup","Remove-VMGroupMember","Remove-VMHardDiskDrive","Remove-VMHostAssignableDevice","Remove-VMKeyStorageDrive","Remove-VMMigrationNetwork","Remove-VMNetworkAdapter","Remove-VMNetworkAdapterAcl","Remove-VMNetworkAdapterExtendedAcl","Remove-VMNetworkAdapterRoutingDomainMapping","Remove-VMNetworkAdapterTeamMapping","Remove-VMPmemController","Remove-VMRemoteFx3dVideoAdapter","Remove-VMReplication","Remove-VMReplicationAuthorizationEntry","Remove-VMResourcePool","Remove-VMSan","Remove-VMSavedState","Remove-VMScsiController","Remove-VMSnapshot","Remove-VMStoragePath","Remove-VMSwitch","Remove-VMSwitchExtensionPortFeature","Remove-VMSwitchExtensionSwitchFeature","Remove-VMSwitchTeamMember","Remove-WindowsCapability","Remove-WindowsDriver","Remove-WindowsImage","Remove-WindowsPackage","Remove-WmiObject","Remove-WSManInstance","Rename-Computer","Rename-Item","Rename-ItemProperty","Rename-LocalGroup","Rename-LocalUser","Rename-VM","Rename-VMGroup","Rename-VMNetworkAdapter","Rename-VMResourcePool","Rename-VMSan","Rename-VMSnapshot","Rename-VMSwitch","Repair-AppvClientConnectionGroup","Repair-AppvClientPackage","Repair-UevTemplateIndex","Repair-VM","Repair-WindowsImage","Reset-AppSharedPackageContainer","Reset-AppxPackage","Reset-ComputerMachinePassword","Reset-LapsPassword","Reset-VMReplicationStatistics","Reset-VMResourceMetering","Resize-VHD","Resolve-DnsName","Resolve-Path","Restart-Computer","Restart-Service","Restart-VM","Restore-Computer","Restore-UevBackup","Restore-UevUserSetting","Restore-VMSnapshot","Resume-BitsTransfer","Resume-Job","Resume-ProvisioningSession","Resume-ReFSDedupSchedule","Resume-Service","Resume-VM","Resume-VMReplication","Revoke-VMConnectAccess","Save-Help","Save-OsImage","Save-Package","Save-SoftwareInventory","Save-VM","Save-WindowsImage","Select-Object","Select-String","Select-Xml","Send-AppvClientReport","Send-DtcDiagnosticTransaction","Send-MailMessage","Set-Acl","Set-Alias","Set-AppBackgroundTaskResourcePolicy","Set-AppLockerPolicy","Set-AppvClientConfiguration","Set-AppvClientMode","Set-AppvClientPackage","Set-AppvPublishingServer","Set-AppxDefaultVolume","Set-AppxPackageAutoUpdateSettings","Set-AppXProvisionedDataFile","Set-AuthenticodeSignature","Set-BcdBootDefault","Set-BcdBootDisplayOrder","Set-BcdBootSequence","Set-BcdBootTimeout","Set-BcdBootToolsDisplayOrder","Set-BcdDebugSettings","Set-BcdElement","Set-BcdHypervisorSettings","Set-BitsTransfer","Set-CertificateAutoEnrollmentPolicy","Set-CimInstance","Set-CIPolicyIdInfo","Set-CIPolicySetting","Set-CIPolicyVersion","Set-Clipboard","Set-Content","Set-Culture","Set-Date","Set-DscLocalConfigurationManager","Set-ExecutionPolicy","Set-HVCIOptions","Set-Item","Set-ItemProperty","Set-JobTrigger","Set-KdsConfiguration","Set-LapsADAuditing","Set-LapsADComputerSelfPermission","Set-LapsADPasswordExpirationTime","Set-LapsADReadPasswordPermission","Set-LapsADResetPasswordPermission","Set-LocalGroup","Set-LocalUser","Set-Location","Set-NonRemovableAppsPolicy","Set-OsConfigurationDocument","Set-OsConfigurationProperty","Set-OSConfigurationScenarioDefinition","Set-PackageSource","Set-ProcessMitigation","Set-PSBreakpoint","Set-PSDebug","Set-PSReadLineKeyHandler","Set-PSReadLineOption","Set-PSSessionConfiguration","Set-RecoveryManagementPluginAltitude","Set-RecoveryRemoteManagementStatus","Set-ReFSDedupSchedule","Set-ReFSDedupScrubSchedule","Set-RuleOption","Set-ScheduledJob","Set-ScheduledJobOption","Set-SecureBootUEFI","Set-Service","Set-StrictMode","Set-SystemPreferredUILanguage","Set-TimeZone","Set-TpmOwnerAuth","Set-TraceSource","Set-UevConfiguration","Set-UevTemplateProfile","Set-Variable","Set-VHD","Set-VM","Set-VMBios","Set-VMComPort","Set-VMDvdDrive","Set-VMFibreChannelHba","Set-VMFirmware","Set-VMFloppyDiskDrive","Set-VMGpuPartitionAdapter","Set-VMHardDiskDrive","Set-VMHost","Set-VMHostCluster","Set-VMHostPartitionableGpu","Set-VMKeyProtector","Set-VMKeyStorageDrive","Set-VMMemory","Set-VMMigrationNetwork","Set-VMNetworkAdapter","Set-VMNetworkAdapterFailoverConfiguration","Set-VMNetworkAdapterIsolation","Set-VMNetworkAdapterRdma","Set-VMNetworkAdapterRoutingDomainMapping","Set-VMNetworkAdapterTeamMapping","Set-VMNetworkAdapterVlan","Set-VMPartitionableGpu","Set-VMProcessor","Set-VMRemoteFx3dVideoAdapter","Set-VMReplication","Set-VMReplicationAuthorizationEntry","Set-VMReplicationServer","Set-VMResourcePool","Set-VMSan","Set-VMSecurity","Set-VMSecurityPolicy","Set-VMStorageSettings","Set-VMSwitch","Set-VMSwitchExtensionPortFeature","Set-VMSwitchExtensionSwitchFeature","Set-VMSwitchTeam","Set-VMVideo","Set-WheaMemoryPolicy","Set-WinAcceptLanguageFromLanguageListOptOut","Set-WinCultureFromLanguageListOptOut","Set-WinDefaultInputMethodOverride","Set-WindowsEdition","Set-WindowsProductKey","Set-WindowsReservedStorageState","Set-WindowsSearchSetting","Set-WinHomeLocation","Set-WinLanguageBarOption","Set-WinSystemLocale","Set-WinUILanguageOverride","Set-WinUserLanguageList","Set-WmiInstance","Set-WSManInstance","Set-WSManQuickConfig","Show-Command","Show-ControlPanelItem","Show-EventLog","Show-WindowsDeveloperLicenseRegistration","Sort-Object","Split-Path","Split-WindowsImage","Start-BitsTransfer","Start-DscConfiguration","Start-DtcDiagnosticResourceManager","Start-Job","Start-OSUninstall","Start-Process","Start-ReFSDedupJob","Start-Service","Start-Sleep","Start-Transaction","Start-Transcript","Start-VM","Start-VMFailover","Start-VMInitialReplication","Start-VMTrace","Stop-AppvClientConnectionGroup","Stop-AppvClientPackage","Stop-Computer","Stop-DtcDiagnosticResourceManager","Stop-Job","Stop-Process","Stop-ReFSDedupJob","Stop-Service","Stop-Transcript","Stop-VM","Stop-VMFailover","Stop-VMInitialReplication","Stop-VMReplication","Stop-VMTrace","Suspend-BitsTransfer","Suspend-Job","Suspend-ReFSDedupSchedule","Suspend-Service","Suspend-VM","Suspend-VMReplication","Switch-Certificate","Sync-AppvPublishingServer","Tee-Object","Test-AppLockerPolicy","Test-Certificate","Test-ComputerSecureChannel","Test-Connection","Test-DscConfiguration","Test-FileCatalog","Test-HgsTraceTarget","Test-KdsRootKey","Test-ModuleManifest","Test-Path","Test-PSSessionConfigurationFile","Test-UevTemplate","Test-VHD","Test-VMNetworkAdapter","Test-VMReplicationConnection","Test-WSMan","Trace-Command","Unblock-File","Unblock-Tpm","Undo-DtcDiagnosticTransaction","Undo-Transaction","Uninstall-Language","Uninstall-Package","Uninstall-ProvisioningPackage","Uninstall-TrustedProvisioningCertificate","Unprotect-CmsMessage","Unpublish-AppvClientPackage","Unregister-Event","Unregister-PackageSource","Unregister-PSSessionConfiguration","Unregister-RecoveryManagementPlugin","Unregister-ScheduledJob","Unregister-UevTemplate","Unregister-WindowsDeveloperLicense","Update-DscConfiguration","Update-FormatData","Update-Help","Update-LapsADSchema","Update-List","Update-TypeData","Update-UevTemplate","Update-VMVersion","Update-WIMBootEntry","Use-Transaction","Use-WindowsUnattend","Wait-Debugger","Wait-Event","Wait-Job","Wait-Process","Wait-VM","Where-Object","Write-Debug","Write-Error","Write-EventLog","Write-Host","Write-Information","Write-Output","Write-Progress","Write-Verbose","Write-Warning"], "tree": {"git":{"insert":"git ","children":{"add":{"insert":"git add "},"backfill":{"insert":"git backfill "},"bisect":{"insert":"git bisect "},"branch":{"insert":"git branch "},"clone":{"insert":"git clone "},"commit":{"insert":"git commit "},"diff":{"insert":"git diff "},"fetch":{"insert":"git fetch "},"grep":{"insert":"git grep "},"history":{"insert":"git history "},"init":{"insert":"git init "},"log":{"insert":"git log "},"merge":{"insert":"git merge "},"mv":{"insert":"git mv "},"pull":{"insert":"git pull "},"push":{"insert":"git push "},"rebase":{"insert":"git rebase "},"reset":{"insert":"git reset "},"restore":{"insert":"git restore "},"rm":{"insert":"git rm "},"show":{"insert":"git show "},"status":{"insert":"git status "},"switch":{"insert":"git switch "},"tag":{"insert":"git tag "}}},"docker":{"insert":"docker ","children":{"attach":{"insert":"docker attach "},"bake":{"insert":"docker bake "},"build":{"insert":"docker build "},"builder":{"insert":"docker builder "},"checkpoint":{"insert":"docker checkpoint "},"commit":{"insert":"docker commit "},"config":{"insert":"docker config "},"container":{"insert":"docker container "},"context":{"insert":"docker context "},"cp":{"insert":"docker cp "},"create":{"insert":"docker create "},"diff":{"insert":"docker diff "},"events":{"insert":"docker events "},"exec":{"insert":"docker exec "},"export":{"insert":"docker export "},"history":{"insert":"docker history "},"image":{"insert":"docker image "},"images":{"insert":"docker images "},"import":{"insert":"docker import "},"info":{"insert":"docker info "},"inspect":{"insert":"docker inspect "},"kill":{"insert":"docker kill "},"load":{"insert":"docker load "},"login":{"insert":"docker login "},"logout":{"insert":"docker logout "},"logs":{"insert":"docker logs "},"manifest":{"insert":"docker manifest "},"network":{"insert":"docker network "},"node":{"insert":"docker node "},"pause":{"insert":"docker pause "},"plugin":{"insert":"docker plugin "},"port":{"insert":"docker port "},"ps":{"insert":"docker ps "},"pull":{"insert":"docker pull "},"push":{"insert":"docker push "},"rename":{"insert":"docker rename "},"restart":{"insert":"docker restart "},"rm":{"insert":"docker rm "},"rmi":{"insert":"docker rmi "},"run":{"insert":"docker run "},"save":{"insert":"docker save "},"search":{"insert":"docker search "},"secret":{"insert":"docker secret "},"service":{"insert":"docker service "},"stack":{"insert":"docker stack "},"start":{"insert":"docker start "},"stats":{"insert":"docker stats "},"stop":{"insert":"docker stop "},"swarm":{"insert":"docker swarm "},"system":{"insert":"docker system "},"tag":{"insert":"docker tag "},"top":{"insert":"docker top "},"unpause":{"insert":"docker unpause "},"update":{"insert":"docker update "},"version":{"insert":"docker version "},"volume":{"insert":"docker volume "},"wait":{"insert":"docker wait "}}},"kubectl":{"insert":"kubectl ","children":{"annotate":{"insert":"kubectl annotate "},"api-resources":{"insert":"kubectl api-resources "},"api-versions":{"insert":"kubectl api-versions "},"apply":{"insert":"kubectl apply "},"attach":{"insert":"kubectl attach "},"auth":{"insert":"kubectl auth "},"autoscale":{"insert":"kubectl autoscale "},"certificate":{"insert":"kubectl certificate "},"cluster-info":{"insert":"kubectl cluster-info "},"completion":{"insert":"kubectl completion "},"config":{"insert":"kubectl config "},"cordon":{"insert":"kubectl cordon "},"cp":{"insert":"kubectl cp "},"create":{"insert":"kubectl create "},"debug":{"insert":"kubectl debug "},"delete":{"insert":"kubectl delete "},"describe":{"insert":"kubectl describe "},"diff":{"insert":"kubectl diff "},"drain":{"insert":"kubectl drain "},"edit":{"insert":"kubectl edit "},"events":{"insert":"kubectl events "},"exec":{"insert":"kubectl exec "},"explain":{"insert":"kubectl explain "},"expose":{"insert":"kubectl expose "},"get":{"insert":"kubectl get "},"kustomize":{"insert":"kubectl kustomize "},"label":{"insert":"kubectl label "},"logs":{"insert":"kubectl logs "},"patch":{"insert":"kubectl patch "},"plugin":{"insert":"kubectl plugin "},"port-forward":{"insert":"kubectl port-forward "},"proxy":{"insert":"kubectl proxy "},"replace":{"insert":"kubectl replace "},"rollout":{"insert":"kubectl rollout "},"run":{"insert":"kubectl run "},"scale":{"insert":"kubectl scale "},"set":{"insert":"kubectl set "},"taint":{"insert":"kubectl taint "},"top":{"insert":"kubectl top "},"uncordon":{"insert":"kubectl uncordon "},"version":{"insert":"kubectl version "},"wait":{"insert":"kubectl wait "}}},"winget":{"insert":"winget ","children":{"configure":{"insert":"winget configure "},"download":{"insert":"winget download "},"dscv3":{"insert":"winget dscv3 "},"export":{"insert":"winget export "},"features":{"insert":"winget features "},"hash":{"insert":"winget hash "},"import":{"insert":"winget import "},"install":{"insert":"winget install "},"list":{"insert":"winget list "},"mcp":{"insert":"winget mcp "},"pin":{"insert":"winget pin "},"repair":{"insert":"winget repair "},"search":{"insert":"winget search "},"settings":{"insert":"winget settings "},"show":{"insert":"winget show "},"source":{"insert":"winget source "},"uninstall":{"insert":"winget uninstall "},"upgrade":{"insert":"winget upgrade "},"validate":{"insert":"winget validate "}}},"pip":{"insert":"pip ","children":{"cache":{"insert":"pip cache "},"check":{"insert":"pip check "},"completion":{"insert":"pip completion "},"config":{"insert":"pip config "},"debug":{"insert":"pip debug "},"download":{"insert":"pip download "},"freeze":{"insert":"pip freeze "},"hash":{"insert":"pip hash "},"help":{"insert":"pip help "},"index":{"insert":"pip index "},"inspect":{"insert":"pip inspect "},"install":{"insert":"pip install "},"list":{"insert":"pip list "},"lock":{"insert":"pip lock "},"search":{"insert":"pip search "},"show":{"insert":"pip show "},"uninstall":{"insert":"pip uninstall "},"wheel":{"insert":"pip wheel "}}},"dotnet":{"insert":"dotnet ","children":{"build":{"insert":"dotnet build "},"build-server":{"insert":"dotnet build-server "},"clean":{"insert":"dotnet clean "},"dev-certs":{"insert":"dotnet dev-certs "},"format":{"insert":"dotnet format "},"fsi":{"insert":"dotnet fsi "},"help":{"insert":"dotnet help "},"msbuild":{"insert":"dotnet msbuild "},"new":{"insert":"dotnet new "},"nuget":{"insert":"dotnet nuget "},"pack":{"insert":"dotnet pack "},"package":{"insert":"dotnet package "},"publish":{"insert":"dotnet publish "},"reference":{"insert":"dotnet reference "},"restore":{"insert":"dotnet restore "},"run":{"insert":"dotnet run "},"sdk":{"insert":"dotnet sdk "},"solution":{"insert":"dotnet solution "},"store":{"insert":"dotnet store "},"test":{"insert":"dotnet test "},"tool":{"insert":"dotnet tool "},"user-jwts":{"insert":"dotnet user-jwts "},"user-secrets":{"insert":"dotnet user-secrets "},"vstest":{"insert":"dotnet vstest "},"watch":{"insert":"dotnet watch "},"workload":{"insert":"dotnet workload "}}},"Import-Module":{"insert":"Import-Module ","children":{"AppBackgroundTask":{"insert":"Import-Module AppBackgroundTask "},"AppLocker":{"insert":"Import-Module AppLocker "},"AppvClient":{"insert":"Import-Module AppvClient "},"Appx":{"insert":"Import-Module Appx "},"AssignedAccess":{"insert":"Import-Module AssignedAccess "},"BitLocker":{"insert":"Import-Module BitLocker "},"BitsTransfer":{"insert":"Import-Module BitsTransfer "},"BranchCache":{"insert":"Import-Module BranchCache "},"CimCmdlets":{"insert":"Import-Module CimCmdlets "},"ConfigCI":{"insert":"Import-Module ConfigCI "},"ConfigDefender":{"insert":"Import-Module ConfigDefender "},"ConfigDefenderPerformance":{"insert":"Import-Module ConfigDefenderPerformance "},"Defender":{"insert":"Import-Module Defender "},"DefenderPerformance":{"insert":"Import-Module DefenderPerformance "},"DeliveryOptimization":{"insert":"Import-Module DeliveryOptimization "},"DirectAccessClientComponents":{"insert":"Import-Module DirectAccessClientComponents "},"Dism":{"insert":"Import-Module Dism "},"DnsClient":{"insert":"Import-Module DnsClient "},"EventTracingManagement":{"insert":"Import-Module EventTracingManagement "},"Get-NetView":{"insert":"Import-Module Get-NetView "},"HgsClient":{"insert":"Import-Module HgsClient "},"HgsDiagnostics":{"insert":"Import-Module HgsDiagnostics "},"HostNetworkingService":{"insert":"Import-Module HostNetworkingService "},"Hyper-V":{"insert":"Import-Module Hyper-V "},"International":{"insert":"Import-Module International "},"iSCSI":{"insert":"Import-Module iSCSI "},"ISE":{"insert":"Import-Module ISE "},"Kds":{"insert":"Import-Module Kds "},"LanguagePackManagement":{"insert":"Import-Module LanguagePackManagement "},"LAPS":{"insert":"Import-Module LAPS "},"Microsoft.PowerShell.Archive":{"insert":"Import-Module Microsoft.PowerShell.Archive "},"Microsoft.PowerShell.Diagnostics":{"insert":"Import-Module Microsoft.PowerShell.Diagnostics "},"Microsoft.PowerShell.Host":{"insert":"Import-Module Microsoft.PowerShell.Host "},"Microsoft.PowerShell.LocalAccounts":{"insert":"Import-Module Microsoft.PowerShell.LocalAccounts "},"Microsoft.PowerShell.Management":{"insert":"Import-Module Microsoft.PowerShell.Management "},"Microsoft.PowerShell.ODataUtils":{"insert":"Import-Module Microsoft.PowerShell.ODataUtils "},"Microsoft.PowerShell.Operation.Validation":{"insert":"Import-Module Microsoft.PowerShell.Operation.Validation "},"Microsoft.PowerShell.Security":{"insert":"Import-Module Microsoft.PowerShell.Security "},"Microsoft.PowerShell.Utility":{"insert":"Import-Module Microsoft.PowerShell.Utility "},"Microsoft.ReFsDedup.Commands":{"insert":"Import-Module Microsoft.ReFsDedup.Commands "},"Microsoft.Windows.Bcd.Cmdlets":{"insert":"Import-Module Microsoft.Windows.Bcd.Cmdlets "},"Microsoft.WSMan.Management":{"insert":"Import-Module Microsoft.WSMan.Management "},"MMAgent":{"insert":"Import-Module MMAgent "},"MsDtc":{"insert":"Import-Module MsDtc "},"NetAdapter":{"insert":"Import-Module NetAdapter "},"NetConnection":{"insert":"Import-Module NetConnection "},"NetEventPacketCapture":{"insert":"Import-Module NetEventPacketCapture "},"NetLbfo":{"insert":"Import-Module NetLbfo "},"NetNat":{"insert":"Import-Module NetNat "},"NetQos":{"insert":"Import-Module NetQos "},"NetSecurity":{"insert":"Import-Module NetSecurity "},"NetSwitchTeam":{"insert":"Import-Module NetSwitchTeam "},"NetTCPIP":{"insert":"Import-Module NetTCPIP "},"NetworkConnectivityStatus":{"insert":"Import-Module NetworkConnectivityStatus "},"NetworkSwitchManager":{"insert":"Import-Module NetworkSwitchManager "},"NetworkTransition":{"insert":"Import-Module NetworkTransition "},"OsConfiguration":{"insert":"Import-Module OsConfiguration "},"OSLicense":{"insert":"Import-Module OSLicense "},"PackageManagement":{"insert":"Import-Module PackageManagement "},"PcsvDevice":{"insert":"Import-Module PcsvDevice "},"PersistentMemory":{"insert":"Import-Module PersistentMemory "},"Pester":{"insert":"Import-Module Pester "},"PKI":{"insert":"Import-Module PKI "},"PnpDevice":{"insert":"Import-Module PnpDevice "},"PowerShellGet":{"insert":"Import-Module PowerShellGet "},"PrintManagement":{"insert":"Import-Module PrintManagement "},"ProcessMitigations":{"insert":"Import-Module ProcessMitigations "},"Provisioning":{"insert":"Import-Module Provisioning "},"PSDesiredStateConfiguration":{"insert":"Import-Module PSDesiredStateConfiguration "},"PSDiagnostics":{"insert":"Import-Module PSDiagnostics "},"PSReadLine":{"insert":"Import-Module PSReadLine "},"PSScheduledJob":{"insert":"Import-Module PSScheduledJob "},"PSWorkflow":{"insert":"Import-Module PSWorkflow "},"PSWorkflowUtility":{"insert":"Import-Module PSWorkflowUtility "},"ScheduledTasks":{"insert":"Import-Module ScheduledTasks "},"SecureBoot":{"insert":"Import-Module SecureBoot "},"SmbShare":{"insert":"Import-Module SmbShare "},"SmbWitness":{"insert":"Import-Module SmbWitness "},"StartLayout":{"insert":"Import-Module StartLayout "},"Storage":{"insert":"Import-Module Storage "},"StorageBusCache":{"insert":"Import-Module StorageBusCache "},"TLS":{"insert":"Import-Module TLS "},"TroubleshootingPack":{"insert":"Import-Module TroubleshootingPack "},"TrustedPlatformModule":{"insert":"Import-Module TrustedPlatformModule "},"UEV":{"insert":"Import-Module UEV "},"VMDirectStorage":{"insert":"Import-Module VMDirectStorage "},"VpnClient":{"insert":"Import-Module VpnClient "},"Wdac":{"insert":"Import-Module Wdac "},"Whea":{"insert":"Import-Module Whea "},"WindowsDeveloperLicense":{"insert":"Import-Module WindowsDeveloperLicense "},"WindowsErrorReporting":{"insert":"Import-Module WindowsErrorReporting "},"WindowsSearch":{"insert":"Import-Module WindowsSearch "},"WindowsUpdate":{"insert":"Import-Module WindowsUpdate "},"WinHttpProxy":{"insert":"Import-Module WinHttpProxy "}}},"Set-ExecutionPolicy":{"insert":"Set-ExecutionPolicy ","children":{"AllSigned":{"insert":"Set-ExecutionPolicy AllSigned "},"Bypass":{"insert":"Set-ExecutionPolicy Bypass "},"Default":{"insert":"Set-ExecutionPolicy Default "},"RemoteSigned":{"insert":"Set-ExecutionPolicy RemoteSigned "},"Restricted":{"insert":"Set-ExecutionPolicy Restricted "},"Undefined":{"insert":"Set-ExecutionPolicy Undefined "},"Unrestricted":{"insert":"Set-ExecutionPolicy Unrestricted "}}}} } }
+}

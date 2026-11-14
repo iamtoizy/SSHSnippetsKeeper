@@ -992,8 +992,74 @@
       "Caption": "Только просмотр содержимого (Dry Run/List)"
     }
   },
+  "CompletionManagerForm": {
+    "Caption": "Менеджер автодополнения",
+    "tsBash": {
+      "Caption": "Bash"
+    },
+    "tsBat": {
+      "Caption": "CMD"
+    },
+    "tsPowerShell": {
+      "Caption": "PowerShell"
+    },
+    "gbTree": {
+      "Caption": "Дерево"
+    },
+    "gbCommands": {
+      "Caption": "Команды"
+    },
+    "edTreeFilter": {
+      "TextHint": "Фильтр дерева"
+    },
+    "edCmdFilter": {
+      "TextHint": "Фильтр команд"
+    },
+    "edName": {
+      "TextHint": "Имя"
+    },
+    "edInsert": {
+      "TextHint": "Вставка"
+    },
+    "edCommand": {
+      "TextHint": "Новая команда"
+    },
+    "btnAdd": {
+      "Caption": "Добавить"
+    },
+    "btnAddChild": {
+      "Caption": "Вложить"
+    },
+    "btnDelete": {
+      "Caption": "Удалить"
+    },
+    "btnApply": {
+      "Caption": "Применить"
+    },
+    "btnCmdAdd": {
+      "Caption": "Добавить"
+    },
+    "btnCmdDelete": {
+      "Caption": "Удалить"
+    },
+    "btnImport": {
+      "Caption": "Импорт"
+    },
+    "btnExport": {
+      "Caption": "Экспорт"
+    },
+    "btnSave": {
+      "Caption": "Сохранить"
+    },
+    "btnClose": {
+      "Caption": "Закрыть"
+    }
+  },
   "SettingsForm": {
     "Caption": "Настройки",
+    "bCompletionManager": {
+      "Caption": "Менеджер автодополнения..."
+    },
     "tsHotkeys": {
       "Caption": "Горячие клавиши"
     },
@@ -1210,6 +1276,22 @@
     }
   },
   "Messages": {
+    "CompletionManager": {
+      "InputNameTitle": "Имя команды",
+      "InputNamePrompt": "Введите имя команды:",
+      "DuplicateName": "Команда с таким именем уже существует на этом уровне.",
+      "SelectNodeFirst": "Выберите узел в дереве команд.",
+      "CmdSelectFirst": "Выберите команду в списке.",
+      "EmptyName": "Имя команды не может быть пустым.",
+      "DeleteConfirmTitle": "Удаление команды",
+      "DeleteConfirm": "Удалить команду \"%s\" вместе со всеми вложенными?",
+      "SavedToast": "Файл автодополнения сохранён.",
+      "ImportedToast": "Секция импортирована.",
+      "ExportedToast": "Секция экспортирована.",
+      "ImportErrorFormat": "Ошибка импорта: %s",
+      "ExportErrorFormat": "Ошибка экспорта: %s",
+      "SaveErrorFormat": "Не удалось сохранить файл автодополнения: %s"
+    },
     "AllDatabases": {
       "Title": "Все базы данных",
       "Open": "Открыть",

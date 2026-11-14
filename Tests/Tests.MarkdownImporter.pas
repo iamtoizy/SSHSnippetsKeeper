@@ -1,4 +1,4 @@
-unit Tests.MarkdownImporter;
+﻿unit Tests.MarkdownImporter;
 
 interface
 
@@ -20,16 +20,14 @@ uses
     ;
 
 type
-    // Заглушка настроек: импортеру нужен только дефолтный TAppSettings
+    // Р—Р°РіР»СѓС€РєР° РЅР°СЃС‚СЂРѕРµРє: РёРјРїРѕСЂС‚РµСЂСѓ РЅСѓР¶РµРЅ С‚РѕР»СЊРєРѕ РґРµС„РѕР»С‚РЅС‹Р№ TAppSettings
     TTestSettings = class(TInterfacedObject, ISettingsManager)
     private
         FData: TAppSettings;
-        FBash: TStringList;
         function GetSettings: TAppSettings;
         procedure SetSettings(const Value: TAppSettings);
         function GetCurrentLanguage: string;
         procedure SetCurrentLanguage(const Value: string);
-        function GetBashAutocomplete: TStringList;
     public
         constructor Create;
         destructor Destroy; override;
@@ -37,7 +35,7 @@ type
         procedure Save;
     end;
 
-    // Заглушка UI-сообщений: копит последний текст вместо показа диалогов
+    // Р—Р°РіР»СѓС€РєР° UI-СЃРѕРѕР±С‰РµРЅРёР№: РєРѕРїРёС‚ РїРѕСЃР»РµРґРЅРёР№ С‚РµРєСЃС‚ РІРјРµСЃС‚Рѕ РїРѕРєР°Р·Р° РґРёР°Р»РѕРіРѕРІ
     TTestMessages = class(TInterfacedObject, IUIMessagesHandler)
     public
         LastMessage: string;
@@ -49,7 +47,7 @@ type
         function AskInput(const Title, Prompt: string; var Value: string): Boolean;
     end;
 
-    // Заглушка менеджера БД: считает вызовы снапшота и возвращает заданный путь
+    // Р—Р°РіР»СѓС€РєР° РјРµРЅРµРґР¶РµСЂР° Р‘Р”: СЃС‡РёС‚Р°РµС‚ РІС‹Р·РѕРІС‹ СЃРЅР°РїС€РѕС‚Р° Рё РІРѕР·РІСЂР°С‰Р°РµС‚ Р·Р°РґР°РЅРЅС‹Р№ РїСѓС‚СЊ
     TTestDatabaseManager = class(TInterfacedObject, IDatabaseManager)
     public
         SnapshotResult: string;
@@ -63,7 +61,7 @@ type
         function CreateImportSnapshot: string;
     end;
 
-    // Контекст над in-memory SQLite: реальные репозитории и сервисы
+    // РљРѕРЅС‚РµРєСЃС‚ РЅР°Рґ in-memory SQLite: СЂРµР°Р»СЊРЅС‹Рµ СЂРµРїРѕР·РёС‚РѕСЂРёРё Рё СЃРµСЂРІРёСЃС‹
     TTestAppContext = class(TInterfacedObject, IAppContext)
     private
         FConn: TFDConnection;
@@ -94,7 +92,7 @@ type
         function GetDBConnection: TFDConnection;
     public
         constructor Create(AConn: TFDConnection; ADatabaseManager: IDatabaseManager);
-        // Имитация потерянного подключения для теста слоя 1
+        // РРјРёС‚Р°С†РёСЏ РїРѕС‚РµСЂСЏРЅРЅРѕРіРѕ РїРѕРґРєР»СЋС‡РµРЅРёСЏ РґР»СЏ С‚РµСЃС‚Р° СЃР»РѕСЏ 1
         procedure DropConnection;
         function CreateIsolatedSnippetService(out BackgroundConnection: TComponent): ISnippetService;
         function CreateIsolatedContext(out BackgroundConnection: TComponent): IAppContext;
@@ -119,13 +117,13 @@ type
         [TearDown]
         procedure TearDown;
 
-        // Слой 1
+        // РЎР»РѕР№ 1
         [Test]
         procedure NoConnection_RaisesImportError;
         [Test]
         procedure LockedDB_AbortsAndLeavesNoPartialData;
 
-        // Слой 2
+        // РЎР»РѕР№ 2
         [Test]
         procedure NewerFile_UpdatesSnippet;
         [Test]
@@ -141,7 +139,7 @@ type
         [Test]
         procedure ForeignId_DoesNotOverwriteOtherUserSnippet;
 
-        // Слой 3
+        // РЎР»РѕР№ 3
         [Test]
         procedure FirstSync_TakesSnapshot;
         [Test]
@@ -184,9 +182,9 @@ uses
 var
     GDriverLink: TFDPhysSQLiteDriverLink;
 
-// True, если заглушку менеджера БД сейчас удерживает контекст через
-// интерфейс. Проверять нужно ДО освобождения контекста: его деструктор
-// может стать последним _Release и уничтожить объект
+// True, РµСЃР»Рё Р·Р°РіР»СѓС€РєСѓ РјРµРЅРµРґР¶РµСЂР° Р‘Р” СЃРµР№С‡Р°СЃ СѓРґРµСЂР¶РёРІР°РµС‚ РєРѕРЅС‚РµРєСЃС‚ С‡РµСЂРµР·
+// РёРЅС‚РµСЂС„РµР№СЃ. РџСЂРѕРІРµСЂСЏС‚СЊ РЅСѓР¶РЅРѕ Р”Рћ РѕСЃРІРѕР±РѕР¶РґРµРЅРёСЏ РєРѕРЅС‚РµРєСЃС‚Р°: РµРіРѕ РґРµСЃС‚СЂСѓРєС‚РѕСЂ
+// РјРѕР¶РµС‚ СЃС‚Р°С‚СЊ РїРѕСЃР»РµРґРЅРёРј _Release Рё СѓРЅРёС‡С‚РѕР¶РёС‚СЊ РѕР±СЉРµРєС‚
 function DbManagerHeld(AMgr: TTestDatabaseManager): Boolean;
 begin
     Result := (AMgr <> nil) and (AMgr.RefCount > 0);
@@ -198,12 +196,10 @@ constructor TTestSettings.Create;
 begin
     inherited Create;
     FData := Default(TAppSettings);
-    FBash := TStringList.Create;
 end;
 
 destructor TTestSettings.Destroy;
 begin
-    FBash.Free;
     inherited;
 end;
 
@@ -225,11 +221,6 @@ end;
 procedure TTestSettings.SetCurrentLanguage(const Value: string);
 begin
     FData.CurrentLanguage := Value;
-end;
-
-function TTestSettings.GetBashAutocomplete: TStringList;
-begin
-    Result := FBash;
 end;
 
 procedure TTestSettings.Load;
@@ -482,8 +473,8 @@ begin
     FConn.Connected := True;
     FConn.ExecSQL('PRAGMA foreign_keys = ON');
     ExecSchema(FConn);
-    // Имя пользователя совпадает с именем папки в хранилище: импортер
-    // выводит владельца файла из пути и только для него доверяет id из YAML
+    // РРјСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ СЃРѕРІРїР°РґР°РµС‚ СЃ РёРјРµРЅРµРј РїР°РїРєРё РІ С…СЂР°РЅРёР»РёС‰Рµ: РёРјРїРѕСЂС‚РµСЂ
+    // РІС‹РІРѕРґРёС‚ РІР»Р°РґРµР»СЊС†Р° С„Р°Р№Р»Р° РёР· РїСѓС‚Рё Рё С‚РѕР»СЊРєРѕ РґР»СЏ РЅРµРіРѕ РґРѕРІРµСЂСЏРµС‚ id РёР· YAML
     FConn.ExecSQL('INSERT OR IGNORE INTO users (id, name) VALUES (1, ''user1'')');
 
     FDbManager := TTestDatabaseManager.Create;
@@ -575,7 +566,7 @@ begin
 end;
 
 // ---------------------------------------------------------------------------
-// Слой 1: харденинг транзакции
+// РЎР»РѕР№ 1: С…Р°СЂРґРµРЅРёРЅРі С‚СЂР°РЅР·Р°РєС†РёРё
 // ---------------------------------------------------------------------------
 
 procedure TMarkdownImporterTests.NoConnection_RaisesImportError;
@@ -626,7 +617,7 @@ begin
         ExecSchema(ConnA);
         ConnA.ExecSQL('INSERT OR IGNORE INTO users (id, name) VALUES (1, ''Local User'')');
 
-        // Активный писатель в другом соединении блокирует запись
+        // РђРєС‚РёРІРЅС‹Р№ РїРёСЃР°С‚РµР»СЊ РІ РґСЂСѓРіРѕРј СЃРѕРµРґРёРЅРµРЅРёРё Р±Р»РѕРєРёСЂСѓРµС‚ Р·Р°РїРёСЃСЊ
         ConnA.StartTransaction;
         ConnA.ExecSQL('INSERT INTO users (name) VALUES (''Blocker'')');
 
@@ -641,15 +632,15 @@ begin
         LocalMgr := TTestDatabaseManager.Create;
         Ctx := TTestAppContext.Create(ConnB, LocalMgr);
 
-        // Импорт обязан упасть с исключением, не оставив частичной записи
+        // РРјРїРѕСЂС‚ РѕР±СЏР·Р°РЅ СѓРїР°СЃС‚СЊ СЃ РёСЃРєР»СЋС‡РµРЅРёРµРј, РЅРµ РѕСЃС‚Р°РІРёРІ С‡Р°СЃС‚РёС‡РЅРѕР№ Р·Р°РїРёСЃРё
         Assert.WillRaise(
             procedure
             begin
                 TMarkdownImporter.ImportFromDirectory(Ctx, VaultDirLocked);
             end);
 
-        // Владение проверяем ДО освобождения контекста: его деструктор может
-        // стать последним _Release и уничтожить заглушку (см. DbManagerHeld)
+        // Р’Р»Р°РґРµРЅРёРµ РїСЂРѕРІРµСЂСЏРµРј Р”Рћ РѕСЃРІРѕР±РѕР¶РґРµРЅРёСЏ РєРѕРЅС‚РµРєСЃС‚Р°: РµРіРѕ РґРµСЃС‚СЂСѓРєС‚РѕСЂ РјРѕР¶РµС‚
+        // СЃС‚Р°С‚СЊ РїРѕСЃР»РµРґРЅРёРј _Release Рё СѓРЅРёС‡С‚РѕР¶РёС‚СЊ Р·Р°РіР»СѓС€РєСѓ (СЃРј. DbManagerHeld)
         Held := DbManagerHeld(LocalMgr);
         Ctx := nil;
 
@@ -670,7 +661,7 @@ begin
 end;
 
 // ---------------------------------------------------------------------------
-// Слой 2: сравнение UpdatedAt
+// РЎР»РѕР№ 2: СЃСЂР°РІРЅРµРЅРёРµ UpdatedAt
 // ---------------------------------------------------------------------------
 
 procedure TMarkdownImporterTests.NewerFile_UpdatesSnippet;
@@ -687,7 +678,7 @@ begin
     Assert.AreEqual(1, Res.TotalFiles);
     Assert.AreEqual(1, Res.Updated);
     Assert.AreEqual(0, Res.Created);
-    // Тело md-файла попадает в comment, ограждение кода - в content
+    // РўРµР»Рѕ md-С„Р°Р№Р»Р° РїРѕРїР°РґР°РµС‚ РІ comment, РѕРіСЂР°Р¶РґРµРЅРёРµ РєРѕРґР° - РІ content
     Assert.AreEqual('new content', string(FConn.ExecSQLScalar(
         'SELECT comment FROM snippets WHERE id = ?', [SnipID])));
     Assert.AreEqual(Int64(1800000000), Int64(FConn.ExecSQLScalar(
@@ -740,7 +731,7 @@ begin
     FilePath := WriteFile(TPath.Combine('vault', 'user1', 'scripts', 'nomd.md'),
         MdFile(SnipID, -1, 'NoUpd', 'file content'));
 
-    // mtime старее записи в БД - скип
+    // mtime СЃС‚Р°СЂРµРµ Р·Р°РїРёСЃРё РІ Р‘Р” - СЃРєРёРї
     TFile.SetLastWriteTimeUtc(FilePath, UnixToDateTime(1600000000));
     Res := TMarkdownImporter.ImportFromDirectory(FContext, VaultDir);
     Assert.AreEqual(1, Res.SkippedStale);
@@ -748,7 +739,7 @@ begin
     Assert.AreEqual('db content', string(FConn.ExecSQLScalar(
         'SELECT content FROM snippets WHERE id = ?', [SnipID])));
 
-    // mtime новее записи в БД - обновление
+    // mtime РЅРѕРІРµРµ Р·Р°РїРёСЃРё РІ Р‘Р” - РѕР±РЅРѕРІР»РµРЅРёРµ
     TFile.SetLastWriteTimeUtc(FilePath, UnixToDateTime(1900000000));
     Res := TMarkdownImporter.ImportFromDirectory(FContext, VaultDir);
     Assert.AreEqual(1, Res.Updated);
@@ -800,7 +791,7 @@ var
     CatID, ForeignID: Integer;
     Res: TMarkdownImportResult;
 begin
-    // Соседнее пространство: у другого пользователя свой сниппет
+    // РЎРѕСЃРµРґРЅРµРµ РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІРѕ: Сѓ РґСЂСѓРіРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ СЃРІРѕР№ СЃРЅРёРїРїРµС‚
     FConn.ExecSQL('INSERT INTO users (id, name) VALUES (2, ''other'')');
     Cat := Default(TCategoryDTO);
     Cat.Name := 'scripts';
@@ -818,8 +809,8 @@ begin
     Snip.UpdatedAt := 1700000000;
     ForeignID := FContext.SnippetService.CreateSnippet(Snip, []);
 
-    // Файл в пространстве user1 с чужим id и нашим маркером: id из YAML
-    // не даёт права переписывать сниппет другого пространства
+    // Р¤Р°Р№Р» РІ РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІРµ user1 СЃ С‡СѓР¶РёРј id Рё РЅР°С€РёРј РјР°СЂРєРµСЂРѕРј: id РёР· YAML
+    // РЅРµ РґР°С‘С‚ РїСЂР°РІР° РїРµСЂРµРїРёСЃС‹РІР°С‚СЊ СЃРЅРёРїРїРµС‚ РґСЂСѓРіРѕРіРѕ РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІР°
     WriteFile(TPath.Combine('vault', 'user1', 'scripts', 'stolen.md'),
         MdFile(ForeignID, 1800000000, 'Stolen', 'attacker content'));
 
@@ -831,13 +822,13 @@ begin
         'SELECT content FROM snippets WHERE id = ?', [ForeignID])));
     Assert.AreEqual(Int64(1700000000), Int64(FConn.ExecSQLScalar(
         'SELECT updated_at FROM snippets WHERE id = ?', [ForeignID])));
-    // Файл не потерян: он импортирован как новый в пространство user1
+    // Р¤Р°Р№Р» РЅРµ РїРѕС‚РµСЂСЏРЅ: РѕРЅ РёРјРїРѕСЂС‚РёСЂРѕРІР°РЅ РєР°Рє РЅРѕРІС‹Р№ РІ РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІРѕ user1
     Assert.AreEqual(1, Integer(FConn.ExecSQLScalar(
         'SELECT COUNT(*) FROM snippets WHERE title = ''Stolen'' AND user_id = 1')));
 end;
 
 // ---------------------------------------------------------------------------
-// Слой 3: снапшот по порогу
+// РЎР»РѕР№ 3: СЃРЅР°РїС€РѕС‚ РїРѕ РїРѕСЂРѕРіСѓ
 // ---------------------------------------------------------------------------
 
 procedure TMarkdownImporterTests.FirstSync_TakesSnapshot;
@@ -893,7 +884,7 @@ var
     CatID, I: Integer;
     Res: TMarkdownImportResult;
 begin
-    // База из 100 сниппетов: 3 новых = 15% и меньше лимита - снапшот не нужен
+    // Р‘Р°Р·Р° РёР· 100 СЃРЅРёРїРїРµС‚РѕРІ: 3 РЅРѕРІС‹С… = 15% Рё РјРµРЅСЊС€Рµ Р»РёРјРёС‚Р° - СЃРЅР°РїС€РѕС‚ РЅРµ РЅСѓР¶РµРЅ
     Cat := Default(TCategoryDTO);
     Cat.Name := 'bulk';
     Cat.ParentID := 0;
@@ -924,8 +915,8 @@ begin
 end;
 
 initialization
-    // Первый link процесса задаёт параметры драйвера FireDAC: переводим
-    // на sqlite3mc_x64.dll (см. ApplyEngineLinkage)
+    // РџРµСЂРІС‹Р№ link РїСЂРѕС†РµСЃСЃР° Р·Р°РґР°С‘С‚ РїР°СЂР°РјРµС‚СЂС‹ РґСЂР°Р№РІРµСЂР° FireDAC: РїРµСЂРµРІРѕРґРёРј
+    // РЅР° sqlite3mc_x64.dll (СЃРј. ApplyEngineLinkage)
     GDriverLink := TFDPhysSQLiteDriverLink.Create(nil);
     ApplyEngineLinkage(GDriverLink);
 

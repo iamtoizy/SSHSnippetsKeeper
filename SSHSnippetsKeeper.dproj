@@ -246,13 +246,16 @@
         <DCCReference Include="UI\Forms\TagEditorFormUI.pas">
             <Form>TagEditorForm</Form>
         </DCCReference>
+        <DCCReference Include="UI\Forms\CompletionManagerFormUI.pas">
+            <Form>CompletionManagerForm</Form>
+        </DCCReference>
         <DCCReference Include="UI\Forms\WorkspaceManagerFormUI.pas">
             <Form>WorkspaceManagerForm</Form>
         </DCCReference>
         <DCCReference Include="UI\Controls\SynThemeAdapter.pas"/>
         <DCCReference Include="UI\Controls\CustomBashSyn.pas"/>
         <DCCReference Include="UI\Controls\MacroSyn.pas"/>
-        <DCCReference Include="Core\Core.BashCompletionEngine.pas"/>
+        <DCCReference Include="Core\Core.CompletionEngine.pas"/>
         <DCCReference Include="Core\Services\SnippetService.pas"/>
         <DCCReference Include="Core\Services\SnippetHistoryService.pas"/>
         <DCCReference Include="Core\Services\TagService.pas"/>

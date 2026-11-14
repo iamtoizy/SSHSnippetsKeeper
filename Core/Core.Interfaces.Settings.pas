@@ -273,13 +273,11 @@ type
         procedure SetSettings(const Value: TAppSettings);
         function GetCurrentLanguage: string;
         procedure SetCurrentLanguage(const Value: string);
-        function GetBashAutocomplete: TStringList;
 
         procedure Load;
         procedure Save;
 
         property Data: TAppSettings read GetSettings write SetSettings;
-        property BashAutocomplete: TStringList read GetBashAutocomplete;
         property CurrentLanguage: string read GetCurrentLanguage write SetCurrentLanguage;
     end;
 

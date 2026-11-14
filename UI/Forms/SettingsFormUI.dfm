@@ -500,6 +500,15 @@ object SettingsForm: TSettingsForm
           OnClick = bBackupCreateNowClick
         end
       end
+      object bCompletionManager: TButton
+        Left = 3
+        Top = 350
+        Width = 240
+        Height = 25
+        Caption = #1052#1077#1085#1077#1076#1078#1077#1088' '#1072#1074#1090#1086#1076#1086#1087#1086#1083#1085#1077#1085#1080#1103'...'
+        TabOrder = 4
+        OnClick = bCompletionManagerClick
+      end
     end
     object tsSecurity: TTabSheet
       Caption = #1041#1077#1079#1086#1087#1072#1089#1085#1086#1089#1090#1100

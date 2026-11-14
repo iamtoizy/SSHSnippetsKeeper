@@ -44,6 +44,7 @@ uses
     Tests.RunCmdCommand in 'Tests.RunCmdCommand.pas',
     Tests.Helpers in 'Tests.Helpers.pas',
     Tests.Settings in 'Tests.Settings.pas',
+    Tests.CompletionEngine in 'Tests.CompletionEngine.pas',
     Tests.DbCrypto in 'Tests.DbCrypto.pas',
     Tests.WindowHelper in 'Tests.WindowHelper.pas',
     Tests.SyncController in 'Tests.SyncController.pas'
@@ -100,6 +101,7 @@ begin
         TDUnitX.RegisterTestFixture(THelpersShortenDbPathTests);
         TDUnitX.RegisterTestFixture(TSettingsDpapiTests);
         TDUnitX.RegisterTestFixture(TSettingsManagerTests);
+        TDUnitX.RegisterTestFixture(TCompletionEngineTests);
         TDUnitX.RegisterTestFixture(TSettingsDbSecurityTests);
         TDUnitX.RegisterTestFixture(TSettingsRecentDatabasesTests);
         TDUnitX.RegisterTestFixture(TDbCryptoPbkdf2Tests);

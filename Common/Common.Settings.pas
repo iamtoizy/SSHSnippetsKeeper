@@ -15,10 +15,12 @@ type
     TSettingsManager = class(TInterfacedObject, ISettingsManager)
     private
         FSettings: TAppSettings;
-        FBashAutocomplete: TStringList;
 
         function GetSettingsPath: string;
-        function GetBashPath: string;
+        function GetAutocompletePath: string;
+
+        // Одноразовая миграция: bash.autocomplete.json -> autocomplete.json
+        procedure MigrateLegacyAutocomplete;
 
         // Внутренние методы инициализации дефолтов
         procedure ApplyDefaults;
@@ -27,7 +29,6 @@ type
 
         function GetSettings: TAppSettings;
         procedure SetSettings(const Value: TAppSettings);
-        function GetBashAutocomplete: TStringList;
         function GetCurrentLanguage: string;
         procedure SetCurrentLanguage(const Value: string);
     public
@@ -534,13 +535,11 @@ const
 constructor TSettingsManager.Create;
 begin
     inherited Create;
-    FBashAutocomplete := TStringList.Create;
     ApplyDefaults; // Сразу ставим дефолты на случай, если файла еще нет
 end;
 
 destructor TSettingsManager.Destroy;
 begin
-    FBashAutocomplete.Free;
     inherited;
 end;
 
@@ -549,9 +548,56 @@ begin
     Result := ResolvePath('settings.json');
 end;
 
-function TSettingsManager.GetBashPath: string;
+function TSettingsManager.GetAutocompletePath: string;
 begin
-    Result := ResolvePath('bash.autocomplete.json');
+    Result := ResolvePath('autocomplete.json');
+end;
+
+// Одноразовая миграция старого одноязычного файла: его содержимое
+// целиком переносится в секцию "bash" нового общего файла,
+// после чего старый файл удаляется
+procedure TSettingsManager.MigrateLegacyAutocomplete;
+var
+    NewPath, OldPath, JsonText: string;
+    OldRoot, NewRoot, BashSection: TJSONObject;
+begin
+    NewPath := GetAutocompletePath;
+    if TFile.Exists(NewPath) then
+        Exit;
+
+    OldPath := ResolvePath('bash.autocomplete.json');
+    if not TFile.Exists(OldPath) then
+        Exit;
+
+    try
+        JsonText := TFile.ReadAllText(OldPath, TEncoding.UTF8);
+        OldRoot := TJSONObject.ParseJSONValue(JsonText) as TJSONObject;
+        if not Assigned(OldRoot) then
+            Exit;
+
+        try
+            NewRoot := TJSONObject.Create;
+            try
+                if not (OldRoot.FindValue('completion') is TJSONObject) then
+                    Exit;
+                BashSection := TJSONObject.Create;
+                BashSection.AddPair('completion',
+                    OldRoot.GetValue('completion').Clone as TJSONObject);
+                NewRoot.AddPair('version', TJSONNumber.Create(2));
+                NewRoot.AddPair('bash', BashSection);
+                TFile.WriteAllText(NewPath, NewRoot.ToJSON, TEncoding.UTF8);
+            finally
+                NewRoot.Free;
+            end;
+        finally
+            OldRoot.Free;
+        end;
+
+        TFile.Delete(OldPath);
+    except
+        on E: Exception do
+            LogException('TSettingsManager.MigrateLegacyAutocomplete', E);
+    end;
 end;
 
 function TSettingsManager.GetCurrentLanguage: string;
@@ -732,46 +778,11 @@ end;
 
 procedure TSettingsManager.Load;
 var
-    JsonString, Cmd: string;
+    JsonString: string;
     Path: string;
-    JsonRoot: TJSONObject;
-    CompletionObj, CommandsArr: TJSONValue;
     I: Integer;
 begin
-    Path := GetBashPath;
-    if TFile.Exists(Path) then
-    try
-        JsonString := TFile.ReadAllText(Path, TEncoding.UTF8);
-        JsonRoot := TJSONObject.ParseJSONValue(JsonString) as TJSONObject;
-        if Assigned(JsonRoot) then
-        try
-            CompletionObj := JsonRoot.FindValue('completion');
-            if CompletionObj is TJSONObject then
-            begin
-                CommandsArr := TJSONObject(CompletionObj).FindValue('commands');
-                if CommandsArr is TJSONArray then
-                begin
-                    FBashAutocomplete.BeginUpdate;
-                    try
-                        FBashAutocomplete.Clear;
-                        for I := 0 to TJSONArray(CommandsArr).Count - 1 do
-                        begin
-                            Cmd := Trim(TJSONArray(CommandsArr).Items[I].Value);
-                            if Cmd <> '' then
-                                FBashAutocomplete.Add(Cmd);
-                        end;
-                    finally
-                        FBashAutocomplete.EndUpdate;
-                    end;
-                end;
-            end;
-        finally
-            JsonRoot.Free;
-        end;
-    except
-        on E: Exception do
-            LogException('TSettingsManager.Load(BashAutocomplete)', E);
-    end;
+    MigrateLegacyAutocomplete;
 
     Path := GetSettingsPath;
     if not TFile.Exists(Path) then
@@ -969,11 +980,6 @@ end;
 procedure TSettingsManager.SetSettings(const Value: TAppSettings);
 begin
     FSettings := Value;
-end;
-
-function TSettingsManager.GetBashAutocomplete: TStringList;
-begin
-    Result := FBashAutocomplete;
 end;
 
 end.
