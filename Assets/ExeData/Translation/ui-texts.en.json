@@ -315,7 +315,7 @@
     }
   },
   "AddEditSnippetForm": {
-    "Caption": "SSH Snippets Keeper - Add/Edit Snippet",
+    "Caption": "SSH Snippets Keeper — Add/Edit Snippet",
     "actShowAIForm": {
       "Caption": "Show AI Assistant"
     },
@@ -387,7 +387,7 @@
       "Caption": "Macros"
     },
     "mInfo": {
-      "Text": "Current test macros:\n{SLEEP N} - Delay execution by N milliseconds.\n{ENTER} - Send ENTER key press.\n{SENDKEY X} - Send character X, a key name (ENTER, TAB, F1-F12) or a VK code to the target window.\n{INPUT[TYPE:DEFAULT_VALUE] NAME} - Show a text input dialog and replace macro with input. Examples:\n  {INPUT Name}\n  {INPUT[STRING:test string] Name}\n  {INPUT[NUMBER:100] Size}\n  {INPUT[FLOAT:3.14] Size}\n  {INPUT[Hex:FF] Color}\n  {INPUT[Password] Password}\n  {INPUT[DATE:2026-01-31] Date}\n  {INPUT[TIME:12:00] Time}\n  {INPUT[DATETIME:2026-01-31 12:00] Date and time}\n  {INPUT[SELECT:prod|stage|dev] Env} - Pick one value from the list (options separated by |).\n  {INPUT[Confirm] Text for user} - Pause execution and wait for user confirmation.\n{DATETIME:FORMAT} - Current date and time (FormatDateTime mask), default yyyy-MM-dd HH:mm:ss.\n{UUID} - New UUID (lowercase).\n{RANDOM:N} - Random string of N letters and digits (default 16).\n{COUNTER} - Snippet run number (1, 2, 3...). Params (semicolon-separated): start=NUM (initial value), step=NUM (increment), pad=N (zero-pad to N digits), current (reuse this run's number without incrementing), volatile (do not persist across runs). Example: {COUNTER:start=100;step=2;pad=3} yields 100, 102, 104...\n{ENV:NAME} - Value of an environment variable.\n{CLIPBOARD} - Clipboard text at run time.\n{SENDKEY CTRL+K} - Key combinations: CTRL, ALT, SHIFT + key (e.g., CTRL+C, ALT+F4, CTRL+SHIFT+T).\n{CLEAR_LINE} - Clear the current terminal line: Ctrl+C, pause, Ctrl+U.\n{KEYDELAY N} - Delay between characters (ms) for the following text.\n\n..."
+      "Text": "Current test macros:\n{SLEEP N} — Delay execution by N milliseconds.\n{ENTER} — Send ENTER key press.\n{SENDKEY X} — Send character X, a key name (ENTER, TAB, F1-F12) or a VK code to the target window.\n{INPUT[TYPE:DEFAULT_VALUE] NAME} — Show a text input dialog and replace macro with input. Examples:\n  {INPUT Name}\n  {INPUT[STRING:test string] Name}\n  {INPUT[NUMBER:100] Size}\n  {INPUT[FLOAT:3.14] Size}\n  {INPUT[Hex:FF] Color}\n  {INPUT[Password] Password}\n  {INPUT[DATE:2026-01-31] Date}\n  {INPUT[TIME:12:00] Time}\n  {INPUT[DATETIME:2026-01-31 12:00] Date and time}\n  {INPUT[SELECT:prod|stage|dev] Env} — Pick one value from the list (options separated by |).\n  {INPUT[Confirm] Text for user} — Pause execution and wait for user confirmation.\n{DATETIME:FORMAT} — Current date and time (FormatDateTime mask), default yyyy-MM-dd HH:mm:ss.\n{UUID} — New UUID (lowercase).\n{RANDOM:N} — Random string of N letters and digits (default 16).\n{COUNTER} — Snippet run number (1, 2, 3...). Params (semicolon-separated): start=NUM (initial value), step=NUM (increment), pad=N (zero-pad to N digits), current (reuse this run's number without incrementing), volatile (do not persist across runs). Example: {COUNTER:start=100;step=2;pad=3} yields 100, 102, 104...\n{ENV:NAME} — Value of an environment variable.\n{CLIPBOARD} — Clipboard text at run time.\n{SENDKEY CTRL+K} — Key combinations: CTRL, ALT, SHIFT + key (e.g., CTRL+C, ALT+F4, CTRL+SHIFT+T).\n{CLEAR_LINE} — Clear the current terminal line: Ctrl+C, pause, Ctrl+U.\n{KEYDELAY N} — Delay between characters (ms) for the following text.\n\n..."
     }
   },
   "AISettingsForm": {
@@ -1321,13 +1321,13 @@
       "MainForm": {
         "tvCategories": {
           "Title": "Category List",
-          "Main": "Tree list of categories in the current workspace. If \"All Workspaces\" is selected, workspaces are displayed as root categories, but snippets cannot be added to them.<br><blockquote><b>Virtual categories</b> \"Recent\" and \"Frequently used\": snippets cannot be added manually to these categories, only modified or deleted.</blockquote><br><blockquote><b>Chains</b> - a named sequence of snippets executed one by one. Create: right-click the \"Chains\" node and choose \"New chain\", or right-click a snippet and choose \"Create chain from snippet\". Run by double-clicking the chain or via its context menu; a progress panel with a \"Stop\" button (Esc works too) appears during execution. Edit and delete via the chain's context menu.</blockquote><br><blockquote><b>Saved searches</b> - named search queries. Create: right-click the \"Saved searches\" node and choose \"Save search\" (the search box must be non-empty), then enter a name. Selecting a search runs the query and shows the results in the snippet list. Rename with F2 or via the context menu; delete via \"Delete saved search\".</blockquote>",
-          "Expanded": "<code>ALT+A</code> - Add category<br><code>ALT+E</code> - Edit category<br><code>ALT+D</code> - Delete category"
+          "Main": "Tree list of categories in the current workspace. If \"All Workspaces\" is selected, workspaces are displayed as root categories, but snippets cannot be added to them.<br><blockquote><b>Virtual categories</b> \"Recent\" and \"Frequently used\": snippets cannot be added manually to these categories, only modified or deleted.</blockquote><br><blockquote><b>Chains</b> — a named sequence of snippets executed one by one. Create: right-click the \"Chains\" node and choose \"New chain\", or right-click a snippet and choose \"Create chain from snippet\". Run by double-clicking the chain or via its context menu; a progress panel with a \"Stop\" button (Esc works too) appears during execution. Edit and delete via the chain's context menu.</blockquote><br><blockquote><b>Saved searches</b> — named search queries. Create: right-click the \"Saved searches\" node and choose \"Save search\" (the search box must be non-empty), then enter a name. Selecting a search runs the query and shows the results in the snippet list. Rename with F2 or via the context menu; delete via \"Delete saved search\".</blockquote>",
+          "Expanded": "<code>ALT+A</code> — Add category<br><code>ALT+E</code> — Edit category<br><code>ALT+D</code> — Delete category"
         },
         "lvSnippets": {
           "Title": "Snippet List",
           "Main": "Flat list of snippets in the selected category; it also shows results of searches, saved searches, and tag filters. Run with a double click or \"Run\": the snippet is typed into the selected target window; \"Dry run\" shows the snippet without typing and lets you run it after review.<br><blockquote><b>Columns:</b> \"Title\" is always visible; \"Language\", \"Last run\" and \"Last modified\" can be toggled in Settings. If a snippet was never edited, \"Last modified\" shows the creation date.</blockquote><br><blockquote><b>Favorites:</b> favorite snippets are marked with ★, the first ten also show a slot number (1..0) triggered by the global keys ALT+1…ALT+0 (configurable). Reorder favorites by dragging a row onto another favorite, or via the context menu \"Move in favorites\" (To top / Up / Down / To end). Hovering a row shows a tooltip with ID, title, language and comment.</blockquote><br><blockquote><b>Multi-selection</b> (CTRL+click / SHIFT+click) enables bulk context-menu actions: \"Running in order\", \"Export snippets\", \"Add tag to selected snippets\", \"Remove tag from selected snippets\", \"Move to category\", \"Delete\". The menu also offers \"Create chain from snippet\", \"Version history…\" (view and restore), \"Add to favorites\" / \"Remove from favorites\" and \"Save search\" (when the list shows search results).</blockquote>",
-          "Expanded": "<code>ALT+1…ALT+0</code> - Run favorite snippet by slot (global)<br><code>CTRL+ALT+A</code> - Add snippet<br><code>CTRL+ALT+E</code> - Edit snippet<br><code>CTRL+D</code> - Duplicate snippet<br><code>CTRL+ALT+D</code> - Delete snippet"
+          "Expanded": "<code>ALT+1…ALT+0</code> — Run favorite snippet by slot (global)<br><code>CTRL+ALT+A</code> — Add snippet<br><code>CTRL+ALT+E</code> — Edit snippet<br><code>CTRL+D</code> — Duplicate snippet<br><code>CTRL+ALT+D</code> — Delete snippet"
         },
         "lvTags": {
           "Title": "Tag List",
@@ -1336,8 +1336,8 @@
         },
         "ebSearch": {
           "Title": "Search Bar",
-          "Main": "Search covers title, code, comments, and tags; the engine also matches parts of words (query <code>List</code> finds <code>TList</code>), results are sorted by relevance.<br><blockquote><b>Query language:</b><ul><li><code>word</code> - full-text search; several words in a row are searched as a phrase;</li><li><code>tag:word</code> - filter by tag name; multiple tag: - all must match;</li><li><code>cat:name</code> - the snippet's direct category; multiple cat: - any of them;</li><li><code>title:word</code> - substring in the title;</li><li><code>comment:word</code> - substring in the comment;</li><li><code>lang:word</code> - substring in the snippet language; multiple lang: - any match;</li><li><code>content:word</code> - substring in the snippet code (title and tags are not searched);</li><li><code>\"phrase\"</code> - exact phrase; works for title:, comment:, content: and without a prefix (title, code, tags);</li><li><code>created:2025-01-15</code> - creation day; <code>created:2025-01</code> - the whole month; <code>updated:2025-11-05T10:30</code> - the modification minute (a quoted space can be used instead of T); operators: =, &gt;, &gt;=, &lt;, &lt;=;</li><li><code>fav</code> - favorites only; <code>-fav</code> - exclude favorites;</li><li><code>-word</code> - exclude snippets containing the word in title or code.</li></ul>Tokens combine: <code>fav tag:docker title:logs lang:python created:2025-01</code>. Search is case-insensitive.</blockquote>",
-          "Expanded": "Type a query while the search bar is focused, and it will be applied automatically.<br><br>Tag Management (Global):<br><code>CTRL+SHIFT+A</code> - Add tag<br><code>CTRL+SHIFT+E</code> - Edit tag<br><code>CTRL+SHIFT+D</code> - Delete tag"
+          "Main": "Search covers title, code, comments, and tags; the engine also matches parts of words (query <code>List</code> finds <code>TList</code>), results are sorted by relevance.<br><blockquote><b>Query language:</b><ul><li><code>word</code> — full-text search; several words in a row are searched as a phrase;</li><li><code>tag:word</code> — filter by tag name; multiple tag: — all must match;</li><li><code>cat:name</code> — the snippet's direct category; multiple cat: — any of them;</li><li><code>title:word</code> — substring in the title;</li><li><code>comment:word</code> — substring in the comment;</li><li><code>lang:word</code> — substring in the snippet language; multiple lang: — any match;</li><li><code>content:word</code> — substring in the snippet code (title and tags are not searched);</li><li><code>\"phrase\"</code> — exact phrase; works for title:, comment:, content: and without a prefix (title, code, tags);</li><li><code>created:2025-01-15</code> — creation day; <code>created:2025-01</code> — the whole month; <code>updated:2025-11-05T10:30</code> — the modification minute (a quoted space can be used instead of T); operators: =, &gt;, &gt;=, &lt;, &lt;=;</li><li><code>fav</code> — favorites only; <code>-fav</code> — exclude favorites;</li><li><code>-word</code> — exclude snippets containing the word in title or code.</li></ul>Tokens combine: <code>fav tag:docker title:logs lang:python created:2025-01</code>. Search is case-insensitive.</blockquote>",
+          "Expanded": "Type a query while the search bar is focused, and it will be applied automatically.<br><br>Tag Management (Global):<br><code>CTRL+SHIFT+A</code> — Add tag<br><code>CTRL+SHIFT+E</code> — Edit tag<br><code>CTRL+SHIFT+D</code> — Delete tag"
         },
         "FrequentlyUsed": "Frequently Used",
         "Recent": "Recent",
@@ -1349,17 +1349,17 @@
         "lvSteps": {
           "Title": "Chain steps",
           "Main": "The chain's snippets run top to bottom, each typed into the selected target terminal window. Reorder by dragging rows or with the Up/Down buttons. The 'Remove step' button deletes the selected step from the chain. The field below the list sets the pause for the selected step.",
-          "Expanded": "Hotkeys (while the steps list has focus):<br><code>CTRL+↑ / CTRL+↓</code> - move the selected step;<br><code>DEL</code> - remove the selected step.<br>Adding: double-click a snippet in the library on the right, or use the 'Add step' button."
+          "Expanded": "Hotkeys (while the steps list has focus):<br><code>CTRL+↑ / CTRL+↓</code> — move the selected step;<br><code>DEL</code> — remove the selected step.<br>Adding: double-click a snippet in the library on the right, or use the 'Add step' button."
         },
         "edPause": {
           "Title": "Pause after step",
-          "Main": "Delay in seconds after the selected step finishes, before the next one starts. 0 - the next step starts immediately after the previous one finishes typing. The value is stored in milliseconds in the database.",
+          "Main": "Delay in seconds after the selected step finishes, before the next one starts. 0 — the next step starts immediately after the previous one finishes typing. The value is stored in milliseconds in the database.",
           "Expanded": "Applied when the field loses focus and when the chain is saved (OK button)."
         },
         "lvLibrary": {
           "Title": "Snippet library",
           "Main": "All snippets from all workspaces; search filters by title substring. Double-clicking a snippet or the 'Add step' button appends it as a step to the end of the chain.",
-          "Expanded": "The 'Workspace' column shows the snippet's workspace - a chain can combine steps from different workspaces."
+          "Expanded": "The 'Workspace' column shows the snippet's workspace — a chain can combine steps from different workspaces."
         }
       },
       "SequenceDialog": {
@@ -1373,7 +1373,7 @@
         "edSearch": {
           "Title": "Tag search",
           "Main": "Filters the list of existing tags by substring. If a tag with the entered name does not exist, it will be created after clicking OK and added to all selected snippets.",
-          "Expanded": "<code>ENTER</code> - confirm the choice."
+          "Expanded": "<code>ENTER</code> — confirm the choice."
         },
         "lvTags": {
           "Title": "Existing tags",
@@ -1383,7 +1383,7 @@
       },
       "CompletionImportDialog": {
         "Title": "Autocompletion import",
-        "Main": "This dialog transfers autocompletion commands from the section chosen for import into the current one. <blockquote><b>Search:</b> filters the command list by substring; checkbox states are preserved when the filter changes.</blockquote><blockquote><b>Command list:</b> top-level commands found in the imported section; the checked ones will be transferred to the current section.</blockquote><blockquote><b>Merge with existing:</b> existing commands are kept; their \"insert\" completions are overwritten by the imported ones, child commands are merged recursively, nothing is deleted.</blockquote><blockquote><b>Replace selected:</b> an existing command with the same name is fully removed and replaced by its version from the import (applies only to the checked names).</blockquote><blockquote><b>Buttons:</b> \"Select all\" / \"Select none\" affect only the commands visible in the current search filter; <code>ENTER</code> - confirm the import of the checked commands, <code>ESC</code> - close without importing.</blockquote>",
+        "Main": "This dialog transfers autocompletion commands from the section chosen for import into the current one. <blockquote><b>Search:</b> filters the command list by substring; checkbox states are preserved when the filter changes.</blockquote><blockquote><b>Command list:</b> top-level commands found in the imported section; the checked ones will be transferred to the current section.</blockquote><blockquote><b>Merge with existing:</b> existing commands are kept; their \"insert\" completions are overwritten by the imported ones, child commands are merged recursively, nothing is deleted.</blockquote><blockquote><b>Replace selected:</b> an existing command with the same name is fully removed and replaced by its version from the import (applies only to the checked names).</blockquote><blockquote><b>Buttons:</b> \"Select all\" / \"Select none\" affect only the commands visible in the current search filter; <code>ENTER</code> — confirm the import of the checked commands, <code>ESC</code> — close without importing.</blockquote>",
         "Expanded": ""
       },
       "CategorySelectDialog": {
@@ -1397,7 +1397,7 @@
         "mContent": {
           "Title": "Snippet Text",
           "Main": "Main input field for snippet code. Supports syntax highlighting and auto-completion for Linux Shell/Bash. <blockquote><ul><li><b>Macros:</b> The built-in engine allows prompting the user for arguments, inserting pauses, awaiting confirmation, and more. Full syntax is available on the «Macros» tab.</li><li><b>Execution (Line breaks):</b> Each new line is interpreted by the terminal as an <code>ENTER</code> key press (sending a command). Keep this in mind when writing multi-line scripts.</li><li><b>AI Assistant:</b> Built-in integration with Yandex AI Studio for code generation and refactoring. It is recommended to set up and use «Agents» — they return concise, ready-to-use code without unnecessary reasoning. You can configure AI via the main menu.</li><li><b>Data Protection:</b> Snippets are automatically checked for sensitive information (passwords, API keys, SSH tokens, DB connection strings). If threats are detected, saving will be blocked until you explicitly check the «Ignore checks» checkbox.</li></ul></blockquote>",
-          "Expanded": "<code>CTRL+I</code> - Open AI Assistant prompt window.<br><code>CTRL+ALT+P</code> - Open AI Settings window.<br><code>CTRL+ALT+→</code> / <code>CTRL+ALT+←</code> - Jump to the next / previous macro card.<br><code>CTRL+ALT+↓</code> / <code>CTRL+ALT+↑</code> - Jump to the nearest card on the line below / above.<br><code>CTRL+←</code> / <code>CTRL+→</code> and <code>CTRL+↓</code> / <code>CTRL+↑</code> - Regular word / line movement, as in any editor."
+          "Expanded": "<code>CTRL+I</code> — Open AI Assistant prompt window.<br><code>CTRL+ALT+P</code> — Open AI Settings window.<br><code>CTRL+ALT+→</code> / <code>CTRL+ALT+←</code> — Jump to the next / previous macro card.<br><code>CTRL+ALT+↓</code> / <code>CTRL+ALT+↑</code> — Jump to the nearest card on the line below / above.<br><code>CTRL+←</code> / <code>CTRL+→</code> and <code>CTRL+↓</code> / <code>CTRL+↑</code> — Regular word / line movement, as in any editor."
         },
         "mComment": {
           "Title": "Snippet Comment",
@@ -1622,7 +1622,7 @@
     },
     "CmdLine": {
       "HelpTitle": "Command Line Parameters",
-      "HelpText": "SSHSnippetsKeeper.exe [keys]\n\nDatabase maintenance (works while the app is already running):\n  -migrate -db=<file>          Apply schema migrations to the database.\n  -backup [path] -db=<file>    Database snapshot (VACUUM INTO). The path comes\n                               right after -backup: a folder or a file; without\n                               it the copy is stored next to the DB.\n  -checkdb -db=<file>          Integrity check (integrity_check,\n                               foreign_key_check).\n  -newdb <file>                Create a new database with the baseline schema.\n\nInformation:\n  -version                     Print the application version.\n  -help                        Show this help.\n\nGUI keys:\n  -db=<path>    Open the specified SQLite database on startup.\n  -user=<name>  Select a workspace by name (use after -db).\n  -nosync       Disable automatic sync with the Markdown vault.\n  -minimized    Start minimized.\n\nThe /, - and -- prefixes are equivalent, case-insensitive.\nExit codes: 0 - success, 2 - database schema is newer than the app, 3 - error,\n4 - database file not found or not specified, 5 - integrity problems.",
+      "HelpText": "SSHSnippetsKeeper.exe [keys]\n\nDatabase maintenance (works while the app is already running):\n  -migrate -db=<file>          Apply schema migrations to the database.\n  -backup [path] -db=<file>    Database snapshot (VACUUM INTO). The path comes\n                               right after -backup: a folder or a file; without\n                               it the copy is stored next to the DB.\n  -checkdb -db=<file>          Integrity check (integrity_check,\n                               foreign_key_check).\n  -newdb <file>                Create a new database with the baseline schema.\n\nInformation:\n  -version                     Print the application version.\n  -help                        Show this help.\n\nGUI keys:\n  -db=<path>    Open the specified SQLite database on startup.\n  -user=<name>  Select a workspace by name (use after -db).\n  -nosync       Disable automatic sync with the Markdown vault.\n  -minimized    Start minimized.\n\nThe /, - and -- prefixes are equivalent, case-insensitive.\nExit codes: 0 — success, 2 — database schema is newer than the app, 3 — error,\n4 — database file not found or not specified, 5 — integrity problems.",
       "Version": "SSH Snippets Keeper, version %s",
       "NoDbParam": "Database path is not specified. Add the /db <database file> key.",
       "DbFileNotFound": "Database file not found: %s",
@@ -1716,7 +1716,7 @@
       "ApplicationsDeleteConfirm": "Delete application \"%s\" from the allowed list?",
       "ApplicationsInvalidName": "Specify an executable file name (e.g., ssh.exe).",
       "ApplicationsDuplicate": "Application \"%s\" is already in the list.",
-      "ApplicationsProfileTitle": "Window profile - %s",
+      "ApplicationsProfileTitle": "Window profile — %s",
       "ApplicationsProfileInclude": "Allow titles (regex, empty = all):",
       "ApplicationsProfileExclude": "Deny titles (regex):",
       "ApplicationsProfileClasses": "Window classes (comma-separated, empty = all):",
@@ -1728,8 +1728,8 @@
       "ProfilePreviewPass": "passes",
       "ProfilePreviewBlockedInclude": "blocked by include",
       "ProfilePreviewBlockedExclude": "blocked by exclude",
-      "ProfilePreviewNoWindows": "No open windows of this process - preview unavailable.",
-      "ProfilePreviewBlocksAll": "The current include blocks all windows of the process - typing will be impossible.",
+      "ProfilePreviewNoWindows": "No open windows of this process — preview unavailable.",
+      "ProfilePreviewBlocksAll": "The current include blocks all windows of the process — typing will be impossible.",
       "BackupGroup": "Database backup",
       "BackupEnabled": "Create backup copies automatically",
       "BackupInterval": "Interval:",
@@ -1769,7 +1769,7 @@
       "DbSaveKeyDontStore": "Don't store the key",
       "DbSaveKeyStore": "Store the key",
       "DbSaveKeyOff": "The key is no longer stored: the database will ask for the password on next open.",
-      "DbOpenPlainNoKey": "The database is not encrypted - there is no key to store.",
+      "DbOpenPlainNoKey": "The database is not encrypted — there is no key to store.",
       "DbExportOfferAsk": "Save the database key to a file now? Without it, the encrypted database cannot be opened after moving to another computer or reinstalling Windows.",
       "DbProfilesButton": "Database profiles...",
       "DbProfilesTitle": "Database profiles",
@@ -1782,7 +1782,7 @@
       "DbProfilesCleanupDone": "Removed profiles of missing databases: %d",
       "DbProfilesKeyStored": "Stored",
       "DbProfilesKeyNotStored": "Not stored",
-      "DbHelp": "How database encryption works:\n\n• DPAPI - the app generates a random key itself and stores it in settings.json protected by Windows (DPAPI). The key is bound to this machine and user: a database copied to another computer will not open without key export and import. New databases are created encrypted this way right away.\n\n• Passphrase - the key is derived from the phrase and a random salt. The \"Key storage\" combo decides whether to keep the derived key: without storing it, the password is asked on every database open.\n\n• \"Apply\" turns encryption on and off and changes its type (DPAPI and passphrase): a backup is taken before conversion, the database is closed and reopened.\n\nEach database has its own profile: the key and mode are stored per database file path, so keys of different databases do not replace each other. When encryption is turned on, the app immediately offers to export the key to a file - without it the encrypted database cannot be opened on another machine; you can do this later with the \"Export key\" button. \"Database profiles...\" lists the stored keys of all databases: from there you can delete the key of a database whose encryption was removed or the record of a file that no longer exists.",
+      "DbHelp": "How database encryption works:\n\n• DPAPI — the app generates a random key itself and stores it in settings.json protected by Windows (DPAPI). The key is bound to this machine and user: a database copied to another computer will not open without key export and import. New databases are created encrypted this way right away.\n\n• Passphrase — the key is derived from the phrase and a random salt. The \"Key storage\" combo decides whether to keep the derived key: without storing it, the password is asked on every database open.\n\n• \"Apply\" turns encryption on and off and changes its type (DPAPI and passphrase): a backup is taken before conversion, the database is closed and reopened.\n\nEach database has its own profile: the key and mode are stored per database file path, so keys of different databases do not replace each other. When encryption is turned on, the app immediately offers to export the key to a file — without it the encrypted database cannot be opened on another machine; you can do this later with the \"Export key\" button. \"Database profiles...\" lists the stored keys of all databases: from there you can delete the key of a database whose encryption was removed or the record of a file that no longer exists.",
       "DbApplyConfirmOn": "Turn on database encryption?\n\nA backup will be created, and the database will be closed and reopened. The key is tied to this machine (DPAPI): to move the database to another computer, you will need to export and import the key.",
       "DbApplyConfirmOff": "Remove database encryption?\n\nA backup will be created, and the database will be closed and reopened without encryption.",
       "DbApplyConfirmMode": "Change the database encryption key type?\n\nA backup with the current key will be created, and the database will be closed and reopened with the new key.",
@@ -1791,11 +1791,11 @@
       "DbApplyDoneOn": "The database is encrypted.",
       "DbApplyDoneOff": "Database encryption has been removed.",
       "DbApplyFailed": "Failed to change encryption: %s",
-      "DbEngineMissing": "Encryption library sqlite3mc_x64.dll was not found - database encryption is unavailable.",
+      "DbEngineMissing": "Encryption library sqlite3mc_x64.dll was not found — database encryption is unavailable.",
       "DbConversionTitle": "Database conversion",
-      "DbConversionInProgress": "Converting the database. Please wait - do not close the application.",
-      "DbBackupUnencrypted": "An unencrypted backup of the database was created before the conversion: %s - delete it after you verify the encrypted database.",
-      "DbNotOpen": "No database is open - encryption operations are unavailable.",
+      "DbConversionInProgress": "Converting the database. Please wait — do not close the application.",
+      "DbBackupUnencrypted": "An unencrypted backup of the database was created before the conversion: %s — delete it after you verify the encrypted database.",
+      "DbNotOpen": "No database is open — encryption operations are unavailable.",
       "DbModePassphrase": "Passphrase",
       "DbPassphrasePrompt": "Enter passphrase",
       "DbPassphraseConfirm": "Confirm passphrase",
@@ -1804,7 +1804,7 @@
       "DbExportTitle": "Export encryption key",
       "DbExportPassphrase": "Export passphrase for the key file",
       "DbExportPassphraseConfirm": "Confirm the export passphrase",
-      "DbExportNoKey": "The database is not encrypted - there is nothing to export.",
+      "DbExportNoKey": "The database is not encrypted — there is nothing to export.",
       "DbExportDone": "Key exported: %s",
       "DbExportFailed": "Failed to export key: %s",
       "DbImportTitle": "Import encryption key",
@@ -1921,7 +1921,7 @@
       "WindowNoLongerExists": "The selected window no longer exists.",
       "ConfirmTarget": "Insert the snippet into window \"%s\"?",
       "WindowsCount": "Windows: %d",
-      "KeyboardHint": "Enter - select · Esc - cancel · 1..9 - quick pick",
+      "KeyboardHint": "Enter — select · Esc — cancel · 1..9 — quick pick",
       "FilterEmpty": "No matches",
       "FilterHint": "Filter: title or process",
       "ViewTiles": "Tiles",
@@ -1974,7 +1974,7 @@
       },
       "Run": {
         "PanelTitle": "Chain execution",
-        "Progress": "Chain \"%s\" - step %d/%d: %s",
+        "Progress": "Chain \"%s\" — step %d/%d: %s",
         "Stop": "Stop",
         "Empty": "Chain \"%s\" has no steps.",
         "ErrorActive": "A chain is already running.",
@@ -1987,7 +1987,7 @@
       "DeletedMsg": "Chain \"%s\" deleted.",
       "RenameError": "Failed to rename chain: %s",
       "Panel": {
-        "Caption": "Chain \"%s\" - steps: %d"
+        "Caption": "Chain \"%s\" — steps: %d"
       },
       "Error": {
         "EmptyName": "Enter chain name.",
@@ -2010,7 +2010,7 @@
       "RenameError": "Failed to rename saved search: %s",
       "Error": {
         "EmptyName": "Enter the saved search name.",
-        "EmptyQuery": "The search box is empty - nothing to save.",
+        "EmptyQuery": "The search box is empty — nothing to save.",
         "DuplicateName": "Saved search \"%s\" already exists.",
         "NotFound": "Saved search not found."
       }
@@ -2045,13 +2045,13 @@
       "AddTag": {
         "Caption": "Add tag to selected snippets",
         "SearchHint": "Search the list or type a new tag name...",
-        "Hint": "Tag not in the list? Just type a new name in the field above - the tag will be created and added to all selected snippets.",
+        "Hint": "Tag not in the list? Just type a new name in the field above — the tag will be created and added to all selected snippets.",
         "ColTag": "Tag",
         "DoneMsg": "Tag \"%s\" added to %d snippets (already had: %d)."
       },
       "RemoveTag": {
         "Caption": "Remove tag from selected snippets",
-        "Hint": "The list shows tags of the selected snippets. Pick one or more tags (you can search in the field above) - they will be removed from every selected snippet that has them.",
+        "Hint": "The list shows tags of the selected snippets. Pick one or more tags (you can search in the field above) — they will be removed from every selected snippet that has them.",
         "DoneMsg": "Removed %d tag links, skipped (tag not present): %d."
       },
       "Move": {
@@ -2121,8 +2121,8 @@
     "Cron": {
       "Error-5Elements": "Error: Cron expression must consist of exactly 5 elements.",
       "EveryStep": "Every %d %s",
-      "Range": "%s - %s",
-      "Range-Base": "%s - %s",
+      "Range": "%s–%s",
+      "Range-Base": "%s–%s",
       "Prefix-Minutes": "Minutes: %s",
       "Prefix-Hours": "Hours: %s",
       "Prefix-DaysOfMonth": "Days of month: %s",
@@ -2203,7 +2203,7 @@
       "EnterSnippetTextHere": "Enter snippet name here...",
       "MacroCounter": "Macros: %d",
       "MacroCounterSel": "Macro: %d of %d",
-      "DetectNoContent": "No code to detect language from - add some code first"
+      "DetectNoContent": "No code to detect language from — add some code first"
     },
     "AISettingsForm": {
       "DeleteModelConfirm": "Delete this model?",
@@ -2283,7 +2283,7 @@
       }
     },
     "ParamsForm": {
-      "Hint": "Fill in the parameters - on run they will be gathered in a single dialog",
+      "Hint": "Fill in the parameters — on run they will be gathered in a single dialog",
       "Error": {
         "Invalid": "Invalid parameter: %s"
       }
@@ -2304,8 +2304,8 @@
         "CounterNote": "(preview: the counter is not incremented)"
       },
       "Warn": {
-        "Unknown": "Unrecognized macro - it will be skipped on run: %s",
-        "Invalid": "Typo in macro parameters - check before run"
+        "Unknown": "Unrecognized macro — it will be skipped on run: %s",
+        "Invalid": "Typo in macro parameters — check before run"
       },
       "TypeName": {
         "String": "string",
@@ -2322,7 +2322,7 @@
     },
     "MacroDoc": {
       "Title": "Macros: how it works",
-      "Body": "<h3>Basics</h3><p>The snippet is typed into the target window character by character, like keyboard input. Every new line of text sends ENTER. Macros in curly braces are replaced with values at run time. A mistake in macro parameters highlights the card in red but does not abort the run - the value falls back to safe default behavior.</p><h3>Card navigation</h3><p><code>Ctrl+Alt+→</code> and <code>Ctrl+Alt+←</code> - next and previous card; <code>Ctrl+Alt+↓</code> and <code>Ctrl+Alt+↑</code> - nearest card on the line below or above. Plain <code>Ctrl+←/→</code> and <code>Ctrl+↓/↑</code> keep working as regular editor keys.</p><ul><li><code>Enter</code> or <code>F2</code> on a card - open the card editor.</li><li><code>Ctrl+Shift+D</code> - duplicate the card, <code>Ctrl+Del</code> - delete it.</li><li><code>Ctrl+Shift+C</code> / <code>Ctrl+Shift+V</code> - copy / paste a card.</li></ul><h3>Data input: INPUT</h3><ul><li><code>{INPUT Name}</code> - asks for text and inserts it at the macro position.</li><li><code>{INPUT[NUMBER:100] Size}</code> - types: STRING, NUMBER, HEX, FLOAT, PASSWORD, DATE, TIME, DATETIME; after the colon comes the default value.</li><li><code>{INPUT[SELECT:prod|stage|dev] Env}</code> - pick one value from a list (options separated by |).</li><li><code>{INPUT[Confirm] Proceed?}</code> - pause and wait for confirmation.</li><li>An underscore _ can be used instead of a space in date values.</li></ul><h3>Substituted values</h3><ul><li><code>{DATETIME:yyyy-MM-dd}</code> - current date and time, FormatDateTime mask; default yyyy-MM-dd HH:mm:ss.</li><li><code>{UUID}</code> - new lowercase UUID.</li><li><code>{RANDOM:16}</code> - random string of the given length (default 16, max 1024).</li><li><code>{ENV:HOME}</code> - environment variable value.</li><li><code>{CLIPBOARD}</code> - clipboard text at run time.</li></ul><h3>COUNTER counter</h3><p><code>{COUNTER}</code> - sequential run number of the snippet: 1, 2, 3… Each snippet has its own state; the state is stored in the shared appstate.json file (next to settings.json) and survives application restarts.</p><p>Parameters are separated by a semicolon:</p><ul><li><code>start=N</code> - initial value, applies while the counter has no stored state;</li><li><code>step=N</code> - increment applied after each take (0 is forbidden, negative allowed);</li><li><code>pad=N</code> - zero-padding on the left to N digits (1..18), display only;</li><li><code>current</code> - return this run's number without incrementing the counter;</li><li><code>volatile</code> - do not persist the change across runs.</li></ul><p>Examples: <code>{COUNTER:start=100;step=2;pad=3}</code> yields 100, 102, 104… To repeat the same number twice in one run: <code>{COUNTER}</code> … <code>{COUNTER:current}</code>. One-off counter without saving to file: <code>{COUNTER:volatile}</code>. Reset values in Settings, the Counters tab.</p><h3>Terminal control</h3><ul><li><code>{SLEEP 500}</code> - pause in milliseconds (max 600000).</li><li><code>{ENTER}</code> - press ENTER.</li><li><code>{SENDKEY CTRL+C}</code> - key by name (ENTER, TAB, F1-F12), character or VK code; combinations with CTRL, ALT, SHIFT are supported.</li><li><code>{CLEAR_LINE}</code> - clear the current line: Ctrl+C, pause, Ctrl+U.</li><li><code>{KEYDELAY 20}</code> - delay between characters for the following text (ms).</li></ul><h3>Card editor</h3><p>Double-click a card to edit the step, drag cards to reorder. A red card means a mistake in the step parameters.</p>"
+      "Body": "<h3>Basics</h3><p>The snippet is typed into the target window character by character, like keyboard input. Every new line of text sends ENTER. Macros in curly braces are replaced with values at run time. A mistake in macro parameters highlights the card in red but does not abort the run — the value falls back to safe default behavior.</p><h3>Card navigation</h3><p><code>Ctrl+Alt+→</code> and <code>Ctrl+Alt+←</code> — next and previous card; <code>Ctrl+Alt+↓</code> and <code>Ctrl+Alt+↑</code> — nearest card on the line below or above. Plain <code>Ctrl+←/→</code> and <code>Ctrl+↓/↑</code> keep working as regular editor keys.</p><ul><li><code>Enter</code> or <code>F2</code> on a card — open the card editor.</li><li><code>Ctrl+Shift+D</code> — duplicate the card, <code>Ctrl+Del</code> — delete it.</li><li><code>Ctrl+Shift+C</code> / <code>Ctrl+Shift+V</code> — copy / paste a card.</li></ul><h3>Data input: INPUT</h3><ul><li><code>{INPUT Name}</code> — asks for text and inserts it at the macro position.</li><li><code>{INPUT[NUMBER:100] Size}</code> — types: STRING, NUMBER, HEX, FLOAT, PASSWORD, DATE, TIME, DATETIME; after the colon comes the default value.</li><li><code>{INPUT[SELECT:prod|stage|dev] Env}</code> — pick one value from a list (options separated by |).</li><li><code>{INPUT[Confirm] Proceed?}</code> — pause and wait for confirmation.</li><li>An underscore _ can be used instead of a space in date values.</li></ul><h3>Substituted values</h3><ul><li><code>{DATETIME:yyyy-MM-dd}</code> — current date and time, FormatDateTime mask; default yyyy-MM-dd HH:mm:ss.</li><li><code>{UUID}</code> — new lowercase UUID.</li><li><code>{RANDOM:16}</code> — random string of the given length (default 16, max 1024).</li><li><code>{ENV:HOME}</code> — environment variable value.</li><li><code>{CLIPBOARD}</code> — clipboard text at run time.</li></ul><h3>COUNTER counter</h3><p><code>{COUNTER}</code> — sequential run number of the snippet: 1, 2, 3… Each snippet has its own state; the state is stored in the shared appstate.json file (next to settings.json) and survives application restarts.</p><p>Parameters are separated by a semicolon:</p><ul><li><code>start=N</code> — initial value, applies while the counter has no stored state;</li><li><code>step=N</code> — increment applied after each take (0 is forbidden, negative allowed);</li><li><code>pad=N</code> — zero-padding on the left to N digits (1..18), display only;</li><li><code>current</code> — return this run's number without incrementing the counter;</li><li><code>volatile</code> — do not persist the change across runs.</li></ul><p>Examples: <code>{COUNTER:start=100;step=2;pad=3}</code> yields 100, 102, 104… To repeat the same number twice in one run: <code>{COUNTER}</code> … <code>{COUNTER:current}</code>. One-off counter without saving to file: <code>{COUNTER:volatile}</code>. Reset values in Settings, the Counters tab.</p><h3>Terminal control</h3><ul><li><code>{SLEEP 500}</code> — pause in milliseconds (max 600000).</li><li><code>{ENTER}</code> — press ENTER.</li><li><code>{SENDKEY CTRL+C}</code> — key by name (ENTER, TAB, F1-F12), character or VK code; combinations with CTRL, ALT, SHIFT are supported.</li><li><code>{CLEAR_LINE}</code> — clear the current line: Ctrl+C, pause, Ctrl+U.</li><li><code>{KEYDELAY 20}</code> — delay between characters for the following text (ms).</li></ul><h3>Card editor</h3><p>Double-click a card to edit the step, drag cards to reorder. A red card means a mistake in the step parameters.</p>"
     },
     "MacroBuilder": {
       "StepType": {
@@ -2356,10 +2356,10 @@
     "Macro": {
       "StopPanelTitle": "Typing snippet...",
       "StopButton": "Stop",
-      "TargetWindowClosed": "Target window closed - typing aborted.",
-      "PauseWaiting": "Paused: switch back to the target window - typing will resume",
-      "UnknownCommand": "Unknown command %s - typing aborted.",
-      "TypingInProgress": "Snippet typing is in progress - wait for completion and run again.",
+      "TargetWindowClosed": "Target window closed — typing aborted.",
+      "PauseWaiting": "Paused: switch back to the target window — typing will resume",
+      "UnknownCommand": "Unknown command %s — typing aborted.",
+      "TypingInProgress": "Snippet typing is in progress — wait for completion and run again.",
       "ProgressChars": "%d/%d characters (%d%%)",
       "PauseRemaining": "Pause: ~%d s left",
       "CardEdit": "Edit macro",
