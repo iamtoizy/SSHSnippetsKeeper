@@ -45,6 +45,7 @@ uses
     Tests.Helpers in 'Tests.Helpers.pas',
     Tests.Settings in 'Tests.Settings.pas',
     Tests.CompletionEngine in 'Tests.CompletionEngine.pas',
+    Tests.CompletionProviders in 'Tests.CompletionProviders.pas',
     Tests.DbCrypto in 'Tests.DbCrypto.pas',
     Tests.WindowHelper in 'Tests.WindowHelper.pas',
     Tests.SyncController in 'Tests.SyncController.pas'

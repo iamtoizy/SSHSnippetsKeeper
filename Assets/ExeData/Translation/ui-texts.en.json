@@ -1292,6 +1292,18 @@
       "ExportErrorFormat": "Export error: %s",
       "SaveErrorFormat": "Failed to save the completion file: %s"
     },
+    "CompletionImport": {
+      "Caption": "Import completion",
+      "Prompt": "Check the commands to import:",
+      "SearchHint": "Search",
+      "SelectAll": "Check all",
+      "SelectNone": "Uncheck all",
+      "ModeMerge": "Merge with existing",
+      "ModeReplace": "Replace selected",
+      "NothingSelected": "No commands are checked.",
+      "NothingImported": "None of the checked commands were found in the imported section.",
+      "ImportedToast": "Imported: %d"
+    },
     "AllDatabases": {
       "Title": "All databases",
       "Open": "Open",
@@ -1368,6 +1380,11 @@
           "Main": "All database tags. Select a tag and click OK (or double-click the row) to add it to all selected snippets at once. Tags already attached to a snippet are not duplicated.",
           "Expanded": ""
         }
+      },
+      "CompletionImportDialog": {
+        "Title": "Autocompletion import",
+        "Main": "This dialog transfers autocompletion commands from the section chosen for import into the current one. <blockquote><b>Search:</b> filters the command list by substring; checkbox states are preserved when the filter changes.</blockquote><blockquote><b>Command list:</b> top-level commands found in the imported section; the checked ones will be transferred to the current section.</blockquote><blockquote><b>Merge with existing:</b> existing commands are kept; their \"insert\" completions are overwritten by the imported ones, child commands are merged recursively, nothing is deleted.</blockquote><blockquote><b>Replace selected:</b> an existing command with the same name is fully removed and replaced by its version from the import (applies only to the checked names).</blockquote><blockquote><b>Buttons:</b> \"Select all\" / \"Select none\" affect only the commands visible in the current search filter; <code>ENTER</code> - confirm the import of the checked commands, <code>ESC</code> - close without importing.</blockquote>",
+        "Expanded": ""
       },
       "CategorySelectDialog": {
         "tvCategories": {

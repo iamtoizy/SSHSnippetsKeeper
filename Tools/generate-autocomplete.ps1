@@ -1,11 +1,13 @@
 # Generates Assets\ExeData\autocomplete.json
-# "bash" section is reused verbatim from the existing autocomplete.json
+# "bash" section is reused from the existing autocomplete.json
 # (or migrated from the legacy bash.autocomplete.json on first run).
 # "bat" and "powershell" sections are collected from the local system:
 #   - flat command lists: cmd /c help + CMD internals, Get-Command cmdlets
 #   - command trees: subcommands of locally installed external tools parsed
 #     from "--help" output, plus PowerShell-native chains
 #     (Import-Module -> installed modules, Set-ExecutionPolicy -> policies)
+# Frequent commands get common parameters appended to their insert text
+# (-y for package managers, -e --id for winget) applied to all sections.
 param(
     [string]$RepoRoot = (Split-Path -Parent $PSScriptRoot)
 )
@@ -19,35 +21,17 @@ function Escape-JsonString([string]$Value) {
     return $Value.Replace('\', '\\').Replace('"', '\"')
 }
 
-# --- 1. bash section: reuse from current file or wrap the legacy one ---
-$bashLines = $null
+# --- 1. bash section: reuse the whole object from current file or legacy ---
+$bashSectionObj = $null
 if (Test-Path -LiteralPath $newPath) {
-    $curLines = Get-Content -LiteralPath $newPath
-    $start = -1
-    for ($i = 0; $i -lt $curLines.Count; $i++) {
-        if ($curLines[$i] -match '^  "bash": \{$') { $start = $i; break }
-    }
-    if ($start -lt 0) { throw 'bash section not found in existing autocomplete.json' }
-    $end = -1
-    for ($i = $start + 1; $i -lt $curLines.Count; $i++) {
-        if ($curLines[$i] -match '^  \},$') { $end = $i; break }
-    }
-    if ($end -lt 0) { throw 'bash section end not found in existing autocomplete.json' }
-    $bashLines = $curLines[$start..$end]
+    $bashSectionObj = (Get-Content -LiteralPath $newPath -Raw | ConvertFrom-Json).bash
 }
 elseif (Test-Path -LiteralPath $oldPath) {
-    $oldLines = Get-Content -LiteralPath $oldPath
-    if ($oldLines[0].Trim() -ne '{' -or $oldLines[$oldLines.Count - 1].Trim() -ne '}') {
-        throw 'Unexpected bash.autocomplete.json format: expected a JSON object'
-    }
-    $bashLines = @('  "bash": {')
-    for ($i = 1; $i -lt $oldLines.Count - 1; $i++) {
-        $bashLines += '  ' + $oldLines[$i]
-    }
-    $bashLines += '  },'
+    # Legacy single-language format: completion lives at the root
+    $bashSectionObj = Get-Content -LiteralPath $oldPath -Raw | ConvertFrom-Json
 }
-else {
-    throw "No bash source: neither $newPath nor $oldPath exists"
+if (-not $bashSectionObj -or -not $bashSectionObj.completion) {
+    throw "No bash source: no completion section in $newPath or $oldPath"
 }
 
 # --- 2. bat/powershell flat command lists ---
@@ -93,7 +77,9 @@ function Build-ToolTree([string]$Tool) {
     $children = @()
     foreach ($s in $subs) {
         $se = Escape-JsonString $s
-        $children += '"' + $se + '":{"insert":"' + $t + ' ' + $se + ' "}'
+        # insert - только слово: SynCompletionProposal заменяет им
+        # текущее частичное слово в строке
+        $children += '"' + $se + '":{"insert":"' + $se + ' "}'
     }
     return '"' + $t + '":{"insert":"' + $t + ' ","children":{' + ($children -join ',') + '}}'
 }
@@ -117,7 +103,8 @@ function Build-SimpleTree([string]$Name, [string[]]$Subs) {
     $children = @()
     foreach ($s in $Subs) {
         $se = Escape-JsonString $s
-        $children += '"' + $se + '":{"insert":"' + $n + ' ' + $se + ' "}'
+        # insert - только слово (см. комментарий в Build-ToolTree)
+        $children += '"' + $se + '":{"insert":"' + $se + ' "}'
     }
     return '"' + $n + '":{"insert":"' + $n + ' ","children":{' + ($children -join ',') + '}}'
 }
@@ -133,47 +120,66 @@ $policyTree = Build-SimpleTree 'Set-ExecutionPolicy' @(
     'AllSigned','Bypass','Default','RemoteSigned','Restricted','Undefined','Unrestricted')
 if ($policyTree) { $psTreeParts += $policyTree }
 
-# --- 5. assemble the file ---
+$batTreeObj = '{' + ($batTreeParts -join ',') + '}' | ConvertFrom-Json
+$psTreeObj  = '{' + ($psTreeParts -join ',')  + '}' | ConvertFrom-Json
+
+# --- 5. frequent-command parameters appended to insert text ---
+$insertArgs = @{
+    'apt install'         = '-y '; 'apt-get install'    = '-y '
+    'apt remove'          = '-y '; 'apt-get remove'     = '-y '
+    'apt upgrade'         = '-y '; 'apt-get upgrade'    = '-y '
+    'apt autoremove'      = '-y '; 'apt-get autoremove' = '-y '
+    'dnf install'         = '-y '; 'yum install'        = '-y '
+    'dnf remove'          = '-y '; 'yum remove'         = '-y '
+    'choco install'       = '-y '; 'choco upgrade'      = '-y '
+    'choco uninstall'     = '-y '
+    'winget install'      = '-e --id '; 'winget uninstall' = '-e --id '
+}
+
+# Recursively appends the mapped parameters to node insert texts
+# ("install" -> "install -y " under the apt path). Skips nodes that
+# already end with the parameters.
+function Add-InsertArgs([object]$Tree, [string]$Prefix) {
+    if (-not $Tree) { return }
+    foreach ($prop in $Tree.PSObject.Properties) {
+        $node = $prop.Value
+        $path = if ($Prefix) { "$Prefix $($prop.Name)" } else { $prop.Name }
+        $key = $path.ToLowerInvariant()
+        if ($node.PSObject.Properties['insert'] -and $insertArgs.ContainsKey($key)) {
+            $extra = $insertArgs[$key].Trim()
+            $ins = ([string]$node.insert).Trim()
+            if (-not $ins.ToLowerInvariant().EndsWith($extra.ToLowerInvariant())) {
+                $node.insert = "$ins $extra "
+            }
+        }
+        if ($node.PSObject.Properties['children']) {
+            Add-InsertArgs $node.children $path
+        }
+    }
+}
+
+Add-InsertArgs $bashSectionObj.completion.tree ''
+Add-InsertArgs $batTreeObj ''
+Add-InsertArgs $psTreeObj ''
+
+# --- 6. assemble the file ---
 if ($batCmds.Count -lt 50) { throw "Too few CMD commands: $($batCmds.Count)" }
 if ($psCmds.Count -lt 200) { throw "Too few PowerShell cmdlets: $($psCmds.Count)" }
 
-function Format-CommandArray {
-    param([string[]]$Names)
-    $quoted = $Names | ForEach-Object { '"' + (Escape-JsonString $_) + '"' }
-    return '[' + ($quoted -join ',') + ']'
-}
+$batCompletion = [ordered]@{ commands = $batCmds }
+if ($batTreeObj) { $batCompletion.tree = $batTreeObj }
+$psCompletion = [ordered]@{ commands = $psCmds }
+if ($psTreeObj) { $psCompletion.tree = $psTreeObj }
 
-$batText  = Format-CommandArray $batCmds
-$psText   = Format-CommandArray $psCmds
-$bashText = $bashLines -join "`n"
-$batTree  = ($batTreeParts -join ',')
-$psTree   = ($psTreeParts -join ',')
-
-if ($batTree) {
-    $batSection = '  "bat": { "completion": { "commands": ' + $batText +
-        ', "tree": {' + $batTree + '} } },'
+$root = [ordered]@{
+    version    = 2
+    bash       = $bashSectionObj
+    bat        = [ordered]@{ completion = $batCompletion }
+    powershell = [ordered]@{ completion = $psCompletion }
 }
-else {
-    $batSection = '  "bat": { "completion": { "commands": ' + $batText + ' } },'
-}
-if ($psTree) {
-    $psSection = '  "powershell": { "completion": { "commands": ' + $psText +
-        ', "tree": {' + $psTree + '} } }'
-}
-else {
-    $psSection = '  "powershell": { "completion": { "commands": ' + $psText + ' } }'
-}
-
-$json =
-    "{`n" +
-    "  `"version`": 2,`n" +
-    $bashText + "`n" +
-    $batSection + "`n" +
-    $psSection + "`n" +
-    '}'
 
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
-[System.IO.File]::WriteAllText($newPath, $json, $utf8NoBom)
+[System.IO.File]::WriteAllText($newPath, ($root | ConvertTo-Json -Depth 32), $utf8NoBom)
 
 # Sanity check: the file must parse as JSON
 $parsed = Get-Content -LiteralPath $newPath -Raw | ConvertFrom-Json

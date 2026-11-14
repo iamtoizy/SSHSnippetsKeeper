@@ -33,9 +33,19 @@ type
         [Test]
         procedure FillProposals_UnknownContext_Fails;
         [Test]
+        procedure FillProposals_GitCommitContext_BuiltinFlags;
+        [Test]
+        procedure FillProposals_CustomProvider_MergeAndDedup;
+        [Test]
         procedure ExportKeywords_ActiveSection;
         [Test]
         procedure SaveToJsonFile_Roundtrip;
+        [Test]
+        procedure Import_SelectedMerge_SubtreeAndCommands;
+        [Test]
+        procedure Import_ReplaceMode_ReplacesSelectedOnly;
+        [Test]
+        procedure Import_NothingSelected_Noop;
     end;
 
 implementation
@@ -228,6 +238,105 @@ begin
     end;
 end;
 
+procedure TCompletionEngineTests.FillProposals_GitCommitContext_BuiltinFlags;
+var
+    Engine: TCompletionEngine;
+    Path: string;
+    Items, Inserts: TStringList;
+    CanExecute: Boolean;
+begin
+    // В дереве есть только git без детей: git-флаги дают встроенные
+    // провайдеры второго уровня
+    Path := WriteJson(
+        '{"version":2,"bash":{"completion":{"commands":["ls"],' +
+        '"tree":{"git":{"insert":"git "}}}}}');
+
+    Engine := TCompletionEngine.Create;
+    Items := TStringList.Create;
+    Inserts := TStringList.Create;
+    try
+        Engine.LoadFromJsonFile(Path);
+        Engine.SetLanguage(SNIPPET_LANG_BASH);
+
+        CanExecute := True;
+        Engine.FillProposals('git commit ', Items, Inserts, CanExecute);
+        Assert.IsTrue(CanExecute);
+        Assert.IsTrue(Items.IndexOf('--amend') >= 0);
+        Assert.IsTrue(Items.IndexOf('-m') >= 0);
+        Assert.AreEqual('--amend ', Inserts[Items.IndexOf('--amend')]);
+
+        // Частичное слово в контексте commit: провайдер тоже срабатывает
+        Items.Clear;
+        CanExecute := True;
+        Engine.FillProposals('git commit --am', Items, Inserts, CanExecute);
+        Assert.IsTrue(CanExecute);
+        Assert.IsTrue(Items.IndexOf('--amend') >= 0);
+    finally
+        Inserts.Free;
+        Items.Free;
+        Engine.Free;
+    end;
+end;
+
+procedure TCompletionEngineTests.FillProposals_CustomProvider_MergeAndDedup;
+var
+    Engine: TCompletionEngine;
+    Path: string;
+    Items, Inserts: TStringList;
+    CanExecute: Boolean;
+begin
+    Path := WriteJson(
+        '{"version":2,"bash":{"completion":{"commands":["ls"],' +
+        '"tree":{"docker":{"insert":"docker ","children":' +
+        '{"ps":{"insert":"docker ps"},"compose":{"insert":"docker compose"}}}}}}}');
+
+    Engine := TCompletionEngine.Create;
+    Items := TStringList.Create;
+    Inserts := TStringList.Create;
+    try
+        Engine.LoadFromJsonFile(Path);
+        Engine.SetLanguage(SNIPPET_LANG_BASH);
+
+        Engine.RegisterContextProvider('bash', ['docker'],
+            procedure(AItems, AInserts: TStrings)
+            begin
+                AItems.Add('ps');
+                AInserts.Add('docker ps');
+                AItems.Add('extra');
+                AInserts.Add('docker extra');
+            end);
+
+        // Дерево даёт ps/compose, провайдер - ps (дубликат) и extra;
+        // порядок итерации словаря не гарантирован, проверяем состав
+        CanExecute := True;
+        Engine.FillProposals('docker ', Items, Inserts, CanExecute);
+        Assert.IsTrue(CanExecute);
+        Assert.AreEqual(3, Items.Count);
+        Assert.IsTrue(Items.IndexOf('ps') >= 0);
+        Assert.IsTrue(Items.IndexOf('compose') >= 0);
+        Assert.IsTrue(Items.IndexOf('extra') >= 0);
+
+        // Неизвестный дереву контекст: предложения даёт только провайдер
+        Engine.RegisterContextProvider('bash', ['mytool', 'sub'],
+            procedure(AItems, AInserts: TStrings)
+            begin
+                AItems.Add('alpha');
+                AInserts.Add('mytool sub alpha');
+            end);
+
+        Items.Clear;
+        CanExecute := True;
+        Engine.FillProposals('mytool sub ', Items, Inserts, CanExecute);
+        Assert.IsTrue(CanExecute);
+        Assert.AreEqual(1, Items.Count);
+        Assert.AreEqual('alpha', Items[0]);
+    finally
+        Inserts.Free;
+        Items.Free;
+        Engine.Free;
+    end;
+end;
+
 procedure TCompletionEngineTests.ExportKeywords_ActiveSection;
 var
     Engine: TCompletionEngine;
@@ -312,6 +421,141 @@ begin
         Items.Free;
         Inserts.Free;
         Reloaded.Free;
+    end;
+end;
+
+procedure TCompletionEngineTests.Import_SelectedMerge_SubtreeAndCommands;
+var
+    Engine: TCompletionEngine;
+    Path, ImportJson: string;
+    ImportObj: TJSONObject;
+    Tree: TCommandNode;
+    Imported: Integer;
+begin
+    // Текущие данные: git с поддеревом commit, docker - не трогаем;
+    // импорт: git с новым insert для commit и ребенком push + плоские команды
+    Path := WriteJson(
+        '{"version":2,"bash":{"completion":{"commands":["ls"],' +
+        '"tree":{"git":{"insert":"git ","children":{"commit":{"insert":"git commit"}}},' +
+        '"docker":{"insert":"docker ","children":{"ps":{"insert":"docker ps"}}}}}}}');
+
+    ImportJson :=
+        '{"commands":["git","ls"],' +
+        '"tree":{"git":{"insert":"git ","children":' +
+        '{"commit":{"insert":"git commit -m "},"push":{"insert":"git push "}}},' +
+        '"kubectl":{"insert":"kubectl "}}}';
+
+    Engine := TCompletionEngine.Create;
+    try
+        Engine.LoadFromJsonFile(Path);
+        ImportObj := TJSONObject.ParseJSONValue(ImportJson) as TJSONObject;
+        try
+            Imported := Engine.ImportSectionCompletion('bash', ImportObj, ['git'], False);
+        finally
+            ImportObj.Free;
+        end;
+
+        Assert.AreEqual(1, Imported);
+
+        // Merge: insert импорта выиграл, новый ребенок добавлен
+        Tree := Engine.GetSectionTree('bash');
+        Assert.IsTrue(Tree.SubCommands.ContainsKey('git'));
+        Assert.AreEqual('git commit -m ', Tree.SubCommands['git'].SubCommands['commit'].InsertText);
+        Assert.IsTrue(Tree.SubCommands['git'].SubCommands.ContainsKey('push'));
+        // Не выбранный корень kubectl не импортирован, docker не тронут
+        Assert.IsFalse(Tree.SubCommands.ContainsKey('kubectl'));
+        Assert.IsTrue(Tree.SubCommands.ContainsKey('docker'));
+        // Плоская команда git добавлена, ls не задублирована
+        Assert.AreEqual(2, Engine.GetSectionCommands('bash').Count);
+        Assert.IsTrue(Engine.GetSectionCommands('bash').IndexOf('git') >= 0);
+        Assert.IsTrue(Engine.GetSectionCommands('bash').IndexOf('ls') >= 0);
+    finally
+        Engine.Free;
+    end;
+end;
+
+procedure TCompletionEngineTests.Import_ReplaceMode_ReplacesSelectedOnly;
+var
+    Engine: TCompletionEngine;
+    Path, ImportJson: string;
+    ImportObj: TJSONObject;
+    Tree: TCommandNode;
+    Imported: Integer;
+begin
+    // Текущие данные: git{commit}, docker{ps}; импорт: git{push}, docker{image};
+    // выбран только git в режиме замены
+    Path := WriteJson(
+        '{"version":2,"bash":{"completion":{"commands":["ls","git"],' +
+        '"tree":{"git":{"insert":"git ","children":{"commit":{"insert":"git commit"}}},' +
+        '"docker":{"insert":"docker ","children":{"ps":{"insert":"docker ps"}}}}}}}');
+
+    ImportJson :=
+        '{"commands":["git","kubectl"],' +
+        '"tree":{"git":{"insert":"git ","children":{"push":{"insert":"git push "}}},' +
+        '"docker":{"insert":"docker ","children":{"image":{"insert":"docker image "}}}}}';
+
+    Engine := TCompletionEngine.Create;
+    try
+        Engine.LoadFromJsonFile(Path);
+        ImportObj := TJSONObject.ParseJSONValue(ImportJson) as TJSONObject;
+        try
+            Imported := Engine.ImportSectionCompletion('bash', ImportObj, ['git'], True);
+        finally
+            ImportObj.Free;
+        end;
+
+        Assert.AreEqual(1, Imported);
+
+        // git заменен целиком: только push
+        Tree := Engine.GetSectionTree('bash');
+        Assert.IsTrue(Tree.SubCommands.ContainsKey('git'));
+        Assert.IsFalse(Tree.SubCommands['git'].SubCommands.ContainsKey('commit'));
+        Assert.IsTrue(Tree.SubCommands['git'].SubCommands.ContainsKey('push'));
+        // docker не выбран - остался прежним, image из импорта не попал
+        Assert.IsTrue(Tree.SubCommands.ContainsKey('docker'));
+        Assert.IsTrue(Tree.SubCommands['docker'].SubCommands.ContainsKey('ps'));
+        Assert.IsFalse(Tree.SubCommands['docker'].SubCommands.ContainsKey('image'));
+        // Плоская команда kubectl (не выбрана) не добавлена, git не задублирована
+        Assert.AreEqual(-1, Engine.GetSectionCommands('bash').IndexOf('kubectl'));
+        Assert.AreEqual(2, Engine.GetSectionCommands('bash').Count);
+    finally
+        Engine.Free;
+    end;
+end;
+
+procedure TCompletionEngineTests.Import_NothingSelected_Noop;
+var
+    Engine: TCompletionEngine;
+    Path, ImportJson: string;
+    ImportObj: TJSONObject;
+begin
+    Path := WriteJson(
+        '{"version":2,"bash":{"completion":{"commands":["ls"]}}}');
+
+    ImportJson := '{"commands":["git"],"tree":{"git":{"insert":"git "}}}';
+
+    Engine := TCompletionEngine.Create;
+    try
+        Engine.LoadFromJsonFile(Path);
+
+        ImportObj := TJSONObject.ParseJSONValue(ImportJson) as TJSONObject;
+        try
+            // Пустой список выбора
+            Assert.AreEqual(0, Engine.ImportSectionCompletion('bash', ImportObj, [], False));
+            // Выбранное имя отсутствует в импорте
+            Assert.AreEqual(0, Engine.ImportSectionCompletion('bash', ImportObj, ['docker'], False));
+        finally
+            ImportObj.Free;
+        end;
+
+        // Nil-JSON
+        Assert.AreEqual(0, Engine.ImportSectionCompletion('bash', nil, ['git'], False));
+
+        // Секция не изменилась
+        Assert.AreEqual(1, Engine.GetSectionCommands('bash').Count);
+        Assert.IsFalse(Engine.GetSectionTree('bash').SubCommands.ContainsKey('git'));
+    finally
+        Engine.Free;
     end;
 end;
 

@@ -7,7 +7,8 @@ uses
     System.Generics.Collections,
     System.IOUtils,
     System.JSON,
-    System.SysUtils
+    System.SysUtils,
+    Core.CompletionProviders
     ;
 
 type
@@ -24,7 +25,7 @@ type
         function Add(const AName: string; AInsertText: string = ''): TCommandNode;
 
         property Name: string read FName;
-        property InsertText: string read FInsertText;
+        property InsertText: string read FInsertText write FInsertText;
         property SubCommands: TObjectDictionary<string, TCommandNode> read FSubCommands;
     end;
 
@@ -47,6 +48,7 @@ type
     TCompletionEngine = class
     private
         FSections: TObjectDictionary<string, TCompletionSection>;
+        FProviders: TCompletionProviderRegistry;
         FActiveSection: string;
         FFilePath: string;
         FLastModified: TDateTime;
@@ -72,6 +74,13 @@ type
         procedure ReplaceSectionTree(const ALanguage: string; TreeJson: TJSONObject);
         // CompletionJson: { "completion": { "commands": [...], "tree": {...} } }
         procedure ReplaceSectionCompletion(const ALanguage: string; CompletionJson: TJSONObject);
+        // Выборочный импорт секции: ASelected - имена верхнего уровня
+        // (корни дерева и/или плоские команды из CompletionJson);
+        // AReplaceItems=True удаляет одноименные поддеревья перед вставкой,
+        // False - сливает с текущими (insert импорта выигрывает).
+        // Возвращает число фактически импортированных имен
+        function ImportSectionCompletion(const ALanguage: string; CompletionJson: TJSONObject;
+            const ASelected: TArray<string>; AReplaceItems: Boolean): Integer;
 
         // Метод для отслеживания изменений файла на диске
         function CheckForUpdates: Boolean;
@@ -79,7 +88,13 @@ type
         procedure FillProposals(const LineText: string; ItemList, InsertList: TStrings; var CanExecute: Boolean);
         procedure ExportKeywords(TargetList: TStringList);
 
+        // Дополнительный second-level провайдер; встроенные (git-флаги,
+        // пакеты winget) регистрируются в конструкторе автоматически
+        procedure RegisterContextProvider(const ALanguage: string; const APath: array of string;
+            AFunc: TCompletionContextFunc);
+
         property ActiveSection: string read FActiveSection;
+        property Providers: TCompletionProviderRegistry read FProviders;
     end;
 
 implementation
@@ -169,14 +184,24 @@ end;
 
 constructor TCompletionEngine.Create;
 begin
+    inherited Create;
     FSections := TObjectDictionary<string, TCompletionSection>.Create([doOwnsValues]);
+    FProviders := TCompletionProviderRegistry.Create;
+    RegisterBuiltinProviders(FProviders);
     FActiveSection := SNIPPET_LANG_BASH;
 end;
 
 destructor TCompletionEngine.Destroy;
 begin
-    FSections.Free;
+    FreeAndNil(FProviders);
+    FreeAndNil(FSections);
     inherited;
+end;
+
+procedure TCompletionEngine.RegisterContextProvider(const ALanguage: string;
+    const APath: array of string; AFunc: TCompletionContextFunc);
+begin
+    FProviders.RegisterProvider(ALanguage, APath, AFunc);
 end;
 
 function TCompletionEngine.GetSection(const AName: string): TCompletionSection;
@@ -384,6 +409,94 @@ begin
     ParseSection(CompletionJson, Section);
 end;
 
+// Глубокое клонирование узла; вызывающий владеет результатом
+function CloneNode(Source: TCommandNode): TCommandNode;
+var
+    Pair: TPair<string, TCommandNode>;
+begin
+    Result := TCommandNode.Create(Source.Name, Source.InsertText);
+    for Pair in Source.SubCommands do
+        Result.SubCommands.Add(Pair.Key, CloneNode(Pair.Value));
+end;
+
+// Слияние импортированного узла в текущий: insert импорта выигрывает,
+// дети сливаются рекурсивно, отсутствующие в текущем клонируются
+procedure MergeNodeInto(Source, Dest: TCommandNode);
+var
+    Pair: TPair<string, TCommandNode>;
+    DestChild: TCommandNode;
+begin
+    for Pair in Source.SubCommands do
+        if Dest.SubCommands.TryGetValue(Pair.Key, DestChild) then
+        begin
+            DestChild.InsertText := Pair.Value.InsertText;
+            MergeNodeInto(Pair.Value, DestChild);
+        end
+        else
+            Dest.SubCommands.Add(Pair.Key, CloneNode(Pair.Value));
+end;
+
+function TCompletionEngine.ImportSectionCompletion(const ALanguage: string;
+    CompletionJson: TJSONObject; const ASelected: TArray<string>;
+    AReplaceItems: Boolean): Integer;
+var
+    Imported, Section: TCompletionSection;
+    ImportNode, Existing: TCommandNode;
+    CmdName, Key: string;
+    Matched: Boolean;
+begin
+    Result := 0;
+    if (not Assigned(CompletionJson)) or (Length(ASelected) = 0) then
+        Exit;
+
+    Imported := TCompletionSection.Create;
+    try
+        ParseSection(CompletionJson, Imported);
+        Section := GetSection(NormalizeSnippetLanguage(ALanguage));
+
+        for CmdName in ASelected do
+        begin
+            Key := LowerCase(Trim(CmdName));
+            if Key = '' then
+                Continue;
+
+            Matched := False;
+
+            // Поддерево верхнего уровня
+            if Imported.Tree.SubCommands.TryGetValue(Key, ImportNode) then
+            begin
+                Matched := True;
+                if Section.Tree.SubCommands.TryGetValue(Key, Existing) then
+                begin
+                    if AReplaceItems then
+                    begin
+                        // doOwnsValues: Remove освобождает текущий узел
+                        Section.Tree.SubCommands.Remove(Key);
+                        Section.Tree.SubCommands.Add(Key, CloneNode(ImportNode));
+                    end
+                    else
+                        MergeNodeInto(ImportNode, Existing);
+                end
+                else
+                    Section.Tree.SubCommands.Add(Key, CloneNode(ImportNode));
+            end;
+
+            // Плоская команда с тем же именем
+            if Imported.Commands.IndexOf(Trim(CmdName)) <> -1 then
+            begin
+                Matched := True;
+                if Section.Commands.IndexOf(Trim(CmdName)) = -1 then
+                    Section.Commands.Add(Trim(CmdName));
+            end;
+
+            if Matched then
+                Inc(Result);
+        end;
+    finally
+        Imported.Free;
+    end;
+end;
+
 function TCompletionEngine.CheckForUpdates: Boolean;
 var
     CurrentModified: TDateTime;
@@ -415,6 +528,8 @@ var
     Token: string;
     NodePair: TPair<string, TCommandNode>;
     I: Integer;
+    TreeFailed: Boolean;
+    ProviderItems, ProviderInserts: TStringList;
 begin
     ItemList.Clear;
     InsertList.Clear;
@@ -436,6 +551,9 @@ begin
         if (not IsNewWord) and (ContextTokens.Count > 0) then
             ContextTokens.Delete(ContextTokens.Count - 1);
 
+        // Проход по статическому дереву; при неизвестном контексте дерево
+        // пропускается, но провайдеры второго уровня всё равно опрашиваются
+        TreeFailed := False;
         CurrentNode := Section.Tree;
         for Token in ContextTokens do
         begin
@@ -443,24 +561,49 @@ begin
                 CurrentNode := NextNode
             else
             begin
-                CanExecute := False;
-                Exit;
+                TreeFailed := True;
+                Break;
             end;
         end;
 
-        if CurrentNode = Section.Tree then
+        if not TreeFailed then
         begin
-            for I := 0 to Section.Commands.Count - 1 do
+            if CurrentNode = Section.Tree then
             begin
-                ItemList.Add(Section.Commands[I]);
-                InsertList.Add(Section.Commands[I] + ' ');
+                for I := 0 to Section.Commands.Count - 1 do
+                begin
+                    ItemList.Add(Section.Commands[I]);
+                    InsertList.Add(Section.Commands[I] + ' ');
+                end;
+            end;
+
+            for NodePair in CurrentNode.SubCommands do
+            begin
+                ItemList.Add(NodePair.Value.Name);
+                InsertList.Add(NodePair.Value.InsertText);
             end;
         end;
 
-        for NodePair in CurrentNode.SubCommands do
-        begin
-            ItemList.Add(NodePair.Value.Name);
-            InsertList.Add(NodePair.Value.InsertText);
+        // Провайдеры второго уровня: статические git-флаги, пакеты winget
+        // и пользовательские; слияние без дубликатов
+        ProviderItems := TStringList.Create;
+        try
+            ProviderInserts := TStringList.Create;
+            try
+                FProviders.Fill(FActiveSection, ContextTokens.ToArray,
+                    ProviderItems, ProviderInserts);
+
+                for I := 0 to ProviderItems.Count - 1 do
+                    if ItemList.IndexOf(ProviderItems[I]) = -1 then
+                    begin
+                        ItemList.Add(ProviderItems[I]);
+                        InsertList.Add(ProviderInserts[I]);
+                    end;
+            finally
+                ProviderInserts.Free;
+            end;
+        finally
+            ProviderItems.Free;
         end;
 
         if ItemList.Count = 0 then

@@ -112,6 +112,7 @@ uses
     Common.Helpers,
     Common.Localization,
     Common.SnippetLanguages,
+    CompletionImportDialogUI,
     System.IOUtils,
     System.StrUtils,
     System.UITypes,
@@ -699,9 +700,15 @@ procedure TCompletionManagerForm.btnImportClick(Sender: TObject);
 var
     OpenDlg: TOpenDialog;
     JsonText: string;
-    Root, CompletionObj: TJSONObject;
+    Root, CompletionObj, TreeObj: TJSONObject;
+    CommandsArr: TJSONArray;
     I: Integer;
     Pair: TJSONPair;
+    Value: TJSONValue;
+    Names: TStringList;
+    Items, Selected: TArray<string>;
+    ReplaceMode: Boolean;
+    ImportedCount: Integer;
 begin
     Root := nil;
     OpenDlg := TOpenDialog.Create(nil);
@@ -737,11 +744,59 @@ begin
             if not Assigned(CompletionObj) then
                 raise Exception.Create('structure');
 
-            FEngine.ReplaceSectionCompletion(ActiveLangId, CompletionObj);
+            // Единицы выбора: имена верхнего уровня - union корней дерева
+            // и записей commands
+            Names := TStringList.Create;
+            try
+                Names.Sorted := True;
+                Names.Duplicates := dupIgnore;
+
+                if CompletionObj.FindValue('tree') is TJSONObject then
+                begin
+                    TreeObj := TJSONObject(CompletionObj.GetValue('tree'));
+                    for I := 0 to TreeObj.Count - 1 do
+                        Names.Add(TreeObj.Pairs[I].JsonString.Value);
+                end;
+
+                if CompletionObj.FindValue('commands') is TJSONArray then
+                begin
+                    CommandsArr := TJSONArray(CompletionObj.GetValue('commands'));
+                    for I := 0 to CommandsArr.Count - 1 do
+                    begin
+                        Value := CommandsArr.Items[I];
+                        if Value is TJSONString then
+                            Names.Add(TJSONString(Value).Value);
+                    end;
+                end;
+
+                if Names.Count = 0 then
+                    raise Exception.Create('structure');
+
+                Items := nil;
+                SetLength(Items, Names.Count);
+                for I := 0 to Names.Count - 1 do
+                    Items[I] := Names[I];
+            finally
+                Names.Free;
+            end;
+
+            if not TCompletionImportForm.Execute(Self, AppContext, Items, Selected, ReplaceMode) then
+                Exit;
+
+            ImportedCount := FEngine.ImportSectionCompletion(ActiveLangId, CompletionObj,
+                Selected, ReplaceMode);
+            if ImportedCount = 0 then
+            begin
+                MessagesHandler.ShowWarning(
+                    TUIStateLoader.GetMessage('CompletionImport.NothingImported'));
+                Exit;
+            end;
+
             LoadTabTree(pcMain.ActivePageIndex);
             LoadCommandList(pcMain.ActivePageIndex);
             ApplyFilter;
-            ShowSimpleToast(TUIStateLoader.GetMessage('CompletionManager.ImportedToast'));
+            ShowSimpleToast(TUIStateLoader.GetMessage('CompletionImport.ImportedToast',
+                [ImportedCount]));
         except
             on E: Exception do
                 MessagesHandler.ShowError(
