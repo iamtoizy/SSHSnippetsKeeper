@@ -99,6 +99,7 @@ uses
   PassphraseFormUI in 'UI\Forms\PassphraseFormUI.pas' {PassphraseForm},
    DbConvertProgressUI in 'UI\Forms\DbConvertProgressUI.pas' {DbConvertProgressForm},
    DbProfilesFormUI in 'UI\Forms\DbProfilesFormUI.pas' {DbProfilesForm},
+   AllDatabasesFormUI in 'UI\Forms\AllDatabasesFormUI.pas' {AllDatabasesForm},
   ParamsFormUI in 'UI\Forms\ParamsFormUI.pas' {ParamsForm},
   DryRunFormUI in 'UI\Forms\DryRunFormUI.pas' {DryRunForm},
   MacroCardEditorFormUI in 'UI\Forms\MacroCardEditorFormUI.pas' {MacroCardEditorForm},

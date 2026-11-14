@@ -93,6 +93,7 @@ begin
     // --- БЛОК БАЗЫ ДАННЫХ ---
     RegisterAction('TMainForm.actCreateDatabase', 'Actions.MainForm.Database.CreateDatabase', 'Actions.MainForm.Database.Caption', 'Ctrl+N');
     RegisterAction('TMainForm.actOpenDatabase',   'Actions.MainForm.Database.OpenDatabase',   'Actions.MainForm.Database.Caption', 'Ctrl+O');
+    RegisterAction('TMainForm.actAllDatabases',   'Actions.MainForm.Database.AllDatabases',   'Actions.MainForm.Database.Caption', 'Ctrl+Shift+O');
     RegisterAction('TMainForm.actCloseDatabase',  'Actions.MainForm.Database.CloseDatabase',  'Actions.MainForm.Database.Caption', 'Ctrl+Q');
     RegisterAction('TMainForm.actSyncDatabase',  'Actions.MainForm.Database.SyncDatabase',  'Actions.MainForm.Database.Caption', 'Ctrl+Alt+Shift+E');
 

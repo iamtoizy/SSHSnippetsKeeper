@@ -26,6 +26,12 @@
     "nOpenDatabase": {
       "Caption": "Открыть базу данных"
     },
+    "nRecentDatabases": {
+      "Caption": "Последние базы"
+    },
+    "nAllDatabases": {
+      "Caption": "Все базы..."
+    },
     "nCloseDatabase": {
       "Caption": "Закрыть базу данных"
     },
@@ -1198,6 +1204,19 @@
     }
   },
   "Messages": {
+    "AllDatabases": {
+      "Title": "Все базы данных",
+      "Open": "Открыть",
+      "DeleteSelected": "Удалить выбранные",
+      "DeleteMissing": "Удалить несуществующие",
+      "DeleteAsk": "Удалить выбранные базы из списка недавних вместе с их сохранёнными ключами шифрования?",
+      "CleanupDone": "Удалено недоступных баз: %d",
+      "ColPath": "Путь",
+      "ColStatus": "Состояние",
+      "StatusOpen": "Открыта",
+      "StatusAvailable": "Доступна",
+      "StatusMissing": "Не найдена"
+    },
     "Help": {
       "MainForm": {
         "tvCategories": {
@@ -1407,6 +1426,7 @@
           "Caption": "База данных",
           "CreateDatabase": "Создать БД",
           "OpenDatabase": "Открыть БД",
+          "AllDatabases": "Все базы данных",
           "CloseDatabase": "Закрыть БД",
           "SyncDatabase": "Синхронизировать с Markdown-хранилищем"
         },

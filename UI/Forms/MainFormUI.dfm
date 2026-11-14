@@ -354,6 +354,15 @@ object MainForm: TMainForm
       object nOpenDatabase: TMenuItem
         Action = actOpenDatabase
       end
+      object nRecentDatabases: TMenuItem
+        Caption = 'nRecentDatabases'
+        object nRecentSeparator: TMenuItem
+          Caption = '-'
+        end
+        object nAllDatabases: TMenuItem
+          Action = actAllDatabases
+        end
+      end
       object nCloseDatabase: TMenuItem
         Action = actCloseDatabase
       end
@@ -6126,6 +6135,11 @@ object MainForm: TMainForm
       Category = 'Database'
       Caption = 'actOpenDatabase'
       OnExecute = actOpenDatabaseExecute
+    end
+    object actAllDatabases: TAction
+      Category = 'Database'
+      Caption = 'actAllDatabases'
+      OnExecute = actAllDatabasesExecute
     end
     object actCloseDatabase: TAction
       Category = 'Database'

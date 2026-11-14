@@ -228,6 +228,9 @@
         <DCCReference Include="UI\Forms\DbProfilesFormUI.pas">
             <Form>DbProfilesForm</Form>
         </DCCReference>
+        <DCCReference Include="UI\Forms\AllDatabasesFormUI.pas">
+            <Form>AllDatabasesForm</Form>
+        </DCCReference>
         <DCCReference Include="UI\Forms\ParamsFormUI.pas">
             <Form>ParamsForm</Form>
         </DCCReference>

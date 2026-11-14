@@ -26,6 +26,12 @@
     "nOpenDatabase": {
       "Caption": "Open database"
     },
+    "nRecentDatabases": {
+      "Caption": "Recent databases"
+    },
+    "nAllDatabases": {
+      "Caption": "All databases..."
+    },
     "nCloseDatabase": {
       "Caption": "Close database"
     },
@@ -1198,6 +1204,19 @@
     }
   },
   "Messages": {
+    "AllDatabases": {
+      "Title": "All databases",
+      "Open": "Open",
+      "DeleteSelected": "Delete selected",
+      "DeleteMissing": "Delete missing",
+      "DeleteAsk": "Remove the selected databases from the recent list along with their stored encryption keys?",
+      "CleanupDone": "Missing databases removed: %d",
+      "ColPath": "Path",
+      "ColStatus": "Status",
+      "StatusOpen": "Open",
+      "StatusAvailable": "Available",
+      "StatusMissing": "Not found"
+    },
     "Help": {
       "MainForm": {
         "tvCategories": {
@@ -1407,6 +1426,7 @@
           "Caption": "Database",
           "CreateDatabase": "Create Database",
           "OpenDatabase": "Open Database",
+          "AllDatabases": "All Databases",
           "CloseDatabase": "Close Database",
           "SyncDatabase": "Sync with Markdown vault"
         },

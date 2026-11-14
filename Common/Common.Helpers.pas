@@ -35,6 +35,11 @@ procedure ShutdownToasts;
 procedure SetToastNotificationHandler(Handler: TOnReceiveLocalNotification);
 { Поиск конкретного файла конфигурации или БД (Для TUIStateLoader и SQLite) }
 function ResolvePath(const PathName: string; IsDirectory: Boolean = False): string;
+{ Сокращение пути к БД для показа в подменю «Последние базы»: имя файла уже
+  выводится первым, поэтому возвращается только каталоговая часть. Короткие
+  пути (в пределах MaxLength) остаются как есть, длинные - диск + «\...» +
+  два последних каталога. UNC и корень диска обрабатываются корректно }
+function ShortenDbPath(const Path: string; MaxLength: Integer = 60): string;
 { Получение базовой папки для диалогов открытия/сохранения }
 function GetDefaultDataDir: string;
 { Безопасное удаление содержимого TCustomEdit }
@@ -174,6 +179,43 @@ begin
         Result := DevPath
     else
         Result := ExePath; // Если папки нет, возвращаем директорию с .exe
+end;
+
+function ShortenDbPath(const Path: string; MaxLength: Integer): string;
+var
+    Dir, Drive, Rest: string;
+    Parts: TArray<string>;
+    TailStart, I: Integer;
+begin
+    // Отбрасываем имя файла: в меню оно уже выведено отдельным словом
+    Dir := ExtractFileDir(ExcludeTrailingPathDelimiter(Path));
+    if Dir.IsEmpty or (Length(Dir) <= MaxLength) then
+        Exit(Dir);
+
+    // Относительные пути сокращать нечего
+    Drive := ExtractFileDrive(Dir);
+    if Drive.IsEmpty then
+        Exit(Dir);
+
+    Rest := Dir.Substring(Length(Drive));
+    // ExcludeEmpty: UNC '\\server\share' уходит в Drive целиком,
+    // здесь остаются только каталоги
+    Parts := Rest.Split(['\'], TStringSplitOptions.ExcludeEmpty);
+    if Length(Parts) = 0 then
+        Exit(Dir);
+
+    TailStart := High(Parts) - 1;
+    if TailStart < Low(Parts) then
+        TailStart := Low(Parts);
+
+    Result := Drive + '\...';
+    for I := TailStart to High(Parts) do
+        Result := Result + '\' + Parts[I];
+
+    // Сокращение не выигрывает в длине (например, один глубокий каталог
+    // длиннее порога) - экономии нет, возвращаем путь как есть
+    if Length(Result) >= Length(Dir) then
+        Result := Dir;
 end;
 
 procedure WipeVCLControlText(Control: TCustomEdit);

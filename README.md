@@ -335,6 +335,7 @@ sudo systemctl restart nginx
 | Alt+A / D / E | Добавить / удалить / редактировать категорию |
 | Ctrl+Shift+A / D / E | Добавить / удалить / редактировать тег |
 | Ctrl+N / Ctrl+O / Ctrl+Q | Создать / открыть / закрыть базу данных |
+| Ctrl+Shift+O | Все базы... (окно списка путей баз) |
 | Ctrl+Alt+Shift+E | Синхронизация с папкой (Markdown) |
 | Ctrl+Shift+S | Быстрый поиск |
 | Ctrl+Shift+G | Генератор паролей |
@@ -366,6 +367,10 @@ sudo systemctl restart nginx
 - После открытия базы применяются PRAGMA: `journal_mode=WAL`, `synchronous=NORMAL`, `foreign_keys=ON` и др.; при `synchronous=NORMAL` сбой питания может стоить последних зафиксированных транзакций — целостность базы сохраняется. При закрытии выполняется принудительный checkpoint WAL на диск;
 - Консольные команды обслуживания (`/migrate`, `/backup`, `/checkdb`, `/newdb`) с кодами возврата — см. [Ключи запуска](#ключи-запуска).
 
+### Последние базы данных
+
+Меню **Файл → Последние базы** содержит до 10 последних открытых баз: при каждом открытии путь поднимается наверх списка без дублей, длина ограничена (`RECENT_DATABASES_LIMIT = 10`). База с несуществующим файлом показывается в меню, но пункт неактивен. Последний пункт подменю — **Все базы...** (по умолчанию **Ctrl+Shift+O**): окно со всеми известными путями баз (недавние плюс базы с сохранёнными ключами шифрования) и колонкой состояния («Открыта», «Доступна», «Не найдена»). В окне работают «Открыть» и двойной клик, «Удалить выбранные» (мультивыбор) и «Удалить несуществующие»; удаление снимает запись и из списка недавних, и сохранённый ключ шифрования базы (`RemoveRecentDatabase`). Список хранится в `settings.json` в узле `RecentDatabases`. Реализация: `Common/Common.Settings.pas` (`AddRecentDatabase`, `RemoveRecentDatabase`, `RemoveMissingDatabasePaths`, `GetAllDatabasePaths`), `UI/Forms/AllDatabasesFormUI.pas`, перестройка подменю — `TMainForm.UpdateRecentDatabasesMenu`.
+
 ### Шифрование базы данных
 
 База может быть зашифрована движком [SQLite3 Multiple Ciphers](https://utelle.github.io/SQLite3MultipleCiphers/) (дефолтный шифр ChaCha20-Poly1305, ключ 32 байта, PBKDF2). Управление - *Настройки → Безопасность базы данных*: включение и выключение применяются к открытой базе сразу (перед конверсией файла создаётся резервная копия), режим ключа - DPAPI этой машины или парольная фраза (вывод ключа: PBKDF2-HMAC-SHA256, 600 000 итераций, соль 16 байт). Новая база создаётся сразу зашифрованной (DPAPI, свежий случайный ключ): приложение уведомляет, что ключ привязан к машине, а тип шифрования можно изменить в настройках.
@@ -391,7 +396,7 @@ sudo systemctl restart nginx
 
 ## Тесты
 
-Юнит-тесты на DUnitX (консольный раннер): 40 групп / 531 тест — консольные ключи (`Tests.CmdLine`), миграции БД и резервные копии (`Tests.DbMigrations`), репозитории и сервисы на in-memory SQLite через FireDAC (`Tests.Chains`, `Tests.MultiSelect`, `Tests.SearchTags`), язык запросов (`Tests.QueryLanguage`), макро-движок (`Tests.MacroEngine`, `Tests.MacroInputTypes`, `Tests.MacroCounters`, `Tests.MacroBuilder`, `Tests.MacroCardController`), подсветка синтаксиса (`Tests.MacroSyn`, `Tests.CustomBashSyn`, `Tests.SynHighlighterFactory`), определение языка сниппета (`Tests.SnippetLanguages`, `Tests.SnippetLanguageDetect`, `Tests.SnippetLanguageNB`), утилиты (`Tests.EpochService`, `Tests.HotkeyService`, `Tests.PasswordService`, `Tests.TextDiff`), шифрование базы (`Tests.DatabaseEncryption`).
+Юнит-тесты на DUnitX (консольный раннер): 41 группа / 539 тестов — консольные ключи (`Tests.CmdLine`), миграции БД и резервные копии (`Tests.DbMigrations`), репозитории и сервисы на in-memory SQLite через FireDAC (`Tests.Chains`, `Tests.MultiSelect`, `Tests.SearchTags`), язык запросов (`Tests.QueryLanguage`), макро-движок (`Tests.MacroEngine`, `Tests.MacroInputTypes`, `Tests.MacroCounters`, `Tests.MacroBuilder`, `Tests.MacroCardController`), подсветка синтаксиса (`Tests.MacroSyn`, `Tests.CustomBashSyn`, `Tests.SynHighlighterFactory`), определение языка сниппета (`Tests.SnippetLanguages`, `Tests.SnippetLanguageDetect`, `Tests.SnippetLanguageNB`), утилиты (`Tests.EpochService`, `Tests.HotkeyService`, `Tests.PasswordService`, `Tests.TextDiff`), настройки (`Tests.Settings`), шифрование базы (`Tests.DatabaseEncryption`).
 
 Сборка и запуск — проверенная команда (из корня репозитория):
 
@@ -403,8 +408,8 @@ Tests\bin\Win64\Debug\SSHSnippetsKeeperTests.exe
 Код выхода: `0` — все тесты прошли, `1` — есть упавшие, `2` — ошибка запуска. Тесты шифрования базы (`Tests.DatabaseEncryption`) требуют `sqlite3mc_x64.dll` рядом с тестовым exe - без библиотеки эта группа пропускается. Ожидаемый итог:
 
 ```
-Tests Found   : 531
-Tests Passed  : 531
+Tests Found   : 539
+Tests Passed  : 539
 Tests Failed  : 0
 Tests Errored : 0
 ```

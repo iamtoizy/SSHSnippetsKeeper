@@ -72,9 +72,25 @@ procedure DeleteDbProfile(var Settings: TAppSettings; const ADatabaseFile: strin
 procedure PinDbKeyTo(var Settings: TAppSettings; const ADatabaseFile: string;
     const AKey: string; AForceRemember: Boolean);
 
+// Недавние базы: путь (нормализованный) в начало списка без дублей,
+// длина ограничена RECENT_DATABASES_LIMIT; :memory: и пустые игнорируются
+procedure AddRecentDatabase(var Settings: TAppSettings; const ADatabaseFile: string);
+
+// Удаление пути из недавних вместе с профилем шифрования этой базы
+procedure RemoveRecentDatabase(var Settings: TAppSettings; const ADatabaseFile: string);
+
+// Удаление всех недоступных баз: из недавних и из профилей, вместе с
+// их профилями шифрования; возвращает число удалённых записей
+function RemoveMissingDatabasePaths(var Settings: TAppSettings): Integer;
+
+// Все известные пути баз: недавние первыми, затем пути профилей,
+// не попавшие в недавние; без дублей, в нормализованном виде
+function GetAllDatabasePaths(const Settings: TAppSettings): TArray<string>;
+
 implementation
 
 uses
+    ArrayHelper,
     Common.Helpers,
     JSONSerializer,
     System.Generics.Collections,
@@ -412,6 +428,71 @@ begin
         if Settings.DbProfiles.Items[I].Key <> '' then
             Settings.DbProfiles.Items[I].Key :=
                 ProtectSecret(Settings.DbProfiles.Items[I].Key);
+end;
+
+procedure AddRecentDatabase(var Settings: TAppSettings; const ADatabaseFile: string);
+var
+    Path: string;
+    I, Existing: Integer;
+begin
+    Path := NormalizeDbProfilePath(ADatabaseFile);
+    if Path = '' then
+        Exit;
+
+    // Dedupe: повторное открытие поднимает базу наверх списка
+    Existing := Settings.RecentDatabases.IndexOf(Path);
+    if Existing >= 0 then
+        Settings.RecentDatabases.Delete(Existing);
+    Settings.RecentDatabases.Insert(0, Path);
+
+    // Обрезка хвоста до лимита
+    for I := Settings.RecentDatabases.Count - 1 downto RECENT_DATABASES_LIMIT do
+        Settings.RecentDatabases.Delete(I);
+end;
+
+procedure RemoveRecentDatabase(var Settings: TAppSettings; const ADatabaseFile: string);
+var
+    Idx: Integer;
+begin
+    Idx := Settings.RecentDatabases.IndexOf(NormalizeDbProfilePath(ADatabaseFile));
+    if Idx >= 0 then
+        Settings.RecentDatabases.Delete(Idx);
+    DeleteDbProfile(Settings, ADatabaseFile);
+end;
+
+function RemoveMissingDatabasePaths(var Settings: TAppSettings): Integer;
+var
+    Paths: TArray<string>;
+    I: Integer;
+begin
+    Result := 0;
+    // Обратный обход: пути уникальны и нормализованы, RemoveRecentDatabase
+    // снимает и запись недавних, и профиль шифрования
+    Paths := GetAllDatabasePaths(Settings);
+    for I := High(Paths) downto 0 do
+        if not TFile.Exists(Paths[I]) then
+        begin
+            RemoveRecentDatabase(Settings, Paths[I]);
+            Inc(Result);
+        end;
+end;
+
+function GetAllDatabasePaths(const Settings: TAppSettings): TArray<string>;
+var
+    Paths: TArrayRecord<string>;
+    I: Integer;
+    Path: string;
+begin
+    Paths := Settings.RecentDatabases;
+    // Пути профилей, не попавшие в недавние (шифрование снято до
+    // появления списка недавних и т.п.), дописываем в хвост
+    for I := 0 to High(Settings.DbProfiles.Items) do
+    begin
+        Path := Settings.DbProfiles.Items[I].Path;
+        if (Path <> '') and (Paths.IndexOf(Path) < 0) then
+            Paths.Add(Path);
+    end;
+    Result := Paths.Items;
 end;
 
 const

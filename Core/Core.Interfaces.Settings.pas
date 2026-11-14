@@ -14,6 +14,9 @@ const
     DB_KEYMODE_DPAPI = 'dpapi';
     DB_KEYMODE_PASSPHRASE = 'passphrase';
 
+    // Максимальная длина списка недавних баз данных
+    RECENT_DATABASES_LIMIT = 10;
+
 type
     // Domain Models настроек
     THelpButton = record
@@ -221,6 +224,10 @@ type
         Db: TDbSecuritySettings;
         // Безопасность отдельных баз (профиль на каждый файл БД)
         DbProfiles: TArrayRecord<TDbSecurityProfile>;
+
+        // Недавние базы данных: нормализованные пути файлов, самая
+        // свежая первой, не более RECENT_DATABASES_LIMIT
+        RecentDatabases: TArrayRecord<string>;
 
         // Окно выбора терминала: True = режим таблицы, False = плитки
         TerminalChooserTableView: Boolean;

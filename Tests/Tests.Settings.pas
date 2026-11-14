@@ -107,6 +107,35 @@ type
         procedure StoredKeyMaterial_Profile_ReturnsBase64Key;
     end;
 
+    [TestFixture]
+    TSettingsRecentDatabasesTests = class(TObject)
+    private
+        function SettingsPath: string;
+        function TempDbFile(const AName: string): string;
+    public
+        [Setup]
+        procedure Setup;
+        [TearDown]
+        procedure TearDown;
+
+        [Test]
+        procedure AddRecentDatabase_InsertsFrontAndDedupes;
+        [Test]
+        procedure AddRecentDatabase_CapsAtLimit;
+        [Test]
+        procedure AddRecentDatabase_MemoryOrEmpty_Ignored;
+        [Test]
+        procedure RemoveRecentDatabase_RemovesPathAndProfile;
+        [Test]
+        procedure RemoveMissingDatabasePaths_KeepsExistingFiles;
+        [Test]
+        procedure RemoveMissingDatabasePaths_CleansProfileOnlyEntries;
+        [Test]
+        procedure GetAllDatabasePaths_MergesProfilesWithoutDuplicates;
+        [Test]
+        procedure SaveLoad_Roundtrip_PreservesRecents;
+    end;
+
 implementation
 
 uses
@@ -814,6 +843,177 @@ begin
     Assert.AreEqual('', DbStoredKeyMaterial(P));
     P.Key := 'zzz';
     Assert.AreEqual('', DbStoredKeyMaterial(P));
+end;
+
+{ TSettingsRecentDatabasesTests }
+
+function TSettingsRecentDatabasesTests.SettingsPath: string;
+begin
+    Result := TPath.Combine(TPath.GetDirectoryName(ParamStr(0)), 'settings.json');
+end;
+
+function TSettingsRecentDatabasesTests.TempDbFile(const AName: string): string;
+begin
+    // Реальный файл на диске: RemoveMissingRecentDatabases удаляет
+    // только записи с несуществующими файлами
+    Result := TPath.Combine(TPath.GetDirectoryName(ParamStr(0)), AName);
+    TFile.WriteAllText(Result, '', TEncoding.ASCII);
+end;
+
+procedure TSettingsRecentDatabasesTests.Setup;
+begin
+    SafeDeleteIfPresent(SettingsPath);
+    SafeDeleteIfPresent(SettingsPath + '.tmp');
+end;
+
+procedure TSettingsRecentDatabasesTests.TearDown;
+var
+    I: Integer;
+begin
+    SafeDeleteIfPresent(SettingsPath);
+    SafeDeleteIfPresent(SettingsPath + '.tmp');
+    for I := 1 to RECENT_DATABASES_LIMIT + 1 do
+        SafeDeleteIfPresent(TPath.Combine(TPath.GetDirectoryName(ParamStr(0)),
+            'mru_test_' + IntToStr(I) + '.sqlite'));
+end;
+
+procedure TSettingsRecentDatabasesTests.AddRecentDatabase_InsertsFrontAndDedupes;
+var
+    S: TAppSettings;
+begin
+    S := Default(TAppSettings);
+    AddRecentDatabase(S, 'C:\db\a.sqlite');
+    AddRecentDatabase(S, 'C:\db\b.sqlite');
+    // Повторное открытие поднимает базу наверх, а не дублирует
+    AddRecentDatabase(S, 'c:\DB\A.sqlite');
+    Assert.AreEqual(2, S.RecentDatabases.Count);
+    Assert.AreEqual(NormalizeDbProfilePath('C:\db\a.sqlite'),
+        S.RecentDatabases.Items[0]);
+    Assert.AreEqual(NormalizeDbProfilePath('C:\db\b.sqlite'),
+        S.RecentDatabases.Items[1]);
+end;
+
+procedure TSettingsRecentDatabasesTests.AddRecentDatabase_CapsAtLimit;
+var
+    S: TAppSettings;
+    I: Integer;
+begin
+    S := Default(TAppSettings);
+    for I := 1 to RECENT_DATABASES_LIMIT + 3 do
+        AddRecentDatabase(S, 'C:\db\db' + IntToStr(I) + '.sqlite');
+    Assert.AreEqual(RECENT_DATABASES_LIMIT, S.RecentDatabases.Count);
+    // Самая свежая - первая, самые старые обрезаны
+    Assert.AreEqual(NormalizeDbProfilePath('C:\db\db13.sqlite'),
+        S.RecentDatabases.Items[0]);
+    Assert.AreEqual(NormalizeDbProfilePath('C:\db\db4.sqlite'),
+        S.RecentDatabases.Items[RECENT_DATABASES_LIMIT - 1]);
+end;
+
+procedure TSettingsRecentDatabasesTests.AddRecentDatabase_MemoryOrEmpty_Ignored;
+var
+    S: TAppSettings;
+begin
+    S := Default(TAppSettings);
+    AddRecentDatabase(S, ':memory:');
+    AddRecentDatabase(S, '');
+    Assert.AreEqual(0, S.RecentDatabases.Count);
+end;
+
+procedure TSettingsRecentDatabasesTests.RemoveRecentDatabase_RemovesPathAndProfile;
+var
+    S: TAppSettings;
+    P: TDbSecurityProfile;
+begin
+    S := Default(TAppSettings);
+    AddRecentDatabase(S, 'C:\db\a.sqlite');
+    P := GetDbProfile(S, 'C:\db\a.sqlite');
+    P.KeyMode := DB_KEYMODE_DPAPI;
+    P.Key := 'c2VjcmV0a2V5YmFzZTY0';
+    SaveDbProfile(S, P);
+    AddRecentDatabase(S, 'C:\db\b.sqlite');
+
+    RemoveRecentDatabase(S, 'C:\db\a.sqlite');
+    Assert.AreEqual(1, S.RecentDatabases.Count);
+    Assert.AreEqual(NormalizeDbProfilePath('C:\db\b.sqlite'),
+        S.RecentDatabases.Items[0]);
+    Assert.AreEqual(-1, FindDbProfileIndex(S, 'C:\db\a.sqlite'));
+end;
+
+procedure TSettingsRecentDatabasesTests.RemoveMissingDatabasePaths_KeepsExistingFiles;
+var
+    S: TAppSettings;
+    Existing, Ghost, Ghost2: string;
+begin
+    Existing := TempDbFile('mru_test_1.sqlite');
+    Ghost := 'C:\db\missing1.sqlite';
+    Ghost2 := 'C:\db\missing2.sqlite';
+    S := Default(TAppSettings);
+    AddRecentDatabase(S, Existing);
+    AddRecentDatabase(S, Ghost);
+    AddRecentDatabase(S, Ghost2);
+    // Профиль призрачной базы тоже удаляется
+    SaveDbProfile(S, GetDbProfile(S, Ghost));
+
+    Assert.AreEqual(2, RemoveMissingDatabasePaths(S));
+    Assert.AreEqual(1, S.RecentDatabases.Count);
+    Assert.AreEqual(NormalizeDbProfilePath(Existing), S.RecentDatabases.Items[0]);
+    Assert.AreEqual(-1, FindDbProfileIndex(S, Ghost));
+end;
+
+procedure TSettingsRecentDatabasesTests.RemoveMissingDatabasePaths_CleansProfileOnlyEntries;
+var
+    S: TAppSettings;
+    Existing: string;
+begin
+    // База есть только в профилях (без записи в недавних) и файла нет -
+    // cleanup снимает и такой профиль; существующая недавняя остаётся
+    Existing := TempDbFile('mru_test_2.sqlite');
+    S := Default(TAppSettings);
+    SaveDbProfile(S, GetDbProfile(S, 'C:\db\missing.sqlite'));
+    AddRecentDatabase(S, Existing);
+
+    Assert.AreEqual(1, RemoveMissingDatabasePaths(S));
+    Assert.AreEqual(1, S.RecentDatabases.Count);
+    Assert.AreEqual(0, S.DbProfiles.Count);
+end;
+
+procedure TSettingsRecentDatabasesTests.GetAllDatabasePaths_MergesProfilesWithoutDuplicates;
+var
+    S: TAppSettings;
+    Paths: TArray<string>;
+begin
+    S := Default(TAppSettings);
+    AddRecentDatabase(S, 'C:\db\a.sqlite');
+    SaveDbProfile(S, GetDbProfile(S, 'C:\db\b.sqlite'));
+    // Профиль недавней базы не дублируется в объединённом списке
+    SaveDbProfile(S, GetDbProfile(S, 'C:\db\a.sqlite'));
+
+    Paths := GetAllDatabasePaths(S);
+    Assert.AreEqual(2, Integer(Length(Paths)));
+    Assert.AreEqual(NormalizeDbProfilePath('C:\db\a.sqlite'), Paths[0]);
+    Assert.AreEqual(NormalizeDbProfilePath('C:\db\b.sqlite'), Paths[1]);
+end;
+
+procedure TSettingsRecentDatabasesTests.SaveLoad_Roundtrip_PreservesRecents;
+var
+    M: ISettingsManager;
+    S: TAppSettings;
+begin
+    M := TSettingsManager.Create;
+    S := M.Data;
+    AddRecentDatabase(S, 'C:\db\a.sqlite');
+    AddRecentDatabase(S, 'C:\db\b.sqlite');
+    M.Data := S;
+    M.Save;
+    M := nil;
+
+    M := TSettingsManager.Create;
+    M.Load;
+    S := M.Data;
+    Assert.AreEqual(2, S.RecentDatabases.Count);
+    Assert.AreEqual(NormalizeDbProfilePath('C:\db\b.sqlite'),
+        S.RecentDatabases.Items[0]);
+    M := nil;
 end;
 
 end.

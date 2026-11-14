@@ -65,6 +65,9 @@ type
         nFile: TMenuItem;
         nOpenDatabase: TMenuItem;
         nCreateDatabase: TMenuItem;
+        nRecentDatabases: TMenuItem;
+        nRecentSeparator: TMenuItem;
+        nAllDatabases: TMenuItem;
         OpenDialog: TOpenDialog;
         SaveDialog: TSaveDialog;
         pLeft: TPanel;
@@ -133,6 +136,7 @@ type
         actDeleteSnippet: TAction;
         actCreateDatabase: TAction;
         actOpenDatabase: TAction;
+        actAllDatabases: TAction;
         actCloseDatabase: TAction;
         actAddCategory: TAction;
         actDeleteCategory: TAction;
@@ -214,6 +218,7 @@ type
         procedure actSyncDatabaseExecute(Sender: TObject);
         procedure actNetworkCalculatorExecute(Sender: TObject);
         procedure actOpenDatabaseExecute(Sender: TObject);
+        procedure actAllDatabasesExecute(Sender: TObject);
         procedure actPasswordGeneratorExecute(Sender: TObject);
         procedure actRunSnippetExecute(Sender: TObject);
         procedure actDryRunSnippetExecute(Sender: TObject);
@@ -308,9 +313,13 @@ type
         FCategoryTree: TCategoryTreeController;
         FTags: TTagListController;
         FLangMenu: TLanguageMenuController;
+        // Пути пунктов подменю недавних баз, индекс = Tag пункта меню
+        FRecentPaths: TArray<string>;
 
         procedure MarkDataChanged;
         procedure tmrCloseAfterTypingTimer(Sender: TObject);
+        procedure UpdateRecentDatabasesMenu;
+        procedure RecentDatabaseItemClick(Sender: TObject);
         function GetSyncEngine: TSyncController;
         function GetSearchEngine: TMainSearchController;
         function GetSecurityScan: TSecurityScanController;
@@ -402,6 +411,7 @@ implementation
 
 uses
     AddEditSnippetFormUI,
+    AllDatabasesFormUI,
     UI.Services.AppStateManager,
     ArchiveBuilderFormUI,
     ArrayHelper,
@@ -593,6 +603,60 @@ begin
         OpenDatabaseFile(OpenDialog.FileName);
 end;
 
+// Перестройка подменю недавних баз: путь в заголовке пункта, недоступный
+// файл виден, но неактивен. Вызывается в точках изменения списка (открытие
+// базы, удаление в окне «Все базы...»), поэтому при показе подменю список
+// уже актуален
+procedure TMainForm.UpdateRecentDatabasesMenu;
+var
+    Setts: TAppSettings;
+    Paths: TArray<string>;
+    I: Integer;
+    Item: TMenuItem;
+begin
+    Setts := AppContext.SettingsManager.Data;
+    Paths := GetAllDatabasePaths(Setts);
+    FRecentPaths := Paths;
+
+    // Динамические пункты живут перед разделителем и «Все базы...»
+    while nRecentDatabases.Count > 2 do
+        nRecentDatabases.Delete(0);
+    nRecentDatabases.Enabled := Length(Paths) > 0;
+
+    for I := High(Paths) downto 0 do
+    begin
+        Item := TMenuItem.Create(nRecentDatabases);
+        Item.Caption := ExtractFileName(Paths[I]) + ' [' + ShortenDbPath(Paths[I]) + ']';
+        Item.Tag := I;
+        Item.OnClick := RecentDatabaseItemClick;
+        Item.Enabled := TFile.Exists(Paths[I]);
+        nRecentDatabases.Insert(0, Item);
+    end;
+end;
+
+procedure TMainForm.RecentDatabaseItemClick(Sender: TObject);
+var
+    Index: Integer;
+begin
+    if not (Sender is TMenuItem) then
+        Exit;
+    Index := (Sender as TMenuItem).Tag;
+    if (Index < 0) or (Index > High(FRecentPaths)) then
+        Exit;
+    OpenDatabaseFile(FRecentPaths[Index]);
+end;
+
+procedure TMainForm.actAllDatabasesExecute(Sender: TObject);
+var
+    Chosen: string;
+begin
+    Chosen := ShowAllDatabasesForm(AppContext);
+    if Chosen <> '' then
+        OpenDatabaseFile(Chosen);
+    // Удаления в окне меняют список недавних - перестраиваем меню
+    UpdateRecentDatabasesMenu;
+end;
+
 function TMainForm.OpenDatabaseFile(const AFileName: string): Boolean;
 var
     Key: string;
@@ -709,6 +773,12 @@ begin
             AppContext.SettingsManager.Data := Setts;
             AppContext.SettingsManager.Save;
         end;
+        // Недавние базы: путь поднимается в начало подменю «Последние базы»
+        Setts := AppContext.SettingsManager.Data;
+        AddRecentDatabase(Setts, AFileName);
+        AppContext.SettingsManager.Data := Setts;
+        AppContext.SettingsManager.Save;
+        UpdateRecentDatabasesMenu;
         TStateMgr.Instance.OpenDatabase;
 
         PurgeStaleDrafts;
@@ -2169,6 +2239,9 @@ begin
     RegisterHelp(ebSearch, hipTopRight, 'Help.MainForm.ebSearch', hkCustomForm);
 
     ApplyLanguage;
+
+    // Список недавних баз в меню «Файл» из настроек прошлых сессий
+    UpdateRecentDatabasesMenu;
 
     FHotkeyMgr := TGlobalHotkeyManager.Create(
         AppContext

@@ -42,6 +42,7 @@ uses
     Tests.Localization in 'Tests.Localization.pas',
     Tests.MacroThread in 'Tests.MacroThread.pas',
     Tests.RunCmdCommand in 'Tests.RunCmdCommand.pas',
+    Tests.Helpers in 'Tests.Helpers.pas',
     Tests.Settings in 'Tests.Settings.pas',
     Tests.DbCrypto in 'Tests.DbCrypto.pas',
     Tests.WindowHelper in 'Tests.WindowHelper.pas',
@@ -96,9 +97,11 @@ begin
         TDUnitX.RegisterTestFixture(TLocalizationDiagnosticsTests);
         TDUnitX.RegisterTestFixture(TMacroThreadTests);
         TDUnitX.RegisterTestFixture(TRunCmdCommandTests);
+        TDUnitX.RegisterTestFixture(THelpersShortenDbPathTests);
         TDUnitX.RegisterTestFixture(TSettingsDpapiTests);
         TDUnitX.RegisterTestFixture(TSettingsManagerTests);
         TDUnitX.RegisterTestFixture(TSettingsDbSecurityTests);
+        TDUnitX.RegisterTestFixture(TSettingsRecentDatabasesTests);
         TDUnitX.RegisterTestFixture(TDbCryptoPbkdf2Tests);
         TDUnitX.RegisterTestFixture(TDbCryptoGcmTests);
         TDUnitX.RegisterTestFixture(TDbCryptoKeyFileTests);
