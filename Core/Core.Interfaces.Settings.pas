@@ -7,6 +7,13 @@ uses
     System.Classes
     ;
 
+const
+    // Допустимые значения узла Db настроек шифрования БД
+    DB_ENCRYPTION_NONE = 'none';
+    DB_ENCRYPTION_AES256 = 'aes256';
+    DB_KEYMODE_DPAPI = 'dpapi';
+    DB_KEYMODE_PASSPHRASE = 'passphrase';
+
 type
     // Domain Models настроек
     THelpButton = record
@@ -123,6 +130,50 @@ type
         Keep: Integer;
     end;
 
+    // Шифрование БД: AES-256 через FireDAC. KeyMode выбирает источник
+    // ключа: dpapi - ключ БД защищён DPAPI этой машины (без фразы),
+    // passphrase - ключ БД производный от парольной фразы пользователя
+    TDbSecuritySettings = record
+        // DB_ENCRYPTION_NONE | DB_ENCRYPTION_AES256
+        Encryption: string;
+        // DB_KEYMODE_DPAPI | DB_KEYMODE_PASSPHRASE
+        KeyMode: string;
+        // Мастер-ключ БД (base64 от 32 байт). В памяти хранится открытым
+        // текстом, на диск пишется только под DPAPI (dpapi:...) - как APIKey
+        Key: string;
+        // Соль KDF (base64 от 16 байт) для деривации ключа из парольной
+        // фразы (KeyMode = passphrase). Не секрет, на диск пишется открытым
+        Salt: string;
+        // passphrase: True = производный ключ сохраняется под DPAPI в Key
+        // (перезапуск без ввода фразы), False = фраза запрашивается при
+        // каждом старте, Key на диске не хранится
+        RememberKey: Boolean;
+        // True = диалог предложения включить шифрование при первом запуске
+        // уже показывался и больше не повторяется
+        FirstRunPromptDone: Boolean;
+        // Маркер инициализации: False = старый settings.json без узла Db
+        DbDefined: Boolean;
+    end;
+
+    // Безопасность конкретной базы: ключ привязан к файлу по нормализованному
+    // пути. Снимает конфликт «один глобальный слот Db на все базы»: ключи
+    // разных файлов не подменяют друг друга. Узел Db остаётся для флага
+    // первого запуска и плавной миграции старых установок
+    TDbSecurityProfile = record
+        // Нормализованный полный путь файла БД (ExpandFileName + lowercase)
+        Path: string;
+        // DB_KEYMODE_DPAPI | DB_KEYMODE_PASSPHRASE
+        KeyMode: string;
+        // Мастер-ключ БД (base64 от 32 байт). В памяти хранится открытым
+        // текстом, на диск пишется только под DPAPI (dpapi:...)
+        Key: string;
+        // Соль KDF (base64 от 16 байт) для KeyMode = passphrase
+        Salt: string;
+        // passphrase: True = производный ключ сохраняется в Key,
+        // False = фраза запрашивается при каждом открытии
+        RememberKey: Boolean;
+    end;
+
     TAppSettings = record
         UISettings: TUISettings;
         WindowHelper: TWindowHelperNode;
@@ -165,6 +216,11 @@ type
         Backup: TBackupSettings;
         // Маркер инициализации: False = старый settings.json без узла Backup
         BackupDefined: Boolean;
+
+        // Шифрование БД
+        Db: TDbSecuritySettings;
+        // Безопасность отдельных баз (профиль на каждый файл БД)
+        DbProfiles: TArrayRecord<TDbSecurityProfile>;
 
         // Окно выбора терминала: True = режим таблицы, False = плитки
         TerminalChooserTableView: Boolean;

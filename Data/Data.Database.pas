@@ -42,6 +42,8 @@ type
         FDPhysSQLiteDriverLink: TFDPhysSQLiteDriverLink;
         FDScript: TFDScript;
     private
+        FEncryptionKey: string;
+
         procedure Connect(const Filename: string);
         procedure InitializeDatabase(Filename: string);
         procedure ApplyPRAGMA;
@@ -56,6 +58,11 @@ type
         function GetConnectionString: string;
         function DatabaseFile: string;
         function CreateImportSnapshot: string;
+
+        // Материал ключа шифрования БД (base64 от 32 байт) для следующего
+        // Connect; пустая строка = открытие без шифрования. Выставляется
+        // вызывающим кодом ДО CreateDatabase/OpenDatabase
+        property EncryptionKey: string read FEncryptionKey write FEncryptionKey;
     end;
 
 var
@@ -66,6 +73,7 @@ implementation
 uses
     Common.Localization,
     Data.Database.Migrations,
+    Data.Database.Security,
     Winapi.Windows
     ;
 
@@ -87,8 +95,19 @@ procedure TAppDatabase.Connect(const Filename: string);
 begin
     CloseDatabase;
 
+    // Зашифрованное открытие без DLL mc-движка невозможно: статический
+    // движок вернул бы NOTADB - сообщаем об отсутствии библиотеки явно
+    if (FEncryptionKey <> '') and (not DbEngineDllAvailable) then
+        raise Exception.Create(TUIStateLoader.GetMessage(
+            'DB.EncryptionEngineMissing', [DbEngineDllPath]));
+
     FDConnection.Params.Database := Filename;
     FDConnection.Params.Add('DriverID=SQLite');
+    // Динамическая линковка: sqlite3mc_x64.dll рядом с exe (SQLite 3.54 +
+    // шифрование SQLite3 Multiple Ciphers). Единый движок для шифрованных
+    // и обычных БД - открытый файл не зависит от того, с каким ключом
+    // его открыли
+    ApplyEngineLinkage(FDPhysSQLiteDriverLink);
     // Параметры задаются вместо PRAGMA после открытия: FireDAC на этапе
     // открытия сам выполняет "PRAGMA journal_mode = DELETE" (выкидывает БД
     // из WAL) и "PRAGMA locking_mode = Exclusive" (монопольный лок всей БД).
@@ -97,6 +116,8 @@ begin
     FDConnection.Params.Add('JournalMode=WAL');
     FDConnection.Params.Add('LockingMode=Normal');
     FDConnection.Params.Add('CharacterSet=utf8');
+    if FEncryptionKey <> '' then
+        ApplyEncryptionParams(FDConnection.Params, FEncryptionKey);
     FDConnection.Connected := True;
 
     ApplyPRAGMA;

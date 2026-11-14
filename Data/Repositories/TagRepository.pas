@@ -101,10 +101,8 @@ end;
 
 function TTagRepository.Add(const Tag: TTagDTO): Integer;
 begin
-    Result := ExecuteSQLScalar(
-        'INSERT INTO tags(name) VALUES(?) RETURNING id',
-        [Tag.Name]
-    );
+    ExecuteSQL('INSERT INTO tags(name) VALUES(?)', [Tag.Name]);
+    Result := ExecuteSQLScalar('SELECT last_insert_rowid()', []);
 end;
 
 procedure TTagRepository.Update(const Tag: TTagDTO);

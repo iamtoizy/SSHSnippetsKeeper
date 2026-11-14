@@ -1129,6 +1129,24 @@
     "gbBackup": {
       "Caption": "Database backup"
     },
+    "gbDbSecurity": {
+      "Caption": "Database encryption"
+    },
+    "chkDbEncrypt": {
+      "Caption": "Encrypt database"
+    },
+    "lbDbMode": {
+      "Caption": "Key:"
+    },
+    "bDbApply": {
+      "Caption": "Apply"
+    },
+    "bDbExport": {
+      "Caption": "Export key"
+    },
+    "bDbImport": {
+      "Caption": "Import key"
+    },
     "chkBackupEnabled": {
       "Caption": "Create backup copies automatically"
     },
@@ -1541,7 +1559,18 @@
       "OpenError": "Error opening database: %s",
       "CreateError": "Error creating database: %s",
       "OpenedSuccess": "SQLite database opened.",
+      "PassphrasePrompt": "Enter the database passphrase",
+      "PassphraseWrong": "Wrong passphrase. Try again or cancel opening.",
+      "OpenKeyImportAsk": "The database did not open with this machine's key. Import the encryption key from a file?",
+      "KeyImportTitle": "Import encryption key",
+      "KeyImportPassphrase": "Passphrase of the key file",
+      "KeyImportFailed": "Failed to import key: %s",
+      "FirstRunEncryptAsk": "Turn on database encryption? The key will be tied to this machine (DPAPI): to move the database to another computer, you will need to export and import the key.",
+      "EncryptionEnabled": "The database is now encrypted.",
+      "EncryptionEnableFailed": "Failed to turn on encryption: %s",
+      "EncryptionEngineMissing": "Could not open the encrypted database: encryption library %s was not found next to the program.",
       "CreatedSuccess": "SQLite database created.",
+      "EncryptedOnCreateNotice": "Encryption has been applied (DPAPI): the key is tied to this machine; to move the database to another computer you will need to export and import the key. The encryption type can be changed in Settings.",
       "AutoBackupCreated": "Database auto-backup created: %s",
       "AutoBackupFailed": "Failed to create database auto-backup: %s",
       "NoConnectionError": "Error: No connection to the database.",
@@ -1600,6 +1629,58 @@
       "BackupLastCopy": "Last copy: %s",
       "BackupLastCopyNone": "Last copy: none yet",
       "BackupInProgress": "creating copy…",
+      "DbModeDpapi": "This machine's DPAPI",
+      "DbStateOff": "Current state: encryption is off",
+      "DbStateOn": "Current state: encryption is on (machine key)",
+      "DbStateOnPassphrase": "Current state: encryption is on (passphrase)",
+      "DbRememberNowDone": "The current key is now stored in settings: the database will open without a password prompt on next launches.",
+      "DbRememberNowAlready": "The current key is already stored in settings.",
+      "DbSaveKeyDontStore": "Don't store the key",
+      "DbSaveKeyStore": "Store the key",
+      "DbSaveKeyOff": "The key is no longer stored: the database will ask for the password on next open.",
+      "DbOpenPlainNoKey": "The database is not encrypted - there is no key to store.",
+      "DbExportOfferAsk": "Save the database key to a file now? Without it, the encrypted database cannot be opened after moving to another computer or reinstalling Windows.",
+      "DbProfilesButton": "Database profiles...",
+      "DbProfilesTitle": "Database profiles",
+      "DbProfilesColDb": "Database",
+      "DbProfilesColMode": "Mode",
+      "DbProfilesColKey": "Key",
+      "DbProfilesDelete": "Delete",
+      "DbProfilesDeleteMissing": "Remove missing",
+      "DbProfilesDeleteAsk": "Delete the stored key of this database from settings?",
+      "DbProfilesCleanupDone": "Removed profiles of missing databases: %d",
+      "DbProfilesKeyStored": "Stored",
+      "DbProfilesKeyNotStored": "Not stored",
+      "DbHelp": "How database encryption works:\n\n• DPAPI - the app generates a random key itself and stores it in settings.json protected by Windows (DPAPI). The key is bound to this machine and user: a database copied to another computer will not open without key export and import. New databases are created encrypted this way right away.\n\n• Passphrase - the key is derived from the phrase and a random salt. The \"Key storage\" combo decides whether to keep the derived key: without storing it, the password is asked on every database open.\n\n• \"Apply\" turns encryption on and off and changes its type (DPAPI and passphrase): a backup is taken before conversion, the database is closed and reopened.\n\nEach database has its own profile: the key and mode are stored per database file path, so keys of different databases do not replace each other. When encryption is turned on, the app immediately offers to export the key to a file - without it the encrypted database cannot be opened on another machine; you can do this later with the \"Export key\" button. \"Database profiles...\" lists the stored keys of all databases: from there you can delete the key of a database whose encryption was removed or the record of a file that no longer exists.",
+      "DbApplyConfirmOn": "Turn on database encryption?\n\nA backup will be created, and the database will be closed and reopened. The key is tied to this machine (DPAPI): to move the database to another computer, you will need to export and import the key.",
+      "DbApplyConfirmOff": "Remove database encryption?\n\nA backup will be created, and the database will be closed and reopened without encryption.",
+      "DbApplyConfirmMode": "Change the database encryption key type?\n\nA backup with the current key will be created, and the database will be closed and reopened with the new key.",
+      "DbModeChanged": "The database encryption key type has been changed.",
+      "DbApplyInProgress": "Changing database encryption…",
+      "DbApplyDoneOn": "The database is encrypted.",
+      "DbApplyDoneOff": "Database encryption has been removed.",
+      "DbApplyFailed": "Failed to change encryption: %s",
+      "DbEngineMissing": "Encryption library sqlite3mc_x64.dll was not found - database encryption is unavailable.",
+      "DbConversionTitle": "Database conversion",
+      "DbConversionInProgress": "Converting the database. Please wait - do not close the application.",
+      "DbBackupUnencrypted": "An unencrypted backup of the database was created before the conversion: %s - delete it after you verify the encrypted database.",
+      "DbNotOpen": "No database is open - encryption operations are unavailable.",
+      "DbModePassphrase": "Passphrase",
+      "DbPassphrasePrompt": "Enter passphrase",
+      "DbPassphraseConfirm": "Confirm passphrase",
+      "DbPassphraseMismatch": "Passphrases do not match.",
+      "DbRememberAsk": "Remember the key on this computer (DPAPI)? If you decline, the passphrase will be asked on every start.",
+      "DbExportTitle": "Export encryption key",
+      "DbExportPassphrase": "Export passphrase for the key file",
+      "DbExportPassphraseConfirm": "Confirm the export passphrase",
+      "DbExportNoKey": "The database is not encrypted - there is nothing to export.",
+      "DbExportDone": "Key exported: %s",
+      "DbExportFailed": "Failed to export key: %s",
+      "DbImportTitle": "Import encryption key",
+      "DbImportPassphrase": "Passphrase of the key file",
+      "DbImportDone": "Encryption key imported.",
+      "DbImportFailed": "Failed to import key: %s",
+      "DbImportApplyConfirm": "Apply the imported key to the current database?\n\nA backup will be created, and the database will be closed and reopened with the imported key.",
       "BackupNoDatabase": "No database is open — nothing to copy.",
       "StyleApplyError": "Failed to apply style \"%s\"."
     },

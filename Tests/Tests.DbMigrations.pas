@@ -56,6 +56,7 @@ type
 implementation
 
 uses
+    Data.Database.Security,
     FireDAC.Comp.DataSet,
     FireDAC.Comp.Script,
     FireDAC.ConsoleUI.Wait,
@@ -504,7 +505,12 @@ begin
 end;
 
 initialization
+    // Параметры драйвера FireDAC (VendorLib/EngineLinkage) берутся из
+    // ПЕРВОГО зарегистрированного link-компонента процесса. Без mc-движка
+    // здесь драйвер грузит статическую сборку без sqlite3_key, и все
+    // шифрованные сценарии падают с -303
     GDriverLink := TFDPhysSQLiteDriverLink.Create(nil);
+    ApplyEngineLinkage(GDriverLink);
 
 finalization
     GDriverLink.Free;

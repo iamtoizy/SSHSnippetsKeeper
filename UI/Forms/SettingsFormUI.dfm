@@ -519,6 +519,100 @@ object SettingsForm: TSettingsForm
             '24 hours')
         end
       end
+      object gbDbSecurity: TGroupBox
+        Left = 3
+        Top = 160
+        Width = 610
+        Height = 145
+        Caption = #1064#1080#1092#1088#1086#1074#1072#1085#1080#1077#32#1073#1072#1079#1099#32#1076#1072#1085#1085#1099#1093
+        TabOrder = 1
+        object lbDbMode: TLabel
+          Left = 12
+          Top = 53
+          Width = 50
+          Height = 15
+          Caption = #1050#1083#1102#1095#58
+        end
+        object bDbApply: TButton
+          Left = 12
+          Top = 85
+          Width = 180
+          Height = 25
+          Caption = #1055#1088#1080#1084#1077#1085#1080#1090#1100
+          TabOrder = 1
+          OnClick = bDbApplyClick
+        end
+        object bDbExport: TButton
+          Left = 200
+          Top = 85
+          Width = 150
+          Height = 25
+          Caption = #1069#1082#1089#1087#1086#1088#1090#32#1082#1083#1102#1095#1072
+          TabOrder = 3
+          OnClick = bDbExportClick
+        end
+        object bDbImport: TButton
+          Left = 358
+          Top = 85
+          Width = 150
+          Height = 25
+          Caption = #1048#1084#1087#1086#1088#1090#32#1082#1083#1102#1095#1072
+          TabOrder = 4
+          OnClick = bDbImportClick
+        end
+        object lbDbState: TLabel
+          Left = 12
+          Top = 122
+          Width = 380
+          Height = 15
+          Caption = #1058#1077#1082#1091#1097#1077#1077#32#1089#1086#1089#1090#1086#1103#1085#1080#1077#58#32#1096#1080#1092#1088#1086#1074#1072#1085#1080#1077#32#1074#1099#1082#1083#1102#1095#1077#1085#1086
+        end
+        object chkDbEncrypt: TCheckBox
+          Left = 12
+          Top = 22
+          Width = 590
+          Height = 17
+          Caption = #1064#1080#1092#1088#1086#1074#1072#1090#1100#32#1073#1072#1079#1091#32#1076#1072#1085#1085#1099#1093
+          TabOrder = 0
+          OnClick = chkDbEncryptClick
+        end
+        object cbDbMode: TComboBox
+          Left = 120
+          Top = 49
+          Width = 180
+          Height = 23
+          Style = csDropDownList
+          TabOrder = 2
+          OnSelect = cbDbModeSelect
+        end
+        object cbDbSaveKey: TComboBox
+          Left = 312
+          Top = 49
+          Width = 290
+          Height = 23
+          Style = csDropDownList
+          TabOrder = 5
+          OnSelect = cbDbSaveKeySelect
+        end
+        object bDbHelp: TButton
+          Left = 516
+          Top = 85
+          Width = 86
+          Height = 25
+          Caption = #1057#1087#1088#1072#1074#1082#1072
+          TabOrder = 6
+          OnClick = bDbHelpClick
+        end
+        object bDbProfiles: TButton
+          Left = 404
+          Top = 117
+          Width = 198
+          Height = 25
+          Caption = #1055#1088#1086#1092#1080#1083#1080' '#1073#1072#1079'...'
+          TabOrder = 7
+          OnClick = bDbProfilesClick
+        end
+      end
     end
     object tsCounters: TTabSheet
       Caption = 'Counters'

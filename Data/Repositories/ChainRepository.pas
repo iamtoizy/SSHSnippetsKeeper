@@ -101,11 +101,14 @@ var
 begin
     Q := CreateQuery;
     try
-        Q.SQL.Text := 'INSERT INTO snippet_chains (user_id, name) VALUES (:uid, :name) RETURNING id';
+        // last_insert_rowid вместо RETURNING id: FDE-сборка SQLite старше
+        // 3.35 и RETURNING не знает; функция привязана к соединению,
+        // поэтому гонок между потоками нет
+        Q.SQL.Text := 'INSERT INTO snippet_chains (user_id, name) VALUES (:uid, :name)';
         Q.ParamByName('uid').AsInteger := Chain.UserID;
         Q.ParamByName('name').AsString := Chain.Name;
-        Q.Open;
-        Result := Q.Fields[0].AsInteger;
+        ExecSQLWithRetry(Q);
+        Result := Q.Connection.ExecSQLScalar('SELECT last_insert_rowid()');
     finally
         Q.Free;
     end;

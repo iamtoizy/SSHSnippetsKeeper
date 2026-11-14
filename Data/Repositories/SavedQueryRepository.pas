@@ -98,12 +98,14 @@ var
 begin
     Q := CreateQuery;
     try
-        Q.SQL.Text := 'INSERT INTO saved_queries (user_id, name, query_text) VALUES (:uid, :name, :query) RETURNING id';
+        // last_insert_rowid вместо RETURNING id - совместимо со старой
+        // FDE-сборкой SQLite
+        Q.SQL.Text := 'INSERT INTO saved_queries (user_id, name, query_text) VALUES (:uid, :name, :query)';
         Q.ParamByName('uid').AsInteger := SavedQuery.UserID;
         Q.ParamByName('name').AsString := SavedQuery.Name;
         Q.ParamByName('query').AsString := SavedQuery.QueryText;
-        Q.Open;
-        Result := Q.Fields[0].AsInteger;
+        ExecSQLWithRetry(Q);
+        Result := Q.Connection.ExecSQLScalar('SELECT last_insert_rowid()');
     finally
         Q.Free;
     end;

@@ -20,6 +20,7 @@ uses
     Tests.QueryLanguage in 'Tests.QueryLanguage.pas',
     Tests.SearchTags in 'Tests.SearchTags.pas',
     Tests.DbMigrations in 'Tests.DbMigrations.pas',
+    Tests.DatabaseEncryption in 'Tests.DatabaseEncryption.pas',
     Tests.WindowMonitor in 'Tests.WindowMonitor.pas',
     Tests.Chains in 'Tests.Chains.pas',
     Tests.SavedQueries in 'Tests.SavedQueries.pas',
@@ -42,6 +43,7 @@ uses
     Tests.MacroThread in 'Tests.MacroThread.pas',
     Tests.RunCmdCommand in 'Tests.RunCmdCommand.pas',
     Tests.Settings in 'Tests.Settings.pas',
+    Tests.DbCrypto in 'Tests.DbCrypto.pas',
     Tests.WindowHelper in 'Tests.WindowHelper.pas',
     Tests.SyncController in 'Tests.SyncController.pas'
     ;
@@ -66,6 +68,7 @@ begin
         TDUnitX.RegisterTestFixture(TQueryLanguageTests);
         TDUnitX.RegisterTestFixture(TSearchTagsTests);
         TDUnitX.RegisterTestFixture(TDbMigrationTests);
+        TDUnitX.RegisterTestFixture(TDbEncryptionRoundtripTests);
         TDUnitX.RegisterTestFixture(TWindowMonitorTests);
         TDUnitX.RegisterTestFixture(TChainsTests);
         TDUnitX.RegisterTestFixture(TSavedQueriesTests);
@@ -95,6 +98,10 @@ begin
         TDUnitX.RegisterTestFixture(TRunCmdCommandTests);
         TDUnitX.RegisterTestFixture(TSettingsDpapiTests);
         TDUnitX.RegisterTestFixture(TSettingsManagerTests);
+        TDUnitX.RegisterTestFixture(TSettingsDbSecurityTests);
+        TDUnitX.RegisterTestFixture(TDbCryptoPbkdf2Tests);
+        TDUnitX.RegisterTestFixture(TDbCryptoGcmTests);
+        TDUnitX.RegisterTestFixture(TDbCryptoKeyFileTests);
         TDUnitX.RegisterTestFixture(TWindowHelperTests);
         TDUnitX.RegisterTestFixture(TSyncControllerTests);
         Runner := TDUnitX.CreateRunner([TDUnitXConsoleLogger.Create(False)]);

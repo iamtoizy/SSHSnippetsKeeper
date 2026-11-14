@@ -44,6 +44,33 @@ function ProtectSecret(const Value: string): string;
 function UnprotectSecretToBytes(const Value: string): TBytes;
 function IsProtectedSecret(const Value: string): Boolean;
 procedure WipeSecretBytes(var ABytes: TBytes);
+procedure ClearUnrememberedDbKey(var Settings: TAppSettings);
+procedure PinDbKey(var Settings: TAppSettings; const AKey: string;
+    AForceRemember: Boolean);
+
+// Нормализованный ключ профиля: ExpandFileName + lowercase.
+// '' для :memory: и пустых путей - такие базы без профилей
+function NormalizeDbProfilePath(const ADatabaseFile: string): string;
+
+// Индекс профиля базы в Settings.DbProfiles (-1 если профиля нет)
+function FindDbProfileIndex(const Settings: TAppSettings;
+    const ADatabaseFile: string): Integer;
+
+// Профиль базы; для отсутствующего - дефолтный DPAPI-профиль без ключа
+function GetDbProfile(const Settings: TAppSettings;
+    const ADatabaseFile: string): TDbSecurityProfile;
+
+// Вставка или обновление профиля по полю Path
+procedure SaveDbProfile(var Settings: TAppSettings;
+    const AProfile: TDbSecurityProfile);
+
+// Удаление профиля базы (например, при снятии шифрования с файла)
+procedure DeleteDbProfile(var Settings: TAppSettings; const ADatabaseFile: string);
+
+// Закрепление фактического ключа открытой базы в её профиле; семантика
+// как у PinDbKey, но запись адресуется путём файла и создаётся при нужде
+procedure PinDbKeyTo(var Settings: TAppSettings; const ADatabaseFile: string;
+    const AKey: string; AForceRemember: Boolean);
 
 implementation
 
@@ -220,6 +247,171 @@ begin
                 Settings.AISettings.Items[HubIdx].Items.Items[KeyIdx].APIKey :=
                     SECRET_PREFIX + Key.Substring(Length(SECRET_PREFIX_OLD));
         end;
+end;
+
+// Дефолты узла Db: без шифрования (DB_ENCRYPTION_NONE / DB_KEYMODE_DPAPI).
+// Используется и при первичной инициализации, и при загрузке старого
+// settings.json без узла Db
+procedure ApplyDbSecurityDefaults(var Settings: TAppSettings);
+begin
+    Settings.Db.Encryption := DB_ENCRYPTION_NONE;
+    Settings.Db.KeyMode := DB_KEYMODE_DPAPI;
+    Settings.Db.Key := '';
+    Settings.Db.Salt := '';
+    Settings.Db.RememberKey := False;
+    Settings.Db.FirstRunPromptDone := False;
+    Settings.Db.DbDefined := True;
+end;
+
+procedure ClearUnrememberedDbKey(var Settings: TAppSettings);
+var
+    I: Integer;
+begin
+    // Инвариант passphrase: без «запомнить» производный ключ не хранится
+    // нигде, включая копию настроек в памяти
+    if (Settings.Db.KeyMode = DB_KEYMODE_PASSPHRASE) and
+        (not Settings.Db.RememberKey) then
+        Settings.Db.Key := '';
+
+    // Тот же инвариант для профилей отдельных баз
+    for I := 0 to High(Settings.DbProfiles.Items) do
+        if (Settings.DbProfiles.Items[I].KeyMode = DB_KEYMODE_PASSPHRASE) and
+            (not Settings.DbProfiles.Items[I].RememberKey) then
+            Settings.DbProfiles.Items[I].Key := '';
+end;
+
+// Закрепление фактического ключа открытой базы в настройках: passphrase
+// хранит ключ только при включённом запоминании (AForceRemember - явное
+// «запомнить сейчас»), DPAPI - всегда, с перепривязкой к этой машине.
+// Флаг шифрования подводится к факту: файл уже зашифрован
+procedure PinDbKey(var Settings: TAppSettings; const AKey: string;
+    AForceRemember: Boolean);
+begin
+    Settings.Db.DbDefined := True;
+    Settings.Db.Encryption := DB_ENCRYPTION_AES256;
+    if Settings.Db.KeyMode = DB_KEYMODE_PASSPHRASE then
+    begin
+        if AForceRemember or Settings.Db.RememberKey then
+        begin
+            Settings.Db.RememberKey := True;
+            Settings.Db.Key := AKey;
+        end;
+    end
+    else
+    begin
+        Settings.Db.KeyMode := DB_KEYMODE_DPAPI;
+        Settings.Db.Salt := '';
+        Settings.Db.RememberKey := True;
+        Settings.Db.Key := AKey;
+    end;
+end;
+
+function NormalizeDbProfilePath(const ADatabaseFile: string): string;
+begin
+    Result := '';
+    if ADatabaseFile.IsEmpty or SameText(ADatabaseFile, ':memory:') then
+        Exit;
+    // lowercase: один профиль на файл независимо от регистра букв в пути
+    Result := LowerCase(ExpandFileName(ADatabaseFile));
+end;
+
+function FindDbProfileIndex(const Settings: TAppSettings;
+    const ADatabaseFile: string): Integer;
+var
+    Path: string;
+    I: Integer;
+begin
+    Result := -1;
+    Path := NormalizeDbProfilePath(ADatabaseFile);
+    if Path = '' then
+        Exit;
+    for I := 0 to High(Settings.DbProfiles.Items) do
+        if Settings.DbProfiles.Items[I].Path = Path then
+            Exit(I);
+end;
+
+function GetDbProfile(const Settings: TAppSettings;
+    const ADatabaseFile: string): TDbSecurityProfile;
+var
+    Idx: Integer;
+begin
+    // Для базы без профиля - дефолтный DPAPI-профиль без ключа: открытие
+    // и создание работают так же, как раньше с пустым узлом Db. Path
+    // заполняется сразу - правки дефолта можно сохранять как есть
+    Result := Default(TDbSecurityProfile);
+    Result.KeyMode := DB_KEYMODE_DPAPI;
+    Result.Path := NormalizeDbProfilePath(ADatabaseFile);
+    Idx := FindDbProfileIndex(Settings, ADatabaseFile);
+    if Idx >= 0 then
+        Result := Settings.DbProfiles.Items[Idx];
+end;
+
+procedure SaveDbProfile(var Settings: TAppSettings;
+    const AProfile: TDbSecurityProfile);
+var
+    Idx: Integer;
+begin
+    Idx := FindDbProfileIndex(Settings, AProfile.Path);
+    if Idx < 0 then
+        Settings.DbProfiles.Add(AProfile)
+    else
+        Settings.DbProfiles.Items[Idx] := AProfile;
+end;
+
+procedure DeleteDbProfile(var Settings: TAppSettings; const ADatabaseFile: string);
+var
+    Idx: Integer;
+begin
+    Idx := FindDbProfileIndex(Settings, ADatabaseFile);
+    if Idx >= 0 then
+        Settings.DbProfiles.Delete(Idx);
+end;
+
+procedure PinDbKeyTo(var Settings: TAppSettings; const ADatabaseFile: string;
+    const AKey: string; AForceRemember: Boolean);
+var
+    Idx: Integer;
+begin
+    Idx := FindDbProfileIndex(Settings, ADatabaseFile);
+    if Idx < 0 then
+    begin
+        // Базы без файла на диске (:memory:) профилей не получают
+        if NormalizeDbProfilePath(ADatabaseFile) = '' then
+            Exit;
+        Idx := Settings.DbProfiles.Add(Default(TDbSecurityProfile));
+        Settings.DbProfiles.Items[Idx].Path := NormalizeDbProfilePath(ADatabaseFile);
+    end;
+
+    // Семантика как у PinDbKey: passphrase хранит ключ только при
+    // включённом запоминании, DPAPI - всегда
+    if Settings.DbProfiles.Items[Idx].KeyMode = DB_KEYMODE_PASSPHRASE then
+    begin
+        if AForceRemember or Settings.DbProfiles.Items[Idx].RememberKey then
+        begin
+            Settings.DbProfiles.Items[Idx].RememberKey := True;
+            Settings.DbProfiles.Items[Idx].Key := AKey;
+        end;
+    end
+    else
+    begin
+        Settings.DbProfiles.Items[Idx].KeyMode := DB_KEYMODE_DPAPI;
+        Settings.DbProfiles.Items[Idx].Salt := '';
+        Settings.DbProfiles.Items[Idx].RememberKey := True;
+        Settings.DbProfiles.Items[Idx].Key := AKey;
+    end;
+end;
+
+procedure EncryptDbKey(var Settings: TAppSettings);
+var
+    I: Integer;
+begin
+    ClearUnrememberedDbKey(Settings);
+    if Settings.Db.Key <> '' then
+        Settings.Db.Key := ProtectSecret(Settings.Db.Key);
+    for I := 0 to High(Settings.DbProfiles.Items) do
+        if Settings.DbProfiles.Items[I].Key <> '' then
+            Settings.DbProfiles.Items[I].Key :=
+                ProtectSecret(Settings.DbProfiles.Items[I].Key);
 end;
 
 const
@@ -444,6 +636,9 @@ begin
     // Инициализируем массивы-справочники
     InitDefaultAllowedApplications;
     InitDefaultAISettings;
+
+    // Шифрование БД по умолчанию выключено
+    ApplyDbSecurityDefaults(FSettings);
 end;
 
 // =============================================================================
@@ -547,6 +742,32 @@ begin
             FSettings.SecurityBackgroundScanDefined := True;
         end;
 
+        // Узел шифрования БД: в старом settings.json его нет - дефолты
+        if not FSettings.Db.DbDefined then
+            ApplyDbSecurityDefaults(FSettings);
+
+        // Битые значения режимов не должны ломать открытие БД; Key не
+        // трогаем - потребитель сам разбирает dpapi:блоб через
+        // UnprotectSecretToBytes (прозрачно пропускает открытый текст)
+        if not ((FSettings.Db.Encryption = DB_ENCRYPTION_NONE) or
+                (FSettings.Db.Encryption = DB_ENCRYPTION_AES256)) then
+            FSettings.Db.Encryption := DB_ENCRYPTION_NONE;
+        if not ((FSettings.Db.KeyMode = DB_KEYMODE_DPAPI) or
+                (FSettings.Db.KeyMode = DB_KEYMODE_PASSPHRASE)) then
+            FSettings.Db.KeyMode := DB_KEYMODE_DPAPI;
+
+        // Битые режимы в профилях не должны ломать открытие баз
+        for I := 0 to High(FSettings.DbProfiles.Items) do
+            if not ((FSettings.DbProfiles.Items[I].KeyMode = DB_KEYMODE_DPAPI) or
+                    (FSettings.DbProfiles.Items[I].KeyMode = DB_KEYMODE_PASSPHRASE)) then
+                FSettings.DbProfiles.Items[I].KeyMode := DB_KEYMODE_DPAPI;
+
+        // Тот же инвариант passphrase, что и в EncryptDbKey: затираем
+        // устаревший ключ с диска, чтобы стартовый цикл ввода фразы не
+        // подхватил ключ от прежней сессии с «запомнить» (глобальный слот
+        // и профили отдельных баз)
+        ClearUnrememberedDbKey(FSettings);
+
         // Битые значения не должны отключать бэкап или ротацию
         if FSettings.Backup.IntervalSeconds <= 0 then
             FSettings.Backup.IntervalSeconds := DEFAULT_BACKUP_INTERVAL_SECONDS;
@@ -616,6 +837,7 @@ begin
         // Шифруем копию настроек: в памяти FSettings остается с открытыми ключами
         SafeSettings := FSettings;
         EncryptAIKeys(SafeSettings);
+        EncryptDbKey(SafeSettings);
 
         JsonString := DSON.toJson<TAppSettings>(SafeSettings);
 

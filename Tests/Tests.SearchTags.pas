@@ -129,6 +129,9 @@ begin
     Script := TFDScript.Create(nil);
     try
         Script.Connection := FConn;
+        // Как в TAppDatabase.InitializeDatabase: ошибка statement обязана
+        // прерывать скрипт, иначе сбой применения схемы остаётся незаметным
+        Script.ScriptOptions.BreakOnError := True;
         Script.SQLScripts.Add.SQL.Text := SQL;
         Script.ExecuteAll;
         TableCount := FConn.ExecSQLScalar('SELECT COUNT(*) FROM sqlite_master WHERE type = ''table''');

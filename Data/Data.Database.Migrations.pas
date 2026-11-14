@@ -102,11 +102,14 @@ function CreateAutoBackup(AConnection: TFDConnection;
 // Автобэкап на отдельном короткоживущем соединении: основное соединение GUI
 // не затрагивается, функция безопасна для вызова из фонового потока.
 // Параметры соединения как у консольных команд (/backup): работа параллельно
-// с запущенным приложением. Остальное - как CreateAutoBackup.
+// с запущенным приложением. ADbKey - материал ключа шифрования (base64);
+// пустое значение = БД открывается как незашифрованная. Остальное - как
+// CreateAutoBackup.
 function CreateAutoBackupStandalone(const ADatabaseFile: string;
     AIntervalSeconds: Integer = AUTO_BACKUP_INTERVAL_SECONDS;
     AKeep: Integer = AUTO_BACKUP_KEEP;
-    AForce: Boolean = False): string;
+    AForce: Boolean = False;
+    const ADbKey: string = ''): string;
 
 // Свежайшая авто-копия (auto_*.bak) рядом с файлом БД: путь и метка времени
 // из имени файла ( Stamp = 0, если копий с корректной меткой нет).
@@ -138,6 +141,9 @@ implementation
 uses
     Common.AppVersion,
     Common.Localization,
+    Common.Settings,
+    Core.Interfaces.Settings,
+    Data.Database.Security,
     FireDAC.Comp.DataSet,
     FireDAC.Comp.Script,
     FireDAC.Phys.SQLite,
@@ -592,7 +598,8 @@ begin
 end;
 
 function CreateAutoBackupStandalone(const ADatabaseFile: string;
-    AIntervalSeconds: Integer; AKeep: Integer; AForce: Boolean): string;
+    AIntervalSeconds: Integer; AKeep: Integer; AForce: Boolean;
+    const ADbKey: string): string;
 var
     Connection: TFDConnection;
     DriverLink: TFDPhysSQLiteDriverLink;
@@ -609,6 +616,7 @@ begin
     // приложением. ReadOnly не задаём: открытие WAL-БД может потребовать
     // восстановления wal-index (запись в -shm)
     DriverLink := TFDPhysSQLiteDriverLink.Create(nil);
+    ApplyEngineLinkage(DriverLink);
     Connection := TFDConnection.Create(nil);
     try
         Connection.Params.Add('DriverID=SQLite');
@@ -623,6 +631,8 @@ begin
         Connection.Params.Add('LockingMode=Normal');
         Connection.Params.Add('BusyTimeout=5000');
         Connection.Params.Add('CharacterSet=utf8');
+        if ADbKey <> '' then
+            ApplyEncryptionParams(Connection.Params, ADbKey);
         // FireDAC перед каждым оператором сбрасывает busy_timeout в ноль,
         // если у оператора LockWait=False (дефолт)
         Connection.UpdateOptions.LockWait := True;
@@ -659,15 +669,39 @@ begin
     end;
 end;
 
+// Материал ключа шифрования из settings.json для консольных команд.
+// Сначала берётся per-DB профиль конкретного файла, при пустом -
+// глобальный слот настроек (ключи, сохранённые до появления профилей).
+// Консоль работает в том же каталоге, что и GUI, и под тем же
+// пользователем, поэтому DPAPI-блоб разбирается штатно. Для режима
+// passphrase без "запомнить" ключа нет нигде - вернётся ''
+// и команда упадёт с ошибкой NOTADB (диалог ввода фразы - этап UI)
+function ConsoleDbKeyMaterial(const ADbFile: string): string;
+var
+    M: ISettingsManager;
+begin
+    M := TSettingsManager.Create;
+    try
+        M.Load;
+        Result := DbKeyMaterial(GetDbProfile(M.Data, ADbFile));
+        if Result = '' then
+            Result := DbKeyMaterial(M.Data.Db);
+    finally
+        M := nil;
+    end;
+end;
+
 // Открывает существующий файл БД с рабочими PRAGMA и выполняет действие.
 // Исключения маппятся в коды возврата консольных команд.
 function ExecuteWithConnection(const ADbFile: string;
-    const AAction: TFunc<TFDConnection, Integer>): Integer;
+    const AAction: TFunc<TFDConnection, Integer>;
+    const ADbKey: string = ''): Integer;
 var
     Connection: TFDConnection;
     DriverLink: TFDPhysSQLiteDriverLink;
 begin
     DriverLink := TFDPhysSQLiteDriverLink.Create(nil);
+    ApplyEngineLinkage(DriverLink);
     Connection := TFDConnection.Create(nil);
     try
         Connection.Params.Add('DriverID=SQLite');
@@ -687,6 +721,8 @@ begin
         // выполняет свои PRAGMA уже на этапе открытия
         Connection.Params.Add('BusyTimeout=5000');
         Connection.Params.Add('CharacterSet=utf8');
+        if ADbKey <> '' then
+            ApplyEncryptionParams(Connection.Params, ADbKey);
         // FireDAC перед каждым оператором сбрасывает busy_timeout в ноль,
         // если у оператора LockWait=False (дефолт)
         Connection.UpdateOptions.LockWait := True;
@@ -771,7 +807,7 @@ begin
             end;
 
             Result := MIGRATE_EXIT_OK;
-        end);
+        end, ConsoleDbKeyMaterial(DbFile));
 end;
 
 function ExecuteBackupCommand(const Params: TCmdLineParams): Integer;
@@ -815,7 +851,7 @@ begin
             end;
 
             Result := MIGRATE_EXIT_OK;
-        end);
+        end, ConsoleDbKeyMaterial(DbFile));
 end;
 
 function ExecuteCheckDbCommand(const Params: TCmdLineParams): Integer;
@@ -875,7 +911,7 @@ begin
             finally
                 Problems.Free;
             end;
-        end);
+        end, ConsoleDbKeyMaterial(DbFile));
 end;
 
 function ExecuteNewDbCommand(const Params: TCmdLineParams): Integer;
@@ -909,6 +945,7 @@ begin
 
     Result := MIGRATE_EXIT_FAILED;
     DriverLink := TFDPhysSQLiteDriverLink.Create(nil);
+    ApplyEngineLinkage(DriverLink);
     Connection := TFDConnection.Create(nil);
     try
         try

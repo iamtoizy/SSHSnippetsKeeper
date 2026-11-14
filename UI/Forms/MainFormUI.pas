@@ -350,9 +350,15 @@ type
         procedure LoadUsersToComboBox;
         procedure ProcessCommandLineParams;
         function OpenDatabaseFile(const AFileName: string): Boolean;
+        procedure MaybeOfferDbEncryption;
+        function EnableDbEncryptionNow(AInitial: Boolean = False): Boolean;
+        function ResolveDbOpenKey(const AFileName: string): string;
+        function PromptImportDbKey(var AKey: string): Boolean;
+        procedure OfferDbKeyExport(const AKey: string);
+        function OpenDbKeyMaterial: string;
         procedure RunAutoBackupInBackground;
         procedure StartAutoBackupThread(const ADbFile: string;
-            AIntervalSeconds, AKeep: Integer);
+            AIntervalSeconds, AKeep: Integer; const ADbKey: string = '');
         procedure SelectWorkspaceByName(const AName: string);
         procedure UpdateMenuState;
         procedure UpdateFavoriteMenuState;
@@ -405,18 +411,25 @@ uses
     Core.Entities.Category,
     ChmodFormUI,
     Common.Consts,
+    Common.DbCrypto,
     Common.DraftStore,
     Common.Helpers,
+    Common.Settings,
     Core.MarkdownExporter,
     Core.MarkdownImporter,
     CronGenFormUI,
     Data.Database.Migrations,
+    Data.Database.Security,
+    Data.Database,
+    DbConvertProgressUI,
     EpochConverterFormUI,
     HistoryFormUI,
     HotkeyService,
+    InputFormUI,
     Core.LocalAIService,
     MacroInputTypes,
     NetworkFormUI,
+    PassphraseFormUI,
     PasswordGenFormUI,
     ProcessProfile,
     QuickSearchFormUI,
@@ -426,6 +439,8 @@ uses
     SnippetRunner,
     SnippetViewData,
     System.Math,
+    System.IOUtils,
+    System.NetEncoding,
     System.UITypes,
     TagEditorFormUI,
     TagSelectDialogUI,
@@ -478,6 +493,12 @@ begin
         try
             AppContext.DatabaseManager.CreateDatabase(SaveDialog.FileName);
             TStateMgr.Instance.CreateDatabase;
+
+            // Новая база сразу шифруется DPAPI: уведомляем, что ключ
+            // привязан к машине и тип шифрования меняется в настройках
+            if EnableDbEncryptionNow(True) then
+                MessagesHandler.ShowInfo(
+                    TUIStateLoader.GetMessage('DB.EncryptedOnCreateNotice'));
 
             LoadUsersToComboBox;  // Сначала выпадающий список
             cbUserChange(cbUser); // Применяем и перерисовываем дерево (ReloadUI)
@@ -573,13 +594,128 @@ begin
 end;
 
 function TMainForm.OpenDatabaseFile(const AFileName: string): Boolean;
+var
+    Key: string;
+    Plain, Resolved, Adopted: Boolean;
+    Setts: TAppSettings;
+    P: TDbSecurityProfile;
 begin
     Result := False;
     try
-        AppContext.DatabaseManager.OpenDatabase(AFileName);
+        Setts := AppContext.SettingsManager.Data;
+        // Фактическое состояние файла важнее флага настроек: флаг един
+        // на приложение и мог остаться от другой базы. Незашифрованный
+        // файл открываем без ключа, зашифрованный - с сохранённым
+        // ключом (даже если флаг уже указывал на другую базу). Если
+        // ключа в памяти нет (passphrase не сохранена), запрашиваем
+        // его до первой попытки: открытие без ключа даёт лишь
+        // бессмысленную ошибку "not a database"
+        Plain := DbFileIsPlain(AFileName);
+        Resolved := False;
+        Adopted := False;
+        Key := '';
+        if Plain then
+            (AppContext.DatabaseManager as TAppDatabase).EncryptionKey := ''
+        else
+        begin
+            // Ключ ищем сначала в профиле этой базы; при его отсутствии -
+            // в глобальном слоте (настройки могли остаться от другой
+            // базы). Подошедший базе глобальный ключ закрепляем в её
+            // профиле после открытия
+            Key := DbStoredKeyMaterial(GetDbProfile(Setts, AFileName));
+            if Key = '' then
+            begin
+                Key := DbStoredKeyMaterial(Setts.Db);
+                Adopted := Key <> '';
+            end;
+            if Key = '' then
+            begin
+                // Без DLL mc-движка диалог бесполезен: чистое сообщение
+                // про отсутствие библиотеки вместо сырой ошибки SQLite
+                if not DbEngineDllAvailable then
+                    raise Exception.Create(TUIStateLoader.GetMessage(
+                        'DB.EncryptionEngineMissing', [DbEngineDllPath]));
+                Key := ResolveDbOpenKey(AFileName);
+                if Key = '' then
+                    Exit; // Отмена диалога - не ошибка: выходим беззвучно
+                Resolved := True;
+            end;
+            (AppContext.DatabaseManager as TAppDatabase).EncryptionKey := Key;
+        end;
+        try
+            AppContext.DatabaseManager.OpenDatabase(AFileName);
+            // Флаг настроек молча подводим к факту открытого файла:
+            // предупреждать не о чем - после синхронизации настройки
+            // снова соответствуют реальности
+            if DbEncryptionEnabled(Setts.Db) <> (not Plain) then
+            begin
+                Setts.Db.DbDefined := True;
+                if Plain then
+                    Setts.Db.Encryption := DB_ENCRYPTION_NONE
+                else
+                    Setts.Db.Encryption := DB_ENCRYPTION_AES256;
+                AppContext.SettingsManager.Data := Setts;
+                AppContext.SettingsManager.Save;
+            end;
+        except
+            on E: Exception do
+            begin
+                // Незашифрованная база без ключа открыться не смогла -
+                // причина не в шифровании, не маскируем её диалогами
+                if Plain then
+                    raise;
+                // Зашифрованная база не открылась сохранённым ключом:
+                // перенесена с другой машины или ключ неизвестен
+                // (passphrase). В passphrase-режиме спрашиваем парольную
+                // фразу, в DPAPI-режиме предлагаем импорт ключа.
+                // Без DLL mc-движка диалог бесполезен: чистое сообщение
+                // про отсутствие библиотеки вместо сырой ошибки SQLite
+                if not DbEngineDllAvailable then
+                    raise Exception.Create(TUIStateLoader.GetMessage(
+                        'DB.EncryptionEngineMissing', [DbEngineDllPath]));
+                Key := ResolveDbOpenKey(AFileName);
+                if Key = '' then
+                    Exit; // Отмена диалога - не ошибка: выходим беззвучно
+                Resolved := True;
+                (AppContext.DatabaseManager as TAppDatabase).EncryptionKey := Key;
+                AppContext.DatabaseManager.OpenDatabase(AFileName);
+            end;
+        end;
+        // Диалоговый ключ закрепляем в профиле базы, чтобы она
+        // открывалась без диалогов при следующем запуске (passphrase -
+        // только по галке запоминания). Подошедший базе ключ глобального
+        // слота переносим в её профиль as-is. Флаг шифрования подводим
+        // к факту - файл зашифрован, даже если в настройках было выключено
+        if Resolved or Adopted then
+        begin
+            Setts := AppContext.SettingsManager.Data;
+            if Resolved then
+                PinDbKeyTo(Setts, AFileName, Key, False)
+            else
+            begin
+                P := GetDbProfile(Setts, AFileName);
+                P.KeyMode := Setts.Db.KeyMode;
+                P.Salt := Setts.Db.Salt;
+                P.RememberKey := Setts.Db.RememberKey;
+                // Passphrase без запоминания ключ на диск не пишет:
+                // чужой сохранённый блоб не превращаем в постоянный
+                if (P.KeyMode = DB_KEYMODE_PASSPHRASE) and
+                    (not P.RememberKey) then
+                    P.Key := ''
+                else
+                    P.Key := Setts.Db.Key;
+                SaveDbProfile(Setts, P);
+            end;
+            AppContext.SettingsManager.Data := Setts;
+            AppContext.SettingsManager.Save;
+        end;
         TStateMgr.Instance.OpenDatabase;
 
         PurgeStaleDrafts;
+
+        // Предложение шифрования на первом запуске: до старта потока
+        // автобэкапа, чтобы он не держал файл во время конверсии
+        MaybeOfferDbEncryption;
 
         // Автобэкап БД (включённость/интервал/ротация - в настройках):
         // фоновый поток на отдельном соединении, UI не блокируется.
@@ -614,6 +750,353 @@ begin
     end;
 end;
 
+// Первый запуск с открытой базой: предлагаем включить шифрование (DPAPI
+// этой машины). Спрашиваем один раз - флаг FirstRunPromptDone пишется
+// сразу после вопроса, независимо от ответа
+procedure TMainForm.MaybeOfferDbEncryption;
+var
+    Setts: TAppSettings;
+    Confirmed: Boolean;
+begin
+    Setts := AppContext.SettingsManager.Data;
+    // Без DLL mc-движка предложение бессмысленно; при появлении
+    // библиотеки вопрос покажется при следующем запуске
+    if Setts.Db.FirstRunPromptDone or DbEncryptionEnabled(Setts.Db) or
+        (not DbEngineDllAvailable) then
+        Exit;
+
+    Confirmed := MessagesHandler.AskWarning(
+        TUIStateLoader.GetMessage('DB.FirstRunEncryptAsk'),
+        TUIStateLoader.GetMessage('Common.Warning'));
+
+    Setts.Db.FirstRunPromptDone := True;
+    AppContext.SettingsManager.Data := Setts;
+    AppContext.SettingsManager.Save;
+
+    if Confirmed then
+        EnableDbEncryptionNow;
+end;
+
+// Включение шифрования немедленно (согласие в диалоге первого запуска):
+// автобэкап -> закрытие БД -> PRAGMA rekey -> настройки -> переоткрытие.
+// При сбое возвращаем рабочее состояние: файл остался с прежним ключом
+function TMainForm.EnableDbEncryptionNow(AInitial: Boolean): Boolean;
+var
+    DbFile, BackupFile, ErrMsg: string;
+    Setts: TAppSettings;
+    NewKey: string;
+    RawKey: TBytes;
+    DbApp: TAppDatabase;
+    P: TDbSecurityProfile;
+begin
+    Result := False;
+    DbFile := AppContext.DatabaseManager.DatabaseFile;
+    if (not AppContext.DatabaseManager.IsConnected) or
+        DbFile.IsEmpty or SameText(DbFile, ':memory:') then
+        Exit;
+
+    // Конверсия требует PRAGMA rekey mc-движка: на статическом FireDAC
+    // она невозможна
+    if not DbEngineDllAvailable then
+    begin
+        MessagesHandler.ShowError(
+            TUIStateLoader.GetMessage('Settings.DbEngineMissing'));
+        Exit;
+    end;
+
+    // Сверяем с фактическим файлом, а не с флагом настроек: если файл
+    // уже зашифрован - только подводим флаг к реальности
+    if not DbFileIsPlain(DbFile) then
+    begin
+        Setts := AppContext.SettingsManager.Data;
+        Setts.Db.DbDefined := True;
+        Setts.Db.Encryption := DB_ENCRYPTION_AES256;
+        AppContext.SettingsManager.Data := Setts;
+        AppContext.SettingsManager.Save;
+        Exit(True);
+    end;
+
+    Setts := AppContext.SettingsManager.Data;
+
+    // Новая база получает собственный свежий ключ: сохранённый ключ
+    // другой базы из настроек не переиспользуем
+    if AInitial then
+        NewKey := ''
+    else
+        NewKey := DbKeyMaterial(Setts.Db);
+    if NewKey = '' then
+    begin
+        RawKey := DbGenerateMasterKey;
+        try
+            NewKey := TNetEncoding.Base64.EncodeBytesToString(RawKey);
+        finally
+            WipeSecretBytes(RawKey);
+        end;
+    end;
+
+    try
+        if AInitial then
+            // Резервная копия новой пустой базы не нужна
+            BackupFile := ''
+        else
+            BackupFile := CreateAutoBackupStandalone(DbFile,
+                Setts.Backup.IntervalSeconds, Setts.Backup.Keep, True,
+                DbKeyMaterial(Setts.Db));
+        AppContext.DatabaseManager.CloseDatabase;
+        if not ConvertDbWithProgress(
+            TUIStateLoader.GetMessage('Settings.DbConversionTitle'),
+            TUIStateLoader.GetMessage('Settings.DbConversionInProgress'),
+            DbFile, '', NewKey, AppContext, ErrMsg) then
+            raise Exception.Create(ErrMsg);
+        Setts.Db.DbDefined := True;
+        Setts.Db.Encryption := DB_ENCRYPTION_AES256;
+        Setts.Db.KeyMode := DB_KEYMODE_DPAPI;
+        Setts.Db.RememberKey := True;
+        Setts.Db.Salt := '';
+        Setts.Db.Key := NewKey;
+        // Профиль этой базы получает собственную копию ключа: глобальный
+        // слот позже может уйти к другой базе
+        P := GetDbProfile(Setts, DbFile);
+        P.KeyMode := Setts.Db.KeyMode;
+        P.RememberKey := Setts.Db.RememberKey;
+        P.Salt := Setts.Db.Salt;
+        P.Key := Setts.Db.Key;
+        SaveDbProfile(Setts, P);
+        AppContext.SettingsManager.Data := Setts;
+        AppContext.SettingsManager.Save;
+        DbApp := AppContext.DatabaseManager as TAppDatabase;
+        DbApp.EncryptionKey := NewKey;
+        AppContext.DatabaseManager.OpenDatabase(DbFile);
+        TStateMgr.Instance.OpenDatabase;
+        // Копия снята до конверсии открытой базы - она в открытом виде
+        if BackupFile <> '' then
+            MessagesHandler.ShowInfo(TUIStateLoader.GetMessage(
+                'Settings.DbBackupUnencrypted', [BackupFile]));
+        // При создании базы факт шифрования сообщает отдельное
+        // уведомление о привязке ключа к машине
+        if not AInitial then
+            ShowSimpleToast(TUIStateLoader.GetMessage('DB.EncryptionEnabled'));
+        Result := True;
+    except
+        on E: Exception do
+        begin
+            MessagesHandler.ShowError(TUIStateLoader.GetMessage(
+                'DB.EncryptionEnableFailed', [E.Message]));
+            try
+                DbApp := AppContext.DatabaseManager as TAppDatabase;
+                DbApp.EncryptionKey := '';
+                AppContext.DatabaseManager.OpenDatabase(DbFile);
+                TStateMgr.Instance.OpenDatabase;
+            except
+            end;
+        end;
+    end;
+    // Ключ создан заново: предлагаем сохранить его в файл сразу, пока
+    // он не утерян (и при первом запуске, и при включении из настроек)
+    if Result then
+        OfferDbKeyExport(NewKey);
+end;
+
+// Предложение сохранить ключ базы в зашифрованный JSON сразу после
+// включения шифрования: без файла ключ теряется при переносе базы на
+// другую машину. Отказ безопасен - ключ остаётся в настройках машины
+procedure TMainForm.OfferDbKeyExport(const AKey: string);
+var
+    Pass1, KeyJson, OutFile: string;
+    RawKey: TBytes;
+    SaveDlg: TSaveDialog;
+begin
+    if AKey = '' then
+        Exit;
+    if not MessagesHandler.AskWarning(
+        TUIStateLoader.GetMessage('Settings.DbExportOfferAsk'),
+        TUIStateLoader.GetMessage('Common.Warning')) then
+        Exit;
+
+    Pass1 := '';
+    if not ShowPasswordConfirmForm(
+        TUIStateLoader.GetMessage('Settings.DbExportPassphrase'),
+        TUIStateLoader.GetMessage('Settings.DbExportPassphraseConfirm'),
+        TUIStateLoader.GetMessage('Settings.DbPassphraseMismatch'),
+        AppContext, Pass1) then
+        Exit;
+
+    RawKey := TNetEncoding.Base64.DecodeStringToBytes(AKey);
+    try
+        KeyJson := DbExportKeyToJson(Pass1, RawKey);
+    finally
+        WipeSecretBytes(RawKey);
+    end;
+
+    OutFile := '';
+    SaveDlg := TSaveDialog.Create(Self);
+    try
+        SaveDlg.Title := TUIStateLoader.GetMessage('Settings.DbExportTitle');
+        SaveDlg.Filter := 'JSON (*.json)|*.json';
+        SaveDlg.DefaultExt := 'json';
+        SaveDlg.FileName := Format('snippets-db-key-%s.json',
+            [FormatDateTime('yyyy-mm-dd_hh-nn-ss', Now)]);
+        SaveDlg.Options := SaveDlg.Options + [ofOverwritePrompt];
+        if SaveDlg.Execute(Handle) then
+        try
+            TFile.WriteAllText(SaveDlg.FileName, KeyJson, TEncoding.UTF8);
+            OutFile := SaveDlg.FileName;
+        except
+            on E: Exception do
+                MessagesHandler.ShowError(TUIStateLoader.GetMessage(
+                    'Settings.DbExportFailed', [E.Message]));
+        end;
+    finally
+        SaveDlg.Free;
+    end;
+
+    if OutFile <> '' then
+        MessagesHandler.ShowInfo(TUIStateLoader.GetMessage(
+            'Settings.DbExportDone', [OutFile]));
+end;
+
+// Зашифрованная база не открылась сохранённым ключом. Passphrase-режим:
+// до 3 попыток парольной фразы (ключ выводится из соли профиля базы,
+// при его отсутствии - из соли глобального слота), затем импорт ключа.
+// DPAPI-режим: база перенесена с другой машины - импорт ключа
+function TMainForm.ResolveDbOpenKey(const AFileName: string): string;
+var
+    Db: TDbSecuritySettings;
+    P: TDbSecurityProfile;
+    Pass, Key, SaltB64: string;
+    Salt: TBytes;
+    Attempt: Integer;
+begin
+    Result := '';
+    Db := AppContext.SettingsManager.Data.Db;
+    P := GetDbProfile(AppContext.SettingsManager.Data, AFileName);
+
+    // Соль для деривации берём из профиля базы; когда профиля ещё нет -
+    // из глобального слота (настройки могли остаться от другой базы).
+    // Обе соли пусты: выводить фразу не из чего - сразу предлагаем
+    // импорт ключа вместо тихого отказа
+    SaltB64 := '';
+    if (P.KeyMode = DB_KEYMODE_PASSPHRASE) and (P.Salt <> '') then
+        SaltB64 := P.Salt
+    else if (Db.KeyMode = DB_KEYMODE_PASSPHRASE) and (Db.Salt <> '') then
+        SaltB64 := Db.Salt;
+
+    if SaltB64 <> '' then
+    begin
+        for Attempt := 1 to 3 do
+        begin
+            Pass := '';
+            if not ShowInputForm(TUIStateLoader.GetMessage('DB.PassphrasePrompt'),
+                '', mitPassword, AppContext, Pass) then
+                Exit;
+            if Pass = '' then
+                Exit;
+            Salt := TNetEncoding.Base64.DecodeStringToBytes(SaltB64);
+            Key := TNetEncoding.Base64.EncodeBytesToString(
+                DbDeriveKey(Pass, Salt, DB_PBKDF2_ITERATIONS));
+            try
+                (AppContext.DatabaseManager as TAppDatabase).EncryptionKey := Key;
+                AppContext.DatabaseManager.OpenDatabase(AFileName);
+                Result := Key;
+                Exit;
+            except
+                on E: Exception do
+                    MessagesHandler.ShowWarning(
+                        TUIStateLoader.GetMessage('DB.PassphraseWrong'));
+            end;
+        end;
+    end;
+
+    if not MessagesHandler.AskWarning(
+        TUIStateLoader.GetMessage('DB.OpenKeyImportAsk'),
+        TUIStateLoader.GetMessage('Common.Warning')) then
+        Exit;
+    PromptImportDbKey(Result);
+end;
+
+// Диалог импорта ключа: файл JSON + парольная фраза файла.
+// Импортированный ключ не сохраняется в настройки здесь - решение
+// принимает вызывающий код после успешного открытия базы
+function TMainForm.PromptImportDbKey(var AKey: string): Boolean;
+var
+    InFile, KeyJson, Pass: string;
+    RawKey: TBytes;
+    OpenDlg: TOpenDialog;
+begin
+    Result := False;
+    AKey := '';
+    InFile := '';
+    OpenDlg := TOpenDialog.Create(Self);
+    try
+        OpenDlg.Title := TUIStateLoader.GetMessage('DB.KeyImportTitle');
+        OpenDlg.Filter := 'JSON (*.json)|*.json';
+        OpenDlg.Options := OpenDlg.Options + [ofFileMustExist];
+        if OpenDlg.Execute(Handle) then
+            InFile := OpenDlg.FileName;
+    finally
+        OpenDlg.Free;
+    end;
+    if InFile = '' then
+        Exit;
+
+    Pass := '';
+    if not ShowInputForm(TUIStateLoader.GetMessage('DB.KeyImportPassphrase'),
+        '', mitPassword, AppContext, Pass) then
+        Exit;
+    if Pass = '' then
+        Exit;
+
+    try
+        KeyJson := TFile.ReadAllText(InFile, TEncoding.UTF8);
+        RawKey := DbImportKeyFromJson(KeyJson, Pass);
+        try
+            AKey := TNetEncoding.Base64.EncodeBytesToString(RawKey);
+        finally
+            WipeSecretBytes(RawKey);
+        end;
+    except
+        on E: Exception do
+        begin
+            MessagesHandler.ShowError(TUIStateLoader.GetMessage(
+                'DB.KeyImportFailed', [E.Message]));
+            Exit;
+        end;
+    end;
+    Result := AKey <> '';
+end;
+
+// Фактический ключ текущего соединения: у открытой зашифрованной базы
+// берём ключ соединения - он мог быть введён диалогом и в настройках
+// отсутствовать (passphrase без запоминания). Запасные варианты -
+// профиль открытой базы, затем глобальный слот. Открытая база без
+// шифрования ключа не имеет вовсе: чужой ключ не подставляем
+function TMainForm.OpenDbKeyMaterial: string;
+var
+    DbFile: string;
+    DbApp: TAppDatabase;
+begin
+    Result := '';
+    if AppContext.DatabaseManager.IsConnected then
+    begin
+        DbFile := AppContext.DatabaseManager.DatabaseFile;
+        // Незашифрованный файл ключа не имеет, даже если настройки
+        // говорят об обратном
+        if DbFileIsPlain(DbFile) then
+            Exit;
+        DbApp := AppContext.DatabaseManager as TAppDatabase;
+        Result := DbApp.EncryptionKey;
+        if Result <> '' then
+            Exit;
+        // Ключ сессии неизвестен (passphrase не сохранена) - пробуем
+        // профиль этой базы
+        Result := DbKeyMaterial(GetDbProfile(
+            AppContext.SettingsManager.Data, DbFile));
+        if Result <> '' then
+            Exit;
+    end;
+    Result := DbKeyMaterial(AppContext.SettingsManager.Data.Db);
+end;
+
 // Автобэкап БД после открытия: фоновый поток + отдельное короткоживущее
 // соединение (VACUUM INTO), основное соединение и UI не блокируются.
 // Свежая копия (интервал из настроек) - тихий пропуск без тоста
@@ -632,14 +1115,16 @@ begin
     IntervalSeconds := AppContext.SettingsManager.Data.Backup.IntervalSeconds;
     Keep := AppContext.SettingsManager.Data.Backup.Keep;
 
-    StartAutoBackupThread(DbFile, IntervalSeconds, Keep);
+    // Ключ читается в главном потоке до старта фонового: доступ к настройкам
+    // из потока не потокобезопасен
+    StartAutoBackupThread(DbFile, IntervalSeconds, Keep, OpenDbKeyMaterial);
 end;
 
 // Общий стартер фонового автобэкапа (открытие БД и таймер): отдельное
 // короткоживущее соединение + VACUUM INTO, UI не блокируется.
 // FBackupRunning сериализует запуски - двух параллельных копий не бывает
 procedure TMainForm.StartAutoBackupThread(const ADbFile: string;
-    AIntervalSeconds, AKeep: Integer);
+    AIntervalSeconds, AKeep: Integer; const ADbKey: string);
 begin
     FBackupRunning := True;
 
@@ -652,7 +1137,7 @@ begin
             ErrorMsg := '';
             try
                 BackupFile := Data.Database.Migrations.CreateAutoBackupStandalone(
-                    ADbFile, AIntervalSeconds, AKeep);
+                    ADbFile, AIntervalSeconds, AKeep, False, ADbKey);
             except
                 on E: Exception do
                     ErrorMsg := E.Message;
@@ -704,7 +1189,7 @@ begin
     if not Data.Database.Migrations.AutoBackupDue(DbFile, IntervalSeconds) then
         Exit;
 
-    StartAutoBackupThread(DbFile, IntervalSeconds, Keep);
+    StartAutoBackupThread(DbFile, IntervalSeconds, Keep, OpenDbKeyMaterial);
 end;
 
 procedure TMainForm.ProcessCommandLineParams;

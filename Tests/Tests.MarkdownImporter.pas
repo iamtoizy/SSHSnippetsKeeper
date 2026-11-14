@@ -159,6 +159,7 @@ uses
     CategoryService,
     Core.Entities.Category,
     Core.Entities.Snippet,
+    Data.Database.Security,
     FireDAC.Comp.Script,
     FireDAC.Comp.ScriptCommands,
     FireDAC.ConsoleUI.Wait,
@@ -923,7 +924,10 @@ begin
 end;
 
 initialization
+    // Первый link процесса задаёт параметры драйвера FireDAC: переводим
+    // на sqlite3mc_x64.dll (см. ApplyEngineLinkage)
     GDriverLink := TFDPhysSQLiteDriverLink.Create(nil);
+    ApplyEngineLinkage(GDriverLink);
 
 finalization
     GDriverLink.Free;

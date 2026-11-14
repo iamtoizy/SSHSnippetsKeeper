@@ -100,15 +100,12 @@ begin
 end;
 
 function TUserRepository.Add(const User: TUserDTO): Integer;
-var
-    NewID: Variant;
 begin
-    // Безопасная вставка, исключающая гонку потоков
-    NewID := ExecuteSQLScalar(
-        'INSERT INTO users (name, created_at) VALUES (?, ?) RETURNING id',
-        [User.Name, User.CreatedAt]
-    );
-    Result := Integer(NewID);
+    // last_insert_rowid вместо RETURNING id - совместимо со старой
+    // FDE-сборкой SQLite; функция привязана к соединению сессии
+    ExecuteSQL('INSERT INTO users (name, created_at) VALUES (?, ?)',
+        [User.Name, User.CreatedAt]);
+    Result := Integer(ExecuteSQLScalar('SELECT last_insert_rowid()', []));
 end;
 
 procedure TUserRepository.Update(const User: TUserDTO);

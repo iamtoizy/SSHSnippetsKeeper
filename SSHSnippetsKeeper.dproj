@@ -219,6 +219,15 @@
         <DCCReference Include="UI\Forms\InputFormUI.pas">
             <Form>InputForm</Form>
         </DCCReference>
+        <DCCReference Include="UI\Forms\PassphraseFormUI.pas">
+            <Form>PassphraseForm</Form>
+        </DCCReference>
+        <DCCReference Include="UI\Forms\DbConvertProgressUI.pas">
+            <Form>DbConvertProgressForm</Form>
+        </DCCReference>
+        <DCCReference Include="UI\Forms\DbProfilesFormUI.pas">
+            <Form>DbProfilesForm</Form>
+        </DCCReference>
         <DCCReference Include="UI\Forms\ParamsFormUI.pas">
             <Form>ParamsForm</Form>
         </DCCReference>

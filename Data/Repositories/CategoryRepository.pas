@@ -304,7 +304,9 @@ begin
 
         Q := CreateQuery;
         try
-            Q.SQL.Text := 'INSERT INTO snippet_categories (user_id, name, parent_id, sort_order) VALUES (:uid, :name, :pid, :ord) RETURNING id';
+            // last_insert_rowid вместо RETURNING id - совместимо со старой
+            // FDE-сборкой SQLite; внутри транзакции на том же соединении
+            Q.SQL.Text := 'INSERT INTO snippet_categories (user_id, name, parent_id, sort_order) VALUES (:uid, :name, :pid, :ord)';
             Q.ParamByName('uid').AsInteger := UserID;
             Q.ParamByName('name').AsString := Name;
             Q.ParamByName('pid').DataType := ftInteger;
@@ -313,8 +315,8 @@ begin
             else
                 Q.ParamByName('pid').AsInteger := ParentID;
             Q.ParamByName('ord').AsInteger := MaxOrder;
-            Q.Open;
-            Result := Q.Fields[0].AsInteger;
+            Q.ExecSQL;
+            Result := Q.Connection.ExecSQLScalar('SELECT last_insert_rowid()');
         finally
             Q.Free;
         end;
