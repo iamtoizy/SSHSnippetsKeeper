@@ -258,6 +258,37 @@ object SettingsForm: TSettingsForm
         Caption = #1057#1080#1085#1093#1088#1086#1085#1080#1079#1072#1094#1080#1103' '#1087#1088#1080' '#1079#1072#1082#1088#1099#1090#1080#1080' '#1087#1088#1080#1083#1086#1078#1077#1085#1080#1103
         TabOrder = 3
       end
+      object cbAutoExport: TCheckBox
+        Left = 3
+        Top = 99
+        Width = 574
+        Height = 17
+        Caption = #1055#1077#1088#1080#1086#1076#1080#1095#1077#1089#1082#1072#1103' '#1089#1080#1085#1093#1088#1086#1085#1080#1079#1072#1094#1080#1103' '#1089' Markdown-'#1093#1088#1072#1085#1080#1083#1080#1097#1077#1084
+        TabOrder = 4
+      end
+      object lbAutoExportInterval: TLabel
+        Left = 3
+        Top = 126
+        Width = 63
+        Height = 15
+        Caption = #1048#1085#1090#1077#1088#1074#1072#1083#58
+      end
+      object cbAutoExportInterval: TComboBox
+        Left = 120
+        Top = 122
+        Width = 180
+        Height = 23
+        Style = csDropDownList
+        ItemIndex = 2
+        TabOrder = 5
+        Items.Strings = (
+          '1 minute'
+          '2 minutes'
+          '5 minutes'
+          '10 minutes'
+          '15 minutes'
+          '30 minutes')
+      end
     end
     object tsApplications: TTabSheet
       Caption = #1055#1088#1080#1083#1086#1078#1077#1085#1080#1103

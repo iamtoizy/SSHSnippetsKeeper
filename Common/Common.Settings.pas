@@ -519,6 +519,7 @@ const
     DEFAULT_BACKUP_INTERVAL_SECONDS = 86400;
     DEFAULT_BACKUP_KEEP = 3;
     DEFAULT_SCAN_INTERVAL_MINUTES = 30;
+    DEFAULT_AUTOEXPORT_INTERVAL_MINUTES = 5;
     DEFAULT_QS_MODIFIERS = MOD_ALT;
     DEFAULT_QS_KEY = Ord('Q');
     DEFAULT_PG_MODIFIERS = MOD_CONTROL or MOD_ALT;
@@ -697,6 +698,11 @@ begin
     FSettings.SecurityBackgroundScanIntervalMinutes := DEFAULT_SCAN_INTERVAL_MINUTES;
     FSettings.SecurityBackgroundScanDefined := True;
 
+    // Периодический экспорт в Vault: включён, раз в 5 минут
+    FSettings.AutoExportEnabled := True;
+    FSettings.AutoExportIntervalMinutes := DEFAULT_AUTOEXPORT_INTERVAL_MINUTES;
+    FSettings.AutoExportDefined := True;
+
     // Дефолты для глобальных горячих клавиш
     FSettings.Hotkeys.QuickSearch.Modifiers := DEFAULT_QS_MODIFIERS;
     FSettings.Hotkeys.QuickSearch.Key := DEFAULT_QS_KEY;
@@ -823,6 +829,15 @@ begin
             FSettings.SecurityBackgroundScanDefined := True;
         end;
 
+        // Узел периодического экспорта: в старом settings.json его нет —
+        // восстанавливаем дефолты (экспорт включён, раз в 5 минут)
+        if not FSettings.AutoExportDefined then
+        begin
+            FSettings.AutoExportEnabled := True;
+            FSettings.AutoExportIntervalMinutes := DEFAULT_AUTOEXPORT_INTERVAL_MINUTES;
+            FSettings.AutoExportDefined := True;
+        end;
+
         // Узел шифрования БД: в старом settings.json его нет - дефолты
         if not FSettings.Db.DbDefined then
             ApplyDbSecurityDefaults(FSettings);
@@ -856,6 +871,8 @@ begin
             FSettings.Backup.Keep := DEFAULT_BACKUP_KEEP;
         if FSettings.SecurityBackgroundScanIntervalMinutes <= 0 then
             FSettings.SecurityBackgroundScanIntervalMinutes := DEFAULT_SCAN_INTERVAL_MINUTES;
+        if FSettings.AutoExportIntervalMinutes <= 0 then
+            FSettings.AutoExportIntervalMinutes := DEFAULT_AUTOEXPORT_INTERVAL_MINUTES;
 
         // 2. Глобальные горячие клавиши
         if FSettings.Hotkeys.QuickSearch.Key = 0 then

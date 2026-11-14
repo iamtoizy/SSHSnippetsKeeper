@@ -49,6 +49,12 @@ type
         procedure Load_NormalizesLegacyDpapi2Prefix;
         [Test]
         procedure Load_CorruptFile_FallsBackToDefaults;
+        [Test]
+        procedure SaveLoad_Roundtrip_PreservesAutoExport;
+        [Test]
+        procedure Load_MissingAutoExportNode_RestoresDefaults;
+        [Test]
+        procedure Load_BadAutoExportInterval_FallsBackToDefault;
     end;
 
     [TestFixture]
@@ -342,6 +348,65 @@ begin
     S := M.Data;
     Assert.AreEqual('ru', S.CurrentLanguage);
     Assert.AreEqual(10, S.WindowHelper.KeyPressInterval);
+    M := nil;
+end;
+
+procedure TSettingsManagerTests.SaveLoad_Roundtrip_PreservesAutoExport;
+var
+    M1, M2: ISettingsManager;
+    S: TAppSettings;
+begin
+    M1 := TSettingsManager.Create;
+    S := M1.Data;
+    S.AutoExportEnabled := True;
+    S.AutoExportIntervalMinutes := 15;
+    S.AutoExportDefined := True;
+    M1.Data := S;
+    M1.Save;
+    M1 := nil;
+
+    M2 := TSettingsManager.Create;
+    M2.Load;
+    S := M2.Data;
+    Assert.AreEqual(True, S.AutoExportEnabled);
+    Assert.AreEqual(15, S.AutoExportIntervalMinutes);
+    Assert.AreEqual(True, S.AutoExportDefined);
+    M2 := nil;
+end;
+
+procedure TSettingsManagerTests.Load_MissingAutoExportNode_RestoresDefaults;
+var
+    M: ISettingsManager;
+    S: TAppSettings;
+begin
+    // Файл от версии без узла периодического экспорта
+    TFile.WriteAllText(SettingsPath, '{"CurrentLanguage":"en"}', TEncoding.UTF8);
+
+    M := TSettingsManager.Create;
+    M.Load;
+    S := M.Data;
+    Assert.AreEqual('en', S.CurrentLanguage);
+    Assert.AreEqual(True, S.AutoExportEnabled);
+    Assert.AreEqual(5, S.AutoExportIntervalMinutes);
+    Assert.AreEqual(True, S.AutoExportDefined);
+    M := nil;
+end;
+
+procedure TSettingsManagerTests.Load_BadAutoExportInterval_FallsBackToDefault;
+var
+    M: ISettingsManager;
+    S: TAppSettings;
+begin
+    TFile.WriteAllText(SettingsPath,
+        '{"AutoExportEnabled":true,"AutoExportIntervalMinutes":0,"AutoExportDefined":true}',
+        TEncoding.UTF8);
+
+    M := TSettingsManager.Create;
+    M.Load;
+    S := M.Data;
+    Assert.AreEqual(True, S.AutoExportEnabled);
+    Assert.AreEqual(5, S.AutoExportIntervalMinutes);
+    Assert.AreEqual(True, S.AutoExportDefined);
     M := nil;
 end;
 

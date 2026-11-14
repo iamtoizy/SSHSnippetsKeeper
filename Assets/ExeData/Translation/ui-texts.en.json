@@ -1096,6 +1096,12 @@
     "cbSyncOnExit": {
       "Caption": "Sync with Markdown vault on database close"
     },
+    "cbAutoExport": {
+      "Caption": "Periodic sync with Markdown vault"
+    },
+    "lbAutoExportInterval": {
+      "Caption": "Interval:"
+    },
     "tsGeneral": {
       "Caption": "General"
     },
@@ -1640,6 +1646,12 @@
       "ScanInterval3h": "3 hours",
       "ScanInterval12h": "12 hours",
       "ScanInterval24h": "24 hours",
+      "AutoExportInterval1m": "1 minute",
+      "AutoExportInterval2m": "2 minutes",
+      "AutoExportInterval5m": "5 minutes",
+      "AutoExportInterval10m": "10 minutes",
+      "AutoExportInterval15m": "15 minutes",
+      "AutoExportInterval30m": "30 minutes",
       "ScanFindingsOne": "Secret scan: %d new snippet with findings (total: %d)",
       "ScanFindingsFew": "Secret scan: %d new snippets with findings (total: %d)",
       "ScanFindingsMany": "Secret scan: %d new snippets with findings (total: %d)",

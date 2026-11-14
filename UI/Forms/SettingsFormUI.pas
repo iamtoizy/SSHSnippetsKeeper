@@ -63,6 +63,9 @@ type
         bSelectVaultPath: TButton;
         cbSyncOnStart: TCheckBox;
         cbSyncOnExit: TCheckBox;
+        cbAutoExport: TCheckBox;
+        lbAutoExportInterval: TLabel;
+        cbAutoExportInterval: TComboBox;
         cbTagsMatchAll: TCheckBox;
         cbSecurityStrict: TCheckBox;
         tsSecurity: TTabSheet;
@@ -175,6 +178,9 @@ type
         function IndexToInterval(AIndex: Integer): Integer;
         function ScanIntervalToIndex(AMinutes: Integer): Integer;
         function IndexToScanInterval(AIndex: Integer): Integer;
+        procedure FillAutoExportIntervalCombo;
+        function AutoExportIntervalToIndex(AMinutes: Integer): Integer;
+        function IndexToAutoExportInterval(AIndex: Integer): Integer;
         function TryNormalizeAppName(var AName: string; const AIgnoreExisting: string): Boolean;
         function GetAppProfile(const AExeName: string): TAllowedApplicationsItem;
         procedure UpdateProfileButtonState;
@@ -280,7 +286,12 @@ begin
 
     cbSyncOnStart.Checked := Setts.SyncOnStart;
     cbSyncOnExit.Checked := Setts.SyncOnExit;
-    // -----------------------------------
+
+    // --- Периодический экспорт в Vault ---
+    FillAutoExportIntervalCombo;
+    cbAutoExport.Checked := Setts.AutoExportEnabled;
+    cbAutoExportInterval.ItemIndex := AutoExportIntervalToIndex(Setts.AutoExportIntervalMinutes);
+    // --------------------------------------
 
     cbTagsMatchAll.Checked := Setts.TagsMatchAll;
     cbSecurityStrict.Checked := Setts.SecurityScanStrict;
@@ -617,6 +628,48 @@ begin
         Result := 30
     else
         Result := SECURITY_SCAN_INTERVAL_MINUTES[AIndex];
+end;
+
+const
+    // Пункты комбобокса периодики экспорта в Vault: значения в минутах
+    // и суффиксы ключей локализации Settings.AutoExportInterval<суффикс>
+    AUTOEXPORT_INTERVAL_MINUTES: array [0..5] of Integer =
+        (1, 2, 5, 10, 15, 30);
+    AUTOEXPORT_INTERVAL_KEYS: array [0..5] of string =
+        ('1m', '2m', '5m', '10m', '15m', '30m');
+
+procedure TSettingsForm.FillAutoExportIntervalCombo;
+var
+    I: Integer;
+begin
+    cbAutoExportInterval.Items.BeginUpdate;
+    try
+        cbAutoExportInterval.Items.Clear;
+        for I := Low(AUTOEXPORT_INTERVAL_MINUTES) to High(AUTOEXPORT_INTERVAL_MINUTES) do
+            cbAutoExportInterval.Items.Add(TUIStateLoader.GetMessage(
+                'Settings.AutoExportInterval' + AUTOEXPORT_INTERVAL_KEYS[I]));
+    finally
+        cbAutoExportInterval.Items.EndUpdate;
+    end;
+end;
+
+function TSettingsForm.AutoExportIntervalToIndex(AMinutes: Integer): Integer;
+var
+    I: Integer;
+begin
+    Result := 2; // Неизвестное значение - дефолт (5 минут)
+    for I := Low(AUTOEXPORT_INTERVAL_MINUTES) to High(AUTOEXPORT_INTERVAL_MINUTES) do
+        if AUTOEXPORT_INTERVAL_MINUTES[I] = AMinutes then
+            Exit(I);
+end;
+
+function TSettingsForm.IndexToAutoExportInterval(AIndex: Integer): Integer;
+begin
+    if (AIndex < Low(AUTOEXPORT_INTERVAL_MINUTES)) or
+        (AIndex > High(AUTOEXPORT_INTERVAL_MINUTES)) then
+        Result := 5
+    else
+        Result := AUTOEXPORT_INTERVAL_MINUTES[AIndex];
 end;
 
 procedure TSettingsForm.UpdateBackupLastCopyLabel;
@@ -1856,7 +1909,12 @@ begin
     Setts.SyncDirectory := Trim(ledMarkdownPath.Text);
     Setts.SyncOnStart := cbSyncOnStart.Checked;
     Setts.SyncOnExit := cbSyncOnExit.Checked;
-    // -----------------------------------------
+
+    // --- Периодический экспорт в Vault ---
+    Setts.AutoExportEnabled := cbAutoExport.Checked;
+    Setts.AutoExportIntervalMinutes := IndexToAutoExportInterval(cbAutoExportInterval.ItemIndex);
+    Setts.AutoExportDefined := True;
+    // --------------------------------------
 
     Setts.TagsMatchAll := cbTagsMatchAll.Checked;
     Setts.SecurityScanStrict := cbSecurityStrict.Checked;
@@ -1985,6 +2043,8 @@ begin
             .Append(Trim(ledMarkdownPath.Text)).Append('|')
             .Append(cbSyncOnStart.Checked).Append('|')
             .Append(cbSyncOnExit.Checked).Append('|')
+            .Append(cbAutoExport.Checked).Append('|')
+            .Append(cbAutoExportInterval.ItemIndex).Append('|')
             .Append(cbTagsMatchAll.Checked).Append('|')
             .Append(cbSecurityStrict.Checked).Append('|')
             .Append(cbSecurityBackground.Checked).Append('|')

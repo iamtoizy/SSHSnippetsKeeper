@@ -212,6 +212,15 @@ type
         SyncOnStart: Boolean;
         SyncOnExit: Boolean;
 
+        // Периодический экспорт в Vault по таймеру: страховка от сбоя
+        // или потери питания. True = раз в AutoExportIntervalMinutes
+        // минут выполняется фоновая синхронизация Vault
+        AutoExportEnabled: Boolean;
+        // Минуты между экспортами (типовое значение 5)
+        AutoExportIntervalMinutes: Integer;
+        // Маркер инициализации: False = старый settings.json без этих полей
+        AutoExportDefined: Boolean;
+
         // Фильтр по тегам: True = сниппет должен иметь все выбранные теги
         TagsMatchAll: Boolean;
 

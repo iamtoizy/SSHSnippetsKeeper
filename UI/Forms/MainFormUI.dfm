@@ -6403,4 +6403,10 @@ object MainForm: TMainForm
     Left = 324
     Top = 217
   end
+  object tmrAutoExport: TTimer
+    Interval = 30000
+    OnTimer = tmrAutoExportTimer
+    Left = 388
+    Top = 217
+  end
 end

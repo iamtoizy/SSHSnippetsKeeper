@@ -192,6 +192,7 @@ type
         puFavMove: TMenuItem;
         actSnippetHistory: TAction;
         tmrAutoSync: TTimer;
+        tmrAutoExport: TTimer;
         procedure actAddCategoryExecute(Sender: TObject);
         procedure actAddSnippetExecute(Sender: TObject);
         procedure actAddTagExecute(Sender: TObject);
@@ -281,6 +282,7 @@ type
         procedure ListSplitterMoved(Sender: TObject);
         procedure FormResize(Sender: TObject);
         procedure tmrAutoSyncTimer(Sender: TObject);
+        procedure tmrAutoExportTimer(Sender: TObject);
         procedure tmrSearchTimerTimer(Sender: TObject);
         procedure tmrBackupTimer(Sender: TObject);
         procedure tvCategoriesClick(Sender: TObject);
@@ -299,6 +301,8 @@ type
         FCloseAfterTypingStop: Boolean;
         tmrCloseAfterTyping: TTimer;
         FNoSyncMode: Boolean;
+        // Точка отсчёта периодического экспорта в Vault: 0 = не запущен
+        FAutoExportLast: TDateTime;
         FCmdProcessed: Boolean;
         FPurgedStaleDrafts: Boolean;
         FBackupRunning: Boolean;
@@ -4029,6 +4033,37 @@ end;
 procedure TMainForm.tmrAutoSyncTimer(Sender: TObject);
 begin
     GetSyncEngine.HandleAutoSyncTick;
+end;
+
+procedure TMainForm.tmrAutoExportTimer(Sender: TObject);
+var
+    Setts: TAppSettings;
+begin
+    if not (Assigned(AppContext.DatabaseManager) and AppContext.DatabaseManager.IsConnected) then
+    begin
+        FAutoExportLast := 0;
+        Exit;
+    end;
+
+    Setts := AppContext.SettingsManager.Data;
+    if FNoSyncMode or (not Setts.AutoExportEnabled) or (Setts.AutoExportIntervalMinutes <= 0) then
+        Exit;
+
+    // Первый тик после подключения: фиксируем точку отсчёта
+    if FAutoExportLast = 0 then
+    begin
+        FAutoExportLast := Now;
+        Exit;
+    end;
+
+    // Страховка от сбоя/потери питания: та же изолированная синхронизация
+    // Vault, что и по кнопке/на выходе; гвард PerformSync не даст
+    // пересечься с ручной синхронизацией
+    if MinutesBetween(Now, FAutoExportLast) >= Setts.AutoExportIntervalMinutes then
+    begin
+        FAutoExportLast := Now;
+        PerformSync(True);
+    end;
 end;
 
 procedure TMainForm.tmrSearchTimerTimer(Sender: TObject);

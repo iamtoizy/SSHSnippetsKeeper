@@ -1096,6 +1096,12 @@
     "cbSyncOnExit": {
       "Caption": "Синхронизация с Markdown-хранилищем при закрытии базы данных"
     },
+    "cbAutoExport": {
+      "Caption": "Периодическая синхронизация с Markdown-хранилищем"
+    },
+    "lbAutoExportInterval": {
+      "Caption": "Интервал:"
+    },
     "tsGeneral": {
       "Caption": "Общие"
     },
@@ -1640,6 +1646,12 @@
       "ScanInterval3h": "3 часа",
       "ScanInterval12h": "12 часов",
       "ScanInterval24h": "24 часа",
+      "AutoExportInterval1m": "1 минута",
+      "AutoExportInterval2m": "2 минуты",
+      "AutoExportInterval5m": "5 минут",
+      "AutoExportInterval10m": "10 минут",
+      "AutoExportInterval15m": "15 минут",
+      "AutoExportInterval30m": "30 минут",
       "ScanFindingsOne": "Проверка секретов: %d новый сниппет с находками (всего: %d)",
       "ScanFindingsFew": "Проверка секретов: %d новых сниппета с находками (всего: %d)",
       "ScanFindingsMany": "Проверка секретов: %d новых сниппетов с находками (всего: %d)",

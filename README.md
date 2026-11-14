@@ -387,6 +387,8 @@ sudo systemctl restart nginx
 
 Двусторонняя синхронизация выгружает сниппеты в локальную папку в виде Markdown-файлов и подтягивает изменения обратно (**Ctrl+Alt+Shift+E**). Импорт/экспорт реализован в `Core.MarkdownExporter` и `Core.MarkdownImporter`, оркестрация — `UI/Controllers/SyncController`. Тот же формат использует плоский экспорт выделенных сниппетов (см. [Цепочки и массовые операции](#цепочки-и-массовые-операции)).
 
+Помимо синхронизации при открытии/закрытии базы есть периодическая страховка: раз в N минут (по умолчанию 5, интервал и вкл/выкл — в настройках на вкладке «Markdown-синхронизация») выполняется та же фоновая синхронизация. Каждая база выгружается в собственный подкаталог хранилища (`<хранилище>\<имя базы>`), поэтому данные разных баз не смешиваются.
+
 ## AI-ассистент
 
 Два режима, конфигурация — в форме настроек AI:
@@ -396,7 +398,7 @@ sudo systemctl restart nginx
 
 ## Тесты
 
-Юнит-тесты на DUnitX (консольный раннер): 41 группа / 539 тестов — консольные ключи (`Tests.CmdLine`), миграции БД и резервные копии (`Tests.DbMigrations`), репозитории и сервисы на in-memory SQLite через FireDAC (`Tests.Chains`, `Tests.MultiSelect`, `Tests.SearchTags`), язык запросов (`Tests.QueryLanguage`), макро-движок (`Tests.MacroEngine`, `Tests.MacroInputTypes`, `Tests.MacroCounters`, `Tests.MacroBuilder`, `Tests.MacroCardController`), подсветка синтаксиса (`Tests.MacroSyn`, `Tests.CustomBashSyn`, `Tests.SynHighlighterFactory`), определение языка сниппета (`Tests.SnippetLanguages`, `Tests.SnippetLanguageDetect`, `Tests.SnippetLanguageNB`), утилиты (`Tests.EpochService`, `Tests.HotkeyService`, `Tests.PasswordService`, `Tests.TextDiff`), настройки (`Tests.Settings`), шифрование базы (`Tests.DatabaseEncryption`).
+Юнит-тесты на DUnitX (консольный раннер): 52 группы / 548 тестов — консольные ключи (`Tests.CmdLine`), миграции БД и резервные копии (`Tests.DbMigrations`), репозитории и сервисы на in-memory SQLite через FireDAC (`Tests.Chains`, `Tests.MultiSelect`, `Tests.SearchTags`), язык запросов (`Tests.QueryLanguage`), макро-движок (`Tests.MacroEngine`, `Tests.MacroInputTypes`, `Tests.MacroCounters`, `Tests.MacroBuilder`, `Tests.MacroCardController`), подсветка синтаксиса (`Tests.MacroSyn`, `Tests.CustomBashSyn`, `Tests.SynHighlighterFactory`), определение языка сниппета (`Tests.SnippetLanguages`, `Tests.SnippetLanguageDetect`, `Tests.SnippetLanguageNB`), утилиты (`Tests.EpochService`, `Tests.HotkeyService`, `Tests.PasswordService`, `Tests.TextDiff`), настройки (`Tests.Settings`), шифрование базы (`Tests.DatabaseEncryption`).
 
 Сборка и запуск — проверенная команда (из корня репозитория):
 
@@ -408,8 +410,8 @@ Tests\bin\Win64\Debug\SSHSnippetsKeeperTests.exe
 Код выхода: `0` — все тесты прошли, `1` — есть упавшие, `2` — ошибка запуска. Тесты шифрования базы (`Tests.DatabaseEncryption`) требуют `sqlite3mc_x64.dll` рядом с тестовым exe - без библиотеки эта группа пропускается. Ожидаемый итог:
 
 ```
-Tests Found   : 539
-Tests Passed  : 539
+Tests Found   : 548
+Tests Passed  : 548
 Tests Failed  : 0
 Tests Errored : 0
 ```
