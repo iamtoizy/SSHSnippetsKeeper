@@ -97,7 +97,7 @@
 | FireDAC + SQLite | Локальная база данных |
 | SQLite3 Multiple Ciphers (`sqlite3mc_x64.dll`) | Шифрование базы данных (опционально, DLL рядом с exe) |
 | SynEdit | Редактор кода с подсветкой и автодополнением |
-| Python4Delphi | Встраивание Python для локальной LLM (llama-cpp-python) |
+| Python4Delphi | Встраивание Python для локальной LLM (llama-cpp-python); включается директивой `SSK_PYTHON`, по умолчанию отключено |
 | HtmlViewer | Просмотр HTML-контента |
 | FastMM5 | Менеджер памяти (Debug-сборка) |
 | DUnitX | Юнит-тесты |
@@ -177,12 +177,19 @@ SSHSnippetsKeeper/
 
 ### Встраиваемый Python (опционально, для локального AI)
 
-Основное приложение собирается и работает без Python. Локальная LLM требует:
+Поддержка локального AI на python4delphi **отключена на уровне компиляции**: по умолчанию юнит `Core.LocalAIService` не подключает `PythonEngine`/`VarPyth`, поэтому приложение не пытается загрузить `python3xx.dll` и не показывает системное окно «Error N: Could not open Dll ...» на машинах без Python. Интерфейс `ILocalAIService` при этом остаётся рабочим — `IsPythonAvailable` возвращает `False`, а `LoadModel`, `Ask` и `InstallLlamaModule` сообщают, что интерпретатор не найден.
+
+Директива называется **`SSK_PYTHON`** и по умолчанию не определена. Чтобы включить локальный AI:
+
+- в IDE — *Project → Options → Building → Delphi Compiler → Advanced → Conditional defines*, добавить `SSK_PYTHON`;
+- из командной строки — `msbuild SSHSnippetsKeeper.dproj /p:Config=Release /p:Platform=Win64 /p:DCC_Define=SSK_PYTHON` (переопределяет директивы конфигурации).
+
+После включения локальная LLM требует:
 
 1. Скачайте **Windows embeddable package** Python 3.13 с [python.org](https://www.python.org/downloads/windows/) — разрядность должна совпадать с разрядностью сборки приложения (для Win64 — 64-bit) — и распакуйте в `Assets\ExeData\Python\` (папка исключена из git через `.gitignore`);
 2. Модуль `llama-cpp-python` устанавливается из интерфейса настроек AI (кнопка установки модуля), GGUF-модель указывается там же.
 
-Без встроенного Python приложение попробует найти системный Python через реестр (Python4Delphi).
+Без встроенного Python приложение попробует найти системный Python через реестр (Python4Delphi) — это работает только в сборке с `SSK_PYTHON`.
 
 ---
 
@@ -394,7 +401,7 @@ sudo systemctl restart nginx
 Два режима, конфигурация — в форме настроек AI:
 
 - **Облачные провайдеры** — наборы хабов и моделей (пресеты Yandex AI Studio: YandexGPT 5 Lite, DeepSeek V4 Flash, Alice AI, режим Agents). API-ключи хранятся локально в `settings.json` в зашифрованном виде (DPAPI, см. [Безопасность](#безопасность)) и в git не попадают. Ассистент генерирует команды по текстовому запросу и очищает ответ от разметки перед вставкой в сниппет;
-- **Локальная модель** — llama-cpp-python c GGUF-моделью на встраиваемом Python (см. [Сборка](#сборка-из-исходников)). Полностью офлайн.
+- **Локальная модель** — llama-cpp-python c GGUF-моделью на встраиваемом Python (требует сборки с директивой `SSK_PYTHON`, см. [Сборка](#сборка-из-исходников)). Полностью офлайн.
 
 ## Тесты
 

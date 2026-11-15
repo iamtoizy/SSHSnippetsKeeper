@@ -4,21 +4,29 @@ interface
 
 uses
     Core.Interfaces.Tools,
-    PythonEngine,
     System.Classes,
     System.IOUtils,
-    System.SysUtils,
-    VarPyth
+    System.SysUtils
+    {$IFDEF SSK_PYTHON}
+    , PythonEngine
+    , VarPyth
+    {$ENDIF}
     ;
 
 type
     TLocalAIService = class(TInterfacedObject, ILocalAIService)
     private
+        {$IFDEF SSK_PYTHON}
         FEngine: TPythonEngine;
+        {$ENDIF}
         FIsLoaded: Boolean;
         FOwnsEngine: Boolean;
     public
+        {$IFDEF SSK_PYTHON}
         constructor Create(Engine: TPythonEngine = nil);
+        {$ELSE}
+        constructor Create(Engine: Pointer = nil);
+        {$ENDIF}
         destructor Destroy; override;
 
         function LoadModel(const GgufPath: string): Boolean;
@@ -36,6 +44,7 @@ uses
     Common.Localization
     ;
 
+{$IFDEF SSK_PYTHON}
 constructor TLocalAIService.Create(Engine: TPythonEngine);
 begin
     inherited Create;
@@ -54,6 +63,9 @@ begin
         // Отключаем жесткую привязку
         FEngine.AutoLoad := False;
         FEngine.FatalAbort := False; // Не убивать программу при ошибках
+        // Без этого P4D показывает системный MessageBox «Error N: Could not open
+        // Dll ...» на машине без Python; ошибку логируем сами
+        FEngine.FatalMsgDlg := False;
 
         // Включаем умный поиск в реестре (HKLM и HKCU)
         FEngine.UseLastKnownVersion := True;
@@ -69,14 +81,27 @@ begin
         end;
     end;
 end;
+{$ELSE}
+constructor TLocalAIService.Create(Engine: Pointer);
+begin
+    inherited Create;
+    // Python4Delphi отключён (SSK_PYTHON не определена): интерпретатор
+    // недоступен, но интерфейс ILocalAIService остаётся рабочим
+    FIsLoaded := False;
+    FOwnsEngine := False;
+end;
+{$ENDIF}
 
 destructor TLocalAIService.Destroy;
 begin
+    {$IFDEF SSK_PYTHON}
     if FOwnsEngine and Assigned(FEngine) then
         FEngine.Free;
+    {$ENDIF}
     inherited Destroy;
 end;
 
+{$IFDEF SSK_PYTHON}
 function TLocalAIService.InstallLlamaModule(out Log: string): Boolean;
 var
     PySys: Variant;
@@ -105,7 +130,15 @@ begin
             Log := TUIStateLoader.GetMessage('AI.PipCallError', [E.Message]);
     end;
 end;
+{$ELSE}
+function TLocalAIService.InstallLlamaModule(out Log: string): Boolean;
+begin
+    Result := False;
+    Log := TUIStateLoader.GetMessage('AI.PythonNotFound');
+end;
+{$ENDIF}
 
+{$IFDEF SSK_PYTHON}
 function TLocalAIService.IsLlamaModuleInstalled: Boolean;
 begin
     if not IsPythonAvailable then Exit(False);
@@ -118,6 +151,12 @@ begin
         Result := False;
     end;
 end;
+{$ELSE}
+function TLocalAIService.IsLlamaModuleInstalled: Boolean;
+begin
+    Result := False;
+end;
+{$ENDIF}
 
 function TLocalAIService.IsModelLoaded: Boolean;
 begin
@@ -126,9 +165,14 @@ end;
 
 function TLocalAIService.IsPythonAvailable: Boolean;
 begin
+    {$IFDEF SSK_PYTHON}
     Result := Assigned(FEngine) and FEngine.IsHandleValid;
+    {$ELSE}
+    Result := False;
+    {$ENDIF}
 end;
 
+{$IFDEF SSK_PYTHON}
 function TLocalAIService.LoadModel(const GgufPath: string): Boolean;
 var
     PyMain: Variant;
@@ -168,7 +212,14 @@ begin
         end;
     end;
 end;
+{$ELSE}
+function TLocalAIService.LoadModel(const GgufPath: string): Boolean;
+begin
+    Result := False;
+end;
+{$ENDIF}
 
+{$IFDEF SSK_PYTHON}
 function TLocalAIService.Ask(const SystemPrompt, UserPrompt: string): string;
 var
     PyMain: Variant;
@@ -189,5 +240,11 @@ begin
             Result := TUIStateLoader.GetMessage('AI.AskCallError', [E.Message]);
     end;
 end;
+{$ELSE}
+function TLocalAIService.Ask(const SystemPrompt, UserPrompt: string): string;
+begin
+    Result := TUIStateLoader.GetMessage('AI.PythonNotFound');
+end;
+{$ENDIF}
 
 end.
