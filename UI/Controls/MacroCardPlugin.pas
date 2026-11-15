@@ -68,6 +68,7 @@ const
     CardAlphaNormal = 100;
     CardAlphaSelected = 140;
     CardAlphaUnknown = 120;
+    LOAD_LIBRARY_SEARCH_SYSTEM32 = $00000800;
 
 var
     AlphaLib: THandle = 0;
@@ -89,7 +90,7 @@ begin
         Exit;
 
     if AlphaLib = 0 then
-        AlphaLib := LoadLibrary(msimg32);
+        AlphaLib := LoadLibraryEx(msimg32, 0, LOAD_LIBRARY_SEARCH_SYSTEM32);
     if AlphaLib = 0 then
         Exit;
 
