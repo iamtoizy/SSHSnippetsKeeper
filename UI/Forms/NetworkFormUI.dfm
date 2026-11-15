@@ -41,6 +41,8 @@ object NetworkForm: TNetworkForm
       Height = 23
       TabOrder = 0
       OnChange = cbIPInputChange
+      OnExit = cbIPInputExit
+      OnKeyDown = cbIPInputKeyDown
       OnKeyPress = cbIPInputKeyPress
     end
   end
@@ -273,7 +275,7 @@ object NetworkForm: TNetworkForm
           MaxValue = 0
           MinValue = 32
           TabOrder = 0
-          Value = 0
+          Value = 32
           OnChange = seVLSMChange
         end
         object bCopyVLSM: TButton

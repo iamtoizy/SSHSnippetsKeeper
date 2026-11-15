@@ -36,7 +36,8 @@ type
         // Диагностика отсутствующих строк. GetMessage - горячий путь (сотни
         // вызовов, в том числе из фоновых потоков), поэтому он никогда не
         // блокирует и ничего не показывает: промахи копятся здесь, а отчёт
-        // показывает UI из главного потока (UI.Services.LocalizationDiagnostics)
+        // показывает UI из главного потока (UI.Services.LocalizationDiagnostics).
+        // GetHelpTexts тоже пишет промахи сюда, а не бросает исключение.
         class function HasPendingLocalizationIssues: Boolean;
         class function TakePendingLocalizationIssues: TArray<TLocalizationIssue>;
         class procedure ClearPendingLocalizationIssues;
@@ -318,19 +319,13 @@ begin
 
         if not Assigned(CurrentVal) then
         begin
-{$IFDEF DEBUG}
-            raise Exception.Create('ERROR: Cannot find key "' + Tokens[I] + '"!' + sLineBreak +
-                        'Current object contents:' + sLineBreak +
-                        CurrentObj.ToString);
-{$ENDIF}
+            RecordLocalizationIssue(BasePath, likKeyNotFound);
             Exit;
         end;
 
         if not (CurrentVal is TJSONObject) then
         begin
-{$IFDEF DEBUG}
-            raise Exception.Create('ERROR: Key "' + Tokens[I] + '" found, but it is NOT an object (possibly already a string?)');
-{$ENDIF}
+            RecordLocalizationIssue(BasePath, likInvalidStructure);
             Exit;
         end;
 

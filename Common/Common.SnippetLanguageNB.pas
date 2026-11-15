@@ -1,4 +1,4 @@
-unit Common.SnippetLanguageNB;
+﻿unit Common.SnippetLanguageNB;
 
 // Наивный Байесовский классификатор языков скриптов (bash / bat / powershell).
 //
@@ -147,7 +147,7 @@ begin
     if ((C >= 'a') and (C <= 'z')) or ((C >= 'A') and (C <= 'Z')) or
         ((C >= '0') and (C <= '9')) or (C = '_') or (C = '-') or (C = '$') then
         Exit(True);
-    Result := (Ord(C) >= $80) and TCharacter.IsLetterOrDigit(C);
+    Result := (Ord(C) >= $80) and C.IsLetterOrDigit;
 end;
 
 // Операторные символы: извлекаются последовательностями ('|', '||', '&&',
@@ -252,7 +252,7 @@ begin
                     else if C < #$00C0 then
                         LC := C // ASCII вне 'A'..'Z' менять не нужно
                     else
-                        LC := TCharacter.ToLower(C);
+                        LC := LC.ToLower;
                     Buf[Len] := LC;
                     Inc(Len);
                 end;

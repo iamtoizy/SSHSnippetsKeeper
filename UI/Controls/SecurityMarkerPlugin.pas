@@ -1,4 +1,4 @@
-unit SecurityMarkerPlugin;
+﻿unit SecurityMarkerPlugin;
 
 interface
 
@@ -47,6 +47,10 @@ type
     end;
 
 implementation
+
+uses
+    System.Classes
+    ;
 
 { TSecurityMarkerPlugin }
 

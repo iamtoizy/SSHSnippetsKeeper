@@ -25,7 +25,6 @@ object CompletionManagerForm: TCompletionManagerForm
     Align = alClient
     TabOrder = 0
     OnChange = pcMainChange
-    ExplicitHeight = 431
     object tsBash: TTabSheet
       Caption = 'Bash'
       object pBashCmds: TPanel
@@ -36,7 +35,6 @@ object CompletionManagerForm: TCompletionManagerForm
         Align = alRight
         BevelOuter = bvNone
         TabOrder = 0
-        ExplicitHeight = 401
         object lvBashCmds: TListView
           Left = 0
           Top = 0
@@ -48,7 +46,6 @@ object CompletionManagerForm: TCompletionManagerForm
           TabOrder = 0
           ViewStyle = vsList
           OnSelectItem = lvSelectItem
-          ExplicitHeight = 401
         end
       end
       object tvBash: TTreeView
@@ -64,9 +61,6 @@ object CompletionManagerForm: TCompletionManagerForm
         OnChange = tvChange
         OnDragDrop = tvDragDrop
         OnDragOver = tvDragOver
-        ExplicitLeft = 5
-        ExplicitWidth = 397
-        ExplicitHeight = 401
       end
     end
     object tsBat: TTabSheet
@@ -108,9 +102,6 @@ object CompletionManagerForm: TCompletionManagerForm
         OnChange = tvChange
         OnDragDrop = tvDragDrop
         OnDragOver = tvDragOver
-        ExplicitLeft = 5
-        ExplicitWidth = 397
-        ExplicitHeight = 401
       end
     end
     object tsPowerShell: TTabSheet
@@ -152,9 +143,6 @@ object CompletionManagerForm: TCompletionManagerForm
         OnChange = tvChange
         OnDragDrop = tvDragDrop
         OnDragOver = tvDragOver
-        ExplicitLeft = 5
-        ExplicitWidth = 397
-        ExplicitHeight = 401
       end
     end
   end
@@ -166,7 +154,6 @@ object CompletionManagerForm: TCompletionManagerForm
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitTop = 431
     object gbTree: TGroupBox
       Left = 0
       Top = 0

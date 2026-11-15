@@ -139,7 +139,7 @@ object ArchiveBuilderForm: TArchiveBuilderForm
       object cbSplit: TCheckBox
         Left = 235
         Top = 194
-        Width = 160
+        Width = 157
         Height = 17
         Caption = #1056#1072#1079#1073#1080#1090#1100' '#1085#1072' '#1090#1086#1084#1072' ('#1052#1041'):'
         TabOrder = 7

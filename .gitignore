@@ -94,6 +94,9 @@ Styles/
 # Артефакты сборки тестов
 Tests/bin/
 
+# Бинарник SQLite3MultipleCiphers из пиннованного релиза (см. README) - не в репо
+vendor/SQLite3MultipleCiphers/
+
 # Generated version resource (built by Tools\make-version.ps1)
 Resources/SSHSnippetsKeeperVersion.rc
 Resources/SSHSnippetsKeeperVersion.res

@@ -299,7 +299,6 @@ end;
 procedure TSecurityScanController.RescanSnippet(SnippetID: Integer);
 var
     Snippet: TSnippetDTO;
-    ContentReason, CommentReason: string;
     Flagged, HadFlag: Boolean;
 begin
     // До первого скана сессии флаги не имеют смысла
@@ -318,8 +317,8 @@ begin
     else if Snippet.IsSecurityCheckIgnored then
         Flagged := False // доверенный: пользователь взял риск на себя
     else
-        Flagged := FAppContext.SecurityScanner.HasSensitiveData(Snippet.Content, ContentReason) or
-            FAppContext.SecurityScanner.HasSensitiveData(Snippet.Comment, CommentReason);
+        Flagged := FAppContext.SecurityScanner.ContainsSensitiveData(Snippet.Content) or
+            FAppContext.SecurityScanner.ContainsSensitiveData(Snippet.Comment);
 
     if Flagged then
         FFlaggedIDs.AddOrSetValue(SnippetID, True)

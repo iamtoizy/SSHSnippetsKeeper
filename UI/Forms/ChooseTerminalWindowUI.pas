@@ -237,7 +237,7 @@ procedure TChooseTerminalWindow.ConfirmSelection;
 begin
     if lvTerminalList.Selected <> nil then
     begin
-        FSelectedWindow := FWindows[Integer(lvTerminalList.Selected.Data)];
+        FSelectedWindow := FWindows[Integer(IntPtr(lvTerminalList.Selected.Data))];
         ModalResult := mrOk;
     end;
 end;
@@ -247,7 +247,7 @@ begin
     if Index < lvTerminalList.Items.Count then
     begin
         lvTerminalList.ItemIndex := Index;
-        FSelectedWindow := FWindows[Integer(lvTerminalList.Items[Index].Data)];
+        FSelectedWindow := FWindows[Integer(IntPtr(lvTerminalList.Items[Index].Data))];
         ModalResult := mrOk;
     end;
 end;
@@ -387,8 +387,8 @@ end;
 procedure TChooseTerminalWindow.lvTerminalListSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
 begin
     if Selected and (Item <> nil) and
-        (Integer(Item.Data) >= 0) and (Integer(Item.Data) <= High(FWindows)) then
-        UpdatePreview(FWindows[Integer(Item.Data)].HWND)
+        (Integer(IntPtr(Item.Data)) >= 0) and (Integer(IntPtr(Item.Data)) <= High(FWindows)) then
+        UpdatePreview(FWindows[Integer(IntPtr(Item.Data))].HWND)
     else
         UpdatePreview(0);
 end;

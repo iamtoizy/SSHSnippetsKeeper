@@ -71,7 +71,6 @@ type
         procedure cbRecursiveClick(Sender: TObject);
         procedure cbSeparateModeClick(Sender: TObject);
         procedure cbSmartExecuteClick(Sender: TObject);
-        procedure OnChownOrFlagChange(Sender: TObject);
     private
         type
             TChmodPresetData = class(TPresetData)
@@ -154,11 +153,11 @@ begin
     ebSymbolic.OnChange := edSymbolicChange;
     ebSymbolic.OnExit   := edSymbolicExit;
 
-    cbUser.OnChange := OnChownOrFlagChange;
-    cbGroup.OnChange := OnChownOrFlagChange;
-    cbFileName.OnChange := OnChownOrFlagChange;
-    cbIsDir.OnClick := OnChownOrFlagChange;
-    cbRecursive.OnClick := OnChownOrFlagChange;
+    cbUser.OnChange := OnCheckboxChange;
+    cbGroup.OnChange := OnCheckboxChange;
+    cbFileName.OnChange := OnCheckboxChange;
+    cbIsDir.OnClick := OnCheckboxChange;
+    cbRecursive.OnClick := OnCheckboxChange;
 
     bCopyCommand.OnClick := bCopyCommandClick;
     cbPresets.OnChange := cbPresetsChange;
@@ -453,16 +452,6 @@ begin
         ebSymbolic.Text := TChmodService.BitsToSymbolic(GetBitsFromUI(), cbIsDir.Checked);
 end;
 
-procedure TChmodForm.OnChownOrFlagChange(Sender: TObject);
-begin
-    if not FUpdatingUI then
-    begin
-        cbPresets.ItemIndex := -1;
-        if Assigned(bDeletePreset) then bDeletePreset.Enabled := False;
-        UpdateOutputs(GetBitsFromUI());
-    end;
-end;
-
 procedure TChmodForm.bCopyCommandClick(Sender: TObject);
 var
     Setts: TAppSettings;
@@ -495,7 +484,7 @@ begin
         cbIsDir.Checked := True;
 
     // Обязательно вызываем общий метод обновления, чтобы перестроилась строка
-    OnChownOrFlagChange(Sender);
+    OnCheckboxChange(Sender);
 end;
 
 procedure TChmodForm.cbSeparateModeClick(Sender: TObject);
@@ -508,7 +497,7 @@ begin
         // Умный X и Раздельный режим несовместимы
         cbSmartExecute.Checked := False;
     end;
-    OnChownOrFlagChange(Sender);
+    OnCheckboxChange(Sender);
 end;
 
 procedure TChmodForm.cbSmartExecuteClick(Sender: TObject);
@@ -520,7 +509,7 @@ begin
         cbIsDir.Checked := True;
         cbSeparateMode.Checked := False; // Взаимоисключение
     end;
-    OnChownOrFlagChange(Sender);
+    OnCheckboxChange(Sender);
 end;
 
 procedure TChmodForm.DoInitialize;

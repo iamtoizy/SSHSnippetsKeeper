@@ -1,0 +1,16 @@
+title = "SSHSnippetsKeeper gitleaks allowlist"
+
+[extend]
+useDefault = true
+
+[allowlist]
+  description = "Сторонний код (vendor/ThirdParty) и тест-фикстуры с заведомо фейковыми секретами и стандартными крипто-векторами"
+  paths = [
+    '''(?i)^vendor/''',
+    '''(?i)^thirdparty/''',
+    '''^Assets/RAW security tests\.txt$''',
+    '''^Assets/Тесты security\.txt$''',
+    '''^Tests/Tests\.SecurityReport\.pas$''',
+    '''^Tests/Tests\.Settings\.pas$''',
+    '''^Tests/Tests\.DbCrypto\.pas$''',
+  ]

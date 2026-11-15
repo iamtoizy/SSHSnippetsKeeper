@@ -233,10 +233,12 @@ begin
     // Свой link - страховка для процесса, где этот путь единственный
     // пользователь FireDAC; параметры драйвера в любом случае берутся
     // из первого зарегистрированного link-компонента
-    DriverLink := TFDPhysSQLiteDriverLink.Create(nil);
-    ApplyEngineLinkage(DriverLink);
-    Connection := TFDConnection.Create(nil);
+    DriverLink := nil;
+    Connection := nil;
     try
+        DriverLink := TFDPhysSQLiteDriverLink.Create(nil);
+        ApplyEngineLinkage(DriverLink);
+        Connection := TFDConnection.Create(nil);
         Connection.Params.Add('DriverID=SQLite');
         Connection.Params.Add('Database=' + ADatabaseFile);
         // WAL слить в основной файл: rekey перекодирует только страницы

@@ -1792,7 +1792,7 @@
       "DbApplyDoneOn": "База данных зашифрована.",
       "DbApplyDoneOff": "Шифрование базы данных снято.",
       "DbApplyFailed": "Не удалось изменить шифрование: %s",
-      "DbEngineMissing": "Библиотека шифрования sqlite3mc_x64.dll не найдена — шифрование базы данных недоступно.",
+      "DbEngineMissing": "sqlite3mc_x64.dll не найдена — шифрование недоступно.",
       "DbDllHelpTitle": "Библиотека шифрования sqlite3mc_x64.dll",
       "DbDllHelpBody": "<h3>Откуда взять библиотеку</h3><p>Библиотека <code>sqlite3mc_x64.dll</code> (движок шифрования SQLite3 Multiple Ciphers) не входит в поставку приложения. Скачай архив <code>sqlite3mc-2.6.1-sqlite-3.54.0-win64.zip</code> из официального релиза v2.6.1 и скопируй файл <code>dll\\sqlite3mc_x64.dll</code> из архива в папку рядом с <code>SSHSnippetsKeeper.exe</code>, затем перезапусти приложение.</p><p><a href=\"https://github.com/utelle/SQLite3MultipleCiphers/releases/tag/v2.6.1\">Релиз v2.6.1 на GitHub</a></p><h3>Проверка целостности</h3><p>SHA256 файла <code>sqlite3mc_x64.dll</code> из релиза: <code>683927DB7E16CCA301C5F2A236830DE28C26B47F01D948F6ABF2F0D60776CE4D</code> (2 542 416 байт, SQLite 3.54.0). Проверь командой <code>certutil -hashfile sqlite3mc_x64.dll SHA256</code>. В релизе есть файл <code>sqlite3mc-2.6.1-SHA256SUMS</code> с контрольными суммами и его подпись (Sigstore Cosign).</p><h3>Альтернатива</h3><p>Библиотеку можно собрать самостоятельно из исходников тега <code>v2.6.1</code> (лицензия MIT, © Ulrich Telle) — если использование сторонних бинарников запрещено политикой безопасности.</p>",
       "DbConversionTitle": "Преобразование базы данных",

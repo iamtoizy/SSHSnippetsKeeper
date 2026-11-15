@@ -147,7 +147,7 @@ begin
     if Item = nil then
         Exit;
 
-    UserID := Integer(Item.Data);
+    UserID := Integer(IntPtr(Item.Data));
     UserName := Item.Caption;
 
     if not MessagesHandler.AskWarning(
@@ -198,7 +198,7 @@ begin
         Exit;
     end;
 
-    UserID := Integer(Item.Data);
+    UserID := Integer(IntPtr(Item.Data));
 
     try
         UserDTO := Default(TUserDTO);

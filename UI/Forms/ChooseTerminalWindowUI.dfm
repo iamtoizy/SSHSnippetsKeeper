@@ -5,9 +5,9 @@ object ChooseTerminalWindow: TChooseTerminalWindow
   Caption = #1042#1099#1073#1086#1088' '#1090#1077#1088#1084#1080#1085#1072#1083#1072
   ClientHeight = 333
   ClientWidth = 780
+  Color = clBtnFace
   Constraints.MinHeight = 220
   Constraints.MinWidth = 480
-  Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -12
@@ -23,6 +23,20 @@ object ChooseTerminalWindow: TChooseTerminalWindow
   OnResize = FormResize
   OnShow = FormShow
   TextHeight = 15
+  object splPreview: TSplitter
+    Left = 0
+    Top = 334
+    Width = 780
+    Height = 6
+    Cursor = crVSplit
+    Align = alTop
+    AutoSnap = False
+    MinSize = 90
+    ResizeStyle = rsUpdate
+    Visible = False
+    OnCanResize = splPreviewCanResize
+    OnMoved = splPreviewMoved
+  end
   object pTop: TPanel
     Left = 0
     Top = 0
@@ -38,14 +52,15 @@ object ChooseTerminalWindow: TChooseTerminalWindow
     object ebFilter: TEdit
       Left = 4
       Top = 5
-      Width = 424
+      Width = 343
       Height = 24
       Align = alClient
       TabOrder = 0
       OnChange = ebFilterChange
+      ExplicitHeight = 23
     end
     object pViewButtons: TPanel
-      Left = 428
+      Left = 347
       Top = 5
       Width = 429
       Height = 24
@@ -53,11 +68,11 @@ object ChooseTerminalWindow: TChooseTerminalWindow
       BevelOuter = bvNone
       TabOrder = 1
       object sbManager: TSpeedButton
+        AlignWithMargins = True
         Left = 0
         Top = 0
         Width = 80
         Height = 24
-        AlignWithMargins = True
         Margins.Left = 0
         Margins.Top = 0
         Margins.Right = 1
@@ -67,11 +82,11 @@ object ChooseTerminalWindow: TChooseTerminalWindow
         OnClick = sbManagerClick
       end
       object sbTiles: TSpeedButton
-        Left = 0
+        AlignWithMargins = True
+        Left = 81
         Top = 0
         Width = 70
         Height = 24
-        AlignWithMargins = True
         Margins.Left = 0
         Margins.Top = 0
         Margins.Right = 1
@@ -80,13 +95,14 @@ object ChooseTerminalWindow: TChooseTerminalWindow
         GroupIndex = 1
         Caption = #1055#1083#1080#1090#1082#1080
         OnClick = ViewButtonClick
+        ExplicitLeft = 0
       end
       object sbTable: TSpeedButton
-        Left = 71
+        AlignWithMargins = True
+        Left = 152
         Top = 0
         Width = 73
         Height = 24
-        AlignWithMargins = True
         Margins.Left = 0
         Margins.Top = 0
         Margins.Right = 1
@@ -95,13 +111,14 @@ object ChooseTerminalWindow: TChooseTerminalWindow
         GroupIndex = 1
         Caption = #1058#1072#1073#1083#1080#1094#1072
         OnClick = ViewButtonClick
+        ExplicitLeft = 71
       end
       object sbGroup: TSpeedButton
-        Left = 145
+        AlignWithMargins = True
+        Left = 226
         Top = 0
         Width = 72
         Height = 24
-        AlignWithMargins = True
         Margins.Left = 0
         Margins.Top = 0
         Margins.Right = 1
@@ -111,13 +128,14 @@ object ChooseTerminalWindow: TChooseTerminalWindow
         GroupIndex = 2
         Caption = #1043#1088#1091#1087#1087#1099
         OnClick = sbGroupClick
+        ExplicitLeft = 145
       end
       object sbPreview: TSpeedButton
-        Left = 218
+        AlignWithMargins = True
+        Left = 299
         Top = 0
         Width = 130
         Height = 24
-        AlignWithMargins = True
         Margins.Left = 0
         Margins.Top = 0
         Margins.Right = 0
@@ -127,6 +145,7 @@ object ChooseTerminalWindow: TChooseTerminalWindow
         GroupIndex = 3
         Caption = #9650' '#1055#1088#1077#1076#1087#1088#1086#1089#1084#1086#1090#1088
         OnClick = sbPreviewClick
+        ExplicitLeft = 218
       end
     end
   end
@@ -156,26 +175,11 @@ object ChooseTerminalWindow: TChooseTerminalWindow
       Layout = tlCenter
     end
   end
-  object splPreview: TSplitter
-    Left = 0
-    Top = 334
-    Width = 780
-    Height = 6
-    Align = alTop
-    AutoSnap = False
-    MinSize = 90
-    ResizeStyle = rsUpdate
-    Visible = False
-    OnCanResize = splPreviewCanResize
-    OnMoved = splPreviewMoved
-    ExplicitTop = 334
-    ExplicitWidth = 780
-  end
   object lvTerminalList: TListView
     Left = 0
-    Top = 34
+    Top = 340
     Width = 780
-    Height = 280
+    Height = 82
     Align = alClient
     Columns = <
       item

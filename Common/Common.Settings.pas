@@ -124,6 +124,34 @@ begin
     ABytes := nil;
 end;
 
+// XORSHIFT-раунд детерминированной энтропии. Вынесен в отдельную функцию,
+// чтобы смена {$Q} была локализована в одном маленьком блоке, а не в теле
+// BuildSecretEntropy. Пара {$IFOPT}/{$DEFINE}/{$IFDEF} восстанавливает
+// исходное состояние Q (включая случай, когда Q- задан снаружи).
+procedure FillEntropyXorShift(var ARaw: TBytes);
+var
+    X: UInt32;
+    I: Integer;
+begin
+{$IFOPT Q+}
+{$DEFINE SSK_ENTROPY_Q_RESTORE}
+{$Q-}
+{$ENDIF}
+    X := $9E3779B9;
+    for I := 0 to High(ARaw) do
+    begin
+        X := X xor (X shl 13);
+        X := X xor (X shr 17);
+        X := X xor (X shl 5);
+        X := X + $85EBCA6B + UInt32(I) * $C2B2AE3D;
+        ARaw[I] := Byte(X shr ((I and 3) shl 3));
+    end;
+{$IFDEF SSK_ENTROPY_Q_RESTORE}
+{$UNDEF SSK_ENTROPY_Q_RESTORE}
+{$Q+}
+{$ENDIF}
+end;
+
 // Детерминированная энтропия DPAPI. Это КОНСТАНТА приложения, а НЕ секрет:
 // она выводится из бинарника. Модель угроз: CryptProtectData привязывает
 // данные к пользователю Windows, энтропия дополнительно - к приложению,
@@ -134,28 +162,10 @@ function BuildSecretEntropy: TBytes;
 var
     Raw: TBytes;
     Hasher: THashSHA2;
-    X: UInt32;
-    I: Integer;
 begin
     SetLength(Raw, 64);
     try
-{$IFOPT Q+}
-{$DEFINE ENTROPY_Q_RESTORE}
-{$Q-}
-{$ENDIF}
-        X := $9E3779B9;
-        for I := 0 to High(Raw) do
-        begin
-            X := X xor (X shl 13);
-            X := X xor (X shr 17);
-            X := X xor (X shl 5);
-            X := X + $85EBCA6B + UInt32(I) * $C2B2AE3D;
-            Raw[I] := Byte(X shr ((I and 3) shl 3));
-        end;
-{$IFDEF ENTROPY_Q_RESTORE}
-{$UNDEF ENTROPY_Q_RESTORE}
-{$Q+}
-{$ENDIF}
+        FillEntropyXorShift(Raw);
         Hasher := THashSHA2.Create(SHA256);
         Hasher.Update(Raw);
         Result := Hasher.HashAsBytes;

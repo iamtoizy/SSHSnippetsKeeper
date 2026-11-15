@@ -308,7 +308,7 @@ var
     Children: TJSONObject;
 begin
     Result := TJSONObject.Create;
-    Result.AddPair('insert', FNodeInserts[Integer(Node.Data)]);
+    Result.AddPair('insert', FNodeInserts[Integer(IntPtr(Node.Data))]);
 
     if Node.HasChildren then
     begin
@@ -403,7 +403,7 @@ begin
     if Node <> nil then
     begin
         edName.Text := Node.Text;
-        edInsert.Text := FNodeInserts[Integer(Node.Data)];
+        edInsert.Text := FNodeInserts[Integer(IntPtr(Node.Data))];
     end
     else
     begin
@@ -637,7 +637,7 @@ begin
         Exit;
     end;
 
-    FNodeInserts[Integer(Node.Data)] := edInsert.Text;
+    FNodeInserts[Integer(IntPtr(Node.Data))] := edInsert.Text;
     Node.Text := Name;
 end;
 
@@ -688,7 +688,7 @@ begin
         Exit;
 
     // Индекс в полном списке движка хранится в Item.Data
-    Idx := Integer(Item.Data);
+    Idx := Integer(IntPtr(Item.Data));
     if (Idx < 0) or (Idx >= Cmds.Count) then
         Exit;
 

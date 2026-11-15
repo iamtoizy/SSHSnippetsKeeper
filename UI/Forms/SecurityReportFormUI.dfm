@@ -98,6 +98,7 @@ object SecurityReportForm: TSecurityReportForm
       Anchors = [akTop, akRight]
       Caption = 'bRescan'
       TabOrder = 1
+      OnClick = bRescanClick
     end
     object bClose: TButton
       Left = 658

@@ -25,6 +25,9 @@ type
     ISecurityScanner = interface
         ['{4BE7DF73-F059-4F22-B05D-330D07B6E655}']
         function HasSensitiveData(const Text: string; out Reason: string): Boolean;
+        // Быстрая проверка без причины: для мест, где сам факт находки
+        // важнее её текста (например, инкрементальный рескан одного сниппета)
+        function ContainsSensitiveData(const Text: string): Boolean;
         // Все находки с позициями (для подсветки в редакторе). Reason из
         // HasSensitiveData = Reason первого элемента результата: сначала
         // regex-детекторы в порядке добавления, затем энтропия
@@ -51,6 +54,7 @@ type
         // Маппинг настройки "Строгая проверка секретов" в режим сканера
         class function ScanModeFromSetting(AStrict: Boolean): TSecurityScanMode; static;
         function HasSensitiveData(const Text: string; out Reason: string): Boolean;
+        function ContainsSensitiveData(const Text: string): Boolean;
         function FindSensitiveRanges(const Text: string): TArray<TSecretRange>;
     end;
 
@@ -177,6 +181,13 @@ begin
         Reason := Ranges[0].Reason
     else
         Reason := '';
+end;
+
+function TSecurityScanner.ContainsSensitiveData(const Text: string): Boolean;
+var
+    Reason: string;
+begin
+    Result := HasSensitiveData(Text, Reason);
 end;
 
 function TSecurityScanner.FindSensitiveRanges(const Text: string): TArray<TSecretRange>;

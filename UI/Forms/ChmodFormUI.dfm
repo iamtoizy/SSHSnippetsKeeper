@@ -296,7 +296,6 @@ object ChmodForm: TChmodForm
       Height = 17
       Caption = 'sudo'
       TabOrder = 12
-      OnClick = OnChownOrFlagChange
     end
     object cbSmartExecute: TCheckBox
       Left = 11

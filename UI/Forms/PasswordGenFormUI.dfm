@@ -110,7 +110,7 @@ object PasswordGenForm: TPasswordGenForm
     Left = 8
     Top = 114
     Width = 505
-    Height = 237
+    Height = 235
     ActivePage = tsHistory
     TabOrder = 6
     OnChanging = pcHostChanging
@@ -118,7 +118,7 @@ object PasswordGenForm: TPasswordGenForm
       Caption = #1048#1089#1090#1086#1088#1080#1103
       object lvHistory: TListView
         Left = 0
-        Top = 24
+        Top = 22
         Width = 497
         Height = 183
         Align = alBottom
@@ -153,6 +153,7 @@ object PasswordGenForm: TPasswordGenForm
         ViewStyle = vsReport
         OnClick = lvHistoryClick
         OnDblClick = lvHistoryDblClick
+        ExplicitTop = 24
       end
       object bClearHistory: TButton
         Left = 472
@@ -362,6 +363,7 @@ object PasswordGenForm: TPasswordGenForm
     end
     object nSaveToFile: TMenuItem
       Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1074' '#1092#1072#1081#1083
+      OnClick = nSaveToFileClick
     end
   end
   object SaveDialog: TSaveDialog

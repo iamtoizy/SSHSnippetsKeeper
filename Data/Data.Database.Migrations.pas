@@ -1,4 +1,4 @@
-unit Data.Database.Migrations;
+﻿unit Data.Database.Migrations;
 
 interface
 
@@ -9,20 +9,6 @@ uses
     ;
 
 const
-    // Текущая версия схемы БД. При изменении схемы:
-    //   1) создать Database\Migrations\V<номер>__<имя>.sql (идемпотентные инструкции)
-    //   2) зарегистрировать имя ресурса в Database\Migrations\Migrations.rc
-    //   3) добавить шаг в реестр MIGRATIONS (implementation)
-    //   4) увеличить APP_DB_VERSION
-    //   5) синхронизировать "PRAGMA user_version" в Database\Schema\000_schema_init.sql
-    APP_DB_VERSION = 14;
-
-    // Сколько последних резервных копий хранится рядом с файлом БД
-    MIGRATION_BACKUP_KEEP = 3;
-
-    // Сколько последних pre_import_-снапшотов хранится рядом с файлом БД
-    IMPORT_SNAPSHOT_KEEP = 3;
-
     // Сколько последних auto_-автобэкапов хранится рядом с файлом БД
     // Дефолт ротации: сколько последних auto_-автобэкапов хранится рядом с БД
     AUTO_BACKUP_KEEP = 3;
@@ -30,12 +16,23 @@ const
     // Дефолтный минимальный интервал между автобэкапами, секунды (раз в сутки)
     AUTO_BACKUP_INTERVAL_SECONDS = 86400;
 
-    // Коды возврата консольных команд (/migrate, /backup, /checkdb, /newdb)
-    MIGRATE_EXIT_OK           = 0;
-    MIGRATE_EXIT_NEWER_SCHEMA = 2;
-    MIGRATE_EXIT_FAILED       = 3;
-    MIGRATE_EXIT_NO_FILE      = 4;
-    MIGRATE_EXIT_INTEGRITY    = 5;
+    // Текущая версия схемы БД. При изменении схемы:
+    //   1) создать Database\Migrations\V<номер>__<имя>.sql (идемпотентные инструкции)
+    //   2) зарегистрировать имя ресурса в Database\Migrations\Migrations.rc
+    //   3) добавить шаг в реестр MIGRATIONS (implementation)
+    //   4) увеличить APP_DB_VERSION
+    //   5) синхронизировать "PRAGMA user_version" в Database\Schema\000_schema_init.sql
+    // Экспортирована в interface, потому что Tests.DbMigrations обращается к ней
+    // напрямую через uses. Из implementation тесты не увидят эту константу.
+    APP_DB_VERSION = 14;
+
+    // Сколько последних резервных копий хранится рядом с файлом БД
+    // Экспортирована для тестов (Tests.DbMigrations)
+    MIGRATION_BACKUP_KEEP = 3;
+
+    // Сколько последних pre_import_-снапшотов хранится рядом с файлом БД
+    // Экспортирована для тестов (Tests.DbMigrations)
+    IMPORT_SNAPSHOT_KEEP = 3;
 
 type
     // БД создана более новой версией приложения - применять миграции (и откат) нельзя
@@ -161,6 +158,17 @@ type
     end;
 
 const
+    // APP_DB_VERSION, MIGRATION_BACKUP_KEEP, IMPORT_SNAPSHOT_KEEP
+    // перенесены в interface — используются Tests.DbMigrations напрямую через uses.
+    // Реестр миграций и коды возврата остаются здесь, они нужны только внутри юнита.
+
+    // Коды возврата консольных команд (/migrate, /backup, /checkdb, /newdb)
+    MIGRATE_EXIT_OK           = 0;
+    MIGRATE_EXIT_NEWER_SCHEMA = 2;
+    MIGRATE_EXIT_FAILED       = 3;
+    MIGRATE_EXIT_NO_FILE      = 4;
+    MIGRATE_EXIT_INTEGRITY    = 5;
+
     // Реестр применяемых миграций, по возрастанию версии.
     // v2..v6 в истории не выделялись отдельными шагами - их изменения
     // включены в базовый скрипт V001 (все шаги идемпотентны).
@@ -615,10 +623,12 @@ begin
     // консольных команд (/backup) - работа параллельно с запущенным
     // приложением. ReadOnly не задаём: открытие WAL-БД может потребовать
     // восстановления wal-index (запись в -shm)
-    DriverLink := TFDPhysSQLiteDriverLink.Create(nil);
-    ApplyEngineLinkage(DriverLink);
-    Connection := TFDConnection.Create(nil);
+    DriverLink := nil;
+    Connection := nil;
     try
+        DriverLink := TFDPhysSQLiteDriverLink.Create(nil);
+        ApplyEngineLinkage(DriverLink);
+        Connection := TFDConnection.Create(nil);
         Connection.Params.Add('DriverID=SQLite');
         Connection.Params.Add('Database=' + ADatabaseFile);
         // SharedCache=False: блокировки как между процессами, а не табличные
@@ -700,56 +710,60 @@ var
     Connection: TFDConnection;
     DriverLink: TFDPhysSQLiteDriverLink;
 begin
-    DriverLink := TFDPhysSQLiteDriverLink.Create(nil);
-    ApplyEngineLinkage(DriverLink);
-    Connection := TFDConnection.Create(nil);
+    DriverLink := nil;
+    Connection := nil;
     try
-        Connection.Params.Add('DriverID=SQLite');
-        Connection.Params.Add('Database=' + ADbFile);
-        // FireDAC глобально включает shared cache SQLite (табличные блокировки
-        // между соединениями одного процесса); консольная команда должна
-        // работать с блокировками как между процессами, как при запущенном GUI
-        Connection.Params.Add('SharedCache=False');
-        // Без этого параметра FireDAC при каждом открытии выполняет
-        // "PRAGMA journal_mode = DELETE": БД молча выводится из WAL,
-        // а при активном писателе открытие падает с ошибкой блокировки
-        Connection.Params.Add('JournalMode=WAL');
-        // Аналогично: дефолт FireDAC - "PRAGMA locking_mode = Exclusive",
-        // что в WAL требует монопольного доступа ко всей БД
-        Connection.Params.Add('LockingMode=Normal');
-        // Задаётся параметром, а не PRAGMA после открытия: FireDAC
-        // выполняет свои PRAGMA уже на этапе открытия
-        Connection.Params.Add('BusyTimeout=5000');
-        Connection.Params.Add('CharacterSet=utf8');
-        if ADbKey <> '' then
-            ApplyEncryptionParams(Connection.Params, ADbKey);
-        // FireDAC перед каждым оператором сбрасывает busy_timeout в ноль,
-        // если у оператора LockWait=False (дефолт)
-        Connection.UpdateOptions.LockWait := True;
-        Connection.Connected := True;
-        Connection.ExecSQL('PRAGMA foreign_keys = ON');
+        DriverLink := TFDPhysSQLiteDriverLink.Create(nil);
+        ApplyEngineLinkage(DriverLink);
+        Connection := TFDConnection.Create(nil);
+        try
+            Connection.Params.Add('DriverID=SQLite');
+            Connection.Params.Add('Database=' + ADbFile);
+            // FireDAC глобально включает shared cache SQLite (табличные блокировки
+            // между соединениями одного процесса); консольная команда должна
+            // работать с блокировками как между процессами, как при запущенном GUI
+            Connection.Params.Add('SharedCache=False');
+            // Без этого параметра FireDAC при каждом открытии выполняет
+            // "PRAGMA journal_mode = DELETE": БД молча выводится из WAL,
+            // а при активном писателе открытие падает с ошибкой блокировки
+            Connection.Params.Add('JournalMode=WAL');
+            // Аналогично: дефолт FireDAC - "PRAGMA locking_mode = Exclusive",
+            // что в WAL требует монопольного доступа ко всей БД
+            Connection.Params.Add('LockingMode=Normal');
+            // Задаётся параметром, а не PRAGMA после открытия: FireDAC
+            // выполняет свои PRAGMA уже на этапе открытия
+            Connection.Params.Add('BusyTimeout=5000');
+            Connection.Params.Add('CharacterSet=utf8');
+            if ADbKey <> '' then
+                ApplyEncryptionParams(Connection.Params, ADbKey);
+            // FireDAC перед каждым оператором сбрасывает busy_timeout в ноль,
+            // если у оператора LockWait=False (дефолт)
+            Connection.UpdateOptions.LockWait := True;
+            Connection.Connected := True;
+            Connection.ExecSQL('PRAGMA foreign_keys = ON');
 
-        Result := AAction(Connection);
-    except
-        on E: ESchemaVersionError do
-        begin
-            Result := MIGRATE_EXIT_NEWER_SCHEMA;
-            ConsoleWrite(E.Message);
+            Result := AAction(Connection);
+        except
+            on E: ESchemaVersionError do
+            begin
+                Result := MIGRATE_EXIT_NEWER_SCHEMA;
+                ConsoleWrite(E.Message);
+            end;
+            on E: ESchemaMigrationError do
+            begin
+                Result := MIGRATE_EXIT_FAILED;
+                ConsoleWrite(E.Message);
+            end;
+            on E: Exception do
+            begin
+                Result := MIGRATE_EXIT_FAILED;
+                ConsoleWrite(TUIStateLoader.GetMessage('DB.OpenError', [E.Message]));
+            end;
         end;
-        on E: ESchemaMigrationError do
-        begin
-            Result := MIGRATE_EXIT_FAILED;
-            ConsoleWrite(E.Message);
-        end;
-        on E: Exception do
-        begin
-            Result := MIGRATE_EXIT_FAILED;
-            ConsoleWrite(TUIStateLoader.GetMessage('DB.OpenError', [E.Message]));
-        end;
+    finally
+        Connection.Free;
+        DriverLink.Free;
     end;
-
-    Connection.Free;
-    DriverLink.Free;
 end;
 
 // Проверки пути к существующей БД, общие для /migrate, /backup и /checkdb.
@@ -944,10 +958,12 @@ begin
     end;
 
     Result := MIGRATE_EXIT_FAILED;
-    DriverLink := TFDPhysSQLiteDriverLink.Create(nil);
-    ApplyEngineLinkage(DriverLink);
-    Connection := TFDConnection.Create(nil);
+    DriverLink := nil;
+    Connection := nil;
     try
+        DriverLink := TFDPhysSQLiteDriverLink.Create(nil);
+        ApplyEngineLinkage(DriverLink);
+        Connection := TFDConnection.Create(nil);
         try
             Connection.Params.Add('DriverID=SQLite');
             Connection.Params.Add('Database=' + DbFile);

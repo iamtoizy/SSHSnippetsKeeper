@@ -34,6 +34,12 @@ type
         procedure ExistingKey_NoIssue;
         [Test]
         procedure BrokenReload_KeepsPreviousSnapshot;
+        [Test]
+        procedure HelpTexts_MissingKey_ReturnsDefaultsAndRecords;
+        [Test]
+        procedure HelpTexts_NotObject_RecordsInvalidStructure;
+        [Test]
+        procedure HelpTexts_Existing_ReturnsValues;
     end;
 
 implementation
@@ -166,6 +172,58 @@ begin
     Assert.IsTrue(Raised, 'Битый JSON должен приводить к исключению');
 
     Assert.AreEqual('one', TUIStateLoader.GetMessage('K'));
+end;
+
+procedure TLocalizationDiagnosticsTests.HelpTexts_MissingKey_ReturnsDefaultsAndRecords;
+var
+    Title, MainText, ExpText: string;
+    Issues: TArray<TLocalizationIssue>;
+begin
+    TUIStateLoader.LoadLanguageFile(WriteLanguageFile('help', '{"Messages":{"A":{"B":"x"}}}'));
+
+    TUIStateLoader.GetHelpTexts('A.Missing', Title, MainText, ExpText);
+
+    Assert.AreEqual('Help', Title);
+    Assert.AreEqual('Help text not found.', MainText);
+    Assert.AreEqual('', ExpText);
+
+    Issues := TUIStateLoader.TakePendingLocalizationIssues;
+    Assert.AreEqual<Integer>(1, Length(Issues));
+    Assert.AreEqual('A.Missing', Issues[0].Key);
+    Assert.AreEqual(Ord(likKeyNotFound), Ord(Issues[0].Kind));
+end;
+
+procedure TLocalizationDiagnosticsTests.HelpTexts_NotObject_RecordsInvalidStructure;
+var
+    Title, MainText, ExpText: string;
+    Issues: TArray<TLocalizationIssue>;
+begin
+    TUIStateLoader.LoadLanguageFile(WriteLanguageFile('helpstruct', '{"Messages":{"A":{"B":"x"}}}'));
+
+    TUIStateLoader.GetHelpTexts('A.B.C', Title, MainText, ExpText);
+
+    Assert.AreEqual('Help', Title);
+    Assert.AreEqual('Help text not found.', MainText);
+
+    Issues := TUIStateLoader.TakePendingLocalizationIssues;
+    Assert.AreEqual<Integer>(1, Length(Issues));
+    Assert.AreEqual('A.B.C', Issues[0].Key);
+    Assert.AreEqual(Ord(likInvalidStructure), Ord(Issues[0].Kind));
+end;
+
+procedure TLocalizationDiagnosticsTests.HelpTexts_Existing_ReturnsValues;
+var
+    Title, MainText, ExpText: string;
+begin
+    TUIStateLoader.LoadLanguageFile(WriteLanguageFile('helpexisting',
+        '{"Messages":{"A":{"B":{"Title":"T","Main":"M","Expanded":"E"}}}}'));
+
+    TUIStateLoader.GetHelpTexts('A.B', Title, MainText, ExpText);
+
+    Assert.AreEqual('T', Title);
+    Assert.AreEqual('M', MainText);
+    Assert.AreEqual('E', ExpText);
+    Assert.IsFalse(TUIStateLoader.HasPendingLocalizationIssues);
 end;
 
 end.

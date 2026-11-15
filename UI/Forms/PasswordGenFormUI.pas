@@ -100,6 +100,7 @@ type
         procedure nCopyBcryptClick(Sender: TObject);
         procedure nCopyNormalClick(Sender: TObject);
         procedure nCopyToClipboardClick(Sender: TObject);
+        procedure nSaveToFileClick(Sender: TObject);
         procedure pcHostChanging(Sender: TObject; var AllowChange: Boolean);
         procedure sbBottomResize(Sender: TObject);
         procedure seLengthChange(Sender: TObject);
@@ -135,6 +136,7 @@ type
         procedure EditWindowProc(var Message: TMessage);
         procedure DoGenerate(BulkGenerate: Boolean = False; BulkCount: Integer = 1; ExportFileName: string = '');
         procedure SetControlsState(Enabled: Boolean);
+        procedure PrepareSaveDialog(const DefaultFileName: string);
 
         procedure StartClipboardTimer(const CopiedText: string);
 
@@ -160,6 +162,7 @@ uses
     Bcrypt,
     Common.Helpers,
     System.Hash,
+    System.IOUtils,
     System.SysUtils,
     System.Threading,
     System.Types,
@@ -293,6 +296,38 @@ begin
     StartClipboardTimer(mBulkResult.Text);
 
     ShowSimpleToast(TUIStateLoader.GetMessage('PasswordGenForm.HistoryCopyToast'));
+end;
+
+procedure TPasswordGenForm.nSaveToFileClick(Sender: TObject);
+var
+    Text: string;
+begin
+    if mBulkResult.Lines.Count = 0 then
+        Exit;
+
+    PrepareSaveDialog(Format('Mass_Passwords_%s.txt', [FormatDateTime('yyyymmdd_hhnn', Now)]));
+    if not SaveDialog.Execute then
+        Exit;
+
+    Text := mBulkResult.Text;
+    try
+        try
+            TFile.WriteAllText(SaveDialog.FileName, Text, TEncoding.UTF8);
+            ShowSimpleToast(TUIStateLoader.GetMessage('PasswordGenForm.BulkSaveSuccessToast'));
+        except
+            on E: Exception do
+                MessagesHandler.ShowError(E.Message);
+        end;
+    finally
+        WipeString(Text);
+    end;
+end;
+
+procedure TPasswordGenForm.PrepareSaveDialog(const DefaultFileName: string);
+begin
+    SaveDialog.InitialDir := GetDefaultDataDir;
+    SaveDialog.FileName := DefaultFileName;
+    SaveDialog.Filter := 'TEXT|*.txt|ALL|*.*';
 end;
 
 procedure TPasswordGenForm.UpdateEntropyUI;
@@ -1068,9 +1103,7 @@ begin
             TUIStateLoader.GetMessage('Common.Warning'),
             MB_YESNO or MB_ICONQUESTION
         ) then begin
-            SaveDialog.InitialDir := GetDefaultDataDir;
-            SaveDialog.FileName := Format('Mass_Passwords_%s.txt', [FormatDateTime('yyyymmdd_hhnn', Now)]);
-            SaveDialog.Filter := '(*.txt)|*.txt';
+            PrepareSaveDialog(Format('Mass_Passwords_%s.txt', [FormatDateTime('yyyymmdd_hhnn', Now)]));
 
             if SaveDialog.Execute then
             begin
