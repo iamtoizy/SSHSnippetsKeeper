@@ -1,4 +1,4 @@
-unit Common.Settings;
+﻿unit Common.Settings;
 
 interface
 
