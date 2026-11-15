@@ -33,6 +33,7 @@ type
     TSettingsManagerTests = class(TObject)
     private
         function SettingsPath: string;
+        function TemplatePath: string;
     public
         [Setup]
         procedure Setup;
@@ -44,11 +45,17 @@ type
         [Test]
         procedure Save_PlaceholderStaysPlain;
         [Test]
-        procedure Load_MissingFile_CreatesDefaults;
+        procedure Load_MissingFile_CopiesTemplate;
+        [Test]
+        procedure Load_MissingTemplate_UsesEmptyConfig;
         [Test]
         procedure Load_NormalizesLegacyDpapi2Prefix;
         [Test]
         procedure Load_CorruptFile_FallsBackToDefaults;
+        [Test]
+        procedure Load_InvalidAllowedApplications_DropsInvalidItems;
+        [Test]
+        procedure SaveLoad_Roundtrip_PreservesAllowedApplications;
         [Test]
         procedure SaveLoad_Roundtrip_PreservesAutoExport;
         [Test]
@@ -238,16 +245,25 @@ begin
     Result := TPath.Combine(TPath.GetDirectoryName(ParamStr(0)), 'settings.json');
 end;
 
+function TSettingsManagerTests.TemplatePath: string;
+begin
+    // Тестовый exe: Tests\bin\Win64\Debug -> корень репозитория на 4 уровня выше
+    Result := TPath.Combine(TPath.GetDirectoryName(ParamStr(0)),
+        '..\..\..\..\Assets\ExeData\settings.template.json');
+end;
+
 procedure TSettingsManagerTests.Setup;
 begin
     SafeDeleteIfPresent(SettingsPath);
     SafeDeleteIfPresent(SettingsPath + '.tmp');
+    SafeDeleteIfPresent(SettingsPath + '.corrupt');
 end;
 
 procedure TSettingsManagerTests.TearDown;
 begin
     SafeDeleteIfPresent(SettingsPath);
     SafeDeleteIfPresent(SettingsPath + '.tmp');
+    SafeDeleteIfPresent(SettingsPath + '.corrupt');
 end;
 
 procedure TSettingsManagerTests.SaveLoad_Roundtrip_EncryptsKeys_NoPlaintext;
@@ -255,11 +271,36 @@ var
     M1, M2: ISettingsManager;
     S: TAppSettings;
     Raw, LoadedKey: string;
+    Hub, SecretHub: TAIHub;
+    Model, SecretModel: TAIItem;
 begin
     M1 := TSettingsManager.Create;
     S := M1.Data;
     S.CurrentLanguage := 'en';
-    S.AISettings.Items[1].Items.Items[0].APIKey := SECRET_TEST_KEY;
+
+    // ApplyDefaults больше не заполняет AISettings: собираем два хаба явно
+    Hub := Default(TAIHub);
+    Hub.Name := 'Hub-Plain';
+    Hub.URL := 'https://example.com';
+    Hub.Items.Count := 1;
+    Model := Default(TAIItem);
+    Model.Name := 'Model-Plain';
+    Model.APIKey := PLACEHOLDER_API_KEY;
+    Hub.Items.Items[0] := Model;
+
+    SecretHub := Default(TAIHub);
+    SecretHub.Name := 'Hub-Secret';
+    SecretHub.URL := 'https://example.com';
+    SecretHub.Items.Count := 1;
+    SecretModel := Default(TAIItem);
+    SecretModel.Name := 'Model-Secret';
+    SecretModel.APIKey := SECRET_TEST_KEY;
+    SecretHub.Items.Items[0] := SecretModel;
+
+    S.AISettings.Count := 2;
+    S.AISettings.Items[0] := Hub;
+    S.AISettings.Items[1] := SecretHub;
+
     M1.Data := S;
     M1.Save;
     M1 := nil;
@@ -284,9 +325,25 @@ end;
 procedure TSettingsManagerTests.Save_PlaceholderStaysPlain;
 var
     M: ISettingsManager;
+    S: TAppSettings;
     Raw: string;
+    Hub: TAIHub;
+    Model: TAIItem;
 begin
     M := TSettingsManager.Create;
+    S := M.Data;
+    Hub := Default(TAIHub);
+    Hub.Name := 'Hub-Plain';
+    Hub.URL := 'https://example.com';
+    Hub.Items.Count := 1;
+    Model := Default(TAIItem);
+    Model.Name := 'Model-Plain';
+    Model.APIKey := PLACEHOLDER_API_KEY;
+    Hub.Items.Items[0] := Model;
+
+    S.AISettings.Count := 1;
+    S.AISettings.Items[0] := Hub;
+    M.Data := S;
     M.Save;
     M := nil;
 
@@ -295,24 +352,52 @@ begin
     Assert.IsFalse(Raw.Contains('dpapi:'));
 end;
 
-procedure TSettingsManagerTests.Load_MissingFile_CreatesDefaults;
+procedure TSettingsManagerTests.Load_MissingFile_CopiesTemplate;
 var
     M: ISettingsManager;
+    TM: TSettingsManager;
     S: TAppSettings;
 begin
-    M := TSettingsManager.Create;
+    TM := TSettingsManager.Create;
+    TM.TemplatePath := TemplatePath;
+    M := TM;
     M.Load;
     M := nil;
 
     Assert.IsTrue(TFile.Exists(SettingsPath));
 
-    M := TSettingsManager.Create;
+    TM := TSettingsManager.Create;
+    TM.TemplatePath := TemplatePath;
+    M := TM;
     M.Load;
     S := M.Data;
     Assert.AreEqual('ru', S.CurrentLanguage);
     Assert.AreEqual(10, S.WindowHelper.KeyPressInterval);
     Assert.AreEqual(100, S.WindowHelper.ActivationDelay);
     Assert.AreEqual(50, S.WindowHelper.SetFocusDelay);
+    Assert.AreEqual(6, S.AllowedApplications.Count);
+    Assert.AreEqual(2, S.AISettings.Count);
+    M := nil;
+end;
+
+procedure TSettingsManagerTests.Load_MissingTemplate_UsesEmptyConfig;
+var
+    M: ISettingsManager;
+    TM: TSettingsManager;
+    S: TAppSettings;
+begin
+    TM := TSettingsManager.Create;
+    TM.TemplatePath := TPath.Combine(TPath.GetDirectoryName(ParamStr(0)),
+        'no-such-settings-template.json');
+    M := TM;
+    M.Load;
+    S := M.Data;
+
+    Assert.IsFalse(TFile.Exists(SettingsPath));
+    Assert.AreEqual(0, S.AllowedApplications.Count);
+    Assert.AreEqual(0, S.AISettings.Count);
+    Assert.AreEqual('ru', S.CurrentLanguage);
+    Assert.AreEqual(10, S.WindowHelper.KeyPressInterval);
     M := nil;
 end;
 
@@ -321,10 +406,22 @@ var
     M: ISettingsManager;
     S: TAppSettings;
     Json: string;
+    Hub: TAIHub;
+    Model: TAIItem;
 begin
     M := TSettingsManager.Create;
     S := M.Data;
-    S.AISettings.Items[0].Items.Items[0].APIKey := 'dpapi2:QUJDRA==';
+    Hub := Default(TAIHub);
+    Hub.Name := 'Hub-Legacy';
+    Hub.URL := 'https://example.com';
+    Hub.Items.Count := 1;
+    Model := Default(TAIItem);
+    Model.Name := 'Model-Legacy';
+    Model.APIKey := 'dpapi2:QUJDRA==';
+    Hub.Items.Items[0] := Model;
+
+    S.AISettings.Count := 1;
+    S.AISettings.Items[0] := Hub;
     Json := DSON.toJson<TAppSettings>(S);
     M := nil;
     TFile.WriteAllText(SettingsPath, Json, TEncoding.UTF8);
@@ -339,15 +436,25 @@ end;
 procedure TSettingsManagerTests.Load_CorruptFile_FallsBackToDefaults;
 var
     M: ISettingsManager;
+    TM: TSettingsManager;
     S: TAppSettings;
 begin
     TFile.WriteAllText(SettingsPath, 'not json', TEncoding.UTF8);
 
-    M := TSettingsManager.Create;
+    TM := TSettingsManager.Create;
+    TM.TemplatePath := TemplatePath;
+    M := TM;
     M.Load;
     S := M.Data;
+
+    // Битый файл сохранён в .corrupt и не перезаписан настройками
+    Assert.IsTrue(TFile.Exists(SettingsPath + '.corrupt'));
+    Assert.AreEqual('not json', TFile.ReadAllText(SettingsPath, TEncoding.UTF8));
+    // Конфиг поднят из шаблона
     Assert.AreEqual('ru', S.CurrentLanguage);
     Assert.AreEqual(10, S.WindowHelper.KeyPressInterval);
+    Assert.AreEqual(6, S.AllowedApplications.Count);
+    Assert.AreEqual(2, S.AISettings.Count);
     M := nil;
 end;
 
@@ -408,6 +515,73 @@ begin
     Assert.AreEqual(5, S.AutoExportIntervalMinutes);
     Assert.AreEqual(True, S.AutoExportDefined);
     M := nil;
+end;
+
+procedure TSettingsManagerTests.Load_InvalidAllowedApplications_DropsInvalidItems;
+var
+    M: ISettingsManager;
+    S: TAppSettings;
+begin
+    TFile.WriteAllText(SettingsPath,
+        '{"CurrentLanguage":"en","AllowedApplications":{"Items":[' +
+        '{"ExeName":"","Enabled":true},' +
+        '{"ExeName":"bad.exe","Enabled":true,"TitleIncludeRegex":"["},' +
+        '{"ExeName":"good.exe","Enabled":true,"WindowClasses":["","GoodClass"]}' +
+        ']}}', TEncoding.UTF8);
+
+    M := TSettingsManager.Create;
+    M.Load;
+    S := M.Data;
+
+    // Элемент с пустым ExeName отброшен; bad.exe оставлен, но битый regex очищен
+    Assert.AreEqual(2, S.AllowedApplications.Count);
+    Assert.AreEqual('bad.exe', S.AllowedApplications.Items[0].ExeName);
+    Assert.AreEqual('', S.AllowedApplications.Items[0].TitleIncludeRegex);
+    Assert.AreEqual('good.exe', S.AllowedApplications.Items[1].ExeName);
+    Assert.AreEqual(1, Integer(Length(S.AllowedApplications.Items[1].WindowClasses)));
+    Assert.AreEqual('GoodClass', S.AllowedApplications.Items[1].WindowClasses[0]);
+    M := nil;
+end;
+
+procedure TSettingsManagerTests.SaveLoad_Roundtrip_PreservesAllowedApplications;
+var
+    M1, M2: ISettingsManager;
+    S: TAppSettings;
+    I: Integer;
+    App: TAllowedApplicationsItem;
+begin
+    M1 := TSettingsManager.Create;
+    S := M1.Data;
+    S.AllowedApplications.Count := 7;
+    for I := 0 to 6 do
+    begin
+        App := Default(TAllowedApplicationsItem);
+        App.ExeName := 'custom' + IntToStr(I + 1) + '.exe';
+        App.Enabled := True;
+        if I = 0 then
+        begin
+            App.TitleIncludeRegex := '^ssh';
+            SetLength(App.WindowClasses, 2);
+            App.WindowClasses[0] := 'ClassA';
+            App.WindowClasses[1] := 'ClassB';
+        end;
+        S.AllowedApplications.Items[I] := App;
+    end;
+    M1.Data := S;
+    M1.Save;
+    M1 := nil;
+
+    M2 := TSettingsManager.Create;
+    M2.Load;
+    S := M2.Data;
+    Assert.AreEqual(7, S.AllowedApplications.Count);
+    Assert.AreEqual('custom1.exe', S.AllowedApplications.Items[0].ExeName);
+    Assert.AreEqual('^ssh', S.AllowedApplications.Items[0].TitleIncludeRegex);
+    Assert.AreEqual(2, Integer(Length(S.AllowedApplications.Items[0].WindowClasses)));
+    Assert.AreEqual('ClassA', S.AllowedApplications.Items[0].WindowClasses[0]);
+    Assert.AreEqual('ClassB', S.AllowedApplications.Items[0].WindowClasses[1]);
+    Assert.AreEqual('custom7.exe', S.AllowedApplications.Items[6].ExeName);
+    M2 := nil;
 end;
 
 { TSettingsDbSecurityTests }

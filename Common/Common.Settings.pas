@@ -1,4 +1,4 @@
-﻿unit Common.Settings;
+unit Common.Settings;
 
 interface
 
@@ -15,6 +15,7 @@ type
     TSettingsManager = class(TInterfacedObject, ISettingsManager)
     private
         FSettings: TAppSettings;
+        FTemplatePath: string;
 
         function GetSettingsPath: string;
         function GetAutocompletePath: string;
@@ -24,8 +25,18 @@ type
 
         // Внутренние методы инициализации дефолтов
         procedure ApplyDefaults;
-        procedure InitDefaultAllowedApplications;
-        procedure InitDefaultAISettings;
+
+        // Копирует settings.template.json в settings.json, если файла настроек нет
+        function EnsureSettingsFromTemplate(const APath: string): Boolean;
+
+        // Сохраняет битый settings.json как .corrupt для диагностики
+        procedure BackupCorruptSettings(const APath: string);
+
+        // Пробует поднять конфиг из шаблона в память (без записи на диск)
+        function TryLoadSettingsFromTemplate: Boolean;
+
+        // Отбрасывает битые элементы AllowedApplications/AISettings, клампит числа
+        procedure SanitizeSettings(var ASettings: TAppSettings);
 
         function GetSettings: TAppSettings;
         procedure SetSettings(const Value: TAppSettings);
@@ -39,6 +50,10 @@ type
         procedure Save;
 
         property CurrentLanguage: string read GetCurrentLanguage write SetCurrentLanguage;
+
+        // Путь к шаблону настроек. По умолчанию ResolvePath('settings.template.json');
+        // в тестах задаётся явно, чтобы не зависеть от расположения Assets\ExeData
+        property TemplatePath: string read FTemplatePath write FTemplatePath;
     end;
 
 function ProtectSecret(const Value: string): string;
@@ -99,6 +114,7 @@ uses
     System.NetEncoding,
     System.IOUtils,
     System.JSON,
+    System.RegularExpressions,
     Winapi.Windows
     ;
 
@@ -133,6 +149,10 @@ var
     X: UInt32;
     I: Integer;
 begin
+    // {$Q-} обязателен: xorshift намеренно заворачивается по модулю 2^32,
+    // иначе Debug-конфиг с DCC_IntegerOverflowCheck поднимал бы EIntOverflow.
+    // Флаг SSK_ENTROPY_Q_RESTORE восстанавливает исходное состояние Q
+    // (включая случай, когда Q был выключен снаружи), а не навязывает {$Q+}.
 {$IFOPT Q+}
 {$DEFINE SSK_ENTROPY_Q_RESTORE}
 {$Q-}
@@ -507,17 +527,10 @@ begin
 end;
 
 const
-    // Системный промпт для всех моделей ИИ
-    AI_SYSTEM_PROMPT = 'Твоя роль - инструмент выполнения кода. ОТВЕЧАЙ ТОЛЬКО ЧИСТЫМ КОДОМ. ' +
-                       'ЗАПРЕЩЕНО: писать объяснения, вступления, заключения, markdown-теги ```bash, ```delphi или другие. ' +
-                       'ВЫДАВАТЬ ТОЛЬКО СИМВОЛЫ КОДА. Если пользователь просит команду - выдай только эту команду.' +
-                       'ПРИМЕР ТВОЕГО ОТВЕТА (всегда в таком формате): ls -la /var/www/html, systemctl restart nginx ' +
-                       'Никакого текста вокруг, только код. Команда должна умещаться в одну строку, если пользователь не попросил иначе.';
-
     // Единый источник значений дефолтов настроек. Безусловное заполнение
     // (ApplyDefaults) и восстановление отсутствующего после DSON.fromJson
     // (Load) ссылаются на одни константы, чтобы значения не разъезжались
-    // при правках. Guard-условия у блоков разные по замыслу: ApplyDefaults
+    // при правках. Guard-условия у блоков разные по замыму: ApplyDefaults
     // перезаписывает всё, Load подставляет только отсутствующее/битое.
     DEFAULT_HOVER_DELAY = 1500;
     DEFAULT_FADE_DURATION = 500;
@@ -545,7 +558,9 @@ const
 constructor TSettingsManager.Create;
 begin
     inherited Create;
-    ApplyDefaults; // Сразу ставим дефолты на случай, если файла еще нет
+    // Шаблон ищем рядом с exe, затем в Assets\ExeData (dev-сборка)
+    FTemplatePath := ResolvePath('settings.template.json');
+    ApplyDefaults; // Скалярные дефолты; массивы приходят из settings.json/шаблона
 end;
 
 destructor TSettingsManager.Destroy;
@@ -619,116 +634,6 @@ end;
 // БЛОК ИНИЦИАЛИЗАЦИИ ДЕФОЛТОВ
 // =============================================================================
 
-procedure TSettingsManager.InitDefaultAllowedApplications;
-begin
-    SetLength(FSettings.AllowedApplications.Items, 6);
-
-    // Классы окон из дефолтных профилей заведомо известны только для
-    // части терминалов; пустой список = разрешены все окна процесса
-    FSettings.AllowedApplications.Items[0].ExeName := 'mobaxterm.exe';
-    FSettings.AllowedApplications.Items[0].Enabled := True;
-    FSettings.AllowedApplications.Items[0].WindowClasses := ['CMoTTY'];
-
-    FSettings.AllowedApplications.Items[1].ExeName := 'xshell.exe';
-    FSettings.AllowedApplications.Items[1].Enabled := True;
-    FSettings.AllowedApplications.Items[1].WindowClasses := ['AfxFrameOrView140u'];
-
-    FSettings.AllowedApplications.Items[2].ExeName := 'putty.exe';
-    FSettings.AllowedApplications.Items[2].Enabled := True;
-    FSettings.AllowedApplications.Items[2].WindowClasses := ['PuTTY'];
-
-    FSettings.AllowedApplications.Items[3].ExeName := 'tabby.exe';
-    FSettings.AllowedApplications.Items[3].Enabled := True;
-
-    FSettings.AllowedApplications.Items[4].ExeName := 'kitty.exe';
-    FSettings.AllowedApplications.Items[4].Enabled := True;
-
-    FSettings.AllowedApplications.Items[5].ExeName := 'securecrt.exe';
-    FSettings.AllowedApplications.Items[5].Enabled := True;
-end;
-
-procedure TSettingsManager.InitDefaultAISettings;
-begin
-    SetLength(FSettings.AISettings.Items, 2);
-
-    // Провайдер 1: Yandex AIStudio [Agents]
-    FSettings.AISettings.Items[0].Name := 'Yandex AIStudio [Agents]';
-    FSettings.AISettings.Items[0].URL := 'https://aistudio.yandex.ru/platform/folders/';
-    FSettings.AISettings.Items[0].Comment := 'Платформа для создания AI-решений и агентов';
-    SetLength(FSettings.AISettings.Items[0].Items.Items, 1);
-
-    with FSettings.AISettings.Items[0].Items.Items[0] do
-    begin
-        Name := 'Qwen3.6-35B (1024 токена)';
-        APIKey := PLACEHOLDER_API_KEY;
-        Folder := 'Paste-your-folder-id-here';
-        Model := '';
-        Agent := 'Paste-your-agent-id-here';
-        Params.Temperature := 0.3;
-        Params.MaxOutputTokens := 1024;
-        Params.Content := AI_SYSTEM_PROMPT;
-        Params.ReasoningEffort := 'none';
-    end;
-
-    // Провайдер 2: Yandex AIStudio [LLM]
-    FSettings.AISettings.Items[1].Name := 'Yandex AIStudio [LLM]';
-    FSettings.AISettings.Items[1].URL := 'https://aistudio.yandex.ru/platform/folders/';
-    FSettings.AISettings.Items[1].Comment := 'Платформа для создания AI-решений и агентов';
-    SetLength(FSettings.AISettings.Items[1].Items.Items, 4);
-
-    with FSettings.AISettings.Items[1].Items.Items[0] do
-    begin
-        Name := 'YandexGPT 5 Lite (1024 токена)';
-        APIKey := PLACEHOLDER_API_KEY;
-        Folder := 'Paste-your-folder-id-here';
-        Model := 'yandexgpt-5-lite/latest';
-        Agent := 'Paste-your-agent-id-here';
-        Params.Temperature := 0.3;
-        Params.MaxOutputTokens := 1024;
-        Params.Content := AI_SYSTEM_PROMPT;
-        Params.ReasoningEffort := 'none';
-    end;
-
-    with FSettings.AISettings.Items[1].Items.Items[1] do
-    begin
-        Name := 'YandexGPT 5 Lite (32к токенов)';
-        APIKey := PLACEHOLDER_API_KEY;
-        Folder := 'Paste-your-folder-id-here';
-        Model := 'yandexgpt-5-lite/latest';
-        Agent := 'Paste-your-agent-id-here';
-        Params.Temperature := 0.3;
-        Params.MaxOutputTokens := 32768;
-        Params.Content := AI_SYSTEM_PROMPT;
-        Params.ReasoningEffort := 'none';
-    end;
-
-    with FSettings.AISettings.Items[1].Items.Items[2] do
-    begin
-        Name := 'DeepSeek V4 Flash (1024 токена)';
-        APIKey := PLACEHOLDER_API_KEY;
-        Folder := 'Paste-your-folder-id-here';
-        Model := 'deepseek-v4-flash/latest';
-        Agent := 'Paste-your-agent-id-here';
-        Params.Temperature := 0.3;
-        Params.MaxOutputTokens := 1024;
-        Params.Content := AI_SYSTEM_PROMPT;
-        Params.ReasoningEffort := 'none';
-    end;
-
-    with FSettings.AISettings.Items[1].Items.Items[3] do
-    begin
-        Name := 'AliceAI LLM Flash (1024 токена)';
-        APIKey := PLACEHOLDER_API_KEY;
-        Folder := 'Paste-your-folder-id-here';
-        Model := 'aliceai-llm-flash/latest';
-        Agent := 'Paste-your-agent-id-here';
-        Params.Temperature := 0.3;
-        Params.MaxOutputTokens := 1024;
-        Params.Content := AI_SYSTEM_PROMPT;
-        Params.ReasoningEffort := 'none';
-    end;
-end;
-
 procedure TSettingsManager.ApplyDefaults;
 begin
     // Заполняем критичные скалярные значения
@@ -776,12 +681,194 @@ begin
     FSettings.Hotkeys.FavoriteSlots.Key := DEFAULT_FS_KEY;
     FSettings.Hotkeys.FavoriteSlots.Enabled := True;
 
-    // Инициализируем массивы-справочники
-    InitDefaultAllowedApplications;
-    InitDefaultAISettings;
+    // Массивы AllowedApplications/AISettings намеренно НЕ заполняются:
+    // их единственный источник - settings.json или settings.template.json
 
     // Шифрование БД по умолчанию выключено
     ApplyDbSecurityDefaults(FSettings);
+end;
+
+// Копирует шаблон в settings.json, если файла настроек нет.
+// Возвращает True, если файл настроек теперь существует.
+function TSettingsManager.EnsureSettingsFromTemplate(const APath: string): Boolean;
+var
+    TemplatePath: string;
+begin
+    TemplatePath := FTemplatePath;
+    if TemplatePath = '' then
+        TemplatePath := ResolvePath('settings.template.json');
+
+    if not TFile.Exists(TemplatePath) then
+        Exit(False);
+
+    try
+        // Копируем без изменений: плейсхолдеры API-ключей не шифруются,
+        // форматирование шаблона сохраняется
+        TFile.Copy(TemplatePath, APath, True);
+        Result := True;
+    except
+        on E: Exception do
+        begin
+            LogException('TSettingsManager.EnsureSettingsFromTemplate', E);
+            Result := False;
+        end;
+    end;
+end;
+
+// Сохраняет битый файл настроек как .corrupt (не затирая оригинал),
+// чтобы пользователь мог разобраться, что именно сломалось
+procedure TSettingsManager.BackupCorruptSettings(const APath: string);
+var
+    CorruptPath: string;
+begin
+    if not TFile.Exists(APath) then
+        Exit;
+
+    CorruptPath := APath + '.corrupt';
+    try
+        TFile.Copy(APath, CorruptPath, True);
+        LogMsg('TSettingsManager.Load: corrupt settings copied to ' + CorruptPath);
+    except
+        on E: Exception do
+            LogException('TSettingsManager.BackupCorruptSettings', E);
+    end;
+end;
+
+// Пробует поднять конфиг из шаблона в память (без записи на диск):
+// используется, когда settings.json битый и его нельзя затирать
+function TSettingsManager.TryLoadSettingsFromTemplate: Boolean;
+var
+    TemplatePath, Json: string;
+begin
+    TemplatePath := FTemplatePath;
+    if TemplatePath = '' then
+        TemplatePath := ResolvePath('settings.template.json');
+
+    if not TFile.Exists(TemplatePath) then
+        Exit(False);
+
+    try
+        Json := TFile.ReadAllText(TemplatePath, TEncoding.UTF8);
+        FSettings := DSON.fromJson<TAppSettings>(Json);
+        SanitizeSettings(FSettings);
+        Result := True;
+    except
+        on E: Exception do
+        begin
+            LogException('TSettingsManager.TryLoadSettingsFromTemplate', E);
+            Result := False;
+        end;
+    end;
+end;
+
+// Санитизация загруженной конфигурации: битые элементы отбрасываются,
+// битые regex сбрасываются в '', числа клампятся. Валидные данные
+// сохраняются; о потерях пишем в лог.
+procedure TSettingsManager.SanitizeSettings(var ASettings: TAppSettings);
+var
+    I, J, K, Kept, DroppedApps, DroppedItems: Integer;
+    Classes: TArray<string>;
+    ExeName, Pattern: string;
+
+    function TryCompileRegex(const APattern: string): Boolean;
+    begin
+        Result := True;
+        try
+            // IsMatch компилирует шаблон: на битом бросает ERegularExpressionError
+            TRegEx.IsMatch('', APattern);
+        except
+            on E: Exception do
+            begin
+                LogMsg('TSettingsManager.Sanitize: bad regex "' + APattern + '": ' + E.Message);
+                Result := False;
+            end;
+        end;
+    end;
+begin
+    DroppedApps := 0;
+    DroppedItems := 0;
+
+    // AllowedApplications
+    Kept := 0;
+    for I := 0 to High(ASettings.AllowedApplications.Items) do
+    begin
+        ExeName := Trim(ASettings.AllowedApplications.Items[I].ExeName);
+        if ExeName = '' then
+        begin
+            Inc(DroppedApps);
+            Continue;
+        end;
+        ASettings.AllowedApplications.Items[I].ExeName := ExeName;
+
+        Pattern := ASettings.AllowedApplications.Items[I].TitleIncludeRegex;
+        if (Pattern <> '') and not TryCompileRegex(Pattern) then
+            ASettings.AllowedApplications.Items[I].TitleIncludeRegex := '';
+
+        Pattern := ASettings.AllowedApplications.Items[I].TitleExcludeRegex;
+        if (Pattern <> '') and not TryCompileRegex(Pattern) then
+            ASettings.AllowedApplications.Items[I].TitleExcludeRegex := '';
+
+        // WindowClasses: убираем пустые
+        SetLength(Classes, 0);
+        for J := 0 to High(ASettings.AllowedApplications.Items[I].WindowClasses) do
+            if Trim(ASettings.AllowedApplications.Items[I].WindowClasses[J]) <> '' then
+            begin
+                SetLength(Classes, Length(Classes) + 1);
+                Classes[High(Classes)] := ASettings.AllowedApplications.Items[I].WindowClasses[J];
+            end;
+        ASettings.AllowedApplications.Items[I].WindowClasses := Classes;
+
+        if Kept <> I then
+            ASettings.AllowedApplications.Items[Kept] := ASettings.AllowedApplications.Items[I];
+        Inc(Kept);
+    end;
+    SetLength(ASettings.AllowedApplications.Items, Kept);
+
+    // AISettings
+    Kept := 0;
+    for I := 0 to High(ASettings.AISettings.Items) do
+    begin
+        if Trim(ASettings.AISettings.Items[I].Name) = '' then
+        begin
+            Inc(DroppedItems);
+            Continue;
+        end;
+        if Trim(ASettings.AISettings.Items[I].URL) = '' then
+            LogMsg('TSettingsManager.Sanitize: AI hub without URL: ' +
+                ASettings.AISettings.Items[I].Name);
+
+        K := 0;
+        for J := 0 to High(ASettings.AISettings.Items[I].Items.Items) do
+        begin
+            if Trim(ASettings.AISettings.Items[I].Items.Items[J].Name) = '' then
+            begin
+                Inc(DroppedItems);
+                Continue;
+            end;
+
+            if ASettings.AISettings.Items[I].Items.Items[J].Params.MaxOutputTokens <= 0 then
+                ASettings.AISettings.Items[I].Items.Items[J].Params.MaxOutputTokens := 1024;
+
+            if ASettings.AISettings.Items[I].Items.Items[J].Params.Temperature < 0 then
+                ASettings.AISettings.Items[I].Items.Items[J].Params.Temperature := 0
+            else if ASettings.AISettings.Items[I].Items.Items[J].Params.Temperature > 2 then
+                ASettings.AISettings.Items[I].Items.Items[J].Params.Temperature := 2;
+
+            if K <> J then
+                ASettings.AISettings.Items[I].Items.Items[K] := ASettings.AISettings.Items[I].Items.Items[J];
+            Inc(K);
+        end;
+        SetLength(ASettings.AISettings.Items[I].Items.Items, K);
+
+        if Kept <> I then
+            ASettings.AISettings.Items[Kept] := ASettings.AISettings.Items[I];
+        Inc(Kept);
+    end;
+    SetLength(ASettings.AISettings.Items, Kept);
+
+    if (DroppedApps > 0) or (DroppedItems > 0) then
+        LogMsg(Format('TSettingsManager.Sanitize: dropped %d app(s), %d AI item(s)',
+            [DroppedApps, DroppedItems]));
 end;
 
 // =============================================================================
@@ -789,6 +876,7 @@ end;
 procedure TSettingsManager.Load;
 var
     JsonString: string;
+    JsonValue: TJSONValue;
     Path: string;
     I: Integer;
 begin
@@ -797,16 +885,32 @@ begin
     Path := GetSettingsPath;
     if not TFile.Exists(Path) then
     begin
-        Save; // Запишет дефолты в новый файл
-        Exit;
+        // Шаблон - единственный источник стартового конфига. Если его нет,
+        // остаёмся на скалярных дефолтах и не плодим пустой settings.json.
+        if not EnsureSettingsFromTemplate(Path) then
+        begin
+            LogMsg('TSettingsManager.Load: settings.json and template not found');
+            Exit;
+        end;
     end;
 
     try
         JsonString := TFile.ReadAllText(Path, TEncoding.UTF8);
 
-        // ВНИМАНИЕ: DSON.fromJson может затереть массивы (сделать их длину = 0),
-        // если они отсутствуют в загружаемом JSON.
+        // TJSONObject.ParseJSONValue возвращает nil на синтаксически битом JSON
+        // (исключения System.JSON не бросает). Без этой проверки битый файл молча
+        // превращался бы в пустой конфиг вместо .corrupt + подстановки шаблона.
+        JsonValue := TJSONObject.ParseJSONValue(JsonString);
+        if JsonValue = nil then
+            raise Exception.Create('settings.json is not valid JSON');
+        JsonValue.Free;
+
+        // DSON.fromJson затирает массивы (делает их длину = 0), если они
+        // отсутствуют в загружаемом JSON. Пустой AllowedApplications/AISettings -
+        // валидное состояние (пользователь мог удалить все элементы), поэтому
+        // дефолты сюда больше не подставляются.
         FSettings := DSON.fromJson<TAppSettings>(JsonString);
+        SanitizeSettings(FSettings);
 
         // --- Восстановление пропавших данных (После загрузки) ---
 
@@ -924,23 +1028,21 @@ begin
             FSettings.Hotkeys.FavoriteSlots.Enabled := True;
         end;
 
-        // 3. Восстановление списков, если они оказались пустыми
-        // Это спасет юзера, если он удалил их из JSON или обновил программу с очень старой версии
-        if Length(FSettings.AllowedApplications.Items) = 0 then
-            InitDefaultAllowedApplications;
-
-        if Length(FSettings.AISettings.Items) = 0 then
-            InitDefaultAISettings;
-
-        // 4. API-ключи остаются DPAPI-блобами: расшифровка только в момент использования
+        // 3. API-ключи остаются DPAPI-блобами: расшифровка только в момент использования
         NormalizeSecretPrefixes(FSettings);
 
     except
         on E: Exception do
         begin
-            // Настройки восстанавливаются к дефолту, но причина сбоя не должна теряться
+            // Битый файл не затираем дефолтами: сохраняем копию для
+            // диагностики, затем пробуем поднять конфиг из шаблона в памяти.
             LogException('TSettingsManager.Load(settings.json)', E);
-            ApplyDefaults;
+            BackupCorruptSettings(Path);
+            if not TryLoadSettingsFromTemplate then
+            begin
+                FSettings := Default(TAppSettings);
+                ApplyDefaults;
+            end;
         end;
     end;
 end;
