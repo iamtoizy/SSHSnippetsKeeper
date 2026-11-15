@@ -988,11 +988,17 @@ begin
 end;
 
 // Справка по шифрованию: принципы DPAPI и парольной фразы, хранение
-// ключа и нюансы работы с несколькими базами
+// ключа и нюансы работы с несколькими базами. Без DLL mc-движка вместо
+// неё показываем HTML-справку о получении и проверке библиотеки
 procedure TSettingsForm.bDbHelpClick(Sender: TObject);
 begin
-    MessagesHandler.ShowInfo(
-        TUIStateLoader.GetMessage('Settings.DbHelp'));
+    if not DbEngineDllAvailable then
+        ShowCustomHelpHtml(
+            TUIStateLoader.GetMessage('Settings.DbDllHelpTitle'),
+            TUIStateLoader.GetMessage('Settings.DbDllHelpBody'))
+    else
+        MessagesHandler.ShowInfo(
+            TUIStateLoader.GetMessage('Settings.DbHelp'));
 end;
 
 procedure TSettingsForm.chkDbEncryptClick(Sender: TObject);

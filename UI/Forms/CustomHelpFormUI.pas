@@ -49,7 +49,8 @@ uses
     System.SysUtils,
     Common.Localization,
     Vcl.Clipbrd,
-    Vcl.Themes
+    Vcl.Themes,
+    Winapi.ShellAPI
     ;
 
 {$R *.dfm}
@@ -301,6 +302,18 @@ begin
         ShowSimpleToast(TUIStateLoader.GetMessage('Common.CopiedToClipboard'));
 
         // После клика тоже забираем фокус у HTMLViewer'а и прячем на кнопку
+        ActiveControl := FFocusCatcher;
+        Exit;
+    end;
+
+    // Внешние ссылки открываем браузером по умолчанию: сам HTMLViewer
+    // грузит URL внутренним навигатором и без этого уходит в ошибку
+    if SRC.StartsWith('http://') or SRC.StartsWith('https://') then
+    begin
+        Handled := True;
+        if ShellExecute(0, 'open', PWideChar(SRC), nil, nil, SW_SHOWNORMAL) <= 32 then
+            ShowSimpleToast(TUIStateLoader.GetMessage('Common.HelpLinkOpenFailed'));
+        // Фокус возвращаем так же, как после копирования
         ActiveControl := FFocusCatcher;
     end;
 end;
