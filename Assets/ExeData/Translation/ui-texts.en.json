@@ -2078,7 +2078,19 @@
         "Export": "Export...",
         "AddTag": "Add tag...",
         "MoveToCategory": "Move to category...",
-        "RemoveTag": "Remove tag..."
+        "RemoveTag": "Remove tag...",
+        "ExportBundle": "Export set to file...",
+        "ImportBundle": "Import set from file..."
+      },
+      "ExportBundle": {
+        "SaveTitle": "Export snippet set",
+        "Error": "Export failed: %s",
+        "DoneMsg": "Exported snippets: %d"
+      },
+      "ImportBundle": {
+        "OpenTitle": "Import snippet set",
+        "Error": "Import failed: %s",
+        "DoneMsg": "Imported: %d, duplicates skipped: %d, categories created: %d"
       },
       "Sequence": {
         "Caption": "Execution order",
@@ -2156,7 +2168,17 @@
       "ModelNotLoaded": "Error: The neural network model is not loaded!",
       "AskCallError": "AI call error: %s",
       "JSONError": "Failed to extract response from JSON: %s",
-      "APIError": "API Error (%d): %s"
+      "APIError": "API Error (%d): %s",
+      "EmptyAnswer": "AI returned an empty response",
+      "AutoTitle": {
+        "Instruction": "Suggest a short title for this code snippet. Return only the title on a single line, without quotes or explanations."
+      },
+      "AutoTags": {
+        "Instruction": "Suggest 3 to 7 short tags (labels) for this code snippet. Return only the tags on a single line, separated by semicolons."
+      },
+      "Explain": {
+        "Instruction": "Explain what this code does in 2-4 plain sentences. No headings, no lists, no code blocks."
+      }
     },
     "Epoch": {
       "Seconds": "sec",
@@ -2257,6 +2279,7 @@
       "SecurityToastTitle": "⚠ Security Threat",
       "AutocompleteUpdated": "Autocomplete file updated. Content will be reloaded.",
       "AIChooseModelError": "Select an AI provider and model!",
+      "AITagsSkipped": "Added: %d. Not found among existing tags: %s",
       "EnterSnippetTextHere": "Enter snippet name here...",
       "MacroCounter": "Macros: %d",
       "MacroCounterSel": "Macro: %d of %d",
@@ -2376,6 +2399,32 @@
         "Confirm": "confirm",
         "Select": "select"
       }
+    },
+    "Guard": {
+      "Summary": "Typing guard: %d issue(s) found",
+      "StatusBar": "Dangerous: %d",
+      "ConfirmRun": "Run the snippet anyway?",
+      "FindingLine": "• %s: \"%s\"",
+      "SummaryMore": "…and %d more",
+      "Danger": {
+        "RmRf": "Recursive forced delete (rm -rf)",
+        "ForkBomb": "Fork bomb",
+        "CurlSh": "Download-and-execute pipe (curl|sh)",
+        "DdDevice": "Raw disk write via dd",
+        "Mkfs": "Filesystem format (mkfs)",
+        "DiskOverwrite": "Disk overwrite (/dev/sd*)",
+        "SqlDrop": "Database structure drop (DROP TABLE/DATABASE/SCHEMA)",
+        "GitForcePush": "Force push (git push --force)",
+        "ChmodRoot": "chmod 777 on filesystem root",
+        "FormatC": "Disk format (format c:)",
+        "RemoveItemForce": "PowerShell recursive delete (Remove-Item -Recurse -Force)"
+      }
+    },
+    "Bundle": {
+      "FileNotFound": "File not found: %s",
+      "InvalidJSON": "The file is not valid JSON",
+      "InvalidFormat": "This is not an SSHSnippetsKeeper snippet bundle",
+      "VersionTooNew": "Bundle version (%d) is newer than supported (%d). Update the app"
     },
     "MacroDoc": {
       "Title": "Macros: how it works",

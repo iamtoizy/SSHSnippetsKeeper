@@ -10,7 +10,6 @@ object SecurityReportForm: TSecurityReportForm
   Font.Height = -12
   Font.Name = 'Segoe UI'
   Font.Style = []
-  FormStyle = fsStayOnTop
   Position = poScreenCenter
   TextHeight = 15
   object lbSummary: TLabel

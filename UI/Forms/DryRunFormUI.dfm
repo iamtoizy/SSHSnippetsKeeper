@@ -49,7 +49,7 @@ object DryRunForm: TDryRunForm
       Anchors = [akRight, akBottom]
       Caption = 'Run'
       Default = True
-      ModalResult = 1
+      OnClick = bRunClick
       TabOrder = 1
     end
     object bClose: TButton

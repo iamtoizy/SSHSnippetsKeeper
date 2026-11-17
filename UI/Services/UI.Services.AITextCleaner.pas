@@ -2,20 +2,29 @@
 
 interface
 
+uses
+    System.SysUtils
+    ;
+
 type
     TAITextCleaner = class
     private
         class function CleanInlineMarkdown(const Line: string): string;
+        class function StripWrappingQuotes(const S: string): string;
     public
         class function ExtractPureCode(const RawText: string): string;
+        class function ExtractOneLine(const RawText: string;
+            AMaxLength: Integer): string;
+        class function ExtractTagSuggestions(const RawText: string;
+            AMaxTags, AMaxTagLen: Integer): TArray<string>;
     end;
 
 implementation
 
 uses
     System.Classes,
-    System.RegularExpressions,
-    System.SysUtils
+    System.Generics.Collections,
+    System.RegularExpressions
     ;
 
 { TAITextCleaner }
@@ -98,6 +107,93 @@ begin
     finally
         CodeLines.Free;
         Lines.Free;
+    end;
+end;
+
+class function TAITextCleaner.StripWrappingQuotes(const S: string): string;
+begin
+    Result := Trim(S);
+    while Length(Result) >= 2 do
+        if ((Result[1] = '"') and (Result[Length(Result)] = '"')) or
+            ((Result[1] = '''') and (Result[Length(Result)] = '''')) or
+            ((Result[1] = '`') and (Result[Length(Result)] = '`')) or
+            ((Result[1] = '«') and (Result[Length(Result)] = '»')) then
+            Result := Trim(Copy(Result, 2, Length(Result) - 2))
+        else
+            Break;
+end;
+
+class function TAITextCleaner.ExtractOneLine(const RawText: string;
+    AMaxLength: Integer): string;
+var
+    Lines: TStringList;
+    I: Integer;
+begin
+    Result := '';
+    Lines := TStringList.Create;
+    try
+        Lines.Text := RawText;
+        for I := 0 to Lines.Count - 1 do
+            if Trim(Lines[I]) <> '' then
+            begin
+                Result := CleanInlineMarkdown(Trim(Lines[I]));
+                Break;
+            end;
+    finally
+        Lines.Free;
+    end;
+
+    Result := StripWrappingQuotes(TRegEx.Replace(Result, '\s+', ' ').Trim);
+    if (AMaxLength > 0) and (Length(Result) > AMaxLength) then
+        Result := Copy(Result, 1, AMaxLength);
+end;
+
+class function TAITextCleaner.ExtractTagSuggestions(const RawText: string;
+    AMaxTags, AMaxTagLen: Integer): TArray<string>;
+var
+    Normalized: string;
+    Parts: TArray<string>;
+    Part, CleanPart: string;
+    Tags: TList<string>;
+    I: Integer;
+    Known: Boolean;
+begin
+    Result := [];
+    if Trim(RawText).IsEmpty or (AMaxTags <= 0) then
+        Exit;
+
+    Normalized := StringReplace(RawText, ';', #10, [rfReplaceAll]);
+    Normalized := StringReplace(Normalized, ',', #10, [rfReplaceAll]);
+    Parts := Normalized.Split([#10, #13]);
+
+    Tags := TList<string>.Create;
+    try
+        for Part in Parts do
+        begin
+            CleanPart := StripWrappingQuotes(TRegEx.Replace(
+                CleanInlineMarkdown(Trim(Part)), '\s+', ' '));
+            if CleanPart.IsEmpty then
+                Continue;
+            if (AMaxTagLen > 0) and (Length(CleanPart) > AMaxTagLen) then
+                Continue;
+
+            Known := False;
+            for I := 0 to Tags.Count - 1 do
+                if SameText(Tags[I], CleanPart) then
+                begin
+                    Known := True;
+                    Break;
+                end;
+            if Known then
+                Continue;
+
+            Tags.Add(CleanPart);
+            if Tags.Count >= AMaxTags then
+                Break;
+        end;
+        Result := Tags.ToArray;
+    finally
+        Tags.Free;
     end;
 end;
 

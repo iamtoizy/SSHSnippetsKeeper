@@ -6057,6 +6057,12 @@ object MainForm: TMainForm
     object puExportSnippets: TMenuItem
       Action = actExportSnippets
     end
+    object puExportBundle: TMenuItem
+      Action = actExportBundle
+    end
+    object puImportBundle: TMenuItem
+      Action = actImportBundle
+    end
     object puFavSep: TMenuItem
       Caption = '-'
     end
@@ -6290,6 +6296,16 @@ object MainForm: TMainForm
       Category = 'Snippets'
       Caption = 'actExportSnippets'
       OnExecute = actExportSnippetsExecute
+    end
+    object actExportBundle: TAction
+      Category = 'Snippets'
+      Caption = 'actExportBundle'
+      OnExecute = actExportBundleExecute
+    end
+    object actImportBundle: TAction
+      Category = 'Snippets'
+      Caption = 'actImportBundle'
+      OnExecute = actImportBundleExecute
     end
     object actAddTagToSnippets: TAction
       Category = 'Snippets'

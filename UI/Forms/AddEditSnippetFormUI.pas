@@ -28,6 +28,7 @@ uses
     SynHighlighterMulti,
     SynHighlighterUNIXShellScript,
     System.Classes,
+    System.SysUtils,
     System.Types,
     Vcl.ComCtrls,
     Vcl.Controls,
@@ -128,6 +129,9 @@ type
         procedure lvAllTagsDragDrop(Sender, Source: TObject; X, Y: Integer);
         procedure lvAllTagsDblClick(Sender: TObject);
         procedure mAIPromptKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+        procedure bAITitleClick(Sender: TObject);
+        procedure bAITagsClick(Sender: TObject);
+        procedure bAIExplainClick(Sender: TObject);
         procedure mContentChange(Sender: TObject);
         procedure mContentKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
         procedure mContentProcessCommand(Sender: TObject; var Command: TSynEditorCommand; var Char: WideChar; Data: Pointer);
@@ -198,6 +202,10 @@ type
 
         procedure ShowAIOverlay;
         procedure ExecuteAICommand;
+        function BuildAIService: IAIService;
+        procedure RunAITask(const AInstruction, AContext: string;
+            const AOnResult: TProc<string>);
+        procedure ApplySuggestedTags(const Suggestions: TArray<string>);
         function IsAutocompleteVisible: Boolean;
         procedure SetSyntax;
         procedure ApplySnippetLanguage(const ALanguage: string);
@@ -279,7 +287,6 @@ uses
     SynThemeAdapter,
     System.DateUtils,
     System.Generics.Collections,
-    System.SysUtils,
     UI.BusyIndicator,
     UI.Helpers,
     UI.HoverHelpManager,
@@ -1063,41 +1070,9 @@ procedure TAddEditSnippetForm.ExecuteAICommand;
 var
     Instruction, CodeContext: string;
     IsSelection: Boolean;
-    HubIdx, ModIdx: Integer;
-    SelectedAI: TAIItem;
-    KeyBytes: TBytes;
-    KeyText: string;
 begin
     Instruction := string(mAIPrompt.Text).Trim;
     if Instruction.IsEmpty then Exit;
-
-    if (cbAIHub.ItemIndex < 0) or (cbAIModel.ItemIndex < 0) then
-    begin
-        MessagesHandler.ShowError(TUIStateLoader.GetMessage('AddEditSnippet.AIChooseModelError'));
-        Exit;
-    end;
-
-    // Получаем реальные индексы из структуры
-    HubIdx := Integer(IntPtr(cbAIHub.Items.Objects[cbAIHub.ItemIndex]));
-    ModIdx := Integer(IntPtr(cbAIModel.Items.Objects[cbAIModel.ItemIndex]));
-
-    // Берем нужную модель из настроек
-    SelectedAI := AppContext.SettingsManager.Data.AISettings[HubIdx].Items[ModIdx];
-
-    KeyBytes := UnprotectSecretToBytes(SelectedAI.APIKey);
-    try
-        KeyText := TEncoding.UTF8.GetString(KeyBytes);
-    finally
-        WipeSecretBytes(KeyBytes);
-    end;
-
-    // Создаем сервис с её параметрами
-    FAIService := TYandexAIService.Create(
-        KeyText,
-        SelectedAI.Folder,
-        SelectedAI.Model,
-        SelectedAI.Agent
-    );
 
     IsSelection := mContent.SelText <> '';
     if IsSelection then
@@ -1105,20 +1080,77 @@ begin
     else
         CodeContext := mContent.Text;
 
+    RunAITask(Instruction, CodeContext,
+        procedure(Raw: string)
+        var
+            NewCode: string;
+        begin
+            NewCode := TAITextCleaner.ExtractPureCode(Raw);
+            mContent.BeginUpdate;
+            try
+                if IsSelection then
+                    mContent.SelText := NewCode
+                else
+                begin
+                    if (mContent.Text <> '') and (mContent.CaretX > 1) then
+                        NewCode := sLineBreak + NewCode;
+                    mContent.SelText := NewCode;
+                end;
+            finally
+                mContent.EndUpdate;
+            end;
+            mContent.SetFocus;
+        end);
+end;
+
+function TAddEditSnippetForm.BuildAIService: IAIService;
+var
+    HubIdx, ModIdx: Integer;
+    SelectedAI: TAIItem;
+    KeyBytes: TBytes;
+begin
+    Result := nil;
+    if (cbAIHub.ItemIndex < 0) or (cbAIModel.ItemIndex < 0) then
+    begin
+        MessagesHandler.ShowError(TUIStateLoader.GetMessage('AddEditSnippet.AIChooseModelError'));
+        Exit;
+    end;
+
+    HubIdx := Integer(IntPtr(cbAIHub.Items.Objects[cbAIHub.ItemIndex]));
+    ModIdx := Integer(IntPtr(cbAIModel.Items.Objects[cbAIModel.ItemIndex]));
+    SelectedAI := AppContext.SettingsManager.Data.AISettings[HubIdx].Items[ModIdx];
+
+    KeyBytes := UnprotectSecretToBytes(SelectedAI.APIKey);
+    try
+        Result := TYandexAIService.Create(
+            TEncoding.UTF8.GetString(KeyBytes),
+            SelectedAI.Folder,
+            SelectedAI.Model,
+            SelectedAI.Agent
+        );
+    finally
+        WipeSecretBytes(KeyBytes);
+    end;
+end;
+
+procedure TAddEditSnippetForm.RunAITask(const AInstruction, AContext: string;
+    const AOnResult: TProc<string>);
+begin
+    FAIService := BuildAIService;
+    if FAIService = nil then Exit;
+
     pbLoading.Visible := True;
     mAIPrompt.Enabled := False;
-    FIsAICanceled := False; // Сброс перед стартом
+    FIsAICanceled := False;
     FAIInProgress := True;
 
     FAIThread := TThread.CreateAnonymousThread(
         procedure
         var
-            NewCode: string;
-            ErrorMsg: string;
+            TaskResult, ErrorMsg: string;
         begin
             try
-                NewCode := FAIService.AskAssistant(Instruction, CodeContext);
-                NewCode := TAITextCleaner.ExtractPureCode(NewCode);
+                TaskResult := FAIService.AskAssistant(AInstruction, AContext);
             except
                 on E: Exception do
                     ErrorMsg := E.Message;
@@ -1128,51 +1160,149 @@ begin
 
             TThread.Synchronize(nil, TThreadProcedure(
                 procedure
-                 begin
-                     FAIInProgress := False;
+                begin
+                    FAIInProgress := False;
 
-                     if FIsAICanceled then Exit;
+                    if FIsAICanceled then Exit;
 
-                     pbLoading.Visible := False;
+                    pbLoading.Visible := False;
                     mAIPrompt.Enabled := True;
                     pAIOverlay.Visible := False;
 
                     if ErrorMsg <> '' then
                         MessagesHandler.ShowError(TUIStateLoader.GetMessage('Common.GeneralError', [ErrorMsg]))
-                    else
-                    begin
-                        mContent.BeginUpdate;
-                        try
-                            if IsSelection then
-                            begin
-                                // Если было выделение — заменяем его
-                                mContent.SelText := NewCode;
-                            end
-                            else
-                            begin
-                                // КАСКАДНЫЙ ЗАПРОС (Вставка в позицию курсора):
-                                // Если мы вставляем в существующий текст, добавим красивые отступы,
-                                // чтобы новый код не слипался со старым
-                                if (mContent.Text <> '') and (mContent.CaretX > 1) then
-                                    NewCode := sLineBreak + NewCode;
-
-                                mContent.SelText := NewCode;
-                            end;
-                        finally
-                            mContent.EndUpdate;
-                        end;
-                    end;
-                    mContent.SetFocus;
+                    else if Assigned(AOnResult) then
+                        AOnResult(TaskResult);
                 end));
         end);
-    // 3. Отключаем автоматическое удаление
     FAIThread.FreeOnTerminate := False;
-
-    // 4. Назначаем обработчик для штатного завершения
     FAIThread.OnTerminate := AIThreadTerminated;
-
-    // 5. Теперь запускаем
     FAIThread.Start;
+end;
+
+procedure TAddEditSnippetForm.bAITitleClick(Sender: TObject);
+begin
+    RunAITask(
+        TUIStateLoader.GetMessage('AI.AutoTitle.Instruction'),
+        mContent.Text,
+        procedure(Raw: string)
+        var
+            TitleText: string;
+        begin
+            TitleText := TAITextCleaner.ExtractOneLine(Raw, 200);
+            if TitleText = '' then
+                MessagesHandler.ShowInfo(TUIStateLoader.GetMessage('AI.EmptyAnswer'))
+            else
+            begin
+                ebTitle.Text := TitleText;
+                ebTitle.SetFocus;
+            end;
+        end);
+end;
+
+procedure TAddEditSnippetForm.bAITagsClick(Sender: TObject);
+var
+    Context: string;
+begin
+    Context := mContent.Text;
+    if string(ebTitle.Text).Trim <> '' then
+        Context := 'Title: ' + ebTitle.Text + sLineBreak + sLineBreak + Context;
+
+    RunAITask(
+        TUIStateLoader.GetMessage('AI.AutoTags.Instruction'),
+        Context,
+        procedure(Raw: string)
+        begin
+            ApplySuggestedTags(TAITextCleaner.ExtractTagSuggestions(Raw, 7, 32));
+        end);
+end;
+
+procedure TAddEditSnippetForm.bAIExplainClick(Sender: TObject);
+begin
+    RunAITask(
+        TUIStateLoader.GetMessage('AI.Explain.Instruction'),
+        mContent.Text,
+        procedure(Raw: string)
+        var
+            Explanation: string;
+        begin
+            Explanation := Trim(Raw);
+            if Explanation = '' then
+                MessagesHandler.ShowInfo(TUIStateLoader.GetMessage('AI.EmptyAnswer'))
+            else
+            begin
+                if string(mComment.Text).Trim <> '' then
+                    mComment.Text := TrimRight(mComment.Text) + sLineBreak +
+                        sLineBreak + Explanation
+                else
+                    mComment.Text := Explanation;
+                mComment.SetFocus;
+            end;
+        end);
+end;
+
+procedure TAddEditSnippetForm.ApplySuggestedTags(
+    const Suggestions: TArray<string>);
+var
+    I, Added, Skipped: Integer;
+    S: string;
+    SkippedNames: TStringList;
+    Found: Boolean;
+    Item: TListItem;
+begin
+    if Length(Suggestions) = 0 then
+    begin
+        MessagesHandler.ShowInfo(TUIStateLoader.GetMessage('AI.EmptyAnswer'));
+        Exit;
+    end;
+
+    SkippedNames := TStringList.Create;
+    try
+        Added := 0;
+        Skipped := 0;
+        lvAllTags.Items.BeginUpdate;
+        lvSelectedTags.Items.BeginUpdate;
+        try
+            for S in Suggestions do
+            begin
+                Found := False;
+                for I := 0 to lvSelectedTags.Items.Count - 1 do
+                    if SameText(lvSelectedTags.Items[I].Caption, S) then
+                    begin
+                        Found := True;
+                        Break;
+                    end;
+                if Found then
+                    Continue;
+
+                for I := 0 to lvAllTags.Items.Count - 1 do
+                    if SameText(lvAllTags.Items[I].Caption, S) then
+                    begin
+                        Item := lvSelectedTags.Items.Add;
+                        Item.Caption := lvAllTags.Items[I].Caption;
+                        Item.Data := lvAllTags.Items[I].Data;
+                        lvAllTags.Items.Delete(I);
+                        Inc(Added);
+                        Found := True;
+                        Break;
+                    end;
+                if not Found then
+                begin
+                    SkippedNames.Add(S);
+                    Inc(Skipped);
+                end;
+            end;
+        finally
+            lvSelectedTags.Items.EndUpdate;
+            lvAllTags.Items.EndUpdate;
+        end;
+
+        if (Added = 0) and (Skipped > 0) then
+            MessagesHandler.ShowInfo(TUIStateLoader.GetMessage(
+                'AddEditSnippet.AITagsSkipped', [Added, SkippedNames.CommaText]));
+    finally
+        SkippedNames.Free;
+    end;
 end;
 
 class function TAddEditSnippetForm.ExecuteEdit(Owner: TComponent; AppContext: IAppContext; var SnippetToEdit: TSnippetDTO): Boolean;

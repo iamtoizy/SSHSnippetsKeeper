@@ -22,11 +22,15 @@ type
         bRun: TButton;
         bClose: TButton;
         sbBottom: TStatusBar;
+        procedure bRunClick(Sender: TObject);
     private
         FSnippet: TSnippetDTO;
         FLines: TArray<TTranscriptLine>;
+        FGuardLineIsDanger: TArray<Boolean>;
+        FGuardDangerCount: Integer;
         function TypeNameText(AInputType: TMacroInputType): string;
         function LineText(const Line: TTranscriptLine): string;
+        procedure ApplyGuard;
         procedure ColorWarningLines;
         procedure FillPreview;
     end;
@@ -39,6 +43,7 @@ uses
     Common.Localization,
     MacroEngine,
     System.SysUtils,
+    TypingGuard,
     Vcl.Graphics,
     Winapi.Messages,
     Winapi.Windows
@@ -148,12 +153,15 @@ begin
     rePreview.SelLength := 0;
     for I := 0 to Length(FLines) - 1 do
     begin
-        if (FLines[I].Warning = '') and (FLines[I].Kind <> tlWarning) then
+        if (FLines[I].Warning = '') and (FLines[I].Kind <> tlWarning) and
+            (not FGuardLineIsDanger[I]) then
             Continue;
 
         rePreview.SelStart := rePreview.Perform(EM_LINEINDEX, I, 0);
         rePreview.SelLength := Length(rePreview.Lines[I]);
         rePreview.SelAttributes.Color := RGB(190, 30, 30);
+        if FGuardLineIsDanger[I] then
+            rePreview.SelAttributes.Style := [fsBold];
     end;
     rePreview.SelStart := 0;
     rePreview.SelLength := 0;
@@ -178,11 +186,46 @@ begin
                 Inc(Warnings);
         end;
 
+        ApplyGuard;
         ColorWarningLines;
         sbBottom.SimpleText := TUIStateLoader.GetMessage('DryRun.Summary', [Total, Warnings]);
+        if FGuardDangerCount > 0 then
+            sbBottom.SimpleText := sbBottom.SimpleText + '  |  ' +
+                Format(TUIStateLoader.GetMessage('Guard.StatusBar'), [FGuardDangerCount]);
     finally
         rePreview.Lines.EndUpdate;
     end;
+end;
+
+procedure TDryRunForm.ApplyGuard;
+var
+    I: Integer;
+begin
+    SetLength(FGuardLineIsDanger, Length(FLines));
+    FGuardDangerCount := 0;
+    for I := 0 to Length(FLines) - 1 do
+    begin
+        FGuardLineIsDanger[I] :=
+            (FLines[I].Kind = tlText) and
+            (Length(TTypingGuard.Findings(FLines[I].Detail, nil)) > 0);
+        if FGuardLineIsDanger[I] then
+            Inc(FGuardDangerCount);
+    end;
+end;
+
+procedure TDryRunForm.bRunClick(Sender: TObject);
+var
+    DangerFindings: TArray<TGuardFinding>;
+begin
+    DangerFindings := TTypingGuard.Findings(FSnippet.Content, nil);
+    if (Length(DangerFindings) > 0) and
+        (not AppContext.MessagesHandler.AskWarning(
+            TTypingGuard.ReportText(DangerFindings, 5) + sLineBreak +
+            TUIStateLoader.GetMessage('Guard.ConfirmRun'),
+            TUIStateLoader.GetMessage('Common.Warning')
+        )) then
+        Exit;
+    ModalResult := mrOk;
 end;
 
 end.

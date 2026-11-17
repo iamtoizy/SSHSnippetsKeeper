@@ -48,7 +48,10 @@ uses
     Tests.CompletionProviders in 'Tests.CompletionProviders.pas',
     Tests.DbCrypto in 'Tests.DbCrypto.pas',
     Tests.WindowHelper in 'Tests.WindowHelper.pas',
-    Tests.SyncController in 'Tests.SyncController.pas'
+    Tests.SyncController in 'Tests.SyncController.pas',
+    Tests.TypingGuard in 'Tests.TypingGuard.pas',
+    Tests.AITextCleaner in 'Tests.AITextCleaner.pas',
+    Tests.BundleExchange in 'Tests.BundleExchange.pas'
     ;
 
 var
@@ -111,6 +114,9 @@ begin
         TDUnitX.RegisterTestFixture(TDbCryptoKeyFileTests);
         TDUnitX.RegisterTestFixture(TWindowHelperTests);
         TDUnitX.RegisterTestFixture(TSyncControllerTests);
+        TDUnitX.RegisterTestFixture(TTypingGuardTests);
+        TDUnitX.RegisterTestFixture(TAITextCleanerTests);
+        TDUnitX.RegisterTestFixture(TBundleExchangeTests);
         Runner := TDUnitX.CreateRunner([TDUnitXConsoleLogger.Create(False)]);
         Runner.UseRTTI := True;
         Results := Runner.Execute;

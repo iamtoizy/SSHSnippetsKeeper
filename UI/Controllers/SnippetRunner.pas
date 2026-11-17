@@ -21,7 +21,8 @@ type
         FAppContext: IAppContext;
         function SelectTargetWindow(out TargetWindow: TWindowMonitorInfo): Boolean;
         function BuildMacroContext(SnippetID: Integer; TargetHWND: HWND): TMacroContext;
-        function ValidateBeforeType(const Snippet: TSnippetDTO): Boolean;
+        function ValidateBeforeType(const Snippet: TSnippetDTO;
+            AAskGuard: Boolean): Boolean;
         procedure TypeIntoWindow(const Snippet: TSnippetDTO; TargetHWND: HWND);
         procedure DoExecuteInWindow(const Snippet: TSnippetDTO; TargetHWND: HWND);
         function IsTypingBlocked: Boolean;
@@ -60,6 +61,7 @@ uses
     MacroStopPanelUI,
     ParamsFormUI,
     System.Classes,
+    TypingGuard,
     Vcl.Controls,
     Vcl.Forms
     ;
@@ -209,10 +211,13 @@ begin
     Result := Context;
 end;
 
-function TSnippetRunner.ValidateBeforeType(const Snippet: TSnippetDTO): Boolean;
+function TSnippetRunner.ValidateBeforeType(const Snippet: TSnippetDTO;
+    AAskGuard: Boolean): Boolean;
 var
     WarningReason: string;
     UnknownCommands: TArray<string>;
+    Findings: TArray<TGuardFinding>;
+    I, DangerCount: Integer;
 begin
     Result := False;
 
@@ -245,6 +250,21 @@ begin
                 TUIStateLoader.GetMessage('Common.Warning')
             ) then Exit;
         end;
+    end;
+
+    if AAskGuard then
+    begin
+        Findings := TTypingGuard.Findings(Snippet.Content, nil);
+        DangerCount := 0;
+        for I := 0 to High(Findings) do
+            if Findings[I].Kind = gfDanger then
+                Inc(DangerCount);
+        if DangerCount > 0 then
+            if not FAppContext.MessagesHandler.AskWarning(
+                TTypingGuard.ReportText(Findings, 5) + sLineBreak +
+                TUIStateLoader.GetMessage('Guard.ConfirmRun'),
+                TUIStateLoader.GetMessage('Common.Warning')
+            ) then Exit;
     end;
 
     Result := True;
@@ -363,7 +383,7 @@ begin
         if IsTypingBlocked then
             Exit;
 
-        if not ValidateBeforeType(Snippet) then
+        if not ValidateBeforeType(Snippet, False) then
             Exit;
 
         // Выбор окна
@@ -401,7 +421,7 @@ end;
 
 procedure TSnippetRunner.DoExecuteInWindow(const Snippet: TSnippetDTO; TargetHWND: HWND);
 begin
-    if not ValidateBeforeType(Snippet) then
+    if not ValidateBeforeType(Snippet, True) then
         Exit;
 
     if not IsWindow(TargetHWND) then
@@ -434,7 +454,7 @@ begin
         if IsTypingBlocked then
             Exit;
 
-        if not ValidateBeforeType(Snippet) then
+        if not ValidateBeforeType(Snippet, False) then
             Exit;
 
         // mrOk - «Запустить» в предпросмотре: сниппет выполняется по-настоящему

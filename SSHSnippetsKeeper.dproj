@@ -318,6 +318,8 @@
             <Form>AISettingsForm</Form>
         </DCCReference>
         <DCCReference Include="Core\Services\SecurityScanner.pas"/>
+        <DCCReference Include="Core\Services\TypingGuard.pas"/>
+        <DCCReference Include="Core\Services\BundleExchange.pas"/>
         <DCCReference Include="Core\Services\PasswordService.pas"/>
         <DCCReference Include="UI\Forms\PasswordGenFormUI.pas">
             <Form>PasswordGenForm</Form>

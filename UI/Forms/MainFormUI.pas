@@ -162,6 +162,8 @@ type
         actDryRunSnippet: TAction;
         actRunSequence: TAction;
         actExportSnippets: TAction;
+        actExportBundle: TAction;
+        actImportBundle: TAction;
         actAddTagToSnippets: TAction;
         actRemoveTagFromSnippets: TAction;
         actMoveToCategory: TAction;
@@ -229,6 +231,8 @@ type
         procedure actSavedQueryDeleteExecute(Sender: TObject);
         procedure actSecurityReportExecute(Sender: TObject);
         procedure actExportSnippetsExecute(Sender: TObject);
+        procedure actExportBundleExecute(Sender: TObject);
+        procedure actImportBundleExecute(Sender: TObject);
         procedure actAddTagToSnippetsExecute(Sender: TObject);
         procedure actRemoveTagFromSnippetsExecute(Sender: TObject);
         procedure actMoveToCategoryExecute(Sender: TObject);
@@ -350,6 +354,8 @@ type
         procedure DoRunFavoriteSlot(Index: Integer);
         procedure DoRunSequence;
         procedure DoExportSnippets;
+        procedure DoExportBundle;
+        procedure DoImportBundle;
         procedure DoAddTagToSnippets;
         procedure DoRemoveTagFromSnippets;
         procedure DoMoveToCategory;
@@ -420,6 +426,7 @@ uses
     ArchiveBuilderFormUI,
     ArrayHelper,
     ChainEditorFormUI,
+    BundleExchange,
     ChainRunnerController,
     CategorySelectDialogUI,
     Core.Entities.Category,
@@ -2302,6 +2309,8 @@ begin
     actAddTagToSnippets.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.AddTag');
     actRemoveTagFromSnippets.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.RemoveTag');
     actMoveToCategory.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.MoveToCategory');
+    actExportBundle.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.ExportBundle');
+    actImportBundle.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.ImportBundle');
     // Заголовки колонок lvSnippets могли смениться - пересчитываем ширины
     SizeSnippetListColumns;
 end;
@@ -3231,6 +3240,16 @@ begin
     DoExportSnippets;
 end;
 
+procedure TMainForm.actExportBundleExecute(Sender: TObject);
+begin
+    DoExportBundle;
+end;
+
+procedure TMainForm.actImportBundleExecute(Sender: TObject);
+begin
+    DoImportBundle;
+end;
+
 procedure TMainForm.actAddTagToSnippetsExecute(Sender: TObject);
 begin
     DoAddTagToSnippets;
@@ -3299,6 +3318,75 @@ begin
     end;
 
     FStatus.Flash(TUIStateLoader.GetMessage('MultiSelect.Export.DoneMsg', [Count]));
+end;
+
+procedure TMainForm.DoExportBundle;
+var
+    Snippets: TArray<TSnippetDTO>;
+    SaveDlg: TSaveDialog;
+    Count: Integer;
+begin
+    Snippets := GetSelectedSnippets;
+    if Length(Snippets) = 0 then
+        Exit;
+
+    SaveDlg := TSaveDialog.Create(Self);
+    try
+        SaveDlg.Title := TUIStateLoader.GetMessage('MultiSelect.ExportBundle.SaveTitle');
+        SaveDlg.Filter := 'SSK Bundle (*.ssk.json)|*.ssk.json|JSON (*.json)|*.json';
+        SaveDlg.DefaultExt := 'json';
+        SaveDlg.FileName := Format('snippets-bundle-%s.ssk.json',
+            [FormatDateTime('yyyy-mm-dd', Now)]);
+        SaveDlg.Options := SaveDlg.Options + [ofOverwritePrompt];
+        if not SaveDlg.Execute(Handle) then
+            Exit;
+        try
+            Count := TBundleExchange.ExportBundle(AppContext,
+                SaveDlg.FileName, Snippets);
+        except
+            on E: Exception do
+            begin
+                MessagesHandler.ShowError(TUIStateLoader.GetMessage(
+                    'MultiSelect.ExportBundle.Error', [E.Message]));
+                Exit;
+            end;
+        end;
+        FStatus.Flash(TUIStateLoader.GetMessage(
+            'MultiSelect.ExportBundle.DoneMsg', [Count]));
+    finally
+        SaveDlg.Free;
+    end;
+end;
+
+procedure TMainForm.DoImportBundle;
+var
+    OpenDlg: TOpenDialog;
+    Res: TBundleImportResult;
+begin
+    OpenDlg := TOpenDialog.Create(Self);
+    try
+        OpenDlg.Title := TUIStateLoader.GetMessage('MultiSelect.ImportBundle.OpenTitle');
+        OpenDlg.Filter := 'SSK Bundle (*.ssk.json)|*.ssk.json|JSON (*.json)|*.json';
+        if not OpenDlg.Execute(Handle) then
+            Exit;
+        try
+            Res := TBundleExchange.ImportBundle(AppContext,
+                OpenDlg.FileName, FUserID);
+        except
+            on E: Exception do
+            begin
+                MessagesHandler.ShowError(TUIStateLoader.GetMessage(
+                    'MultiSelect.ImportBundle.Error', [E.Message]));
+                Exit;
+            end;
+        end;
+        RefreshCurrentSnippetList;
+        FStatus.Flash(TUIStateLoader.GetMessage(
+            'MultiSelect.ImportBundle.DoneMsg',
+            [Res.Imported, Res.Skipped, Res.CreatedCategories]));
+    finally
+        OpenDlg.Free;
+    end;
 end;
 
 procedure TMainForm.DoAddTagToSnippets;

@@ -346,6 +346,42 @@ object AddEditSnippetForm: TAddEditSnippetForm
           TabOrder = 1
           Visible = False
           ExplicitHeight = 143
+          object pAIQuick: TPanel
+            Left = 0
+            Top = 0
+            Width = 521
+            Height = 30
+            Align = alTop
+            BevelOuter = bvNone
+            TabOrder = 2
+            object bAITitle: TButton
+              Left = 0
+              Top = 3
+              Width = 90
+              Height = 25
+              Caption = #1053#1072#1079#1074#1072#1085#1080#1077
+              TabOrder = 0
+              OnClick = bAITitleClick
+            end
+            object bAITags: TButton
+              Left = 96
+              Top = 3
+              Width = 90
+              Height = 25
+              Caption = #1058#1077#1075#1080
+              TabOrder = 1
+              OnClick = bAITagsClick
+            end
+            object bAIExplain: TButton
+              Left = 192
+              Top = 3
+              Width = 110
+              Height = 25
+              Caption = #1054#1073#1098#1103#1089#1085#1080#1090#1100
+              TabOrder = 2
+              OnClick = bAIExplainClick
+            end
+          end
           object pbLoading: TProgressBar
             Left = 0
             Top = 258

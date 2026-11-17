@@ -159,6 +159,8 @@ uses
   SecurityScanner in 'Core\Services\SecurityScanner.pas',
   SecurityReport in 'Core\Services\SecurityReport.pas',
   SecurityScanDelta in 'Core\Services\SecurityScanDelta.pas',
+  TypingGuard in 'Core\Services\TypingGuard.pas',
+  BundleExchange in 'Core\Services\BundleExchange.pas',
   PasswordService in 'Core\Services\PasswordService.pas',
   PasswordGenFormUI in 'UI\Forms\PasswordGenFormUI.pas' {PasswordGenForm},
   Core.AppContext in 'Core\Core.AppContext.pas',
