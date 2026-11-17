@@ -766,9 +766,10 @@ end;
 // сохраняются; о потерях пишем в лог.
 procedure TSettingsManager.SanitizeSettings(var ASettings: TAppSettings);
 var
-    I, J, K, Kept, DroppedApps, DroppedItems: Integer;
+    I, J, K, Kept, DroppedApps, DroppedItems, DroppedRules: Integer;
     Classes: TArray<string>;
     ExeName, Pattern: string;
+    DenyRule: TGlobalTitleDenyRule;
 
     function TryCompileRegex(const APattern: string): Boolean;
     begin
@@ -787,6 +788,7 @@ var
 begin
     DroppedApps := 0;
     DroppedItems := 0;
+    DroppedRules := 0;
 
     // AllowedApplications
     Kept := 0;
@@ -823,6 +825,28 @@ begin
         Inc(Kept);
     end;
     SetLength(ASettings.AllowedApplications.Items, Kept);
+
+    // GlobalTitleDenyRules: пустой или битый Pattern - правило отбрасывается.
+    // Молчаливое хранение такого правила опасно: защита выглядит включённой,
+    // но не работает
+    Kept := 0;
+    for I := 0 to High(ASettings.GlobalTitleDenyRules.Items) do
+    begin
+        DenyRule := ASettings.GlobalTitleDenyRules.Items[I];
+        DenyRule.Name := Trim(DenyRule.Name);
+        DenyRule.Pattern := Trim(DenyRule.Pattern);
+
+        if (DenyRule.Pattern = '') or not TryCompileRegex(DenyRule.Pattern) then
+        begin
+            Inc(DroppedRules);
+            Continue;
+        end;
+
+        if Kept <> I then
+            ASettings.GlobalTitleDenyRules.Items[Kept] := DenyRule;
+        Inc(Kept);
+    end;
+    SetLength(ASettings.GlobalTitleDenyRules.Items, Kept);
 
     // AISettings
     Kept := 0;
@@ -866,9 +890,9 @@ begin
     end;
     SetLength(ASettings.AISettings.Items, Kept);
 
-    if (DroppedApps > 0) or (DroppedItems > 0) then
-        LogMsg(Format('TSettingsManager.Sanitize: dropped %d app(s), %d AI item(s)',
-            [DroppedApps, DroppedItems]));
+    if (DroppedApps > 0) or (DroppedItems > 0) or (DroppedRules > 0) then
+        LogMsg(Format('TSettingsManager.Sanitize: dropped %d app(s), %d AI item(s), %d deny rule(s)',
+            [DroppedApps, DroppedItems, DroppedRules]));
 end;
 
 // =============================================================================

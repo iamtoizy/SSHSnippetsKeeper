@@ -9,6 +9,7 @@ uses
     System.Generics.Collections,
     System.Generics.Defaults,
     System.SysUtils,
+    UI.ListViewColumnSizing,
     Vcl.ComCtrls,
     Vcl.Controls,
     Vcl.ExtCtrls,
@@ -38,6 +39,7 @@ type
         procedure lvItemDblClick(Sender: TObject);
     private
         FEntries: TArray<TWindowClassEntry>;
+        FColFitter: TListViewColumnFitter;
         procedure PopulateList(const AFilter: string);
         procedure UpdateStatus;
         function CollectCheckedClasses: TArray<string>;
@@ -163,9 +165,11 @@ begin
         lvClasses.Items.EndUpdate;
     end;
 
-    // LVSCW_AUTOSIZE_USEHEADER: заголовок - по содержимому, последний - до края
-    for I := 0 to lvClasses.Columns.Count - 1 do
-        lvClasses.Columns[I].Width := -2;
+    // Автоподбор ширин: колонки по содержимому, последняя до края,
+    // без горизонтальной прокрутки
+    if FColFitter = nil then
+        FColFitter := TListViewColumnFitter.Create(Self, lvClasses);
+    FColFitter.Fit;
 end;
 
 procedure TWindowClassPickerDialog.lvItemDblClick(Sender: TObject);

@@ -316,7 +316,7 @@ object SettingsForm: TSettingsForm
         Left = 0
         Top = 326
         Width = 616
-        Height = 33
+        Height = 64
         Align = alBottom
         BevelOuter = bvNone
         TabOrder = 1
@@ -364,6 +364,24 @@ object SettingsForm: TSettingsForm
           Caption = #1055#1088#1086#1092#1080#1083#1100'...'
           TabOrder = 4
           OnClick = bAppProfileClick
+        end
+        object bAppDenyRules: TButton
+          Left = 3
+          Top = 36
+          Width = 220
+          Height = 25
+          Caption = 'DenyRules'
+          TabOrder = 5
+          OnClick = bAppDenyRulesClick
+        end
+        object bAppDiag: TButton
+          Left = 229
+          Top = 36
+          Width = 220
+          Height = 25
+          Caption = #1044#1080#1072#1075#1085#1086#1089#1090#1080#1082#1072'...'
+          TabOrder = 6
+          OnClick = bAppDiagClick
         end
       end
     end

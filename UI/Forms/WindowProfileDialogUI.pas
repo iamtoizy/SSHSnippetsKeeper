@@ -9,10 +9,12 @@ uses
     System.Classes,
     System.RegularExpressions,
     System.SysUtils,
+    UI.ListViewColumnSizing,
     Vcl.ComCtrls,
     Vcl.Controls,
     Vcl.ExtCtrls,
     Vcl.Forms,
+    Vcl.Graphics,
     Vcl.StdCtrls
     ;
 
@@ -23,21 +25,30 @@ type
     TWindowProfileDialog = class(TBaseForm)
         lblAppName: TLabel;
         leInclude: TLabeledEdit;
+        bBuildInclude: TButton;
         leExclude: TLabeledEdit;
+        bBuildExclude: TButton;
         leClasses: TLabeledEdit;
         bPickClass: TButton;
         lbHint: TLabel;
         lvPreview: TListView;
+        lblPreviewStats: TLabel;
         lbPreviewEmpty: TLabel;
         pBottom: TPanel;
         bOK: TButton;
         bCancel: TButton;
         procedure bOKClick(Sender: TObject);
         procedure bPickClassClick(Sender: TObject);
+        procedure bBuildIncludeClick(Sender: TObject);
+        procedure bBuildExcludeClick(Sender: TObject);
         procedure leIncludeChange(Sender: TObject);
         procedure leExcludeChange(Sender: TObject);
+        procedure leClassesChange(Sender: TObject);
+        procedure lvPreviewCustomDrawItem(Sender: TCustomListView; Item: TListItem;
+            State: TCustomDrawState; var DefaultDraw: Boolean);
     private
         FExeName: string;
+        FColFitter: TListViewColumnFitter;
         procedure ApplyToProfile(var AProfile: TAllowedApplicationsItem);
         function ClassesTextToClasses: TArray<string>;
         function IsValidRegex(const APattern: string): Boolean;
@@ -56,6 +67,7 @@ uses
     Common.Localization,
     ProcessProfile,
     WindowClassPickerDialogUI,
+    WindowDenyBuilderUI,
     WindowMonitor
     ;
 
@@ -80,9 +92,13 @@ begin
         Instance.leClasses.EditLabel.Caption := TUIStateLoader.GetMessage('Settings.ApplicationsProfileClasses');
         Instance.lbHint.Caption := TUIStateLoader.GetMessage('Settings.ApplicationsProfileHint');
         Instance.bPickClass.Caption := TUIStateLoader.GetMessage('Settings.ProfilePickClassesButton');
+        Instance.bBuildInclude.Caption := TUIStateLoader.GetMessage('Settings.DenyRulesProfileBuildButton');
+        Instance.bBuildExclude.Caption := TUIStateLoader.GetMessage('Settings.DenyRulesProfileBuildButton');
         Instance.bCancel.Caption := TUIStateLoader.GetMessage('Common.Cancel');
         Instance.lvPreview.Columns[0].Caption := TUIStateLoader.GetMessage('Settings.ProfilePreviewColumnTitle');
-        Instance.lvPreview.Columns[1].Caption := TUIStateLoader.GetMessage('Settings.ProfilePreviewColumnStatus');
+        Instance.lvPreview.Columns[1].Caption := TUIStateLoader.GetMessage('Settings.ProfilePreviewColumnClass');
+        Instance.lvPreview.Columns[2].Caption := TUIStateLoader.GetMessage('Settings.ProfilePreviewColumnStatus');
+        Instance.FColFitter := TListViewColumnFitter.Create(Instance, Instance.lvPreview);
 
         Instance.leInclude.Text := AProfile.TitleIncludeRegex;
         Instance.leExclude.Text := AProfile.TitleExcludeRegex;
@@ -126,17 +142,34 @@ begin
     RefreshPreview;
 end;
 
+procedure TWindowProfileDialog.leClassesChange(Sender: TObject);
+begin
+    RefreshPreview;
+end;
+
+procedure TWindowProfileDialog.lvPreviewCustomDrawItem(Sender: TCustomListView;
+    Item: TListItem; State: TCustomDrawState; var DefaultDraw: Boolean);
+begin
+    // Блокируемые фильтрами строки красным: причина видна без чтения статуса
+    if (Item <> nil) and (TWindowFilterResult(NativeUInt(Item.Data)) <> wfrPass) then
+        Sender.Canvas.Font.Color := clRed
+    else
+        Sender.Canvas.Font.Color := clWindowText;
+end;
+
 procedure TWindowProfileDialog.RefreshPreview;
 var
     Raw: TArray<TWindowMonitorInfo>;
     Info: TWindowMonitorInfo;
     Item: TListItem;
-    IncludePattern, ExcludePattern, StatusText: string;
-    Res: TTitleFilterResult;
-    MatchedCount, BlockedByInclude: Integer;
+    IncludePattern, ExcludePattern, StatusText, StatsText: string;
+    Classes: TArray<string>;
+    Res: TWindowFilterResult;
+    MatchedCount, PassCount, BlockedByInclude, BlockedByExclude, BlockedByClass: Integer;
 begin
     IncludePattern := Trim(leInclude.Text);
     ExcludePattern := Trim(leExclude.Text);
+    Classes := ClassesTextToClasses;
 
     // Некорректный regex на вводе: превью оставляем предыдущим,
     // ошибку покажет валидация по OK
@@ -144,7 +177,10 @@ begin
         Exit;
 
     MatchedCount := 0;
+    PassCount := 0;
     BlockedByInclude := 0;
+    BlockedByExclude := 0;
+    BlockedByClass := 0;
 
     lvPreview.Items.BeginUpdate;
     try
@@ -160,34 +196,67 @@ begin
             if not SameText(Info.ExeName, FExeName) then
                 Continue;
 
-            Res := TProcessProfile.EvaluateTitleFilter(Info.WindowTitle, IncludePattern, ExcludePattern);
-            Inc(MatchedCount);
-            if Res = tfrBlockedByInclude then
-                Inc(BlockedByInclude);
+            // Превью показывает эффект фильтров независимо от вкл/выкл профиля
+            Res := TProcessProfile.EvaluateWindowFilters(True,
+                IncludePattern, ExcludePattern, Classes,
+                Info.WindowClass, Info.WindowTitle);
 
+            Inc(MatchedCount);
             case Res of
-                tfrPass: StatusText := TUIStateLoader.GetMessage('Settings.ProfilePreviewPass');
-                tfrBlockedByInclude: StatusText := TUIStateLoader.GetMessage('Settings.ProfilePreviewBlockedInclude');
+                wfrPass:
+                begin
+                    Inc(PassCount);
+                    StatusText := TUIStateLoader.GetMessage('Settings.ProfilePreviewPass');
+                end;
+                wfrBlockedByInclude:
+                begin
+                    Inc(BlockedByInclude);
+                    StatusText := TUIStateLoader.GetMessage('Settings.ProfilePreviewBlockedInclude');
+                end;
+                wfrBlockedByExclude:
+                begin
+                    Inc(BlockedByExclude);
+                    StatusText := TUIStateLoader.GetMessage('Settings.ProfilePreviewBlockedExclude');
+                end;
             else
-                StatusText := TUIStateLoader.GetMessage('Settings.ProfilePreviewBlockedExclude');
+                begin
+                    // wfrBlockedByClass (wfrDisabled в превью не возникает)
+                    Inc(BlockedByClass);
+                    StatusText := TUIStateLoader.GetMessage('Settings.ProfilePreviewBlockedClass');
+                end;
             end;
 
             Item := lvPreview.Items.Add;
             Item.Caption := Info.WindowTitle;
+            Item.SubItems.Add(Info.WindowClass);
             Item.SubItems.Add(StatusText);
+            // Вердикт строки для раскраски (lvPreviewCustomDrawItem)
+            Item.Data := Pointer(NativeUInt(Res));
         end;
     finally
         lvPreview.Items.EndUpdate;
     end;
 
-    // LVSCW_AUTOSIZE_USEHEADER: заголовок - по содержимому, последний - до края
-    for var I := 0 to lvPreview.Columns.Count - 1 do
-        lvPreview.Columns[I].Width := -2;
+    // Автоподбор ширин: колонки по содержимому, последняя до края,
+    // без горизонтальной прокрутки
+    FColFitter.Fit;
 
-    // Нет окон процесса - превью недоступно; все окна заблокированы include -
+    // Счётчик: сколько окон процесса открыто и сколько пройдёт фильтры
+    StatsText := TUIStateLoader.GetMessage('Settings.ProfilePreviewStats', [MatchedCount, PassCount]);
+    if MatchedCount > PassCount then
+        StatsText := StatsText + TUIStateLoader.GetMessage('Settings.ProfilePreviewStatsBlocked',
+            [BlockedByInclude, BlockedByExclude, BlockedByClass]);
+    lblPreviewStats.Caption := StatsText;
+
+    // Ни одно из открытых окон не пройдёт - красным: макросу будет некуда вводить
+    if (MatchedCount > 0) and (PassCount = 0) then
+        lblPreviewStats.Font.Color := clRed
+    else
+        lblPreviewStats.Font.Color := clWindowText;
+
+    // Нет окон процесса - превью недоступно; ни одно окно не проходит -
     // предупреждение: макросу будет некуда вводить
-    lbPreviewEmpty.Visible := (MatchedCount = 0)
-        or ((BlockedByInclude > 0) and (BlockedByInclude = MatchedCount));
+    lbPreviewEmpty.Visible := (MatchedCount = 0) or (PassCount = 0);
 
     if lbPreviewEmpty.Visible then
     begin
@@ -224,6 +293,28 @@ end;
 procedure TWindowProfileDialog.bPickClassClick(Sender: TObject);
 begin
     AppendPickedClasses(TWindowClassPickerDialog.Execute(Self, AppContext));
+end;
+
+procedure TWindowProfileDialog.bBuildIncludeClick(Sender: TObject);
+var
+    NewPattern: string;
+begin
+    if TWindowDenyBuilderDialog.ExecuteSingle(Self, AppContext, leInclude.Text, NewPattern) then
+    begin
+        leInclude.Text := NewPattern;
+        RefreshPreview;
+    end;
+end;
+
+procedure TWindowProfileDialog.bBuildExcludeClick(Sender: TObject);
+var
+    NewPattern: string;
+begin
+    if TWindowDenyBuilderDialog.ExecuteSingle(Self, AppContext, leExclude.Text, NewPattern) then
+    begin
+        leExclude.Text := NewPattern;
+        RefreshPreview;
+    end;
 end;
 
 procedure TWindowProfileDialog.AppendPickedClasses(const APicked: TArray<string>);

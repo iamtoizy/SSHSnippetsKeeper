@@ -10,7 +10,12 @@ uses
 type
     // Результат проверки заголовка окна фильтрами профиля:
     // превью в диалоге профиля показывает причину блокировки
-    TTitleFilterResult = (tfrPass, tfrBlockedByInclude, tfrBlockedByExclude);
+    TTitleFilterResult = (tfrPass, tfrBlockedByInclude, tfrBlockedByExclude, tfrBlockedByGlobal);
+
+    // Результат полной проверки окна фильтрами профиля: заголовки + классы.
+    // Общий код гейта (MatchesWindow), превью в диалоге профиля,
+    // санити-чека сохранения и экрана диагностики
+    TWindowFilterResult = (wfrPass, wfrDisabled, wfrBlockedByInclude, wfrBlockedByExclude, wfrBlockedByClass);
 
     TProcessProfile = class
     private
@@ -19,6 +24,9 @@ type
         FTitleExcludeRegex: string;
         FWindowClasses: TArray<string>;
         FEnabled: Boolean;
+        // Список классов: пустой = любые окна процесса
+        class function MatchesWindowClassList(const AClasses: TArray<string>;
+            const AWinClass: string): Boolean; static;
     public
         constructor Create(const ExeName: string);
 
@@ -33,13 +41,27 @@ type
         // Проверка заголовка фильтрами без привязки к профилю - единая
         // семантика для монитора окон и превью в диалоге профиля
         class function EvaluateTitleFilter(const ATitle, AIncludeRegex, AExcludeRegex: string): TTitleFilterResult; static;
+        // Глобальный запрет: True, если заголовок совпал с любым включённым
+        // правилом deny-набора. AMatchedRule - имя правила (или Pattern,
+        // если имя пустое). Битые шаблоны пропускаются без падения
+        class function EvaluateGlobalDeny(const ATitle: string;
+            const ARules: TArray<TGlobalTitleDenyRule>;
+            out AMatchedRule: string): Boolean; static;
         // Полная проверка окна. Выключенный профиль = без фильтров (только exe-список)
         function MatchesWindow(const AWinClass, ATitle: string): Boolean;
+
+        // Полная проверка окна фильтрами с причиной результата: единая
+        // семантика гейта для превью профиля, санити-чека и диагностики
+        class function EvaluateWindowFilters(const AEnabled: Boolean;
+            const AIncludeRegex, AExcludeRegex: string;
+            const AClasses: TArray<string>;
+            const AWinClass, ATitle: string): TWindowFilterResult; static;
     end;
 
     TProfileManager = class
     private
         FProfiles: TObjectList<TProcessProfile>;
+        FGlobalDenyRules: TArray<TGlobalTitleDenyRule>;
     public
         constructor Create;
         destructor Destroy; override;
@@ -51,9 +73,19 @@ type
         // Пересобирает профили из списка разрешённых приложений настроек
         procedure SyncFromApplications(const AApps: TArray<TAllowedApplicationsItem>);
 
+        // Заменяет глобальный deny-набор (defensive copy во избежание
+        // совместного владения массивом с настройками)
+        procedure SetGlobalDenyRules(const ARules: TArray<TGlobalTitleDenyRule>);
+
+        // True = ввод разрешён. ADenyRule - имя сработавшего глобального
+        // правила (или его Pattern, если имя пустое), '' = запрет не связан
+        // с deny-набором (или разрешено)
+        function TryIsWindowAllowed(const AExeName, AWinClass, AWindowTitle: string;
+            out ADenyRule: string): Boolean;
         function IsWindowAllowed(const AExeName, AWinClass, AWindowTitle: string): Boolean;
 
         property Profiles: TObjectList<TProcessProfile> read FProfiles;
+        property GlobalDenyRules: TArray<TGlobalTitleDenyRule> read FGlobalDenyRules;
     end;
 
 var
@@ -100,21 +132,27 @@ begin
         FWindowClasses[I] := Trimmed[I];
 end;
 
-function TProcessProfile.MatchesWindowClass(const AWinClass: string): Boolean;
+class function TProcessProfile.MatchesWindowClassList(const AClasses: TArray<string>;
+    const AWinClass: string): Boolean;
 var
     C: string;
 begin
     Result := True;
 
     // Пустой список классов = разрешены любые окна процесса
-    if Length(FWindowClasses) = 0 then
+    if Length(AClasses) = 0 then
         Exit;
 
-    for C in FWindowClasses do
+    for C in AClasses do
         if SameText(C, AWinClass) then
             Exit(True);
 
     Result := False;
+end;
+
+function TProcessProfile.MatchesWindowClass(const AWinClass: string): Boolean;
+begin
+    Result := MatchesWindowClassList(FWindowClasses, AWinClass);
 end;
 
 class function TProcessProfile.EvaluateTitleFilter(const ATitle, AIncludeRegex, AExcludeRegex: string): TTitleFilterResult;
@@ -132,6 +170,68 @@ begin
             Exit(tfrBlockedByExclude);
 end;
 
+class function TProcessProfile.EvaluateWindowFilters(const AEnabled: Boolean;
+    const AIncludeRegex, AExcludeRegex: string;
+    const AClasses: TArray<string>;
+    const AWinClass, ATitle: string): TWindowFilterResult;
+var
+    TitleRes: TTitleFilterResult;
+begin
+    // Выключенный профиль = без фильтров: окно проходит по одному списку exe
+    if not AEnabled then
+        Exit(wfrDisabled);
+
+    TitleRes := EvaluateTitleFilter(ATitle, AIncludeRegex, AExcludeRegex);
+    if TitleRes = tfrBlockedByInclude then
+        Exit(wfrBlockedByInclude);
+    if TitleRes = tfrBlockedByExclude then
+        Exit(wfrBlockedByExclude);
+
+    if not MatchesWindowClassList(AClasses, AWinClass) then
+        Exit(wfrBlockedByClass);
+
+    Result := wfrPass;
+end;
+
+class function TProcessProfile.EvaluateGlobalDeny(const ATitle: string;
+    const ARules: TArray<TGlobalTitleDenyRule>;
+    out AMatchedRule: string): Boolean;
+var
+    Rule: TGlobalTitleDenyRule;
+    Options: TRegExOptions;
+begin
+    AMatchedRule := '';
+
+    for Rule in ARules do
+    begin
+        // Выключенные и пустые правила пропускаются
+        if (not Rule.Enabled) or (Trim(Rule.Pattern) = '') then
+            Continue;
+
+        Options := [roCompiled];
+        if not Rule.CaseSensitive then
+            Include(Options, roIgnoreCase);
+
+        try
+            if TRegEx.IsMatch(ATitle, Rule.Pattern, Options) then
+            begin
+                if Trim(Rule.Name) = '' then
+                    AMatchedRule := Rule.Pattern
+                else
+                    AMatchedRule := Rule.Name;
+                Exit(True);
+            end;
+        except
+            // Битый шаблон не блокирует и не прерывает проверку остальных
+            // правил: sanitize настроек отбрасывает такие правила при загрузке
+            on E: Exception do
+                Continue;
+        end;
+    end;
+
+    Result := False;
+end;
+
 function TProcessProfile.MatchesTitle(const Title: string): Boolean;
 begin
     if not FEnabled then
@@ -142,12 +242,9 @@ end;
 
 function TProcessProfile.MatchesWindow(const AWinClass, ATitle: string): Boolean;
 begin
-    if not FEnabled then
-        Exit(True);
-
-    Result := MatchesTitle(ATitle);
-    if Result then
-        Result := MatchesWindowClass(AWinClass);
+    // Один код с EvaluateWindowFilters: гейт и превью не расходятся
+    Result := EvaluateWindowFilters(FEnabled, FTitleIncludeRegex, FTitleExcludeRegex,
+        FWindowClasses, AWinClass, ATitle) in [wfrPass, wfrDisabled];
 end;
 
 { TProfileManager }
@@ -208,15 +305,33 @@ begin
     end;
 end;
 
-function TProfileManager.IsWindowAllowed(const AExeName, AWinClass, AWindowTitle: string): Boolean;
+procedure TProfileManager.SetGlobalDenyRules(const ARules: TArray<TGlobalTitleDenyRule>);
+begin
+    FGlobalDenyRules := Copy(ARules, 0, Length(ARules));
+end;
+
+function TProfileManager.TryIsWindowAllowed(const AExeName, AWinClass, AWindowTitle: string;
+    out ADenyRule: string): Boolean;
 var
     Profile: TProcessProfile;
 begin
+    ADenyRule := '';
     Result := True;
+
+    // Глобальный запрет проверяется первым и перекрывает любые профили
+    if TProcessProfile.EvaluateGlobalDeny(AWindowTitle, FGlobalDenyRules, ADenyRule) then
+        Exit(False);
 
     Profile := FindProfile(AExeName);
     if Profile <> nil then
         Result := Profile.MatchesWindow(AWinClass, AWindowTitle);
+end;
+
+function TProfileManager.IsWindowAllowed(const AExeName, AWinClass, AWindowTitle: string): Boolean;
+var
+    Dummy: string;
+begin
+    Result := TryIsWindowAllowed(AExeName, AWinClass, AWindowTitle, Dummy);
 end;
 
 initialization

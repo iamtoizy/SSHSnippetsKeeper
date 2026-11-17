@@ -12,6 +12,7 @@ uses
     Vcl.ActnList,
     Vcl.ComCtrls,
     Vcl.Controls,
+    UI.ListViewColumnSizing,
     Vcl.ExtCtrls,
     Vcl.Menus,
     Vcl.StdCtrls
@@ -42,6 +43,7 @@ type
         procedure FormShow(Sender: TObject);
         procedure lvWorkspacesDblClick(Sender: TObject);
     private
+        FColFitter: TListViewColumnFitter;
         procedure RefreshWorkspaces;
         procedure DoAddWorkspace;
         procedure DoDeleteWorkspace;
@@ -61,8 +63,7 @@ uses
     Common.Localization,
     Core.Entities.User,
     Vcl.Dialogs,
-    Vcl.Forms,
-    Winapi.CommCtrl
+    Vcl.Forms
     ;
 
 {$R *.dfm}
@@ -229,11 +230,11 @@ end;
 
 procedure TWorkspaceManagerForm.AdjustColumnWidth;
 begin
-    if not Assigned(lvWorkspaces) or (lvWorkspaces.Handle = 0) then
+    if not Assigned(lvWorkspaces) then
         Exit;
-    // Константа LVSCW_AUTOSIZE_USEHEADER (-2) приказывает Windows автоматически растянуть
-    // последнюю колонку на всЄ доступное пространство.
-    lvWorkspaces.Columns[0].Width := LVSCW_AUTOSIZE_USEHEADER;
+    if FColFitter = nil then
+        FColFitter := TListViewColumnFitter.Create(Self, lvWorkspaces);
+    FColFitter.Fit;
 end;
 
 procedure TWorkspaceManagerForm.FormResize(Sender: TObject);

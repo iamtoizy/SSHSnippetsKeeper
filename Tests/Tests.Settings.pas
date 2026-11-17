@@ -57,6 +57,12 @@ type
         [Test]
         procedure SaveLoad_Roundtrip_PreservesAllowedApplications;
         [Test]
+        procedure SaveLoad_Roundtrip_PreservesGlobalDenyRules;
+        [Test]
+        procedure Load_InvalidGlobalDenyRules_DropsBadPatterns;
+        [Test]
+        procedure Load_MissingGlobalDenyNode_RestoresEmpty;
+        [Test]
         procedure SaveLoad_Roundtrip_PreservesAutoExport;
         [Test]
         procedure Load_MissingAutoExportNode_RestoresDefaults;
@@ -582,6 +588,90 @@ begin
     Assert.AreEqual('ClassB', S.AllowedApplications.Items[0].WindowClasses[1]);
     Assert.AreEqual('custom7.exe', S.AllowedApplications.Items[6].ExeName);
     M2 := nil;
+end;
+
+procedure TSettingsManagerTests.SaveLoad_Roundtrip_PreservesGlobalDenyRules;
+var
+    M1, M2: ISettingsManager;
+    S: TAppSettings;
+    Rule: TGlobalTitleDenyRule;
+begin
+    M1 := TSettingsManager.Create;
+    S := M1.Data;
+    S.GlobalTitleDenyRules.Count := 2;
+
+    Rule := Default(TGlobalTitleDenyRule);
+    Rule.Name := 'Prod Servers';
+    Rule.Pattern := 'prod-\d+';
+    Rule.CaseSensitive := True;
+    Rule.Enabled := True;
+    S.GlobalTitleDenyRules.Items[0] := Rule;
+
+    Rule := Default(TGlobalTitleDenyRule);
+    Rule.Name := 'Legacy';
+    Rule.Pattern := 'legacy';
+    Rule.CaseSensitive := False;
+    Rule.Enabled := False;
+    S.GlobalTitleDenyRules.Items[1] := Rule;
+
+    M1.Data := S;
+    M1.Save;
+    M1 := nil;
+
+    M2 := TSettingsManager.Create;
+    M2.Load;
+    S := M2.Data;
+    Assert.AreEqual(2, S.GlobalTitleDenyRules.Count);
+    Assert.AreEqual('Prod Servers', S.GlobalTitleDenyRules.Items[0].Name);
+    Assert.AreEqual('prod-\d+', S.GlobalTitleDenyRules.Items[0].Pattern);
+    Assert.IsTrue(S.GlobalTitleDenyRules.Items[0].CaseSensitive);
+    Assert.IsTrue(S.GlobalTitleDenyRules.Items[0].Enabled);
+    Assert.AreEqual('Legacy', S.GlobalTitleDenyRules.Items[1].Name);
+    Assert.AreEqual('legacy', S.GlobalTitleDenyRules.Items[1].Pattern);
+    Assert.IsFalse(S.GlobalTitleDenyRules.Items[1].CaseSensitive);
+    Assert.IsFalse(S.GlobalTitleDenyRules.Items[1].Enabled);
+    M2 := nil;
+end;
+
+procedure TSettingsManagerTests.Load_InvalidGlobalDenyRules_DropsBadPatterns;
+var
+    M: ISettingsManager;
+    S: TAppSettings;
+begin
+    // Пустой Pattern и битый regex отбрасываются целиком: правило,
+    // которое не может сработать, не имеет права выглядеть активным
+    TFile.WriteAllText(SettingsPath,
+        '{"CurrentLanguage":"en","GlobalTitleDenyRules":{"Items":[' +
+        '{"Name":"","Pattern":"   ","CaseSensitive":false,"Enabled":true},' +
+        '{"Name":"Bad","Pattern":"[","CaseSensitive":false,"Enabled":true},' +
+        '{"Name":"  Prod  ","Pattern":"prod-\\d+","CaseSensitive":true,"Enabled":true}' +
+        ']}}', TEncoding.UTF8);
+
+    M := TSettingsManager.Create;
+    M.Load;
+    S := M.Data;
+
+    Assert.AreEqual(1, S.GlobalTitleDenyRules.Count);
+    Assert.AreEqual('Prod', S.GlobalTitleDenyRules.Items[0].Name);
+    Assert.AreEqual('prod-\d+', S.GlobalTitleDenyRules.Items[0].Pattern);
+    Assert.IsTrue(S.GlobalTitleDenyRules.Items[0].CaseSensitive);
+    Assert.IsTrue(S.GlobalTitleDenyRules.Items[0].Enabled);
+    M := nil;
+end;
+
+procedure TSettingsManagerTests.Load_MissingGlobalDenyNode_RestoresEmpty;
+var
+    M: ISettingsManager;
+    S: TAppSettings;
+begin
+    // Файл от версии без deny-набора: список остаётся пустым
+    TFile.WriteAllText(SettingsPath, '{"CurrentLanguage":"en"}', TEncoding.UTF8);
+
+    M := TSettingsManager.Create;
+    M.Load;
+    S := M.Data;
+    Assert.AreEqual(0, S.GlobalTitleDenyRules.Count);
+    M := nil;
 end;
 
 { TSettingsDbSecurityTests }

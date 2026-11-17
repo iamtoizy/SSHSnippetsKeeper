@@ -29,7 +29,7 @@ object WindowProfileDialog: TWindowProfileDialog
   object leInclude: TLabeledEdit
     Left = 12
     Top = 56
-    Width = 436
+    Width = 346
     Height = 23
     EditLabel.Width = 220
     EditLabel.Height = 15
@@ -38,10 +38,19 @@ object WindowProfileDialog: TWindowProfileDialog
     TabOrder = 0
     OnChange = leIncludeChange
   end
+  object bBuildInclude: TButton
+    Left = 364
+    Top = 56
+    Width = 84
+    Height = 23
+    Caption = 'Build'
+    TabOrder = 6
+    OnClick = bBuildIncludeClick
+  end
   object leExclude: TLabeledEdit
     Left = 12
     Top = 108
-    Width = 436
+    Width = 346
     Height = 23
     EditLabel.Width = 180
     EditLabel.Height = 15
@@ -49,6 +58,15 @@ object WindowProfileDialog: TWindowProfileDialog
     LabelPosition = lpAbove
     TabOrder = 1
     OnChange = leExcludeChange
+  end
+  object bBuildExclude: TButton
+    Left = 364
+    Top = 108
+    Width = 84
+    Height = 23
+    Caption = 'Build'
+    TabOrder = 7
+    OnClick = bBuildExcludeClick
   end
   object leClasses: TLabeledEdit
     Left = 12
@@ -60,6 +78,7 @@ object WindowProfileDialog: TWindowProfileDialog
     EditLabel.Caption = 'Classes'
     LabelPosition = lpAbove
     TabOrder = 2
+    OnChange = leClassesChange
   end
   object bPickClass: TButton
     Left = 12
@@ -79,25 +98,38 @@ object WindowProfileDialog: TWindowProfileDialog
     Caption = ''
     WordWrap = True
   end
+  object lblPreviewStats: TLabel
+    Left = 12
+    Top = 250
+    Width = 436
+    Height = 15
+    AutoSize = False
+    Caption = ''
+  end
   object lvPreview: TListView
     Left = 12
-    Top = 252
+    Top = 268
     Width = 436
-    Height = 141
+    Height = 125
     Columns = <
       item
         Caption = 'Title'
-        Width = 290
+        Width = 200
+      end
+      item
+        Caption = 'Class'
+        Width = 130
       end
       item
         Caption = 'Status'
-        Width = 140
+        Width = 100
       end>
     HideSelection = False
     ReadOnly = True
     RowSelect = True
     TabOrder = 4
     ViewStyle = vsReport
+    OnCustomDrawItem = lvPreviewCustomDrawItem
   end
   object lbPreviewEmpty: TLabel
     Left = 16

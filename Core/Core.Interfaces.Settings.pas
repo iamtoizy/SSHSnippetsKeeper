@@ -58,6 +58,16 @@ type
         WindowClasses: TArray<string>;
     end;
 
+    // Глобальное правило запрета ввода по заголовку окна. Проверяется
+    // поверх всех профилей: совпадение с любым включённым правилом
+    // блокирует ввод независимо от include/exclude конкретного профиля
+    TGlobalTitleDenyRule = record
+        Name: string;            // Человекочитаемое имя (пусто = показывается Pattern)
+        Pattern: string;         // Regex заголовка окна
+        CaseSensitive: Boolean;  // False = сравнение без учёта регистра
+        Enabled: Boolean;
+    end;
+
     TAIParams = record
         Temperature: Single;
         MaxOutputTokens: Integer;
@@ -181,6 +191,8 @@ type
         UISettings: TUISettings;
         WindowHelper: TWindowHelperNode;
         AllowedApplications: TArrayRecord<TAllowedApplicationsItem>;
+        // Глобальный deny-набор заголовков окон (поверх всех профилей)
+        GlobalTitleDenyRules: TArrayRecord<TGlobalTitleDenyRule>;
         AISettings: TArrayRecord<TAIHub>;
         CurrentLanguage: string;
         ChmodPresets: TArray<TChmodPreset>;

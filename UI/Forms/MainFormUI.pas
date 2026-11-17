@@ -2257,6 +2257,7 @@ begin
             GWinMonitor.AddAllowedProcess(Item.ExeName.ToLower);
 
     GProfileManager.SyncFromApplications(AppContext.SettingsManager.Data.AllowedApplications.Items);
+    GProfileManager.SetGlobalDenyRules(AppContext.SettingsManager.Data.GlobalTitleDenyRules.Items);
 
     TStateMgr.Instance.FirstRun;
 

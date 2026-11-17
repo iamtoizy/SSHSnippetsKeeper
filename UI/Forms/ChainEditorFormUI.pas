@@ -11,6 +11,7 @@ uses
     System.Classes,
     System.Generics.Collections,
     System.SysUtils,
+    UI.ListViewColumnSizing,
     Vcl.ComCtrls,
     Vcl.Controls,
     Vcl.ExtCtrls,
@@ -61,6 +62,8 @@ type
         FSteps: TList<TChainStepDTO>;
         FAllSnippets: TArray<TSnippetDTO>;
         FUsers: TArray<TUserDTO>;
+        FColFitter: TListViewColumnFitter;
+        FLibraryFitter: TListViewColumnFitter;
         procedure LoadLibrary;
         procedure ApplySearchFilter;
         procedure RefreshStepsList;
@@ -70,7 +73,6 @@ type
         procedure UpdateButtonsState;
         function UserNameByID(UserID: Integer): string;
         function ListViewHelpOffset(LV: TListView): Integer;
-        procedure FitColumns(LV: TListView);
     protected
         procedure DoInitialize; override;
     public
@@ -113,8 +115,13 @@ begin
     btnOK.Caption := TUIStateLoader.GetMessage('Common.OK');
     btnCancel.Caption := TUIStateLoader.GetMessage('Common.Cancel');
 
-    FitColumns(lvSteps);
-    FitColumns(lvLibrary);
+    if FColFitter = nil then
+    begin
+        FColFitter := TListViewColumnFitter.Create(Self, lvSteps);
+        FLibraryFitter := TListViewColumnFitter.Create(Self, lvLibrary);
+    end;
+    FColFitter.Fit;
+    FLibraryFitter.Fit;
 
     RegisterHelp(lvSteps, hipTopRight, 'Help.ChainEditorForm.lvSteps', hkCustomForm, 0, ListViewHelpOffset(lvSteps));
     RegisterHelp(edPause, hipTopRight, 'Help.ChainEditorForm.edPause');
@@ -131,17 +138,6 @@ begin
     if (HeaderWnd = 0) or not GetWindowRect(HeaderWnd, R) then
         Exit;
     Result := Max(1, MulDiv(R.Bottom - R.Top, 96, LV.CurrentPPI)) + 2;
-end;
-
-procedure TChainEditorForm.FitColumns(LV: TListView);
-var
-    I, Used: Integer;
-begin
-    Used := 0;
-    for I := 0 to LV.Columns.Count - 2 do
-        Inc(Used, LV.Columns[I].Width);
-    LV.Columns[LV.Columns.Count - 1].Width :=
-        Max(40, LV.ClientWidth - Used - GetSystemMetrics(SM_CXVSCROLL) - 2);
 end;
 
 procedure TChainEditorForm.Setup(ChainID, InitialSnippetID, DefaultUserID: Integer);

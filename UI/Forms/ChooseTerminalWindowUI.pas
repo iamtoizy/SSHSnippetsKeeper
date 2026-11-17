@@ -6,6 +6,7 @@ uses
     BaseFormUI,
     System.Classes,
     System.Generics.Collections,
+    UI.ListViewColumnSizing,
     Vcl.Buttons,
     Vcl.ComCtrls,
     Vcl.Controls,
@@ -34,6 +35,7 @@ type
         ilIcons: TImageList;
         ilSmallIcons: TImageList;
         lbPreviewEmpty: TLabel;
+        lbListEmpty: TLabel;
         sbPreview: TSpeedButton;
         sbManager: TSpeedButton;
         procedure lvTerminalListDblClick(Sender: TObject);
@@ -54,6 +56,7 @@ type
         procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
         procedure FormKeyPress(Sender: TObject; var Key: Char);
         procedure sbManagerClick(Sender: TObject);
+        procedure lbListEmptyClick(Sender: TObject);
     private
         FSelectedWindow: TWindowMonitorInfo;
         FWindows: TArray<TWindowMonitorInfo>;
@@ -70,7 +73,7 @@ type
         FPreviewWasIconic: Boolean;
         FUserSized: Boolean;
         FPreviewSavedHeight: Integer;
-        FColDesired: TArray<Integer>;
+        FColFitter: TListViewColumnFitter;
         FMinimizedShot: TBitmap;
         FMinimizedShotHwnd: HWND;
         FShotTried: HWND;
@@ -106,9 +109,6 @@ type
         procedure UpdateStatusText(AShownCount: Integer);
         procedure RestoreGeometry;
         procedure SaveGeometry;
-        procedure AutoSizeColumns;
-        procedure MeasureColumns;
-        procedure ApplyColumnLayout;
         procedure EnableAntiFlicker;
         function MaxPreviewHeight: Integer;
         procedure FitPreviewToForm;
@@ -134,6 +134,7 @@ uses
     System.Types,
     SynThemeAdapter,
     TerminalManagerFormUI,
+    WindowFilterDiagnosticsUI,
     Vcl.Forms,
     Vcl.Themes,
     Winapi.CommCtrl,
@@ -173,6 +174,9 @@ begin
     pPreview.DoubleBuffered := True;
     ebFilter.DoubleBuffered := True;
     EnableAntiFlicker;
+    // Автоподбор ширин колонок: ручное растяжение колонки отключает
+    // автоподбор; последний минимум - как в прежнем ApplyColumnLayout
+    FColFitter := TListViewColumnFitter.Create(Self, lvTerminalList, 100);
     // Поверх pPreview: последний кадр свёрнутого окна (PrintWindow)
     pbShot := TPaintBox.Create(Self);
     pbShot.Parent := pPreview;
@@ -194,6 +198,12 @@ begin
     sbGroup.Hint := TUIStateLoader.GetMessage('Terminal.ViewGroupsHint');
     sbGroup.ShowHint := True;
     lbPreviewEmpty.Caption := TUIStateLoader.GetMessage('Terminal.PreviewEmpty');
+
+    // Подсказка пустого списка: фильтры настроек могут прятать окна,
+    // клик открывает диагностику фильтров
+    lbListEmpty.Caption := TUIStateLoader.GetMessage('Terminal.NoWindowsHint')
+        + sLineBreak + sLineBreak + TUIStateLoader.GetMessage('Terminal.NoWindowsDiagLink');
+
     UpdateColumnCaptions;
 end;
 
@@ -779,7 +789,7 @@ end;
 procedure TChooseTerminalWindow.FormResize(Sender: TObject);
 begin
     FitPreviewToForm;
-    ApplyColumnLayout;
+    FColFitter.ApplyCached;
 end;
 
 procedure TChooseTerminalWindow.EnableAntiFlicker;
@@ -810,87 +820,6 @@ begin
     SetWindowLongPtr(pTop.Handle, GWL_EXSTYLE, ExStyle or WS_EX_COMPOSITED);
     SetWindowPos(pTop.Handle, 0, 0, 0, 0, 0, SWP_NOMOVE or SWP_NOSIZE or
         SWP_NOZORDER or SWP_NOACTIVATE or SWP_FRAMECHANGED);
-end;
-
-procedure TChooseTerminalWindow.MeasureColumns;
-var
-    I, N: Integer;
-    Col: TLVColumn;
-begin
-    if (lvTerminalList.ViewStyle <> vsReport) or not lvTerminalList.HandleAllocated then
-        Exit;
-    N := lvTerminalList.Columns.Count;
-    if N < 2 then
-        Exit;
-
-    // Меряем один раз: max(текст строк, заголовок); раскладку на тиках
-    // ресайза считаем по кэшу, чтобы не пересканировать содержимое
-    SetLength(FColDesired, N - 1);
-    for I := 0 to N - 2 do
-    begin
-        ListView_SetColumnWidth(lvTerminalList.Handle, I, LVSCW_AUTOSIZE_USEHEADER);
-        FillChar(Col, SizeOf(Col), 0);
-        Col.mask := LVCF_WIDTH;
-        if not ListView_GetColumn(lvTerminalList.Handle, I, Col) then
-            Col.cx := ListView_GetColumnWidth(lvTerminalList.Handle, I);
-        FColDesired[I] := Col.cx;
-    end;
-end;
-
-procedure TChooseTerminalWindow.ApplyColumnLayout;
-const
-    MinLastCol = 100; // последняя колонка не сжимаем меньше этого
-    MinColW = 48;     // пол сжатия первых колонок в узком окне
-var
-    I, N, Avail, Sum, W, Rest: Integer;
-    K: Double;
-begin
-    if (lvTerminalList.ViewStyle <> vsReport) or not lvTerminalList.HandleAllocated then
-        Exit;
-    N := lvTerminalList.Columns.Count;
-    if (N < 2) or (Length(FColDesired) < N - 1) then
-        Exit;
-
-    Sum := 0;
-    for I := 0 to N - 2 do
-        Inc(Sum, FColDesired[I]);
-    if Sum <= 0 then
-        Sum := 1;
-
-    Avail := lvTerminalList.ClientWidth;
-    if Sum + MinLastCol <= Avail then
-    begin
-        // Места хватает: первые колонки по содержимому,
-        // последняя забирает весь остаток
-        for I := 0 to N - 2 do
-            ListView_SetColumnWidth(lvTerminalList.Handle, I, FColDesired[I]);
-        ListView_SetColumnWidth(lvTerminalList.Handle, N - 1, Avail - Sum)
-    end
-    else
-    begin
-        // Узкое окно: сжимаем первые колонки пропорционально, оставляя
-        // последней минимум; если и он не помещается - допустим скролл
-        K := (Avail - MinLastCol) / Sum;
-        Rest := 0;
-        for I := 0 to N - 2 do
-        begin
-            W := Round(FColDesired[I] * K);
-            if W < MinColW then
-                W := MinColW;
-            ListView_SetColumnWidth(lvTerminalList.Handle, I, W);
-            Inc(Rest, W);
-        end;
-        W := Avail - Rest;
-        if W < MinLastCol then
-            W := MinLastCol;
-        ListView_SetColumnWidth(lvTerminalList.Handle, N - 1, W);
-    end;
-end;
-
-procedure TChooseTerminalWindow.AutoSizeColumns;
-begin
-    MeasureColumns;
-    ApplyColumnLayout;
 end;
 
 procedure TChooseTerminalWindow.ttPreviewWatchTimer(Sender: TObject);
@@ -1131,7 +1060,7 @@ end;
 procedure TChooseTerminalWindow.WMExitSizeMove(var Message: TMessage);
 begin
     inherited;
-    AutoSizeColumns;
+    FColFitter.Fit;
     SaveGeometry;
 end;
 
@@ -1280,9 +1209,11 @@ begin
 
         if Length(FWindows) = 0 then
         begin
+            lbListEmpty.Visible := True;
             UpdateStatusText(-1);
             Exit;
         end;
+        lbListEmpty.Visible := False;
 
         // Новые окна сверху (от конца истории к началу) + фильтр
         SetLength(Order, Length(FWindows));
@@ -1384,7 +1315,7 @@ begin
         lvTerminalList.Items.EndUpdate;
     end;
 
-    AutoSizeColumns;
+    FColFitter.Fit;
     EnableAntiFlicker;
 end;
 
@@ -1394,6 +1325,14 @@ begin
     TTerminalManagerForm.ExecuteModal(Self, FAppContext);
     PopulateList;
     AdjustFormHeight;
+end;
+
+procedure TChooseTerminalWindow.lbListEmptyClick(Sender: TObject);
+begin
+    // Диагностика по сохранённым настройкам: черновика в chooser'е нет
+    TWindowFilterDiagnosticsDialog.Execute(Self, FAppContext,
+        FAppContext.SettingsManager.Data.AllowedApplications.Items,
+        FAppContext.SettingsManager.Data.GlobalTitleDenyRules.Items);
 end;
 
 end.

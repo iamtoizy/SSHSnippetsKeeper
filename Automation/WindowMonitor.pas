@@ -4,6 +4,7 @@ interface
 
 uses
     ArrayHelper,
+    Core.Interfaces.Settings,
     Winapi.Windows
     ;
 
@@ -16,6 +17,14 @@ type
         WindowTitle: string;
         WindowClass: string;
         ActivatedAt: TDateTime;
+    end;
+
+    // Результат санити-чека класс-фильтров: включённый профиль с непустым
+    // списком классов, которому не совпало ни одно открытое окно процесса
+    TClassHiddenApp = record
+        ExeName: string;
+        ConfiguredClasses: TArray<string>;
+        RealClasses: TArray<string>;
     end;
 
     TWindowMonitor = class
@@ -62,9 +71,15 @@ var
 
 procedure WinEventProc(hWinEventHook: THandle; eventType: DWORD; HWND: THandle; idObject, idChild: LONG; dwEventThread, dwmsEventTime: DWORD); stdcall;
 
+// Санити-чек настроек: включённые приложения, чей класс-фильтр не совпадёт
+// ни с одним открытым сейчас окном процесса (все окна скроются из списков)
+function FindClassHiddenApps(const AApps: TArray<TAllowedApplicationsItem>;
+    const ARaw: TArray<TWindowMonitorInfo>): TArray<TClassHiddenApp>;
+
 implementation
 
 uses
+    System.Classes,
     System.SysUtils,
     System.Generics.Collections,
     Common.Localization,
@@ -577,6 +592,63 @@ begin
     begin
         UnhookWinEvent(FWinEventHook);
         FWinEventHook := 0;
+    end;
+end;
+
+function FindClassHiddenApps(const AApps: TArray<TAllowedApplicationsItem>;
+    const ARaw: TArray<TWindowMonitorInfo>): TArray<TClassHiddenApp>;
+var
+    App: TAllowedApplicationsItem;
+    Info: TWindowMonitorInfo;
+    RealClasses: TStringList;
+    HasWindow, HasMatch: Boolean;
+    Count: Integer;
+begin
+    SetLength(Result, 0);
+    Count := 0;
+
+    for App in AApps do
+    begin
+        // Только включённые профили с непустым класс-фильтром; полный блок
+        // через include/exclude - намеренный сценарий и не проверяется
+        if (not App.Enabled) or (Length(App.WindowClasses) = 0) then
+            Continue;
+
+        RealClasses := TStringList.Create;
+        try
+            RealClasses.Sorted := True;
+            RealClasses.Duplicates := dupIgnore;
+            RealClasses.CaseSensitive := False;
+
+            HasWindow := False;
+            HasMatch := False;
+            for Info in ARaw do
+            begin
+                if not SameText(Info.ExeName, App.ExeName) then
+                    Continue;
+
+                HasWindow := True;
+                // Пустые include/exclude: вердикт определяет только класс
+                if TProcessProfile.EvaluateWindowFilters(True, '', '',
+                    App.WindowClasses, Info.WindowClass, Info.WindowTitle) = wfrPass then
+                    HasMatch := True
+                else
+                    RealClasses.Add(Info.WindowClass);
+            end;
+
+            // Нет открытых окон процесса - проверить нечего
+            if (not HasWindow) or HasMatch then
+                Continue;
+
+            Inc(Count);
+            SetLength(Result, Count);
+            Result[Count - 1].ExeName := App.ExeName;
+            Result[Count - 1].ConfiguredClasses :=
+                Copy(App.WindowClasses, 0, Length(App.WindowClasses));
+            Result[Count - 1].RealClasses := RealClasses.ToStringArray;
+        finally
+            RealClasses.Free;
+        end;
     end;
 end;
 

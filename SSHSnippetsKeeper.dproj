@@ -76,7 +76,7 @@
         <VerInfo_AutoGenVersion>true</VerInfo_AutoGenVersion>
         <DCC_ExeOutput>Binary\$(Platform)\$(Config)</DCC_ExeOutput>
         <BRCC_OutputDir>Resources</BRCC_OutputDir>
-        <DCC_UnitSearchPath>vendor\SynEdit\Source;vendor\SynEdit\Source\Highlighters;vendor\SynEdit\Source\Highlighters\Omni Highlighters;vendor\HtmlViewer\source;vendor\python4delphi\Source;vendor\python4delphi\Source\vcl;vendor\python4delphi\Source\fmx;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>.;Core;Core\Services;Core\Entities;Data;Data\Repositories;Common;UI;UI\Helpers;UI\Forms;Automation;MacroEngine;ThirdParty;UI\ViewModels;UI\Controllers;UI\Controls;UI\Services;vendor\SynEdit\Source;vendor\SynEdit\Source\Highlighters;vendor\SynEdit\Source\Highlighters\Omni Highlighters;vendor\HtmlViewer\source;vendor\python4delphi\Source;vendor\python4delphi\Source\vcl;vendor\python4delphi\Source\fmx;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
@@ -192,6 +192,7 @@
         <DCCReference Include="UI\Services\UI.Services.LocalizationDiagnostics.pas"/>
         <DCCReference Include="UI\Helpers\UI.AppStatusBar.pas"/>
         <DCCReference Include="UI\Helpers\UI.BusyIndicator.pas"/>
+        <DCCReference Include="UI\Helpers\UI.ListViewColumnSizing.pas"/>
         <DCCReference Include="UI\Helpers\UI.Helpers.pas"/>
         <DCCReference Include="UI\Helpers\UI.TreeViewSearchHelper.pas"/>
         <DCCReference Include="UI\ViewModels\SnippetViewData.pas"/>
@@ -215,6 +216,12 @@
         </DCCReference>
         <DCCReference Include="UI\Forms\WindowClassPickerDialogUI.pas">
             <Form>WindowClassPickerDialog</Form>
+        </DCCReference>
+        <DCCReference Include="UI\Forms\WindowDenyBuilderUI.pas">
+            <Form>WindowDenyBuilderDialog</Form>
+        </DCCReference>
+        <DCCReference Include="UI\Forms\WindowFilterDiagnosticsUI.pas">
+            <Form>WindowFilterDiagnosticsDialog</Form>
         </DCCReference>
         <DCCReference Include="UI\Forms\InputFormUI.pas">
             <Form>InputForm</Form>

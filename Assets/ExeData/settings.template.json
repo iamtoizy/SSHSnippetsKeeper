@@ -49,6 +49,9 @@
             }
         ]
     },
+    "GlobalTitleDenyRules": {
+        "Items": []
+    },
     "AISettings": {
         "Items": [
             {

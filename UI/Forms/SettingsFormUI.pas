@@ -12,6 +12,7 @@ uses
     System.Generics.Collections,
     System.SysUtils,
     System.Variants,
+    UI.ListViewColumnSizing,
     Vcl.ComCtrls,
     Vcl.Controls,
     Vcl.Dialogs,
@@ -105,6 +106,8 @@ type
         bAppDelete: TButton;
         bAppPick: TButton;
         bAppProfile: TButton;
+        bAppDenyRules: TButton;
+        bAppDiag: TButton;
         tsCounters: TTabSheet;
         lvCounters: TListView;
         pCountersButtons: TPanel;
@@ -128,6 +131,8 @@ type
         procedure bAppDeleteClick(Sender: TObject);
         procedure bAppPickClick(Sender: TObject);
         procedure bAppProfileClick(Sender: TObject);
+        procedure bAppDenyRulesClick(Sender: TObject);
+        procedure bAppDiagClick(Sender: TObject);
         procedure lvApplicationsSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
         procedure lvApplicationsDblClick(Sender: TObject);
         procedure cbVCLStyleChange(Sender: TObject);
@@ -148,6 +153,9 @@ type
         FLocalActions: TDictionary<string, TActionHotkeyInfo>;
         FHotkeyData: TObjectList<THotkeyViewData>;
         FAppProfiles: TDictionary<string, TAllowedApplicationsItem>;
+        FHotkeysFitter: TListViewColumnFitter;
+        FApplicationsFitter: TListViewColumnFitter;
+        FDenyRules: TArray<TGlobalTitleDenyRule>;
         FSnapshottedUI: string;
         FFirstShowDone: Boolean;
         FStyleSavedPage: TTabSheet;
@@ -185,6 +193,9 @@ type
         function TryNormalizeAppName(var AName: string; const AIgnoreExisting: string): Boolean;
         function GetAppProfile(const AExeName: string): TAllowedApplicationsItem;
         procedure UpdateProfileButtonState;
+        // Санити-чек сохранения: текст предупреждения о класс-фильтрах,
+        // скрывающих все открытые окна процесса; '' = проблем нет
+        function BuildClassHiddenWarning(const AApps: TArray<TAllowedApplicationsItem>): string;
         function BuildUISnapshot: string;
         procedure CaptureSnapshot;
         function IsUIChanged: Boolean;
@@ -211,6 +222,7 @@ uses
     DbConvertProgressUI,
     DbProfilesFormUI,
     PassphraseFormUI,
+    WindowDenyBuilderUI,
     MacroCounters,
     MacroInputTypes,
     System.IOUtils,
@@ -227,6 +239,7 @@ uses
     ProcessProfile,
     WindowMonitor,
     WindowProfileDialogUI,
+    WindowFilterDiagnosticsUI,
     System.NetEncoding
     ;
 
@@ -236,6 +249,8 @@ begin
     FLocalActions := TDictionary<string, TActionHotkeyInfo>.Create;
     FHotkeyData := TObjectList<THotkeyViewData>.Create;
     FAppProfiles := TDictionary<string, TAllowedApplicationsItem>.Create;
+    FHotkeysFitter := TListViewColumnFitter.Create(Self, lvHotkeys);
+    FApplicationsFitter := TListViewColumnFitter.Create(Self, lvApplications);
 end;
 
 destructor TSettingsForm.Destroy;
@@ -328,6 +343,10 @@ begin
 
     PopulateApplicationsList;
 
+    // Глобальный deny-набор: рабочий экземпляр для конструктора,
+    // попадает в настройки по кнопке «Сохранить»
+    FDenyRules := Copy(Setts.GlobalTitleDenyRules.Items, 0, Setts.GlobalTitleDenyRules.Count);
+
     FLocalActions.Clear;
     Actions := AppContext.HotkeyService.GetAllActions;
     for Info in Actions do
@@ -335,11 +354,8 @@ begin
 
     PopulateHotkeysList;
 
-    for I := 0 to lvHotkeys.Columns.Count - 1 do
-        lvHotkeys.Columns[I].Width := -2;
-
-    for I := 0 to lvApplications.Columns.Count - 1 do
-        lvApplications.Columns[I].Width := -2;
+    FHotkeysFitter.Fit;
+    FApplicationsFitter.Fit;
 end;
 
 procedure TSettingsForm.PopulateHotkeysList(const FilterText: string = '');
@@ -450,7 +466,7 @@ begin
     FLocalActions[ActionID] := Info;
 
     Item.SubItems[1] := Vcl.Menus.ShortCutToText(hkEditor.HotKey);
-    lvHotkeys.Columns[2].Width := -2; // Растягиваем колонку
+    FHotkeysFitter.Fit; // Контент изменился - пересчёт ширин
 end;
 
 procedure TSettingsForm.bResetShortcutClick(Sender: TObject);
@@ -1821,6 +1837,40 @@ begin
         FAppProfiles.AddOrSetValue(Item.Caption.ToLower, Profile);
 end;
 
+procedure TSettingsForm.bAppDenyRulesClick(Sender: TObject);
+var
+    Rules: TArray<TGlobalTitleDenyRule>;
+begin
+    Rules := FDenyRules;
+    if TWindowDenyBuilderDialog.Execute(Self, AppContext, Rules) then
+        FDenyRules := Rules;
+end;
+
+procedure TSettingsForm.bAppDiagClick(Sender: TObject);
+var
+    Apps: TArray<TAllowedApplicationsItem>;
+    AppProfile: TAllowedApplicationsItem;
+    I: Integer;
+begin
+    // Диагностика работает с черновиком: то, что видно в списке сейчас,
+    // а не сохранённые настройки
+    SetLength(Apps, lvApplications.Items.Count);
+    for I := 0 to lvApplications.Items.Count - 1 do
+    begin
+        Apps[I].ExeName := lvApplications.Items[I].Caption;
+        Apps[I].Enabled := lvApplications.Items[I].Checked;
+
+        if FAppProfiles.TryGetValue(lvApplications.Items[I].Caption.ToLower, AppProfile) then
+        begin
+            Apps[I].TitleIncludeRegex := AppProfile.TitleIncludeRegex;
+            Apps[I].TitleExcludeRegex := AppProfile.TitleExcludeRegex;
+            Apps[I].WindowClasses := AppProfile.WindowClasses;
+        end;
+    end;
+
+    TWindowFilterDiagnosticsDialog.Execute(Self, AppContext, Apps, FDenyRules);
+end;
+
 procedure TSettingsForm.cbVCLStyleChange(Sender: TObject);
 var
     Setts: TAppSettings;
@@ -1907,12 +1957,44 @@ begin
         Result := VCLHotkeyToWin32(HotKeyCtrl, Enabled);
 end;
 
+function TSettingsForm.BuildClassHiddenWarning(const AApps: TArray<TAllowedApplicationsItem>): string;
+var
+    Hidden: TArray<TClassHiddenApp>;
+    H: TClassHiddenApp;
+    SB: TStringBuilder;
+begin
+    if Assigned(GWinMonitor) then
+        Hidden := FindClassHiddenApps(AApps, GWinMonitor.GetVisibleWindowsInfo)
+    else
+        Hidden := nil;
+
+    if Length(Hidden) = 0 then
+        Exit('');
+
+    SB := TStringBuilder.Create;
+    try
+        for H in Hidden do
+        begin
+            if SB.Length > 0 then
+                SB.Append(sLineBreak);
+            SB.Append(TUIStateLoader.GetMessage('Settings.ProfileSanityClassBlockLine',
+                [H.ExeName, string.Join(', ', H.ConfiguredClasses),
+                string.Join(', ', H.RealClasses)]));
+        end;
+        Result := TUIStateLoader.GetMessage('Settings.ProfileSanityClassBlock')
+            + sLineBreak + sLineBreak + SB.ToString;
+    finally
+        SB.Free;
+    end;
+end;
+
 procedure TSettingsForm.bSaveClick(Sender: TObject);
 var
     Setts: TAppSettings;
     I: Integer;
     AppProfile: TAllowedApplicationsItem;
     Info: TActionHotkeyInfo;
+    ClassWarning: string;
 begin
     Setts := AppContext.SettingsManager.Data;
     Setts.Hotkeys.QuickSearch := ResolveHotkey(hkQuickSearch, chkEnableQuickSearch.Checked, FSavedQuickSearch);
@@ -1970,6 +2052,17 @@ begin
         end;
     end;
 
+    Setts.GlobalTitleDenyRules.Items := FDenyRules;
+
+    // Санити-чек класс-фильтров: фильтр, не совпадающий ни с одним открытым
+    // окном, полностью скроет процесс из списков (регрессия MobaXterm/CMoTTY).
+    // Только классы: полный блок через include/exclude - намеренный сценарий
+    ClassWarning := BuildClassHiddenWarning(Setts.AllowedApplications.Items);
+    if ClassWarning <> '' then
+        if not MessagesHandler.AskWarning(ClassWarning,
+            TUIStateLoader.GetMessage('Common.Warning')) then
+            Exit;
+
     for Info in FLocalActions.Values do
         AppContext.HotkeyService.SetActionShortCut(Info.ActionName, Info.CurrentShortCut);
 
@@ -1984,6 +2077,7 @@ begin
             GWinMonitor.AddAllowedProcess(lvApplications.Items[I].Caption.ToLower);
 
     GProfileManager.SyncFromApplications(AppContext.SettingsManager.Data.AllowedApplications.Items);
+    GProfileManager.SetGlobalDenyRules(AppContext.SettingsManager.Data.GlobalTitleDenyRules.Items);
 
     for I := 0 to Screen.FormCount - 1 do
         AppContext.HotkeyService.ApplySettingsToForm(Screen.Forms[I]);

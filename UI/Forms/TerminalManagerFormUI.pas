@@ -10,6 +10,7 @@ uses
     Vcl.Controls,
     Vcl.ExtCtrls,
     Vcl.StdCtrls,
+    UI.ListViewColumnSizing,
     WindowMonitor
     ;
 
@@ -35,6 +36,7 @@ type
         FOpenWindows: TArray<TWindowMonitorInfo>;
         FHistory: TArray<TWindowMonitorInfo>;
         FPopulating: Boolean;
+        FColFitter: TListViewColumnFitter;
         function ListViewHelpOffset(LV: TListView): Integer;
         procedure RefreshHistory;
         function FindInHistory(AHWND: THandle; out AInfo: TWindowMonitorInfo): Boolean;
@@ -54,7 +56,6 @@ uses
     Common.Localization,
     System.Math,
     UI.HoverHelpManager,
-    Winapi.CommCtrl,
     Winapi.Windows
     ;
 
@@ -163,11 +164,11 @@ begin
         lvWindows.Items.EndUpdate;
     end;
 
-    // Для последней колонки LVSCW_AUTOSIZE_USEHEADER означает "заполнить
-    // весь остаток клиентской области" (паттерн диалога выбора терминала)
-    if lvWindows.HandleAllocated and (lvWindows.Columns.Count > 0) then
-        ListView_SetColumnWidth(lvWindows.Handle,
-            lvWindows.Columns.Count - 1, LVSCW_AUTOSIZE_USEHEADER);
+    // Автоподбор ширин: колонки по содержимому, последняя до края,
+    // без горизонтальной прокрутки
+    if FColFitter = nil then
+        FColFitter := TListViewColumnFitter.Create(Self, lvWindows);
+    FColFitter.Fit;
 
     UpdateStatus;
 end;

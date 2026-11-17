@@ -15,7 +15,8 @@ uses
     Vcl.Graphics,
     Vcl.Menus,
     Vcl.StdCtrls,
-    EditEx
+    EditEx,
+    UI.ListViewColumnSizing
     ;
 
 type
@@ -81,6 +82,7 @@ type
         FIsValidEpoch: Boolean;
         FMatches: TArray<TEpochMatch>;
         FUpdatingUI: Boolean;
+        FColFitter: TListViewColumnFitter;
 
         procedure UpdateRelativeTime;
         procedure UpdateListViewRelativeTimes;
@@ -683,30 +685,12 @@ begin
 end;
 
 procedure TEpochConverterForm.ResizeLVColumns;
-var
-    TotalWidth: Integer;
 begin
-    if not Assigned(lvParsed) or (lvParsed.Columns.Count < 3) or not lvParsed.HandleAllocated then
+    if not Assigned(lvParsed) then
         Exit;
-
-    lvParsed.Items.BeginUpdate;
-    try
-        lvParsed.Columns[0].Width := LVSCW_AUTOSIZE_USEHEADER;
-        if lvParsed.Columns[0].Width < 100 then
-            lvParsed.Columns[0].Width := 100;
-
-        lvParsed.Columns[1].Width := LVSCW_AUTOSIZE_USEHEADER;
-        if lvParsed.Columns[1].Width < 120 then
-            lvParsed.Columns[1].Width := 120;
-
-        TotalWidth := lvParsed.ClientWidth;
-        lvParsed.Columns[2].Width := TotalWidth - lvParsed.Columns[0].Width - lvParsed.Columns[1].Width;
-
-        if lvParsed.Columns[2].Width < 90 then
-            lvParsed.Columns[2].Width := 90;
-    finally
-        lvParsed.Items.EndUpdate;
-    end;
+    if FColFitter = nil then
+        FColFitter := TListViewColumnFitter.Create(Self, lvParsed);
+    FColFitter.Fit;
 end;
 
 end.

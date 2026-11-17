@@ -73,6 +73,7 @@ begin
         TDUnitX.RegisterTestFixture(TDbMigrationTests);
         TDUnitX.RegisterTestFixture(TDbEncryptionRoundtripTests);
         TDUnitX.RegisterTestFixture(TWindowMonitorTests);
+        TDUnitX.RegisterTestFixture(TProcessProfileFilterTests);
         TDUnitX.RegisterTestFixture(TChainsTests);
         TDUnitX.RegisterTestFixture(TSavedQueriesTests);
         TDUnitX.RegisterTestFixture(TMarkdownImporterTests);

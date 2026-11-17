@@ -208,6 +208,21 @@ object ChooseTerminalWindow: TChooseTerminalWindow
     OnDblClick = lvTerminalListDblClick
     OnSelectItem = lvTerminalListSelectItem
   end
+  object lbListEmpty: TLabel
+    Left = 0
+    Top = 340
+    Width = 780
+    Height = 82
+    Align = alClient
+    Alignment = taCenter
+    AutoSize = False
+    Caption = ''
+    Layout = tlCenter
+    Transparent = True
+    Visible = False
+    WordWrap = True
+    OnClick = lbListEmptyClick
+  end
   object sbBottom: TStatusBar
     Left = 0
     Top = 314
