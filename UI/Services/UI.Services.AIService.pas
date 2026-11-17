@@ -12,13 +12,6 @@ type
         function AskAssistant(const Instruction, CodeContext: string): string;
     end;
 
-    TAITextCleaner = class
-    private
-        class function CleanInlineMarkdown(const Line: string): string;
-    public
-        class function ExtractPureCode(const RawText: string): string;
-    end;
-
     TYandexAIService = class(TInterfacedObject, IAIService)
     private
         FApiKey: string;
@@ -40,75 +33,10 @@ uses
     System.Net.HttpClient,
     System.Net.HttpClientComponent,
     System.Net.URLClient,
-    System.RegularExpressions,
     System.SysUtils,
-    Common.Localization
+    Common.Localization,
+    UI.Services.AITextCleaner
     ;
-
-{ TAITextCleaner }
-
-class function TAITextCleaner.CleanInlineMarkdown(const Line: string): string;
-begin
-    Result := Line;
-    if Result.IsEmpty then
-        Exit;
-    Result := TRegEx.Replace(Result, '(\*\*|__)(.*?)\1', '$2');
-    Result := TRegEx.Replace(Result, '(\*|_)(.*?)\1', '$2');
-    Result := TRegEx.Replace(Result, '`(.*?)`', '$1');
-    Result := TRegEx.Replace(Result, '\[(.*?)\]\(.*?\)', '$1');
-end;
-
-class function TAITextCleaner.ExtractPureCode(const RawText: string): string;
-var
-    Lines: TStringList;
-    CodeLines: TStringList;
-    I: Integer;
-    InCodeBlock: Boolean;
-    CurrentLine: string;
-begin
-    Result := Trim(RawText);
-    if Result.IsEmpty then
-        Exit;
-
-    Lines := TStringList.Create;
-    CodeLines := TStringList.Create;
-    try
-        Lines.Text := RawText;
-        InCodeBlock := False;
-
-        for I := 0 to Lines.Count - 1 do
-        begin
-            CurrentLine := Trim(Lines[I]);
-            if CurrentLine.StartsWith('```') then
-            begin
-                if InCodeBlock then
-                begin
-                    Break;
-                end
-                else
-                begin
-                    InCodeBlock := True;
-                    Continue;
-                end;
-            end;
-
-            if InCodeBlock then
-                CodeLines.Add(CleanInlineMarkdown(Lines[I]));
-        end;
-
-        if CodeLines.Count > 0 then
-            Result := Trim(CodeLines.Text)
-        else
-        begin
-            for I := 0 to Lines.Count - 1 do
-                Lines[I] := CleanInlineMarkdown(Lines[I]);
-            Result := Trim(Lines.Text);
-        end;
-    finally
-        CodeLines.Free;
-        Lines.Free;
-    end;
-end;
 
 { TYandexAIService }
 

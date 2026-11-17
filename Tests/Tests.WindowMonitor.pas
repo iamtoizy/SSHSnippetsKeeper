@@ -102,12 +102,23 @@ type
 
         [Test]
         procedure FindClassHiddenApps_SkipsDisabledEmptyAndMatching;
+
+        [Test]
+        procedure RegexSafety_CatastrophicPattern_TimesOut;
+
+        [Test]
+        procedure RegexSafety_InvalidPattern_SilentFalse;
+
+        [Test]
+        procedure RegexSafety_TitleGate_ToleratesBrokenInclude;
     end;
 
 implementation
 
 uses
+    Common.RegexSafety,
     Core.Interfaces.Settings,
+    System.Diagnostics,
     System.SysUtils,
     Winapi.Windows,
     ProcessProfile,
@@ -694,6 +705,36 @@ begin
     Hidden := FindClassHiddenApps(Apps, Raw);
     Assert.AreEqual<Integer>(0, Length(Hidden),
         'Disabled, empty-filter and matching apps must be skipped');
+end;
+
+procedure TProcessProfileFilterTests.RegexSafety_CatastrophicPattern_TimesOut;
+var
+    SW: TStopwatch;
+begin
+    SW := TStopwatch.StartNew;
+    Assert.IsFalse(TRegexSafety.IsMatch(StringOfChar('a', 40), '(a+)+b', []),
+        'Catastrophic pattern must time out instead of hanging');
+    Assert.IsTrue(SW.ElapsedMilliseconds < 10000,
+        'Match timeout must keep the call bounded');
+end;
+
+procedure TProcessProfileFilterTests.RegexSafety_InvalidPattern_SilentFalse;
+begin
+    Assert.IsFalse(TRegexSafety.IsMatch('abc', '(a+', []),
+        'Invalid pattern must return False, not raise');
+    Assert.IsFalse(TRegexSafety.PatternIsValid('(a+'));
+    Assert.IsTrue(TRegexSafety.PatternIsValid(''));
+    Assert.IsTrue(TRegexSafety.PatternIsValid('a.*b'));
+end;
+
+procedure TProcessProfileFilterTests.RegexSafety_TitleGate_ToleratesBrokenInclude;
+begin
+    Assert.IsTrue(TProcessProfile.EvaluateTitleFilter('abc', '(a+', '')
+        = tfrBlockedByInclude,
+        'Broken include must not raise in the gate');
+    Assert.IsTrue(TProcessProfile.EvaluateTitleFilter('abc', '', '(a+')
+        = tfrPass,
+        'Broken exclude must not block windows');
 end;
 
 end.

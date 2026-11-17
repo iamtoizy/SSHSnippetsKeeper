@@ -97,6 +97,7 @@ implementation
 
 uses
     Common.Localization,
+    Common.RegexSafety,
     ProcessProfile,
     WindowMonitor
     ;
@@ -270,15 +271,7 @@ end;
 
 function TWindowDenyBuilderDialog.IsValidRegex(const APattern: string): Boolean;
 begin
-    Result := True;
-    if APattern = '' then
-        Exit;
-
-    try
-        TRegEx.IsMatch('', APattern);
-    except
-        Result := False;
-    end;
+    Result := TRegexSafety.PatternIsValid(APattern);
 end;
 
 procedure TWindowDenyBuilderDialog.LoadRuleToEditor(const ARule: TGlobalTitleDenyRule);

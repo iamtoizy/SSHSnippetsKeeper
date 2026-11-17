@@ -380,6 +380,7 @@
         <DCCReference Include="Common\Common.Helpers.pas"/>
         <DCCReference Include="Common\Common.Localization.pas"/>
         <DCCReference Include="Common\Common.QueryLanguage.pas"/>
+        <DCCReference Include="Common\Common.RegexSafety.pas"/>
         <DCCReference Include="Common\Common.Settings.pas"/>
         <DCCReference Include="Common\Common.SnippetLanguageDetect.pas"/>
         <DCCReference Include="Common\Common.SnippetLanguages.pas"/>

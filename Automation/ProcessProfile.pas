@@ -94,6 +94,7 @@ var
 implementation
 
 uses
+    Common.RegexSafety,
     System.RegularExpressions,
     System.SysUtils
     ;
@@ -161,12 +162,12 @@ begin
 
     // Include: заголовок обязан совпасть с regex
     if AIncludeRegex <> '' then
-        if not TRegEx.IsMatch(ATitle, AIncludeRegex, [roIgnoreCase]) then
+        if not TRegexSafety.IsMatch(ATitle, AIncludeRegex, [roIgnoreCase]) then
             Exit(tfrBlockedByInclude);
 
     // Exclude: совпавший с regex заголовок блокируется
     if AExcludeRegex <> '' then
-        if TRegEx.IsMatch(ATitle, AExcludeRegex, [roIgnoreCase]) then
+        if TRegexSafety.IsMatch(ATitle, AExcludeRegex, [roIgnoreCase]) then
             Exit(tfrBlockedByExclude);
 end;
 
@@ -212,20 +213,13 @@ begin
         if not Rule.CaseSensitive then
             Include(Options, roIgnoreCase);
 
-        try
-            if TRegEx.IsMatch(ATitle, Rule.Pattern, Options) then
-            begin
-                if Trim(Rule.Name) = '' then
-                    AMatchedRule := Rule.Pattern
-                else
-                    AMatchedRule := Rule.Name;
-                Exit(True);
-            end;
-        except
-            // Битый шаблон не блокирует и не прерывает проверку остальных
-            // правил: sanitize настроек отбрасывает такие правила при загрузке
-            on E: Exception do
-                Continue;
+        if TRegexSafety.IsMatch(ATitle, Rule.Pattern, Options) then
+        begin
+            if Trim(Rule.Name) = '' then
+                AMatchedRule := Rule.Pattern
+            else
+                AMatchedRule := Rule.Name;
+            Exit(True);
         end;
     end;
 

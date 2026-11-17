@@ -108,13 +108,13 @@ implementation
 uses
     ArrayHelper,
     Common.Helpers,
+    Common.RegexSafety,
     JSONSerializer,
     System.Generics.Collections,
     System.Hash,
     System.NetEncoding,
     System.IOUtils,
     System.JSON,
-    System.RegularExpressions,
     Winapi.Windows
     ;
 
@@ -772,18 +772,12 @@ var
     DenyRule: TGlobalTitleDenyRule;
 
     function TryCompileRegex(const APattern: string): Boolean;
+    var
+        Err: string;
     begin
-        Result := True;
-        try
-            // IsMatch компилирует шаблон: на битом бросает ERegularExpressionError
-            TRegEx.IsMatch('', APattern);
-        except
-            on E: Exception do
-            begin
-                LogMsg('TSettingsManager.Sanitize: bad regex "' + APattern + '": ' + E.Message);
-                Result := False;
-            end;
-        end;
+        Result := TRegexSafety.TryCompile(APattern, Err);
+        if not Result then
+            LogMsg('TSettingsManager.Sanitize: bad regex "' + APattern + '": ' + Err);
     end;
 begin
     DroppedApps := 0;

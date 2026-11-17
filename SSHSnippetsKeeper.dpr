@@ -192,6 +192,7 @@ uses
   Common.Helpers in 'Common\Common.Helpers.pas',
   Common.Localization in 'Common\Common.Localization.pas',
   Common.QueryLanguage in 'Common\Common.QueryLanguage.pas',
+  Common.RegexSafety in 'Common\Common.RegexSafety.pas',
   Common.Settings in 'Common\Common.Settings.pas',
   Common.SnippetLanguageDetect in 'Common\Common.SnippetLanguageDetect.pas',
   Common.SnippetLanguages in 'Common\Common.SnippetLanguages.pas',

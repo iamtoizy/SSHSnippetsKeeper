@@ -7,7 +7,6 @@ uses
     Core.Interfaces.App,
     Core.Interfaces.Settings,
     System.Classes,
-    System.RegularExpressions,
     System.SysUtils,
     UI.ListViewColumnSizing,
     Vcl.ComCtrls,
@@ -65,6 +64,7 @@ implementation
 
 uses
     Common.Localization,
+    Common.RegexSafety,
     ProcessProfile,
     WindowClassPickerDialogUI,
     WindowDenyBuilderUI,
@@ -361,15 +361,7 @@ end;
 
 function TWindowProfileDialog.IsValidRegex(const APattern: string): Boolean;
 begin
-    Result := True;
-    if APattern = '' then
-        Exit;
-
-    try
-        TRegEx.IsMatch('', APattern);
-    except
-        Result := False;
-    end;
+    Result := TRegexSafety.PatternIsValid(APattern);
 end;
 
 function TWindowProfileDialog.ClassesTextToClasses: TArray<string>;
