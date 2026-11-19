@@ -306,6 +306,10 @@ begin
     if (not TableExists('snippets')) or ColumnExists('snippets', AColumnName) then
         Exit;
 
+    // SAST-триаж: AColumnName и ADDL - строковые литералы из ApplyColumnGuards
+    // (case 7/11/12/14), не пользовательский ввод; SQL-инъекция исключена.
+    // Имя колонки нельзя передать параметром - SQLite не поддерживает
+    // плейсхолдеры в DDL идентификаторах.
     FConnection.ExecSQL(Format('ALTER TABLE snippets ADD COLUMN %s %s', [AColumnName, ADDL]));
 end;
 
@@ -314,6 +318,8 @@ begin
     if (not TableExists('snippet_chains')) or ColumnExists('snippet_chains', AColumnName) then
         Exit;
 
+    // SAST-триаж: аналогично EnsureSnippetColumn - литеральные аргументы
+    // из ApplyColumnGuards (case 14), идентификатор DDL параметром не передаётся.
     FConnection.ExecSQL(Format('ALTER TABLE snippet_chains ADD COLUMN %s %s', [AColumnName, ADDL]));
 end;
 
@@ -366,6 +372,9 @@ begin
             if TFile.Exists(BackupFile) then
                 TFile.Delete(BackupFile);
 
+            // SAST-триаж: путь BackupFile формируется из FDatabaseFile/ATargetFile,
+            // QuotedStr экранирует одинарные кавычки; VACUUM INTO принимает
+            // только строковый литерал, параметр тут не поддерживается.
             FConnection.ExecSQL('VACUUM INTO ' + QuotedStr(BackupFile));
         except
             // Запасной путь для старых SQLite без VACUUM INTO:

@@ -1,4 +1,4 @@
-unit Tests.DbCrypto;
+﻿unit Tests.DbCrypto;
 
 interface
 
@@ -68,20 +68,20 @@ uses
     ;
 
 const
-    // PBKDF2-HMAC-SHA256, dkLen=32 (RFC 7914, раздел 11; сверено с hashlib)
+    // PBKDF2-HMAC-SHA256, dkLen=32 (RFC 7914, СЂР°Р·РґРµР» 11; СЃРІРµСЂРµРЅРѕ СЃ hashlib)
     PBKDF2_PASSWORD_SALT_C1 = '120fb6cffcf8b32c43e7225256c4f837a86548c92ccc35480805987cb70be17b';
     PBKDF2_PASSWORD_SALT_C2 = 'ae4d0c95af6b46d32d0adff928f06dd02a303f8ef3c251dfd6e2d85a95474c43';
     PBKDF2_PASSWORD_SALT_C4096 = 'c5e478d59288c841aa530db6845c4c8d962893a001ce4e11a4963873aa98134a';
     PBKDF2_PASSWORD_NACL_C2 = '7897885f70bce63d18e043ad11c3a4b71a326b50c5e183d740d8924f5c3ead46';
     PBKDF2_LONGPWORD_S1_C1000 = '0593d2b715a8d4b38301986d8057f5bb96fb12a6f5a0c812f18ef9b60db90398';
 
-    // PBKDF2-HMAC-SHA256, c=3, dkLen=25 (неполный последний блок):
-    // сверено между Windows CNG (BCryptDeriveKeyPBKDF2) и независимой
-    // HMAC-SHA256-реализацией - значения совпали
+    // PBKDF2-HMAC-SHA256, c=3, dkLen=25 (РЅРµРїРѕР»РЅС‹Р№ РїРѕСЃР»РµРґРЅРёР№ Р±Р»РѕРє):
+    // СЃРІРµСЂРµРЅРѕ РјРµР¶РґСѓ Windows CNG (BCryptDeriveKeyPBKDF2) Рё РЅРµР·Р°РІРёСЃРёРјРѕР№
+    // HMAC-SHA256-СЂРµР°Р»РёР·Р°С†РёРµР№ - Р·РЅР°С‡РµРЅРёСЏ СЃРѕРІРїР°Р»Рё
     PBKDF2_PASSWORD_SALT_C3_DKLEN25 = 'ad35240ac683febfaf3cd49d845473fbbbaa2437f5f82d5a41';
 
-    // AES-GCM, кастомные векторы получены из Windows BCrypt (bcrypt.dll)
-    // и сверены с чистой python-реализацией FIPS 197/800-38D
+    // AES-GCM, РєР°СЃС‚РѕРјРЅС‹Рµ РІРµРєС‚РѕСЂС‹ РїРѕР»СѓС‡РµРЅС‹ РёР· Windows BCrypt (bcrypt.dll)
+    // Рё СЃРІРµСЂРµРЅС‹ СЃ С‡РёСЃС‚РѕР№ python-СЂРµР°Р»РёР·Р°С†РёРµР№ FIPS 197/800-38D
     GCM_KEY16_NONCE12_EMPTY = '58e2fccefa7e3061367f1d57a4e7455a';
     GCM_KEY16_NONCE12_BLOCK16 = '0388dace60b6a392f328c2b971b2fe78ab6e47d42cec13bdf53a67b21257bddf';
     GCM_KEY32_NONCE12_EMPTY = '530f8afbc74536b9a963b4f1c4cb738b';
@@ -166,8 +166,8 @@ procedure TDbCryptoPbkdf2Tests.Pbkdf2_LongPassword_Vector;
 var
     LongPassword: string;
 begin
-    // 64-байтный пароль длиннее HMAC-блока SHA-256 (64 байта):
-    // ключ обязан сначала прогоняться через сам хеш
+    // 64-Р±Р°Р№С‚РЅС‹Р№ РїР°СЂРѕР»СЊ РґР»РёРЅРЅРµРµ HMAC-Р±Р»РѕРєР° SHA-256 (64 Р±Р°Р№С‚Р°):
+    // РєР»СЋС‡ РѕР±СЏР·Р°РЅ СЃРЅР°С‡Р°Р»Р° РїСЂРѕРіРѕРЅСЏС‚СЊСЃСЏ С‡РµСЂРµР· СЃР°Рј С…РµС€
     LongPassword := '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
     Assert.AreEqual(PBKDF2_LONGPWORD_S1_C1000,
         ToHex(DbPbkdf2Sha256(Utf8Bytes(LongPassword), Utf8Bytes('s1'), 1000, 32)));
@@ -175,7 +175,7 @@ end;
 
 procedure TDbCryptoPbkdf2Tests.Pbkdf2_PartialLastBlock_Vector;
 begin
-    // dkLen не кратен HLEN=32: последний блок используется частично
+    // dkLen РЅРµ РєСЂР°С‚РµРЅ HLEN=32: РїРѕСЃР»РµРґРЅРёР№ Р±Р»РѕРє РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ С‡Р°СЃС‚РёС‡РЅРѕ
     Assert.AreEqual(PBKDF2_PASSWORD_SALT_C3_DKLEN25,
         ToHex(DbPbkdf2Sha256(Utf8Bytes('password'), Utf8Bytes('salt'), 3, 25)));
 end;
@@ -193,7 +193,7 @@ end;
 
 procedure TDbCryptoGcmTests.Gcm_EmptyPlaintext_KnownTag;
 begin
-    // NIST AES-128-GCM: пустой открытый текст, ключ и nonce из нулей
+    // NIST AES-128-GCM: РїСѓСЃС‚РѕР№ РѕС‚РєСЂС‹С‚С‹Р№ С‚РµРєСЃС‚, РєР»СЋС‡ Рё nonce РёР· РЅСѓР»РµР№
     Assert.AreEqual(GCM_KEY16_NONCE12_EMPTY,
         ToHex(DbAesGcmSeal(Zeros(16), Zeros(12), nil)));
 end;
@@ -232,7 +232,7 @@ begin
     Plain := Sequence(16);
     Assert.AreEqual(ToHex(Plain), ToHex(DbAesGcmOpen(Key, Nonce, DbAesGcmSeal(Key, Nonce, Plain))));
 
-    // Пустой открытый текст
+    // РџСѓСЃС‚РѕР№ РѕС‚РєСЂС‹С‚С‹Р№ С‚РµРєСЃС‚
     Plain := nil;
     Assert.AreEqual(0, Integer(Length(DbAesGcmOpen(Key, Nonce, DbAesGcmSeal(Key, Nonce, Plain)))));
 end;
@@ -271,7 +271,7 @@ end;
 
 procedure TDbCryptoGcmTests.Gcm_WrongKeyLength_Raises;
 begin
-    // 15 байт - ни одна из допустимых длин AES (16/24/32)
+    // 15 Р±Р°Р№С‚ - РЅРё РѕРґРЅР° РёР· РґРѕРїСѓСЃС‚РёРјС‹С… РґР»РёРЅ AES (16/24/32)
     Assert.WillRaise(
         procedure
         begin
@@ -305,7 +305,7 @@ var
     Json: string;
 begin
     MasterKey := Sequence(32);
-    Json := DbExportKeyToJson('export pass-phrase', MasterKey, 1000);
+    Json := DbExportKeyToJson('export pass-phrase', MasterKey, DB_PBKDF2_ITERATIONS_MIN);
     Assert.AreEqual(ToHex(MasterKey),
         ToHex(DbImportKeyFromJson(Json, 'export pass-phrase')));
 end;
@@ -314,7 +314,7 @@ procedure TDbCryptoKeyFileTests.Export_WrongPassword_ImportRaises;
 var
     Json: string;
 begin
-    Json := DbExportKeyToJson('export pass-phrase', Sequence(32), 1000);
+    Json := DbExportKeyToJson('export pass-phrase', Sequence(32), DB_PBKDF2_ITERATIONS_MIN);
     Assert.WillRaise(
         procedure
         begin
@@ -327,17 +327,17 @@ var
     Root: TJSONObject;
     Json: string;
 begin
-    Json := DbExportKeyToJson('export pass-phrase', Sequence(32), 1000);
+    Json := DbExportKeyToJson('export pass-phrase', Sequence(32), DB_PBKDF2_ITERATIONS_MIN);
     Root := TJSONObject.ParseJSONValue(Json) as TJSONObject;
     try
         Assert.AreEqual(1, Root.GetValue<Integer>('version'));
         Assert.AreEqual('pbkdf2-sha256', Root.GetValue<string>('kdf'));
-        Assert.AreEqual(1000, Root.GetValue<Integer>('iterations'));
+        Assert.AreEqual(DB_PBKDF2_ITERATIONS_MIN, Root.GetValue<Integer>('iterations'));
         Assert.AreEqual(DB_SALT_BYTES,
             Integer(Length(TNetEncoding.Base64.DecodeStringToBytes(Root.GetValue<string>('salt')))));
         Assert.AreEqual(DB_GCM_NONCE_BYTES,
             Integer(Length(TNetEncoding.Base64.DecodeStringToBytes(Root.GetValue<string>('nonce')))));
-        // 32 байта ключа + 16 байт тега
+        // 32 Р±Р°Р№С‚Р° РєР»СЋС‡Р° + 16 Р±Р°Р№С‚ С‚РµРіР°
         Assert.AreEqual(DB_KEY_BYTES + DB_GCM_TAG_BYTES,
             Integer(Length(TNetEncoding.Base64.DecodeStringToBytes(Root.GetValue<string>('data')))));
     finally

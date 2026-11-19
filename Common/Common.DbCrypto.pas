@@ -22,6 +22,11 @@ const
     // ключа можно передать меньшее значение явно
     DB_PBKDF2_ITERATIONS = 600000;
 
+    // Допустимые границы итераций в файле экспорта ключа: ниже - отказ
+    // (ослабленный KDF), выше - отказ (DoS при импорте)
+    DB_PBKDF2_ITERATIONS_MIN = 100000;
+    DB_PBKDF2_ITERATIONS_MAX = 10000000;
+
     // Формат файла экспорта ключа
     DB_KEY_FILE_VERSION = 1;
     DB_KEY_FILE_KDF = 'pbkdf2-sha256';
@@ -456,7 +461,12 @@ begin
             raise EDbCryptoError.Create('Key file: unsupported KDF');
 
         Iterations := IntField('iterations');
-        if Iterations < 1 then
+        // Границы от DoS и деградации: слишком мало итераций ослабляет
+        // PBKDF2, слишком много - подвешивает поток на минуты. Дефолт
+        // схемы - 600000, тесты могут использовать меньшие значения
+        // только через прямой вызов примитивов, не через файл ключа
+        if (Iterations < DB_PBKDF2_ITERATIONS_MIN) or
+            (Iterations > DB_PBKDF2_ITERATIONS_MAX) then
             raise EDbCryptoError.Create('Key file: invalid iteration count');
 
         Salt := BytesField('salt');

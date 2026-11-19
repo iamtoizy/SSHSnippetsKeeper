@@ -224,12 +224,42 @@ begin
     AParams.Add('Password=' + AKeyBase64);
 end;
 
+// Строгий base64 (RFC 4648): только алфавит A-Za-z0-9+/ и паддинг =,
+// длина кратна 4. Пустая строка валидна - это снятие шифрования
+function IsValidKeyMaterial(const AKeyBase64: string): Boolean;
+var
+    I: Integer;
+    C: Char;
+begin
+    Result := False;
+    if AKeyBase64 = '' then
+        Exit(True);
+    if Length(AKeyBase64) mod 4 <> 0 then
+        Exit;
+    for I := 1 to Length(AKeyBase64) do
+    begin
+        C := AKeyBase64[I];
+        if not (((C >= 'A') and (C <= 'Z')) or ((C >= 'a') and (C <= 'z')) or
+            ((C >= '0') and (C <= '9')) or (C = '+') or (C = '/') or
+            (C = '=')) then
+            Exit;
+    end;
+    Result := True;
+end;
+
 procedure ConvertDatabaseEncryption(const ADatabaseFile: string;
     const AOldKeyBase64, ANewKeyBase64: string);
 var
     Connection: TFDConnection;
     DriverLink: TFDPhysSQLiteDriverLink;
 begin
+    // Оба ключа попадают в SQL/параметры движка: подставлять в PRAGMA
+    // можно только материал строгого base64 - защита от инъекции в
+    // PRAGMA rekey, даже если источник ключа повреждён
+    if not IsValidKeyMaterial(AOldKeyBase64) then
+        raise EArgumentException.Create('Invalid old key material');
+    if not IsValidKeyMaterial(ANewKeyBase64) then
+        raise EArgumentException.Create('Invalid new key material');
     // Свой link - страховка для процесса, где этот путь единственный
     // пользователь FireDAC; параметры драйвера в любом случае берутся
     // из первого зарегистрированного link-компонента
@@ -252,8 +282,8 @@ begin
         Connection.Connected := True;
 
         try
-            // Пустой новый ключ = снятие шифрования; base64-ключ не
-            // содержит символов кавычек, экранирование не требуется
+            // Пустой новый ключ = снятие шифрования; ключи прошли
+            // строгую base64-валидацию выше, кавычек в них нет
             Connection.ExecSQL('PRAGMA rekey = ''' + ANewKeyBase64 + '''');
         except
             on E: Exception do

@@ -279,7 +279,9 @@ begin
                 Snip.Comment := SnipObj.GetValue<string>('comment', '');
                 Snip.Language := SnipObj.GetValue<string>('language', '');
                 Snip.LanguageLocked := SnipObj.GetValue<Boolean>('languageLocked', False);
-                Snip.IsSecurityCheckIgnored := SnipObj.GetValue<Boolean>('securityCheckIgnored', False);
+                // Флаг игнорирования проверки безопасности не доверяем из внешнего
+                // файла: импортированный сниппет обязан пройти скан заново.
+                Snip.IsSecurityCheckIgnored := False;
                 Snip.CreatedAt := SnipObj.GetValue<Int64>('createdAt', 0);
                 if Snip.CreatedAt <= 0 then
                     Snip.CreatedAt := DateTimeToUnix(Now);

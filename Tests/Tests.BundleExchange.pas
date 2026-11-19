@@ -29,6 +29,9 @@ type
         procedure RoundTrip_ImportRestoresSnippetWithTagsAndCategory;
 
         [Test]
+        procedure Import_ClearsSecurityCheckIgnoredFlag;
+
+        [Test]
         procedure InvalidFormat_Raises;
     end;
 
@@ -36,6 +39,7 @@ implementation
 
 uses
     BundleExchange,
+    Common.Localization,
     Core.Entities.Category,
     Core.Entities.Snippet,
     Core.Entities.Tag,
@@ -49,6 +53,21 @@ uses
 function DbManagerHeld(AMgr: TTestDatabaseManager): Boolean;
 begin
     Result := (AMgr <> nil) and (AMgr.RefCount > 0);
+end;
+
+function TranslationPath: string;
+var
+    Dir: string;
+begin
+    Dir := TPath.GetDirectoryName(ParamStr(0));
+    repeat
+        Result := TPath.Combine(Dir,
+            TPath.Combine('Assets', TPath.Combine('ExeData', TPath.Combine('Translation', 'ui-texts.ru.json'))));
+        if TFile.Exists(Result) then
+            Exit;
+        Dir := TPath.GetDirectoryName(Dir);
+    until Dir = '';
+    raise Exception.Create('Translation file not found: ' + Result);
 end;
 
 function ResolveSchemaPath(const AFilename: string): string;
@@ -85,6 +104,9 @@ end;
 
 procedure TBundleExchangeTests.Setup;
 begin
+    // ImportBundle при ошибке версии формата берёт текст из локализации
+    TUIStateLoader.LoadLanguageFile(TranslationPath);
+
     FTempDir := TPath.Combine(TPath.GetTempPath,
         'ssk_bun_' + TGUID.NewGuid.ToString);
     TDirectory.CreateDirectory(FTempDir);
@@ -216,6 +238,28 @@ begin
     Res := TBundleExchange.ImportBundle(FContext, FileName, 2);
     Assert.AreEqual<Integer>(0, Res.Imported);
     Assert.AreEqual<Integer>(1, Res.Skipped);
+end;
+
+procedure TBundleExchangeTests.Import_ClearsSecurityCheckIgnoredFlag;
+var
+    FileName, Json: string;
+    Res: TBundleImportResult;
+    ImportedSnippets: TArray<TSnippetDTO>;
+begin
+    Json :=
+        '{"format":"ssk-bundle","version":1,"snippets":[' +
+        '{"title":"Ignored Snip","content":"rm -rf /tmp/x",' +
+        '"category":"Shared","securityCheckIgnored":true,"createdAt":1600000000}]}';
+    FileName := TPath.Combine(FTempDir, 'ignored.ssk.json');
+    TFile.WriteAllText(FileName, Json, TEncoding.UTF8);
+
+    Res := TBundleExchange.ImportBundle(FContext, FileName, 2);
+    Assert.AreEqual<Integer>(1, Res.Imported);
+
+    ImportedSnippets := FContext.SnippetService.GetAllSnippets(2);
+    Assert.AreEqual<Integer>(1, Length(ImportedSnippets));
+    Assert.IsFalse(ImportedSnippets[0].IsSecurityCheckIgnored,
+        'импорт не должен переносить флаг securityCheckIgnored из внешнего файла');
 end;
 
 procedure TBundleExchangeTests.InvalidFormat_Raises;

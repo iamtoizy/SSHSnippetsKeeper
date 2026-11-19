@@ -153,9 +153,11 @@ uses
   TrackBarEx in 'UI\Controls\TrackBarEx.pas',
   ListViewEx in 'UI\Controls\ListViewEx.pas',
   EditEx in 'UI\Controls\EditEx.pas',
+{$IFNDEF SSK_NO_AI}
   UI.Services.AIService in 'UI\Services\UI.Services.AIService.pas',
   UI.Services.AITextCleaner in 'UI\Services\UI.Services.AITextCleaner.pas',
   AISettingsFormUI in 'UI\Forms\AISettingsFormUI.pas' {AISettingsForm},
+{$ENDIF}
   SecurityScanner in 'Core\Services\SecurityScanner.pas',
   SecurityReport in 'Core\Services\SecurityReport.pas',
   SecurityScanDelta in 'Core\Services\SecurityScanDelta.pas',

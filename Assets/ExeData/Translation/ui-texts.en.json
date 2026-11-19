@@ -2147,6 +2147,7 @@
         "HighEntropyString": "High entropy string (possibly a hash or token): \"%s...\""
       },
       "SensitiveDataFound": "Sensitive data found:\n• %s\nPlease review the snippet text before sending it to the terminal.\n\nDo you want to proceed with the submission?",
+      "SecurityDisabledNotice": "AI features are disabled in this build for security reasons.",
       "ReportSummary": "Snippets checked: %d. Suspicious findings: %d.",
       "ReportSummaryClean": "Snippets checked: %d. No suspicious content found.",
       "ReportInContent": "Content: %s",

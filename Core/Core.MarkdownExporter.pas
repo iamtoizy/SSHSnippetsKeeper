@@ -116,7 +116,10 @@ var
     Tag: TTagDTO;
     TagsList: string;
     TagSB: TStringBuilder;
+    SafeTitle: string;
 begin
+    // CR/LF в заголовке ломают YAML front-matter (инъекция полей) — вырезаем
+    SafeTitle := Snippet.Title.Replace(#13, ' ').Replace(#10, ' ');
     TagSB := TStringBuilder.Create;
     try
         for Tag in Tags do
@@ -131,7 +134,7 @@ begin
     Result :=
         '---' + sLineBreak +
         'id: ' + Snippet.ID.ToString + sLineBreak +
-        'title: "' + Snippet.Title.Replace('"', '\"') + '"' + sLineBreak +
+        'title: "' + SafeTitle.Replace('"', '\"') + '"' + sLineBreak +
         SYNC_MARKER + sLineBreak +
         'tags: [' + TagsList + ']' + sLineBreak +
         'language: ' + FenceTagForSnippetLanguage(Snippet.Language) + sLineBreak +

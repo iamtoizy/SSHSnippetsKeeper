@@ -3,7 +3,9 @@
 interface
 
 uses
+{$IFNDEF SSK_NO_AI}
     UI.Services.AIService,
+{$ENDIF}
     BaseFormUI,
     Common.DraftStore,
     Core.CompletionEngine,
@@ -123,15 +125,19 @@ type
         procedure chkAutoLanguageClick(Sender: TObject);
         procedure cbIgnoreSecurityChecksClick(Sender: TObject);
         procedure FormClose(Sender: TObject; var Action: TCloseAction);
+{$IFNDEF SSK_NO_AI}
         procedure FormCloseQueryAI(Sender: TObject; var CanClose: Boolean);
+{$ENDIF}
         procedure lvAllTagsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
         procedure lvAllTagsDragOver(Sender, Source: TObject; X, Y: Integer; State: TDragState; var Accept: Boolean);
         procedure lvAllTagsDragDrop(Sender, Source: TObject; X, Y: Integer);
         procedure lvAllTagsDblClick(Sender: TObject);
         procedure mAIPromptKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+{$IFNDEF SSK_NO_AI}
         procedure bAITitleClick(Sender: TObject);
         procedure bAITagsClick(Sender: TObject);
         procedure bAIExplainClick(Sender: TObject);
+{$ENDIF}
         procedure mContentChange(Sender: TObject);
         procedure mContentKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
         procedure mContentProcessCommand(Sender: TObject; var Command: TSynEditorCommand; var Char: WideChar; Data: Pointer);
@@ -160,7 +166,9 @@ type
         procedure Loaded; override;
         procedure DoShownOnScreen; override;
     private
+{$IFNDEF SSK_NO_AI}
         FIsAICanceled: Boolean;
+{$ENDIF}
         FFirstShow: Boolean;
 
         FSnippet: TSnippetDTO;
@@ -180,9 +188,11 @@ type
         FSuppressSecurityConfirm: Boolean;
         FDetectBaselineText: string;
         FCompletionEngine: TCompletionEngine;
+{$IFNDEF SSK_NO_AI}
         FAIService: IAIService;
         FAIThread: TThread;
         FAIInProgress: Boolean;
+{$ENDIF}
         FWasSecuritySafe: Boolean;
         FRestoredInDB: Boolean;
         FMacroCards: TMacroCardController;
@@ -200,12 +210,15 @@ type
         FDraftSuspend: Boolean;
         FDraftRestoreDone: Boolean;
 
+{$IFNDEF SSK_NO_AI}
         procedure ShowAIOverlay;
         procedure ExecuteAICommand;
         function BuildAIService: IAIService;
+        function ConfirmAIContext(const AContext: string): Boolean;
         procedure RunAITask(const AInstruction, AContext: string;
             const AOnResult: TProc<string>);
         procedure ApplySuggestedTags(const Suggestions: TArray<string>);
+{$ENDIF}
         function IsAutocompleteVisible: Boolean;
         procedure SetSyntax;
         procedure ApplySnippetLanguage(const ALanguage: string);
@@ -215,10 +228,14 @@ type
         procedure ForceDetectLanguage;
         procedure SyncLanguageCombo;
         procedure UpdateAutoLanguageCheck;
+{$IFNDEF SSK_NO_AI}
         procedure PopulateHubs;
         procedure PopulateModels(HubIndex: Integer);
+{$ENDIF}
         procedure UpdateSecurityStatusUI(IsSafe: Boolean; const Reason: string);
+{$IFNDEF SSK_NO_AI}
         procedure AIThreadTerminated(Sender: TObject);
+{$ENDIF}
         procedure SetupMacroCards;
         procedure UpdateMacroCardMenuVisibility(AOnCard: Boolean);
         procedure UpdateSelectedCard;
@@ -266,8 +283,10 @@ type
 implementation
 
 uses
+{$IFNDEF SSK_NO_AI}
     UI.Services.AITextCleaner,
     AISettingsFormUI,
+{$ENDIF}
     Common.Consts,
     Common.SnippetLanguageDetect,
     Common.SnippetLanguageNB,
@@ -310,25 +329,42 @@ end;
 
 procedure TAddEditSnippetForm.actConfigureAIExecute(Sender: TObject);
 begin
+{$IFDEF SSK_NO_AI}
+    MessagesHandler.ShowInfo(
+        TUIStateLoader.GetMessage('Security.SecurityDisabledNotice'));
+{$ELSE}
     bAISettingsClick(bAISettings);
+{$ENDIF}
 end;
 
 procedure TAddEditSnippetForm.actShowAIFormExecute(Sender: TObject);
 begin
+{$IFDEF SSK_NO_AI}
+    MessagesHandler.ShowInfo(
+        TUIStateLoader.GetMessage('Security.SecurityDisabledNotice'));
+{$ELSE}
     ShowAIOverlay;
+{$ENDIF}
 end;
 
+{$IFNDEF SSK_NO_AI}
 procedure TAddEditSnippetForm.AIThreadTerminated(Sender: TObject);
 begin
     // Этот код выполняется в главном потоке, когда фоновый поток завершился сам
     if Sender = FAIThread then
         FreeAndNil(FAIThread);
 end;
+{$ENDIF}
 
 procedure TAddEditSnippetForm.bAISettingsClick(Sender: TObject);
 begin
+{$IFDEF SSK_NO_AI}
+    MessagesHandler.ShowInfo(
+        TUIStateLoader.GetMessage('Security.SecurityDisabledNotice'));
+{$ELSE}
     TAISettingsForm.ExecuteGlobal(Application, AppContext);
     PopulateHubs;
+{$ENDIF}
 end;
 
 procedure TAddEditSnippetForm.bHistoryClick(Sender: TObject);
@@ -373,6 +409,7 @@ begin
     if Assigned(FCompletionEngine) then
         FCompletionEngine.Free;
 
+{$IFNDEF SSK_NO_AI}
     FIsAICanceled := True; // Сигнал потоку остановиться
 
     if Assigned(FAIThread) then
@@ -388,6 +425,7 @@ begin
         FAIThread.WaitFor;
         FreeAndNil(FAIThread);
     end;
+{$ENDIF}
 end;
 
 procedure TAddEditSnippetForm.DoInitialize;
@@ -802,35 +840,20 @@ begin
 end;
 
 procedure TAddEditSnippetForm.cbAIHubChange(Sender: TObject);
-var
-    SelectedHubIndex: Integer;
 begin
+{$IFNDEF SSK_NO_AI}
     if cbAIHub.ItemIndex < 0 then
         Exit;
 
     // Получаем индекс хаба, который мы сохранили, и обновляем второй список
-    SelectedHubIndex := Integer(IntPtr(cbAIHub.Items.Objects[cbAIHub.ItemIndex]));
-    PopulateModels(SelectedHubIndex);
+    PopulateModels(Integer(IntPtr(cbAIHub.Items.Objects[cbAIHub.ItemIndex])));
+{$ENDIF}
 end;
 
 procedure TAddEditSnippetForm.cbAIModelChange(Sender: TObject);
-var
-    HubIdx, ModIdx: Integer;
-    SelectedAI: TAIItem;
 begin
-    if (cbAIHub.ItemIndex < 0) or (cbAIModel.ItemIndex < 0) then
-        Exit;
-
-    // Получаем индексы
-    HubIdx := Integer(IntPtr(cbAIHub.Items.Objects[cbAIHub.ItemIndex]));
-    ModIdx := Integer(IntPtr(cbAIModel.Items.Objects[cbAIModel.ItemIndex]));
-
-    // Вытаскиваем выбранную модель
-    SelectedAI := AppContext.SettingsManager.Data.AISettings[HubIdx].Items[ModIdx];
-
-    // Сюда можно добавить код обновления UI. Например:
-    // lbAIInfo.Caption := Format('Лимит: %d токенов, Temp: %0.1f',
-    //   [SelectedAI.Params.MaxOutputTokens, SelectedAI.Params.Temperature]);
+    // Выбор модели не требует UI-обновления; в корпоративном билде
+    // AI-комбо скрыты и обработчик недостижим
 end;
 
 procedure TAddEditSnippetForm.cbLanguageChange(Sender: TObject);
@@ -1005,6 +1028,7 @@ begin
     DraftTouch(Sender);
 end;
 
+{$IFNDEF SSK_NO_AI}
 procedure TAddEditSnippetForm.PopulateHubs;
 var
     I: Integer;
@@ -1028,6 +1052,7 @@ begin
         PopulateModels(0);
     end;
 end;
+{$ENDIF}
 
 procedure TAddEditSnippetForm.ebCategorySearchChange(Sender: TObject);
 begin
@@ -1066,6 +1091,7 @@ begin
     end;
 end;
 
+{$IFNDEF SSK_NO_AI}
 procedure TAddEditSnippetForm.ExecuteAICommand;
 var
     Instruction, CodeContext: string;
@@ -1079,6 +1105,9 @@ begin
         CodeContext := mContent.SelText
     else
         CodeContext := mContent.Text;
+
+    if not ConfirmAIContext(CodeContext) then
+        Exit;
 
     RunAITask(Instruction, CodeContext,
         procedure(Raw: string)
@@ -1133,6 +1162,29 @@ begin
     end;
 end;
 
+function TAddEditSnippetForm.ConfirmAIContext(
+    const AContext: string): Boolean;
+var
+    WarningReason: string;
+begin
+    // "Доверенный" режим: пользователь уже взял проверку на себя
+    if cbIgnoreSecurityChecks.Checked then
+        Exit(True);
+
+    Result := False;
+
+    // Перед отправкой контекста во внешний AI просим явного подтверждения,
+    // если в коде найдены потенциально чувствительные данные
+    if AppContext.SecurityScanner.HasSensitiveData(AContext, WarningReason) then
+        if not MessagesHandler.AskWarning(
+            TUIStateLoader.GetMessage('Security.SensitiveDataFound', [WarningReason]),
+            TUIStateLoader.GetMessage('Common.Warning')
+        ) then
+            Exit;
+
+    Result := True;
+end;
+
 procedure TAddEditSnippetForm.RunAITask(const AInstruction, AContext: string;
     const AOnResult: TProc<string>);
 begin
@@ -1182,6 +1234,9 @@ end;
 
 procedure TAddEditSnippetForm.bAITitleClick(Sender: TObject);
 begin
+    if not ConfirmAIContext(mContent.Text) then
+        Exit;
+
     RunAITask(
         TUIStateLoader.GetMessage('AI.AutoTitle.Instruction'),
         mContent.Text,
@@ -1208,6 +1263,9 @@ begin
     if string(ebTitle.Text).Trim <> '' then
         Context := 'Title: ' + ebTitle.Text + sLineBreak + sLineBreak + Context;
 
+    if not ConfirmAIContext(Context) then
+        Exit;
+
     RunAITask(
         TUIStateLoader.GetMessage('AI.AutoTags.Instruction'),
         Context,
@@ -1219,6 +1277,9 @@ end;
 
 procedure TAddEditSnippetForm.bAIExplainClick(Sender: TObject);
 begin
+    if not ConfirmAIContext(mContent.Text) then
+        Exit;
+
     RunAITask(
         TUIStateLoader.GetMessage('AI.Explain.Instruction'),
         mContent.Text,
@@ -1240,7 +1301,9 @@ begin
             end;
         end);
 end;
+{$ENDIF}
 
+{$IFNDEF SSK_NO_AI}
 procedure TAddEditSnippetForm.ApplySuggestedTags(
     const Suggestions: TArray<string>);
 var
@@ -1304,6 +1367,7 @@ begin
         SkippedNames.Free;
     end;
 end;
+{$ENDIF}
 
 class function TAddEditSnippetForm.ExecuteEdit(Owner: TComponent; AppContext: IAppContext; var SnippetToEdit: TSnippetDTO): Boolean;
 var
@@ -1336,10 +1400,13 @@ end;
 
 procedure TAddEditSnippetForm.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
+{$IFNDEF SSK_NO_AI}
     // Сигнализируем фоновому потоку, что форма закрывается и UI трогать нельзя
     FIsAICanceled := True;
+{$ENDIF}
 end;
 
+{$IFNDEF SSK_NO_AI}
 procedure TAddEditSnippetForm.FormCloseQueryAI(Sender: TObject; var CanClose: Boolean);
 begin
     // Фоновый AI-поток захватывает Self и через Synchronize трогает контролы:
@@ -1357,6 +1424,7 @@ begin
             DeleteCurrentDraft;
     end;
 end;
+{$ENDIF}
 
 procedure TAddEditSnippetForm.FormCreate(Sender: TObject);
 begin
@@ -1376,13 +1444,25 @@ begin
 
     SynCompletionProposal.Options := SynCompletionProposal.Options + [scoUseInsertList];
 
-    // Закрытие блокируется, пока выполняется AI-запрос (см. FormCloseQueryAI)
+    // Закрытие блокируется, пока выполняется AI-запрос (см. FormCloseQueryAI);
+    // в корпоративном билде AI-код исключён, работает штатный CloseQuery
+{$IFNDEF SSK_NO_AI}
     OnCloseQuery := FormCloseQueryAI;
+{$ENDIF}
 
     FDraftSuspend := False;
     FDraftRestoreDone := False;
     ebTitle.OnChange := DraftTouch;
     mComment.OnChange := DraftTouch;
+
+{$IFDEF SSK_NO_AI}
+    // Корпоративный билд: AI-панель и связанные контролы скрываются
+    pAIOverlay.Visible := False;
+    bAISettings.Visible := False;
+    cbAIHub.Visible := False;
+    cbAIModel.Visible := False;
+    nAI.Visible := False;
+{$ENDIF}
 end;
 
 procedure TAddEditSnippetForm.FormShow(Sender: TObject);
@@ -1529,6 +1609,10 @@ end;
 
 procedure TAddEditSnippetForm.mAIPromptKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
+{$IFDEF SSK_NO_AI}
+    // В корпоративном билде оверлей не показывается, обработчик недостижим
+    Key := 0;
+{$ELSE}
     if Key = VK_ESCAPE then
     begin
         pAIOverlay.Visible := False;
@@ -1540,6 +1624,7 @@ begin
         ExecuteAICommand;
         Key := 0;
     end;
+{$ENDIF}
 end;
 
 procedure TAddEditSnippetForm.mContentChange(Sender: TObject);
@@ -2226,6 +2311,7 @@ begin
     end;
 end;
 
+{$IFNDEF SSK_NO_AI}
 procedure TAddEditSnippetForm.PopulateModels(HubIndex: Integer);
 var
     I: Integer;
@@ -2244,6 +2330,7 @@ begin
     if cbAIModel.Items.Count > 0 then
         cbAIModel.ItemIndex := 0;
 end;
+{$ENDIF}
 
 procedure TAddEditSnippetForm.Prepare(IsEditMode: Boolean; const Snippet: TSnippetDTO; CatID, UserID: Integer);
 var
@@ -2264,15 +2351,21 @@ begin
     bHistory.Visible := IsEditMode;
     bDiff.Visible := IsEditMode;
 
+{$IFNDEF SSK_NO_AI}
     FIsAICanceled := False;
+{$ENDIF}
 
     // 2. Применяем темы ДО показа на экране
     TSynThemeAdapter.ApplyTheme(mContent);
     TSynThemeAdapter.ApplyTheme(mComment);
+{$IFNDEF SSK_NO_AI}
     TSynThemeAdapter.ApplyTheme(mAIPrompt);
+{$ENDIF}
 
     // 3. Заполняем комбобоксы ДО показа (Никаких белых вспышек)
+{$IFNDEF SSK_NO_AI}
     PopulateHubs;
+{$ENDIF}
 
     // 4. Заполняем теги и списки
     lvAllTags.Items.BeginUpdate;
@@ -2427,6 +2520,7 @@ begin
     FCurrentHighlighter := NewBase;
 end;
 
+{$IFNDEF SSK_NO_AI}
 procedure TAddEditSnippetForm.ShowAIOverlay;
 begin
     // Устанавливаем стиль прогресс-бара для красоты
@@ -2439,6 +2533,7 @@ begin
     pAIOverlay.BringToFront;
     mAIPrompt.SetFocus;
 end;
+{$ENDIF}
 
 procedure TAddEditSnippetForm.SynCompletionProposalExecute(Kind: SynCompletionType; Sender: TObject; var CurrentInput: string; var x, y: Integer; var CanExecute: Boolean);
 var

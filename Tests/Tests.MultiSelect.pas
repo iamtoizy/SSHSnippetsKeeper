@@ -52,6 +52,8 @@ type
         procedure Export_DuplicateTitles_GetSuffixes;
         [Test]
         procedure Export_ExistingFile_NotOverwritten;
+        [Test]
+        procedure Export_TitleWithCrLf_SingleLineFrontMatter;
     end;
 
 implementation
@@ -451,6 +453,31 @@ begin
 
     Assert.AreEqual('old content', TFile.ReadAllText(TPath.Combine(TempDir, 'Take.md')));
     Assert.IsTrue(TFile.Exists(TPath.Combine(TempDir, 'Take (1).md')));
+end;
+
+procedure TMultiSelectTests.Export_TitleWithCrLf_SingleLineFrontMatter;
+var
+    A: TSnippetDTO;
+    Arr: TArray<TSnippetDTO>;
+    GetTags: TFunc<Integer, TArray<TTagDTO>>;
+    Files: TArray<string>;
+    Text: string;
+begin
+    A := MakeSnippetDTO(401, 'Evil' + #13#10 + 'tags: [injected]');
+    Arr := TArray<TSnippetDTO>.Create(A);
+
+    GetTags := function(SnippetID: Integer): TArray<TTagDTO>
+    begin
+        Result := nil;
+    end;
+
+    TMarkdownExporter.ExportSnippets(TempDir, Arr, GetTags);
+
+    Files := TDirectory.GetFiles(TempDir, '*.md');
+    Assert.AreEqual(1, Integer(Length(Files)));
+    Text := TFile.ReadAllText(Files[0], TEncoding.UTF8);
+    Assert.Contains(Text, 'title: "Evil  tags: [injected]"');
+    Assert.IsFalse(Text.Contains(sLineBreak + 'tags: [injected]' + sLineBreak + 'generator:'));
 end;
 
 end.
