@@ -71,8 +71,10 @@ type
         procedure lvSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
         procedure tvDragOver(Sender, Source: TObject; X, Y: Integer; State: TDragState; var Accept: Boolean);
         procedure tvDragDrop(Sender, Source: TObject; X, Y: Integer);
+        procedure MarkDirty(Sender: TObject);
     protected
         procedure DoInitialize; override;
+        procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     private
         FEngine: TCompletionEngine;
         FFilePath: string;
@@ -81,6 +83,8 @@ type
         FNodeInserts: TStringList;
         // Защита от взаимной рекурсии кросс-выделения дерево <-> список
         FSyncing: Boolean;
+        // Есть правки, не попавшие в файл: закрытие спросит подтверждения
+        FDirty: Boolean;
 
         function TabTree(ATabIndex: Integer): TTreeView;
         function TabCommandList(ATabIndex: Integer): TListView;
@@ -546,6 +550,7 @@ begin
     Node.Selected := True;
     Node.MakeVisible;
     SyncSelectionToEditor;
+    FDirty := True;
 end;
 
 procedure TCompletionManagerForm.btnAddChildClick(Sender: TObject);
@@ -587,6 +592,7 @@ begin
     Node.Selected := True;
     Node.MakeVisible;
     SyncSelectionToEditor;
+    FDirty := True;
 end;
 
 procedure TCompletionManagerForm.btnDeleteClick(Sender: TObject);
@@ -607,6 +613,7 @@ begin
 
     Node.Delete;
     SyncSelectionToEditor;
+    FDirty := True;
 end;
 
 procedure TCompletionManagerForm.btnApplyClick(Sender: TObject);
@@ -639,6 +646,7 @@ begin
 
     FNodeInserts[Integer(IntPtr(Node.Data))] := edInsert.Text;
     Node.Text := Name;
+    FDirty := True;
 end;
 
 procedure TCompletionManagerForm.btnCmdAddClick(Sender: TObject);
@@ -666,6 +674,7 @@ begin
     // Список движка отсортирован и запрещает дубликаты
     Cmds.Add(Cmd);
     LoadCommandList(pcMain.ActivePageIndex);
+    FDirty := True;
 end;
 
 procedure TCompletionManagerForm.btnCmdDeleteClick(Sender: TObject);
@@ -694,6 +703,7 @@ begin
 
     Cmds.Delete(Idx);
     LoadCommandList(pcMain.ActivePageIndex);
+    FDirty := True;
 end;
 
 procedure TCompletionManagerForm.btnImportClick(Sender: TObject);
@@ -795,6 +805,7 @@ begin
             LoadTabTree(pcMain.ActivePageIndex);
             LoadCommandList(pcMain.ActivePageIndex);
             ApplyFilter;
+            FDirty := True;
             ShowSimpleToast(TUIStateLoader.GetMessage('CompletionImport.ImportedToast',
                 [ImportedCount]));
         except
@@ -857,6 +868,7 @@ begin
         for I := 0 to High(COMPLETION_TAB_LANGS) do
             FEngine.ReplaceSectionTree(COMPLETION_TAB_LANGS[I], TreeToChildrenJson(TabTree(I)));
         FEngine.SaveToJsonFile(FFilePath);
+        FDirty := False;
         ShowSimpleToast(TUIStateLoader.GetMessage('CompletionManager.SavedToast'));
     except
         on E: Exception do
@@ -868,6 +880,21 @@ end;
 procedure TCompletionManagerForm.btnCloseClick(Sender: TObject);
 begin
     ModalResult := mrCancel;
+end;
+
+procedure TCompletionManagerForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+begin
+    // Несохранённые правки автодополнения терять молча обидно:
+    // тот же вопрос, что и в настройках
+    if FDirty and (not MessagesHandler.AskWarning(
+        TUIStateLoader.GetMessage('Common.DiscardChangesConfirm'),
+        TUIStateLoader.GetMessage('Common.Warning'))) then
+        CanClose := False;
+end;
+
+procedure TCompletionManagerForm.MarkDirty(Sender: TObject);
+begin
+    FDirty := True;
 end;
 
 procedure TCompletionManagerForm.tvDragOver(Sender, Source: TObject; X, Y: Integer; State: TDragState; var Accept: Boolean);begin
@@ -903,6 +930,7 @@ begin
 
     Sel.MoveTo(Target, naAdd);
     Target.Expand(False);
+    FDirty := True;
 end;
 
 end.
