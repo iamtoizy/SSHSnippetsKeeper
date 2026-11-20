@@ -34,6 +34,7 @@ object AllDatabasesForm: TAllDatabasesForm
     Top = 396
     Width = 110
     Height = 25
+    Default = True
     TabOrder = 1
     OnClick = bOpenClick
   end
@@ -58,6 +59,8 @@ object AllDatabasesForm: TAllDatabasesForm
     Top = 396
     Width = 150
     Height = 25
+    Cancel = True
+    ModalResult = 1
     TabOrder = 4
   end
 end

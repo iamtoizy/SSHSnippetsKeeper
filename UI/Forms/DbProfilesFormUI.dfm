@@ -49,6 +49,9 @@ object DbProfilesForm: TDbProfilesForm
     Top = 316
     Width = 150
     Height = 25
+    Cancel = True
+    Default = True
+    ModalResult = 1
     TabOrder = 3
   end
 end

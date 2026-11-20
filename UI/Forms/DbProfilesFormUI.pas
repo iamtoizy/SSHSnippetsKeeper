@@ -68,7 +68,6 @@ begin
     bDelete.Caption := TUIStateLoader.GetMessage('Settings.DbProfilesDelete');
     bCleanup.Caption := TUIStateLoader.GetMessage('Settings.DbProfilesDeleteMissing');
     bClose.Caption := TUIStateLoader.GetMessage('Common.Cancel');
-    bClose.ModalResult := mrOk;
     if lvProfiles.Columns.Count = 0 then
     begin
         Col := lvProfiles.Columns.Add;

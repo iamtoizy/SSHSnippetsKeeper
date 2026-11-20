@@ -50,7 +50,6 @@ uses
     System.IOUtils,
     System.SysUtils
     ;
-
 {$R *.dfm}
 
 function ShowAllDatabasesForm(const AppContext: IAppContext): string;
@@ -80,7 +79,6 @@ begin
     bDelete.Caption := TUIStateLoader.GetMessage('AllDatabases.DeleteSelected');
     bCleanup.Caption := TUIStateLoader.GetMessage('AllDatabases.DeleteMissing');
     bClose.Caption := TUIStateLoader.GetMessage('Common.Cancel');
-    bClose.ModalResult := mrOk;
     if lvDatabases.Columns.Count = 0 then
     begin
         Col := lvDatabases.Columns.Add;
@@ -105,7 +103,9 @@ begin
         ConnParts := TStringList.Create;
         try
             ConnParts.Text := AppContext.DatabaseManager.GetConnectionString;
-            FCurrentDb := ConnParts.Values['Database'];
+            // Список строится из нормализованных путей (lowercase +
+            // ExpandFileName), поэтому и текущий путь приводим к тому виду
+            FCurrentDb := NormalizeDbProfilePath(ConnParts.Values['Database']);
         finally
             ConnParts.Free;
         end;
