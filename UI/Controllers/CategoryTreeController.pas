@@ -262,10 +262,13 @@ var
     Cat: TCategoryDTO;
 begin
     Node := FTree.Selected;
-    if (Node = nil) or IsVirtualCategory(Node) then
+    if (Node = nil) or IsVirtualCategory(Node) or IsWorkspaceNode(Node) then
         Exit;
 
+    // Устаревший узел: категория уже удалена (дерево не перестроено)
     Cat := FContext.CategoryService.GetCategoryByID(Integer(IntPtr(Node.Data)));
+    if Cat.ID = 0 then
+        Exit;
 
     if FContext.MessagesHandler.AskConfirmation(
         TUIStateLoader.GetMessage('Category.DeleteWithChildrenConfirm', [Cat.Name]),
