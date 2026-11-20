@@ -68,13 +68,20 @@ end;
 function TInputAction.PromptUser(const APrompt: string): string;
 var
     Res: string;
+    OnInput: TInputCallback;
 begin
+    // Снимок коллбэка в локальную переменную: Detach обнуляет поле из
+    // главного потока, а замыкание Synchronize может исполниться уже
+    // после этого - nil-вызов уронил бы поток (RTE 216)
+    OnInput := FContext.OnInput;
     if TThread.CurrentThread.ThreadID = MainThreadID then
-        Exit(FContext.OnInput(APrompt));
+        Exit(OnInput(APrompt));
     TThread.Synchronize(nil,
         procedure
         begin
-            Res := FContext.OnInput(APrompt);
+            if Assigned(OnInput) and
+                (TInterlocked.CompareExchange(FContext.Canceled, 0, 0) = 0) then
+                Res := OnInput(APrompt);
         end);
     Result := Res;
 end;
@@ -82,13 +89,18 @@ end;
 function TInputAction.ConfirmUser(const APrompt: string): Boolean;
 var
     Res: Boolean;
+    OnConfirm: TConfirmCallback;
 begin
+    Res := False;
+    OnConfirm := FContext.OnConfirm;
     if TThread.CurrentThread.ThreadID = MainThreadID then
-        Exit(FContext.OnConfirm(APrompt));
+        Exit(OnConfirm(APrompt));
     TThread.Synchronize(nil,
         procedure
         begin
-            Res := FContext.OnConfirm(APrompt);
+            if Assigned(OnConfirm) and
+                (TInterlocked.CompareExchange(FContext.Canceled, 0, 0) = 0) then
+                Res := OnConfirm(APrompt);
         end);
     Result := Res;
 end;
