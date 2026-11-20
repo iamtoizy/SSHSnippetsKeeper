@@ -97,7 +97,7 @@ begin
         begin
             Item := lvWorkspaces.Items.Add;
             Item.Caption := User.Name;
-            Item.Data := Pointer(Integer(User.ID));
+            Item.Data := Pointer(IntPtr(User.ID));
         end;
     finally
         lvWorkspaces.Items.EndUpdate;
@@ -129,7 +129,7 @@ begin
 
         Item := lvWorkspaces.Items.Add;
         Item.Caption := NewName;
-        Item.Data := Pointer(NewID);
+        Item.Data := Pointer(IntPtr(NewID));
         Item.Selected := True;
         Item.MakeVisible(False);
     except

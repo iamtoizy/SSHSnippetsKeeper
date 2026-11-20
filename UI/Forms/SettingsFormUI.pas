@@ -274,7 +274,6 @@ var
     Setts: TAppSettings;
     Actions: TArray<TActionHotkeyInfo>;
     Info: TActionHotkeyInfo;
-    I: Integer;
 begin
     Setts := AppContext.SettingsManager.Data;
 
@@ -1160,10 +1159,15 @@ begin
                 TUIStateLoader.GetMessage('Settings.DbPassphraseConfirm'),
                 TUIStateLoader.GetMessage('Settings.DbPassphraseMismatch'),
                 AppContext, Pass1) then
+            begin
+                WipeString(Pass1);
                 Exit;
+            end;
             RememberAns := cbDbSaveKey.ItemIndex = 1;
             Salt := DbGenerateSalt;
             RawKey := DbDeriveKey(Pass1, Salt, DB_PBKDF2_ITERATIONS);
+            // Фраза больше не нужна: материал ключа уже выведен
+            WipeString(Pass1);
             try
                 NewKey := TNetEncoding.Base64.EncodeBytesToString(RawKey);
             finally
@@ -1392,12 +1396,17 @@ begin
         TUIStateLoader.GetMessage('Settings.DbExportPassphraseConfirm'),
         TUIStateLoader.GetMessage('Settings.DbPassphraseMismatch'),
         AppContext, Pass1) then
+    begin
+        WipeString(Pass1);
         Exit;
+    end;
 
     RawKey := TNetEncoding.Base64.DecodeStringToBytes(AKey);
     try
         KeyJson := DbExportKeyToJson(Pass1, RawKey);
     finally
+        // Фраза выгружена в JSON: затираем открытую копию
+        WipeString(Pass1);
         WipeSecretBytes(RawKey);
     end;
 
@@ -1489,6 +1498,8 @@ begin
         try
             NewKey := TNetEncoding.Base64.EncodeBytesToString(RawKey);
         finally
+            // Фраза проверена, ключ получен: открытая копия не нужна
+            WipeString(Pass1);
             WipeSecretBytes(RawKey);
         end;
     except
@@ -1724,9 +1735,11 @@ var
     Item: TListItem;
 begin
     NewName := '';
-    if not InputQuery(
-        Caption,
+    if not ShowInputForm(
         TUIStateLoader.GetMessage('Settings.ApplicationsAddPrompt'),
+        '',
+        mitString,
+        AppContext,
         NewName
     ) then Exit;
 
@@ -1750,9 +1763,11 @@ begin
 
     OldName := Item.Caption;
     NewName := OldName;
-    if not InputQuery(
-        Caption,
+    if not ShowInputForm(
         TUIStateLoader.GetMessage('Settings.ApplicationsRenamePrompt'),
+        OldName,
+        mitString,
+        AppContext,
         NewName
     ) then Exit;
 
@@ -2138,6 +2153,7 @@ var
     Item: TListItem;
     AppProfile: TAllowedApplicationsItem;
     C: string;
+    I: Integer;
 begin
     SB := TStringBuilder.Create;
     try
@@ -2191,6 +2207,16 @@ begin
         for KeyName in KeyNames do
             SB.Append(KeyName).Append('=')
                 .Append(FLocalActions[KeyName].CurrentShortCut).Append(';');
+
+        SB.Append('|');
+
+        // Черновик глобальных deny-правил участвует в «Отмена»: правки из
+        // конструктора теряются только с явного согласия пользователя
+        for I := 0 to High(FDenyRules) do
+            SB.Append(FDenyRules[I].Name).Append('=')
+                .Append(FDenyRules[I].Pattern).Append('>')
+                .Append(FDenyRules[I].CaseSensitive).Append('>')
+                .Append(FDenyRules[I].Enabled).Append(';');
 
         Result := SB.ToString;
     finally
