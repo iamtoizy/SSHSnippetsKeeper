@@ -45,6 +45,7 @@ type
         procedure DoShownOnScreen; override;
     public
         procedure Setup(const APrompt, AConfirmPrompt, AMismatchText: string);
+        procedure WipeSecrets;
         property ResultPassphrase: string read FResultPassphrase;
     end;
 
@@ -54,6 +55,7 @@ function ShowPasswordConfirmForm(const APrompt, AConfirmPrompt, AMismatchText: s
 implementation
 
 uses
+    Common.Helpers,
     System.Math,
     Winapi.Windows
     ;
@@ -85,10 +87,23 @@ begin
 
         Result := Form.ShowModal = mrOk;
         if Result then
+        begin
             AResult := Form.ResultPassphrase;
+            // Передаём единственную ссылку вызывающему: форма свою копию теряет,
+            // чтобы затирание строки у вызывающего было полным
+            Form.FResultPassphrase := '';
+        end;
     finally
+        Form.WipeSecrets;
         Form.Free;
     end;
+end;
+
+procedure TPassphraseForm.WipeSecrets;
+begin
+    WipeVCLControlText(ebPass);
+    WipeVCLControlText(ebConfirm);
+    WipeString(FResultPassphrase);
 end;
 
 procedure TPassphraseForm.Setup(const APrompt, AConfirmPrompt, AMismatchText: string);

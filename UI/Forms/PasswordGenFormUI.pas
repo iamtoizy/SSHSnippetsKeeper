@@ -383,7 +383,7 @@ begin
         for Item in History do
         begin
             LI := lvHistory.Items.Add;
-            LI.Caption := FormatDateTime('dd:mm:yyyy', Item.CreatedAt);
+            LI.Caption := FormatDateTime('dd.mm.yyyy', Item.CreatedAt);
             LI.SubItems.Add(FormatDateTime('hh:nn:ss', Item.CreatedAt));
 
             VisiblePassword := StringReplace(Item.Password, ' ', VISIBLE_SPACE, [rfReplaceAll]);
@@ -407,6 +407,9 @@ var
     UniqueChars: Boolean;
     Preset: TPasswordPreset;
 begin
+    if FIsGenerating then Exit;
+
+    Settings := Default(TCustomPasswordSettings);
     if FSelectedPreset = wpCustom then
         Settings := GetCustomSettingsFromUI();
 
@@ -661,6 +664,7 @@ begin
     begin
         ClearClipboardAfterDelay(FLastCopiedText, FClipboardCountdown * 100);
     end;
+    WipeString(FLastCopiedText);
 
     // На всякий случай дублируем вызов скрытия, если форма уничтожается
     // минуя обычный цикл скрытия
@@ -789,8 +793,7 @@ begin
         if FCurrentInstance.WindowState = wsMinimized then
             FCurrentInstance.WindowState := wsNormal;
 
-        SetForegroundWindow(FCurrentInstance.Handle);
-        FCurrentInstance.BringToFront;
+        FCurrentInstance.ForceForeground;
         Exit;
     end;
 
@@ -803,7 +806,7 @@ begin
     try
         Frm.Initialize(AppContext);
         Frm.FormStyle := fsStayOnTop;
-        SetForegroundWindow(Frm.Handle);
+        Frm.ForceForeground;
 
         // 4. Показываем модально
         if Frm.ShowModal = mrOk then
@@ -990,10 +993,8 @@ begin
     bBulkGenerate.Enabled := True;
     bInsertAndClose.Enabled := Enabled;
     cbPresets.Enabled := Enabled;
-    seLength.Enabled := Enabled;
     bExport.Enabled := Enabled;
     ebPassword.Enabled := Enabled;
-    cbUnique.Enabled := Enabled;
     tsHistory.Enabled := Enabled;
     seBulkCount.Enabled := Enabled;
     seLength.Enabled := Enabled and not (FSelectedPreset in [wpMacAddress, wpUUIDv4]);

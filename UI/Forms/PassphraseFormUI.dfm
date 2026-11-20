@@ -41,7 +41,7 @@ object PassphraseForm: TPassphraseForm
       Anchors = [akTop, akRight]
       Caption = 'OK'
       Enabled = False
-      TabOrder = 0
+      TabOrder = 2
       OnClick = bOKClick
     end
     object bCancel: TButton
@@ -52,7 +52,7 @@ object PassphraseForm: TPassphraseForm
       Anchors = [akTop, akRight]
       Caption = #1054#1090#1084#1077#1085#1072
       ModalResult = 2
-      TabOrder = 1
+      TabOrder = 3
     end
     object sbBottom: TStatusBar
       Left = 0
@@ -70,7 +70,7 @@ object PassphraseForm: TPassphraseForm
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       PasswordChar = '*'
-      TabOrder = 2
+      TabOrder = 0
       OnChange = ebPassChange
       OnKeyDown = ebPassKeyDown
     end
@@ -88,7 +88,7 @@ object PassphraseForm: TPassphraseForm
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       PasswordChar = '*'
-      TabOrder = 3
+      TabOrder = 1
       OnChange = ebConfirmChange
       OnKeyDown = ebConfirmKeyDown
     end

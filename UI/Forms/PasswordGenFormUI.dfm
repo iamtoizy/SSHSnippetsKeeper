@@ -323,6 +323,7 @@ object PasswordGenForm: TPasswordGenForm
         DropDownMenu = pmBulkGeneration
         Style = bsSplitButton
         TabOrder = 4
+        OnClick = nSaveToFileClick
       end
     end
   end
@@ -368,6 +369,7 @@ object PasswordGenForm: TPasswordGenForm
   end
   object SaveDialog: TSaveDialog
     Filter = 'TEXT|*.txt|ALL|*.*'
+    Options = [ofOverwritePrompt, ofHideReadOnly, ofEnableSizing]
     Left = 184
     Top = 80
   end
