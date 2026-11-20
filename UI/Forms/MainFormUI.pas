@@ -1000,12 +1000,17 @@ begin
         TUIStateLoader.GetMessage('Settings.DbExportPassphraseConfirm'),
         TUIStateLoader.GetMessage('Settings.DbPassphraseMismatch'),
         AppContext, Pass1) then
+    begin
+        WipeString(Pass1);
         Exit;
+    end;
 
     RawKey := TNetEncoding.Base64.DecodeStringToBytes(AKey);
     try
         KeyJson := DbExportKeyToJson(Pass1, RawKey);
     finally
+        // Фраза выгружена в JSON: затираем открытую копию
+        WipeString(Pass1);
         WipeSecretBytes(RawKey);
     end;
 
@@ -1075,6 +1080,8 @@ begin
             Salt := TNetEncoding.Base64.DecodeStringToBytes(SaltB64);
             Key := TNetEncoding.Base64.EncodeBytesToString(
                 DbDeriveKey(Pass, Salt, DB_PBKDF2_ITERATIONS));
+            // Ключ выведен: открытая фраза больше не нужна
+            WipeString(Pass);
             try
                 (AppContext.DatabaseManager as TAppDatabase).EncryptionKey := Key;
                 AppContext.DatabaseManager.OpenDatabase(AFileName);
@@ -1133,6 +1140,8 @@ begin
         try
             AKey := TNetEncoding.Base64.EncodeBytesToString(RawKey);
         finally
+            // Фраза проверена, ключ получен: открытая копия не нужна
+            WipeString(Pass);
             WipeSecretBytes(RawKey);
         end;
     except
