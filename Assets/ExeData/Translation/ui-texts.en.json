@@ -1890,7 +1890,7 @@
     },
     "TermManager": {
       "NoOpenWindows": "No open windows of allowed applications.",
-      "Status": "Open windows: %d и remembered: %d",
+      "Status": "Open windows: %d and remembered: %d",
       "ClearHistoryConfirm": "Clear the entire allowed-windows history? Windows will have to be remembered again."
     },
     "Category": {
