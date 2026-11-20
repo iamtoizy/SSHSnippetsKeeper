@@ -92,6 +92,12 @@ type
         tsSnippet: TTabSheet;
         sMiddle: TSplitter;
         pAIOverlay: TPanel;
+        pAIQuick: TPanel;
+        bAITitle: TButton;
+        bAITags: TButton;
+        bAIExplain: TButton;
+        bAICancel: TButton;
+        pAIStatus: TLabel;
         pbLoading: TProgressBar;
         mAIPrompt: TSynEdit;
         mComment: TSynEdit;
@@ -137,6 +143,7 @@ type
         procedure bAITitleClick(Sender: TObject);
         procedure bAITagsClick(Sender: TObject);
         procedure bAIExplainClick(Sender: TObject);
+        procedure bAICancelClick(Sender: TObject);
 {$ENDIF}
         procedure mContentChange(Sender: TObject);
         procedure mContentKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -217,6 +224,9 @@ type
         function ConfirmAIContext(const AContext: string): Boolean;
         procedure RunAITask(const AInstruction, AContext: string;
             const AOnResult: TProc<string>);
+        procedure SetAIBusyState(const ABusy: Boolean);
+        procedure UpdateAIContextStatus;
+        function IsAIConfigured: Boolean;
         procedure ApplySuggestedTags(const Suggestions: TArray<string>);
 {$ENDIF}
         function IsAutocompleteVisible: Boolean;
@@ -343,6 +353,15 @@ begin
     MessagesHandler.ShowInfo(
         TUIStateLoader.GetMessage('Security.SecurityDisabledNotice'));
 {$ELSE}
+    if not IsAIConfigured then
+    begin
+        MessagesHandler.ShowWarning(
+            TUIStateLoader.GetMessage('AddEditSnippet.AIChooseModelError'));
+        TAISettingsForm.ExecuteGlobal(Application, AppContext);
+        PopulateHubs;
+        if not IsAIConfigured then
+            Exit;
+    end;
     ShowAIOverlay;
 {$ENDIF}
 end;
@@ -1185,16 +1204,35 @@ begin
     Result := True;
 end;
 
+procedure TAddEditSnippetForm.SetAIBusyState(const ABusy: Boolean);
+begin
+    bAITitle.Enabled := not ABusy;
+    bAITags.Enabled := not ABusy;
+    bAIExplain.Enabled := not ABusy;
+    mAIPrompt.Enabled := not ABusy;
+    bAICancel.Visible := ABusy;
+    pbLoading.Visible := ABusy;
+    if not ABusy then
+    begin
+        pAIStatus.Visible := False;
+        pAIStatus.Caption := ' ';
+    end;
+end;
+
 procedure TAddEditSnippetForm.RunAITask(const AInstruction, AContext: string;
     const AOnResult: TProc<string>);
 begin
+    if FAIInProgress then Exit;
+
     FAIService := BuildAIService;
     if FAIService = nil then Exit;
 
-    pbLoading.Visible := True;
-    mAIPrompt.Enabled := False;
     FIsAICanceled := False;
     FAIInProgress := True;
+    SetAIBusyState(True);
+    pAIStatus.Caption := TUIStateLoader.GetMessage(
+        'AddEditSnippet.AIRequestRunning', [cbAIModel.Text]);
+    pAIStatus.Visible := True;
 
     FAIThread := TThread.CreateAnonymousThread(
         procedure
@@ -1217,8 +1255,7 @@ begin
 
                     if FIsAICanceled then Exit;
 
-                    pbLoading.Visible := False;
-                    mAIPrompt.Enabled := True;
+                    SetAIBusyState(False);
                     pAIOverlay.Visible := False;
 
                     if ErrorMsg <> '' then
@@ -1230,6 +1267,25 @@ begin
     FAIThread.FreeOnTerminate := False;
     FAIThread.OnTerminate := AIThreadTerminated;
     FAIThread.Start;
+end;
+
+procedure TAddEditSnippetForm.bAICancelClick(Sender: TObject);
+begin
+    if not FAIInProgress then Exit;
+
+    FIsAICanceled := True;
+    if Assigned(FAIThread) then
+    begin
+        FAIThread.OnTerminate := nil;
+        TThread.RemoveQueuedEvents(FAIThread);
+        FAIThread.WaitFor;
+        FreeAndNil(FAIThread);
+    end;
+
+    FAIInProgress := False;
+    SetAIBusyState(False);
+    pAIOverlay.Visible := False;
+    mContent.SetFocus;
 end;
 
 procedure TAddEditSnippetForm.bAITitleClick(Sender: TObject);
@@ -1619,7 +1675,7 @@ begin
         mContent.SetFocus;
         Key := 0;
     end
-    else if Key = VK_RETURN then
+    else if (Key = VK_RETURN) and (Shift = []) then
     begin
         ExecuteAICommand;
         Key := 0;
@@ -2211,6 +2267,17 @@ var
     CardPos: Integer;
     GoEdit, GoDuplicate, GoDelete, GoCopy, GoPaste: Boolean;
 begin
+{$IFNDEF SSK_NO_AI}
+    // Esc закрывает AI-оверлей независимо от того, где фокус
+    if (Key = VK_ESCAPE) and pAIOverlay.Visible and not FAIInProgress then
+    begin
+        pAIOverlay.Visible := False;
+        mContent.SetFocus;
+        Key := 0;
+        Exit;
+    end;
+{$ENDIF}
+
     if not Assigned(FMacroCards) or IsAutocompleteVisible then
         Exit;
 
@@ -2528,10 +2595,28 @@ begin
     pbLoading.MarqueeInterval := 30; // Скорость бара
     pbLoading.Visible := False;
 
+    UpdateAIContextStatus;
+
     // Просто показываем панель, она уже привязана к форме
     pAIOverlay.Visible := True;
     pAIOverlay.BringToFront;
     mAIPrompt.SetFocus;
+end;
+
+procedure TAddEditSnippetForm.UpdateAIContextStatus;
+begin
+    if mContent.SelText <> '' then
+        pAIStatus.Caption := TUIStateLoader.GetMessage(
+            'AddEditSnippet.AIContextSelection', [mContent.SelLength])
+    else
+        pAIStatus.Caption := TUIStateLoader.GetMessage(
+            'AddEditSnippet.AIContextWholeSnippet');
+    pAIStatus.Visible := True;
+end;
+
+function TAddEditSnippetForm.IsAIConfigured: Boolean;
+begin
+    Result := (cbAIHub.ItemIndex >= 0) and (cbAIModel.ItemIndex >= 0);
 end;
 {$ENDIF}
 

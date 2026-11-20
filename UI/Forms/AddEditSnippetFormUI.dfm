@@ -353,7 +353,7 @@ object AddEditSnippetForm: TAddEditSnippetForm
             Height = 30
             Align = alTop
             BevelOuter = bvNone
-            TabOrder = 2
+            TabOrder = 0
             object bAITitle: TButton
               Left = 0
               Top = 3
@@ -381,6 +381,29 @@ object AddEditSnippetForm: TAddEditSnippetForm
               TabOrder = 2
               OnClick = bAIExplainClick
             end
+            object bAICancel: TButton
+              Left = 428
+              Top = 3
+              Width = 90
+              Height = 25
+              Align = alRight
+              Caption = #1054#1090#1084#1077#1085#1072
+              TabOrder = 3
+              Visible = False
+              OnClick = bAICancelClick
+            end
+          end
+          object pAIStatus: TLabel
+            Left = 0
+            Top = 245
+            Width = 521
+            Height = 13
+            Align = alBottom
+            Alignment = taCenter
+            Caption = ' '
+            Visible = False
+            ExplicitTop = 113
+            ExplicitWidth = 3
           end
           object pbLoading: TProgressBar
             Left = 0
@@ -391,24 +414,25 @@ object AddEditSnippetForm: TAddEditSnippetForm
             DoubleBuffered = False
             ParentDoubleBuffered = False
             Style = pbstMarquee
-            TabOrder = 1
+            TabOrder = 3
             ExplicitTop = 126
           end
           object mAIPrompt: TSynEdit
             Left = 0
             Top = 0
             Width = 521
-            Height = 258
+            Height = 245
             Cursor = crDefault
             Align = alClient
-            CaseSensitive = True
+            CaseSensitive = False
             ParentFont = True
             ParentShowHint = False
             ShowHint = False
-            TabOrder = 0
+            TabOrder = 1
             TextHint = #1042#1074#1077#1076#1080' '#1079#1072#1087#1088#1086#1089' '#1082' '#1048#1048
             OnKeyDown = mAIPromptKeyDown
             UseCodeFolding = False
+            Gutter.Visible = False
             Gutter.Font.Charset = DEFAULT_CHARSET
             Gutter.Font.Color = clWindowText
             Gutter.Font.Height = -11

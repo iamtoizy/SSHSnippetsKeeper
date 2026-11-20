@@ -368,6 +368,9 @@
     "nAISettings": {
       "Caption": "Configure AI"
     },
+    "bAICancel": {
+      "Caption": "Cancel"
+    },
     "lbCaption": {
       "Caption": "Snippet name"
     },
@@ -2280,6 +2283,9 @@
       "SecurityToastTitle": "⚠ Security Threat",
       "AutocompleteUpdated": "Autocomplete file updated. Content will be reloaded.",
       "AIChooseModelError": "Select an AI provider and model!",
+      "AIRequestRunning": "Request to %s is running...",
+      "AIContextWholeSnippet": "Context: whole snippet (Esc — close, Enter — send, Shift+Enter — new line)",
+      "AIContextSelection": "Context: selection, %d chars (Esc — close, Enter — send, Shift+Enter — new line)",
       "AITagsSkipped": "Added: %d. Not found among existing tags: %s",
       "EnterSnippetTextHere": "Enter snippet name here...",
       "MacroCounter": "Macros: %d",

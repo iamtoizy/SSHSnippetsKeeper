@@ -368,6 +368,9 @@
     "nAISettings": {
       "Caption": "Конфигурировать ИИ"
     },
+    "bAICancel": {
+      "Caption": "Отмена"
+    },
     "lbCaption": {
       "Caption": "Имя сниппета"
     },
@@ -2280,6 +2283,9 @@
       "SecurityToastTitle": "⚠ Угроза безопасности",
       "AutocompleteUpdated": "Файл автозаполнения обновлён. Содержимое будет перезагружено.",
       "AIChooseModelError": "Выбери провайдера и модель ИИ!",
+      "AIRequestRunning": "Запрос к %s выполняется...",
+      "AIContextWholeSnippet": "Контекст: весь сниппет (Esc — закрыть, Enter — отправить, Shift+Enter — новая строка)",
+      "AIContextSelection": "Контекст: выделение, %d симв. (Esc — закрыть, Enter — отправить, Shift+Enter — новая строка)",
       "AITagsSkipped": "Добавлено: %d. Нет среди существующих тегов: %s",
       "EnterSnippetTextHere": "Здесь введи имя сниппета...",
       "MacroCounter": "Макросов: %d",
