@@ -312,8 +312,9 @@ begin
     CurrentObj := TJSONObject(MessagesVal);
     Tokens := BasePath.Split(['.']);
 
-    // 2. Спускаемся по дереву до предпоследнего узла (последний - лист Title/Main/Expanded)
-    for I := 0 to High(Tokens) - 1 do
+    // 2. Спускаемся по дереву ДО САМОГО КОНЦА (последний сегмент - листовый узел
+    // с полями Title/Main/Expanded; GetValue не поддерживает точечные пути)
+    for I := 0 to High(Tokens) do
     begin
         CurrentVal := CurrentObj.GetValue(Tokens[I]);
 
@@ -332,9 +333,9 @@ begin
         CurrentObj := TJSONObject(CurrentVal);
     end;
 
-    Title    := ExtractStr(CurrentObj, Tokens[High(Tokens)] + '.Title', Title);
-    MainText := ExtractStr(CurrentObj, Tokens[High(Tokens)] + '.Main', MainText);
-    ExpText  := ExtractStr(CurrentObj, Tokens[High(Tokens)] + '.Expanded', ExpText);
+    Title    := ExtractStr(CurrentObj, 'Title', Title);
+    MainText := ExtractStr(CurrentObj, 'Main', MainText);
+    ExpText  := ExtractStr(CurrentObj, 'Expanded', ExpText);
 end;
 
 class function TUIStateLoader.GetMessage(const MessageKey: string; const Args: array of const): string;
