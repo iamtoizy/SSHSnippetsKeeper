@@ -668,7 +668,7 @@ end;
 
 procedure TCronGenForm.bCopyClick(Sender: TObject);
 begin
-    Clipboard.AsText := ebCronExpression.Text;
+    CopyToClipboardSecure(ebCronExpression.Text);
     ShowSimpleToast(TUIStateLoader.GetMessage('CronGenForm.CopiedToClipboardToast'));
 end;
 

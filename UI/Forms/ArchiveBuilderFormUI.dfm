@@ -133,6 +133,7 @@ object ArchiveBuilderForm: TArchiveBuilderForm
         Top = 119
         Width = 226
         Height = 23
+        PasswordChar = '*'
         TabOrder = 4
         OnChange = OnUIChange
       end

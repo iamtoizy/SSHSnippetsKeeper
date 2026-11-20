@@ -303,6 +303,9 @@ end;
 
 procedure TArchiveBuilderForm.FormDestroy(Sender: TObject);
 begin
+    // Пароли могли остаться в полях ввода: затираем физически
+    WipeVCLControlText(ebPassword);
+    WipeVCLControlText(ebExtPassword);
     FPresetDataList.Free;
 end;
 
@@ -734,7 +737,7 @@ var
 begin
     if ebCommand.Text <> '' then
     begin
-        Clipboard.AsText := ebCommand.Text;
+        CopyToClipboardSecure(ebCommand.Text);
         ShowSimpleToast(TUIStateLoader.GetMessage('Common.CopiedToClipboard'));
 
         Setts := AppContext.SettingsManager.Data;

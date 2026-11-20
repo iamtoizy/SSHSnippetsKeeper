@@ -459,8 +459,7 @@ begin
     if ebCommand.Text <> '' then
     begin
         // 1. Копируем в буфер
-        Clipboard.AsText := ebCommand.Text;
-//        MessagesHandler.ShowInfo(TUIStateLoader.GetMessage('Common.CopiedToClipboard'));
+        CopyToClipboardSecure(ebCommand.Text);
         ShowSimpleToast(TUIStateLoader.GetMessage('Common.CopiedToClipboard'));
         // 2. Сохраняем "умную" историю (MRU)
         Setts := AppContext.SettingsManager.Data;

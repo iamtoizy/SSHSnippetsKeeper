@@ -335,7 +335,7 @@ begin
 
     if (TargetText <> '') then
     begin
-        Clipboard.AsText := TargetText;
+        CopyToClipboardSecure(TargetText);
         ShowSimpleToast(TUIStateLoader.GetMessage('Common.CopiedToClipboard'));
     end;
 end;
