@@ -207,7 +207,7 @@ begin
     begin
         if lvTags.Items[I].Selected then
         begin
-            TagID := Integer(lvTags.Items[I].Data);
+            TagID := Integer(IntPtr(lvTags.Items[I].Data));
             if TagID > 0 then
                 RecordChange(teaDelete, TagID)
             else

@@ -221,7 +221,7 @@ begin
     S := S.Replace('&quot;', '"');
     S := S.Replace('&amp;', '&');
 
-    Clipboard.AsText := Trim(S);
+    CopyToClipboardSecure(Trim(S));
 end;
 
 procedure TCustomHelpForm.bCopyTextClick(Sender: TObject);
@@ -295,7 +295,7 @@ begin
         // На случай, если движок заменит пробелы на веб-формат
         TextToCopy := TextToCopy.Replace('%20', ' ');
 
-        Clipboard.AsText := TextToCopy;
+        CopyToClipboardSecure(TextToCopy);
         Handled := True;
 
         // Даем пользователю понять, что копирование прошло успешно
