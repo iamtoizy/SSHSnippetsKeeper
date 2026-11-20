@@ -206,7 +206,9 @@ begin
     Panel := TChainRunPanel.Create(nil);
     try
         Panel.Initialize(PanelCaption, SequenceName, Length(Steps));
-        Panel.Show;
+        // NOACTIVATE: фокус остаётся у целевого окна, иначе первый шаг
+        // цепочки печатается не туда
+        Panel.ShowNoActivate;
         Panel.Update;
         Panel.EnsureTopMost;
 

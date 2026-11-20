@@ -49,6 +49,7 @@ type
         procedure DoShownOnScreen; override;
     public
         procedure InitializeParams(const Params: TArray<TMacroParamDescriptor>);
+        procedure WipeInputs;
         function CollectedValues: TArray<string>;
     end;
 
@@ -60,6 +61,7 @@ var
 implementation
 
 uses
+    Common.Helpers,
     Common.Localization,
     InputFormUI,
     System.Math,
@@ -103,6 +105,9 @@ begin
         if Result then
             Values := Form.CollectedValues;
     finally
+        // Парольные параметры затираем в контролах: вызывающий уже
+        // получил свою копию значений
+        Form.WipeInputs;
         Form.Free;
     end;
 end;
@@ -380,6 +385,15 @@ end;
 procedure TParamsForm.bCancelClick(Sender: TObject);
 begin
     ModalResult := mrCancel;
+end;
+
+procedure TParamsForm.WipeInputs;
+var
+    I: Integer;
+begin
+    for I := 0 to High(FInputs) do
+        if FInputs[I] is TEdit then
+            WipeVCLControlText(TEdit(FInputs[I]));
 end;
 
 function TParamsForm.CollectedValues: TArray<string>;

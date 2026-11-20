@@ -26,12 +26,17 @@ type
         FStopRequested: Boolean;
         FChainName: string;
         FBaseCaption: string;
+    protected
+        // Панель не должна красть фокус у целевого окна: печать цепочки
+        // идёт в чужое приложение (как у TMacroStopPanel)
+        procedure CreateParams(var Params: TCreateParams); override;
     public
         procedure Initialize(const PanelCaption, SequenceName: string; TotalSteps: Integer);
         procedure SetStep(Index, Total: Integer; const SnippetTitle: string);
         // Живой статус печати шага: пауза фокуса / остаток сна / прогресс символов
         procedure SetTypingStatus(Paused, SleepRemainingMs, TypedChars, TotalChars: Integer);
         procedure EnsureTopMost;
+        procedure ShowNoActivate;
         property StopRequested: Boolean read FStopRequested;
     end;
 
@@ -44,6 +49,19 @@ uses
 {$R *.dfm}
 
 { TChainRunPanel }
+
+procedure TChainRunPanel.CreateParams(var Params: TCreateParams);
+begin
+    inherited;
+    Params.ExStyle := Params.ExStyle or WS_EX_NOACTIVATE or WS_EX_TOOLWINDOW;
+end;
+
+procedure TChainRunPanel.ShowNoActivate;
+begin
+    ShowWindow(Handle, SW_SHOWNOACTIVATE);
+    Visible := True;
+    EnsureTopMost;
+end;
 
 procedure TChainRunPanel.Initialize(const PanelCaption, SequenceName: string; TotalSteps: Integer);
 var
