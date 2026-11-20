@@ -158,7 +158,7 @@ begin
         Sb.AppendLine('Usable Hosts: ' + ledUsableHosts.Text);
         Sb.AppendLine('Type: ' + ledNetworkType.Text);
 
-        Clipboard.AsText := Sb.ToString;
+        CopyToClipboardSecure(Sb.ToString);
 
         ShowStatusMessage(TUIStateLoader.GetMessage('Common.CopiedToClipboard'));
     finally
@@ -196,7 +196,7 @@ begin
 
     if (TargetText <> '') then
     begin
-        Clipboard.AsText := TargetText;
+        CopyToClipboardSecure(TargetText);
         ShowStatusMessage(TUIStateLoader.GetMessage('Common.CopiedToClipboard'));
     end;
 end;
@@ -381,7 +381,7 @@ begin
 
         if HasData then
         begin
-            Clipboard.AsText := Sb.ToString;
+            CopyToClipboardSecure(Sb.ToString);
             ShowStatusMessage(TUIStateLoader.GetMessage('Common.CopiedToClipboard'));
         end;
     finally

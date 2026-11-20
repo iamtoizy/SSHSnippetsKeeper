@@ -216,6 +216,13 @@ end;
 
 procedure TTerminalManagerForm.bClearHistoryClick(Sender: TObject);
 begin
+    // История разрешённых окон стирается целиком и невозвратно:
+    // требуем явного подтверждения
+    if not MessagesHandler.AskConfirmation(
+        TUIStateLoader.GetMessage('TermManager.ClearHistoryConfirm'),
+        TUIStateLoader.GetMessage('Common.Security')) then
+        Exit;
+
     // Немедленное действие: снимок истории сбрасывается сразу,
     // чекбоксы в списке обновляются
     GWinMonitor.ClearHistory;
@@ -250,6 +257,9 @@ end;
 procedure TTerminalManagerForm.bApplyClick(Sender: TObject);
 begin
     ApplyChanges;
+    // Дифф применён: окно больше не нужно (Cancel только закрывает
+    // без применения несохранённых чекбоксов)
+    ModalResult := mrOk;
 end;
 
 end.
