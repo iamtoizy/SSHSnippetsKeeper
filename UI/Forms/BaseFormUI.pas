@@ -179,6 +179,12 @@ destructor TBaseForm.Destroy;
 begin
     TThread.RemoveQueuedEvents(DeferredStyleRecreated);
 
+    // Снимаем регистрацию в реестре открытых форм: DoClose не вызывается,
+    // если форму освободили напрямую (или через владельца при завершении),
+    // а висячий указатель в FInstances уронил бы следующий ExecuteGlobal
+    if FInstances <> nil then
+        FInstances.Remove(Self.ClassType);
+
     // 1. Менеджер справки уничтожаем первым: его всплывающая кнопка
     // является самостоятельным окном и иначе переживёт разрушение формы.
     if Assigned(FHelpManager) then
@@ -193,7 +199,7 @@ end;
 
 class destructor TBaseForm.DestroyClass;
 begin
-    FInstances.Free;
+    FreeAndNil(FInstances);
 end;
 
 procedure TBaseForm.RegisterHelp(
@@ -232,17 +238,11 @@ begin
     // Проверяем: если форма открыта МОДАЛЬНО, мы НЕ делаем ей caFree,
     // так как блок try..finally в ExecuteModal сам сделает Instance.Free.
     if fsModal in FormState then
-    begin
-        Action := caHide; // Оставляем удаление на совести вызывающего
-    end
+        Action := caHide // Оставляем удаление на совести вызывающего
     else
     begin
         // Если форма плавающая (ExecuteGlobal), она уничтожает себя сама
         Action := caFree;
-
-        // И удаляет себя из реестра открытых окон
-        if FInstances.ContainsKey(Self.ClassType) then
-            FInstances.Remove(Self.ClassType);
     end;
 end;
 
@@ -349,30 +349,36 @@ begin
         if Instance.WindowState = wsMinimized then
             Instance.WindowState := wsNormal;
 
-        SetForegroundWindow(Instance.Handle);
-        Instance.BringToFront;
+        Instance.ForceForeground;
         Exit;
     end;
 
     // Вызываем виртуальный конструктор Create. Delphi поймет, что нужно
     // создать именно дочерний класс (например, TChmodForm), а не TBaseForm.
-    Instance := Self.Create(Application) as TBaseForm;
+    Instance := Self.Create(Owner) as TBaseForm;
 
-    // Регистрируем экземпляр в словаре ДО вызова Initialize,
-    // на случай если внутри Initialize форма попытается обратиться к синглтону
-    FInstances.Add(Self, Instance);
-
-
-    Instance.LockDrawing; // Попытка уменьшить мерцание формы со стилями VCL
     try
-        Instance.Initialize(AppContext);
-        Instance.FormStyle := fsStayOnTop;
-    finally
-        Instance.UnlockDrawing;   // Попытка уменьшить мерцание формы со стилями VCL
+        // Регистрируем экземпляр в словаре ДО вызова Initialize,
+        // на случай если внутри Initialize форма попытается обратиться к синглтону
+        FInstances.Add(Self, Instance);
+
+        Instance.LockDrawing; // Попытка уменьшить мерцание формы со стилями VCL
+        try
+            Instance.Initialize(AppContext);
+            Instance.FormStyle := fsStayOnTop;
+        finally
+            Instance.UnlockDrawing;   // Попытка уменьшить мерцание формы со стилями VCL
+        end;
+        Instance.WarmUpPaint;
+        Instance.PrepareGuardedShow;
+        Instance.Show;
+    except
+        // Форма с Owner=Application не освободится сама: при сбое Initialize
+        // она осталась бы висеть невидимой (и зарегистрированной в FInstances)
+        FInstances.Remove(Self);
+        Instance.Free;
+        raise;
     end;
-    Instance.WarmUpPaint;
-    Instance.PrepareGuardedShow;
-    Instance.Show;
 end;
 
 class function TBaseForm.ExecuteModal(Owner: TComponent; AppContext: IAppContext): TModalResult;
