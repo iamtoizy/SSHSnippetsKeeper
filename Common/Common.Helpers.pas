@@ -524,6 +524,8 @@ begin
     Result := False;
     Output := '';
     SB := TStringBuilder.Create;
+    ReadPipe := 0;
+    WritePipe := 0;
     try
         FillChar(SecurityAttr, SizeOf(SecurityAttr), 0);
         SecurityAttr.nLength := SizeOf(SecurityAttr);
@@ -556,18 +558,12 @@ begin
         GetMem(AttrList, AttrListSize);
         try
             if not InitializeProcThreadAttributeList(AttrList, 1, 0, AttrListSize) then
-            begin
-                CloseHandle(WritePipe);
                 Exit;
-            end;
 
             InheritList[0] := WritePipe;
             if not UpdateProcThreadAttributeRaw(AttrList, 0, PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
                 @InheritList, SizeOf(InheritList), nil, nil) then
-            begin
-                CloseHandle(WritePipe);
                 Exit;
-            end;
 
             // Список атрибутов передается внутри расширенного StartupInfo
             StartInfoEx.lpAttributeList := AttrList;
@@ -590,6 +586,7 @@ begin
             begin
                 // Обязательно закрываем WritePipe со стороны родителя, иначе ReadFile может заблокироваться
                 CloseHandle(WritePipe);
+                WritePipe := 0;
 
                 StartTime := GetTickCount;
                 Result := True;
@@ -646,20 +643,22 @@ begin
 
                 CloseHandle(ProcInfo.hProcess);
                 CloseHandle(ProcInfo.hThread);
-            end
-            else
-            begin
-                // Если процесс не запустился, нужно закрыть WritePipe для предотвращения утечек
-                CloseHandle(WritePipe);
             end;
+            // WritePipe для неуспешного CreateProcess закрывает finally ниже
         finally
             if AttrList <> nil then
             begin
                 DeleteProcThreadAttributeList(AttrList);
                 FreeMem(AttrList);
             end;
+            // ReadPipe и WritePipe закрываем по одному разу в единственной
+            // точке: ранние выходы (не поднялся атрибут-лист/процесс) раньше
+            // оставляли хендлы открытыми до конца жизни процесса
+            if WritePipe <> 0 then
+                CloseHandle(WritePipe);
+            if ReadPipe <> 0 then
+                CloseHandle(ReadPipe);
         end;
-        CloseHandle(ReadPipe);
         Output := SB.ToString;
     finally
         SB.Free;
