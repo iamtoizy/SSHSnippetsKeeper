@@ -10,6 +10,8 @@ uses
 
 type
     TCategoryService = class(TInterfacedObject, ICategoryService)
+    private const
+        MAX_TREE_DEPTH = 32;
     private
         FCategoryRepo: ICategoryRepository;
     public
@@ -51,35 +53,87 @@ begin
 end;
 
 function TCategoryService.CreateCategory(const Category: TCategoryDTO): Integer;
+var
+    CleanName: string;
 begin
-    if Trim(Category.Name) = '' then
+    CleanName := Trim(Category.Name);
+    if CleanName = '' then
         raise Exception.Create(
             TUIStateLoader.GetMessage('Category.EmptyNameError')
         );
-    Result := FCategoryRepo.AddCategory(Category.Name, Category.ParentID, Category.UserID);
+    // Дубли ловим до UNIQUE-индекса: иначе юзер видит сырую ошибку SQLite
+    if FCategoryRepo.ExistsInParent(CleanName, Category.ParentID, Category.UserID) then
+        raise Exception.Create(
+            TUIStateLoader.GetMessage('Category.DuplicateNameError', [CleanName])
+        );
+    Result := FCategoryRepo.AddCategory(CleanName, Category.ParentID, Category.UserID);
 end;
 
 procedure TCategoryService.RenameCategory(CategoryID: Integer; const NewName: string);
+var
+    CleanName: string;
+    Cat: TCategoryDTO;
 begin
     if CategoryID <= 0 then
         raise Exception.Create(
             TUIStateLoader.GetMessage('Category.InvalidIdError')
         );
-    if Trim(NewName) = '' then
+    CleanName := Trim(NewName);
+    if CleanName = '' then
         raise Exception.Create(
             TUIStateLoader.GetMessage('Category.EmptyNameError')
         );
 
-    FCategoryRepo.UpdateName(CategoryID, NewName);
+    Cat := FCategoryRepo.GetByID(CategoryID);
+    if Cat.ID = 0 then
+        raise Exception.Create(
+            TUIStateLoader.GetMessage('Category.CategoryNotFound')
+        );
+
+    // Сама категория не считается дублем своего текущего имени
+    if (not SameText(CleanName, Cat.Name)) and
+        FCategoryRepo.ExistsInParent(CleanName, Cat.ParentID, Cat.UserID) then
+        raise Exception.Create(
+            TUIStateLoader.GetMessage('Category.DuplicateNameError', [CleanName])
+        );
+
+    FCategoryRepo.UpdateName(CategoryID, CleanName);
 end;
 
 procedure TCategoryService.MoveCategory(CategoryID, NewParentID, Position: Integer);
+var
+    Cur: TCategoryDTO;
+    Depth: Integer;
 begin
     if CategoryID <= 0 then
         raise Exception.Create(
-            TUIStateLoader.GetMessage('Category.EmptyNameError')
+            TUIStateLoader.GetMessage('Category.InvalidIdError')
         );
-    // Проверка на циклические ссылки (перемещение родителя в ребенка) должна быть в репозитории или здесь
+    if NewParentID < 0 then
+        NewParentID := 0;
+
+    // Защита от цикла: новый родитель - сам узел или его потомок.
+    // UI-гвард drag&drop работает по узлам дерева и может видеть устаревшие
+    // данные, поэтому проверяем по фактической цепочке родителей в БД
+    if NewParentID = CategoryID then
+        raise Exception.Create(
+            TUIStateLoader.GetMessage('Category.CircularMoveError')
+        );
+    if NewParentID > 0 then
+    begin
+        Cur := FCategoryRepo.GetByID(NewParentID);
+        Depth := 0;
+        while (Cur.ParentID > 0) and (Depth < MAX_TREE_DEPTH) do
+        begin
+            if Cur.ParentID = CategoryID then
+                raise Exception.Create(
+                    TUIStateLoader.GetMessage('Category.CircularMoveError')
+                );
+            Cur := FCategoryRepo.GetByID(Cur.ParentID);
+            Inc(Depth);
+        end;
+    end;
+
     FCategoryRepo.MoveCategory(CategoryID, NewParentID, Position);
 end;
 
@@ -87,7 +141,7 @@ procedure TCategoryService.DeleteCategory(CategoryID: Integer);
 begin
     if CategoryID <= 0 then
         raise Exception.Create(
-            TUIStateLoader.GetMessage('Category.EmptyNameError')
+            TUIStateLoader.GetMessage('Category.InvalidIdError')
         );
     FCategoryRepo.DeleteCategory(CategoryID);
 end;

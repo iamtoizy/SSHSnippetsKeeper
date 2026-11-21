@@ -121,7 +121,9 @@ begin
             TUIStateLoader.GetMessage('Tag.EmptyNameError')
         );
 
-    if FTagRepo.ExistsByName(CleanName) then
+    // Существующий тег с этим именем может быть сам переименовываемый тег
+    // (смена регистра): исключаем его из проверки дубля
+    if FTagRepo.ExistsByName(CleanName, TagID) then
         raise Exception.Create(
             TUIStateLoader.GetMessage('Tag.DuplicateNameError', [CleanName])
         );

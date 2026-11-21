@@ -121,6 +121,13 @@ begin
         TUIStateLoader.GetMessage('Snippet.InvalidIdError')
     );
 
+    // Молчаливое обновление несуществующего сниппета = потерянные правки:
+    // юзер видит "сохранено", а записи в БД нет
+    if FSnippetRepo.GetByID(Snippet.ID).ID = 0 then
+        raise ESnippetValidationException.Create(
+            TUIStateLoader.GetMessage('Snippet.NotFound')
+        );
+
     CatUserID := FCategoryRepo.GetUserID(Snippet.CategoryID);
     if CatUserID <> Snippet.UserID then
         raise EAccessDeniedException.Create(

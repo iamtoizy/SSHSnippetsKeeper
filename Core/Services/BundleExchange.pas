@@ -90,49 +90,53 @@ var
     Path: string;
 begin
     Result := Length(ASnippets);
-    Cats := TStringList.Create;
+    Root := TJSONObject.Create;
     try
-        Cats.Sorted := True;
-        Cats.Duplicates := dupIgnore;
+        // Массивы сразу передаются под владение Root: исключение в цикле
+        // (например, ошибка БД в BuildCategoryPath) не оставит их висеть
         SnipsArr := TJSONArray.Create;
-        for I := 0 to High(ASnippets) do
-        begin
-            Path := BuildCategoryPath(AppContext, ASnippets[I].CategoryID);
-            if Path <> '' then
-                Cats.Add(Path);
-            SnipObj := TJSONObject.Create;
-            SnipObj.AddPair('title', ASnippets[I].Title);
-            SnipObj.AddPair('content', ASnippets[I].Content);
-            SnipObj.AddPair('comment', ASnippets[I].Comment);
-            SnipObj.AddPair('language', ASnippets[I].Language);
-            SnipObj.AddPair('languageLocked', TJSONBool.Create(ASnippets[I].LanguageLocked));
-            SnipObj.AddPair('securityCheckIgnored', TJSONBool.Create(ASnippets[I].IsSecurityCheckIgnored));
-            SnipObj.AddPair('createdAt', TJSONNumber.Create(ASnippets[I].CreatedAt));
-            SnipObj.AddPair('updatedAt', TJSONNumber.Create(ASnippets[I].UpdatedAt));
-            SnipObj.AddPair('category', Path);
-            TagsArr := TJSONArray.Create;
-            for J := 0 to High(ASnippets[I].Tags) do
-                TagsArr.Add(ASnippets[I].Tags[J].Name);
-            SnipObj.AddPair('tags', TagsArr);
-            SnipsArr.AddElement(SnipObj);
-        end;
+        Root.AddPair('snippets', SnipsArr);
         CatsArr := TJSONArray.Create;
-        for I := 0 to Cats.Count - 1 do
-            CatsArr.Add(Cats[I]);
-        Root := TJSONObject.Create;
+        Root.AddPair('categories', CatsArr);
+
+        Cats := TStringList.Create;
         try
+            Cats.Sorted := True;
+            Cats.Duplicates := dupIgnore;
+            for I := 0 to High(ASnippets) do
+            begin
+                Path := BuildCategoryPath(AppContext, ASnippets[I].CategoryID);
+                if Path <> '' then
+                    Cats.Add(Path);
+                SnipObj := TJSONObject.Create;
+                SnipsArr.AddElement(SnipObj);
+                SnipObj.AddPair('title', ASnippets[I].Title);
+                SnipObj.AddPair('content', ASnippets[I].Content);
+                SnipObj.AddPair('comment', ASnippets[I].Comment);
+                SnipObj.AddPair('language', ASnippets[I].Language);
+                SnipObj.AddPair('languageLocked', TJSONBool.Create(ASnippets[I].LanguageLocked));
+                SnipObj.AddPair('securityCheckIgnored', TJSONBool.Create(ASnippets[I].IsSecurityCheckIgnored));
+                SnipObj.AddPair('createdAt', TJSONNumber.Create(ASnippets[I].CreatedAt));
+                SnipObj.AddPair('updatedAt', TJSONNumber.Create(ASnippets[I].UpdatedAt));
+                SnipObj.AddPair('category', Path);
+                TagsArr := TJSONArray.Create;
+                SnipObj.AddPair('tags', TagsArr);
+                for J := 0 to High(ASnippets[I].Tags) do
+                    TagsArr.Add(ASnippets[I].Tags[J].Name);
+            end;
+            for I := 0 to Cats.Count - 1 do
+                CatsArr.Add(Cats[I]);
+
             Root.AddPair('format', FORMAT_ID);
             Root.AddPair('version', TJSONNumber.Create(FORMAT_VERSION));
             Root.AddPair('generator', 'SSHSnippetsKeeper');
             Root.AddPair('exportedAt', TJSONNumber.Create(DateTimeToUnix(Now)));
-            Root.AddPair('categories', CatsArr);
-            Root.AddPair('snippets', SnipsArr);
             TFile.WriteAllText(AFileName, Root.ToString, TEncoding.UTF8);
         finally
-            Root.Free;
+            Cats.Free;
         end;
     finally
-        Cats.Free;
+        Root.Free;
     end;
 end;
 
@@ -169,7 +173,7 @@ var
         CatIdx := CatMap.IndexOf(APath);
         if CatIdx >= 0 then
         begin
-            Result := StrToIntDef(CatMap.ValueFromIndex[CatIdx], 0);
+            Result := Integer(CatMap.Objects[CatIdx]);
             Exit;
         end;
 
@@ -190,7 +194,7 @@ var
                     SoFar := SoFar + '/' + Seg;
                 CatIdx := CatMap.IndexOf(SoFar);
                 if CatIdx >= 0 then
-                    Result := StrToIntDef(CatMap.ValueFromIndex[CatIdx], 0)
+                    Result := Integer(CatMap.Objects[CatIdx])
                 else
                 begin
                     NewCat := Default(TCategoryDTO);
@@ -201,7 +205,7 @@ var
                     if CatID > 0 then
                     begin
                         Inc(Res.CreatedCategories);
-                        CatMap.AddPair(SoFar, IntToStr(CatID));
+                        CatMap.AddObject(SoFar, TObject(CatID));
                         Result := CatID;
                     end
                     else
@@ -239,12 +243,15 @@ begin
         TagIDs := TList<Integer>.Create;
         ExistingKeys := TStringList.Create;
         try
+            // Индекс в БД регистронезависимый (COLLATE NOCASE):
+            // иначе 'work' из бандла при существующей 'Work' даёт сбой UNIQUE
+            CatMap.CaseSensitive := False;
             CatMap.Sorted := True;
             CatMap.Duplicates := dupError;
             ExistingCats := AppContext.CategoryService.GetAllCategories(AUserID);
             for I := 0 to High(ExistingCats) do
-                CatMap.AddPair(BuildCategoryPath(AppContext, ExistingCats[I].ID),
-                    IntToStr(ExistingCats[I].ID));
+                CatMap.AddObject(BuildCategoryPath(AppContext, ExistingCats[I].ID),
+                    TObject(ExistingCats[I].ID));
 
             ExistingKeys.Sorted := True;
             Existing := AppContext.SnippetService.GetAllSnippets(AUserID);
@@ -276,6 +283,13 @@ begin
                 Snip.UserID := AUserID;
                 Snip.CategoryID := EnsureCategory(
                     SnipObj.GetValue<string>('category', ''));
+                // Категория обязательна (FK + валидация сервиса): сниппет без неё
+                // не может быть создан - пропускаем, чтобы не обрывать весь импорт
+                if Snip.CategoryID <= 0 then
+                begin
+                    Inc(Res.Skipped);
+                    Continue;
+                end;
                 Snip.Comment := SnipObj.GetValue<string>('comment', '');
                 Snip.Language := SnipObj.GetValue<string>('language', '');
                 Snip.LanguageLocked := SnipObj.GetValue<Boolean>('languageLocked', False);
@@ -285,7 +299,11 @@ begin
                 Snip.CreatedAt := SnipObj.GetValue<Int64>('createdAt', 0);
                 if Snip.CreatedAt <= 0 then
                     Snip.CreatedAt := DateTimeToUnix(Now);
-                Snip.UpdatedAt := 0;
+                // updatedAt не отбрасываем: экспорт его сохраняет, репозиторий
+                // пишет NULL только при <= 0, а пустая дата сбивает сортировку
+                Snip.UpdatedAt := SnipObj.GetValue<Int64>('updatedAt', 0);
+                if Snip.UpdatedAt <= 0 then
+                    Snip.UpdatedAt := Snip.CreatedAt;
 
                 TagIDs.Clear;
                 TagsArr := nil;

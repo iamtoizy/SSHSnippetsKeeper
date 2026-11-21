@@ -1907,6 +1907,8 @@
       "MoveError": "Error moving category: %s",
       "ParentCategoryNotFound": "Parent category not found.",
       "MoveToDifferentSpaceError": "Cannot move category to a different workspace.",
+      "CircularMoveError": "Cannot move a category inside itself.",
+      "DuplicateNameError": "A category named \"%s\" already exists here.",
       "CategoryNotFound": "Category not found.",
       "AccessDenied": "Access denied: Category belongs to another user.",
       "InvalidIdError": "Invalid identifier for the category.",

@@ -104,7 +104,7 @@ type
         procedure ClearTagsForSnippet(SnippetID: Integer);
 
         procedure LinkTagsToSnippetBatch(SnippetID: Integer; const TagIDs: TArray<Integer>);
-        function ExistsByName(const Name: string): Boolean;
+        function ExistsByName(const Name: string; ExcludeTagID: Integer = 0): Boolean;
     end;
 
     IUserRepository = interface

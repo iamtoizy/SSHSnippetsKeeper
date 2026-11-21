@@ -30,7 +30,7 @@ type
         procedure ClearTagsForSnippet(SnippetID: Integer);
 
         procedure LinkTagsToSnippetBatch(SnippetID: Integer; const TagIDs: TArray<Integer>);
-        function ExistsByName(const Name: string): Boolean;
+        function ExistsByName(const Name: string; ExcludeTagID: Integer = 0): Boolean;
     end;
 
 implementation
@@ -190,12 +190,16 @@ begin
     end;
 end;
 
-function TTagRepository.ExistsByName(const Name: string): Boolean;
+function TTagRepository.ExistsByName(const Name: string; ExcludeTagID: Integer): Boolean;
 var
     Count: Variant;
 begin
-    // Используем COLLATE NOCASE, чтобы 'Delphi' и 'delphi' считались одним тегом (если БД это поддерживает)
-    Count := ExecuteSQLScalar('SELECT COUNT(*) FROM tags WHERE name = ? COLLATE NOCASE', [Trim(Name)]);
+    // Используется COLLATE NOCASE, чтобы 'Delphi' и 'delphi' считались одним тегом
+    if ExcludeTagID > 0 then
+        Count := ExecuteSQLScalar('SELECT COUNT(*) FROM tags WHERE name = ? COLLATE NOCASE AND id <> ?',
+            [Trim(Name), ExcludeTagID])
+    else
+        Count := ExecuteSQLScalar('SELECT COUNT(*) FROM tags WHERE name = ? COLLATE NOCASE', [Trim(Name)]);
     Result := Integer(Count) > 0;
 end;
 
