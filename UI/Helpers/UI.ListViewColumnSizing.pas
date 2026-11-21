@@ -37,6 +37,8 @@ type
             ALastColumnMinWidth: Integer = 90;
             AColumnMinWidth: Integer = 48); reintroduce;
         destructor Destroy; override;
+        procedure Notification(AComponent: TComponent;
+            Operation: TOperation); override;
         // Замерить содержимое и распределить ширины
         procedure Fit;
         // Распределить из кэша последнего замера (тики ресайза окна)
@@ -57,6 +59,11 @@ begin
     FColumnMinWidth := AColumnMinWidth;
     if ALV <> nil then
     begin
+        // Контролы формы уничтожаются раньше owned-компонентов: без
+        // уведомления деструктор восстанавливал бы WindowProc уже
+        // освобождённому ListView (use-after-free, ловится FastMM
+        // как modified-after-free при рециклии блока)
+        ALV.FreeNotification(Self);
         FDefListProc := ALV.WindowProc;
         ALV.WindowProc := ListWndProc;
     end;
@@ -69,10 +76,28 @@ begin
     inherited;
 end;
 
+procedure TListViewColumnFitter.Notification(AComponent: TComponent;
+    Operation: TOperation);
+begin
+    inherited;
+    if (Operation = opRemove) and (AComponent = FLV) then
+    begin
+        // Хук снят самим уничтожаемым ListView не будет - снимаем до его
+        // смерти, чтобы никто не вызвал ListWndProc по висячему Self/FLV
+        if Assigned(FDefListProc) then
+            FLV.WindowProc := FDefListProc;
+        FDefListProc := nil;
+        FLV := nil;
+    end;
+end;
+
 procedure TListViewColumnFitter.ListWndProc(var Message: TMessage);
 var
     Notify: PHDNotify;
 begin
+    // Двойная защита: после Notification FLV=nil, сюда больше не попадаем
+    if FLV = nil then
+        Exit;
     // Пользовательское изменение ширины колонки отключает автоподбор.
     // HDN_ITEMCHANGED с шириной приходит и от программных изменений -
     // их отсекает FInternalUpdate
