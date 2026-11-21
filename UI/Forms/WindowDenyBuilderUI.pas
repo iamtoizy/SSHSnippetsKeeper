@@ -88,6 +88,7 @@ type
         procedure RefreshGenerated;
         procedure RefreshPreview;
         procedure MarkDirty;
+        procedure ResetEditor;
         procedure LoadTemplatesCombo(const ACurrentRules: TArray<TGlobalTitleDenyRule>);
         function HasUnsavedChanges: Boolean;
         function PromptSaveTemplate: Boolean;
@@ -300,6 +301,25 @@ end;
 function TWindowDenyBuilderDialog.IsValidRegex(const APattern: string): Boolean;
 begin
     Result := TRegexSafety.PatternIsValid(APattern);
+end;
+
+procedure TWindowDenyBuilderDialog.ResetEditor;
+begin
+    // Редактор без выбранного правила: пустые поля, дефолтный режим.
+    // Иначе превью строит синтетическое правило из текста, оставшегося
+    // от предыдущего правила, и показывает ложную блокировку окон
+    FUpdating := True;
+    try
+        leName.Clear;
+        leText.Clear;
+        cbMode.ItemIndex := Ord(pmContains);
+        chkCase.Checked := False;
+        chkEnabled.Checked := True;
+    finally
+        FUpdating := False;
+    end;
+    RefreshGenerated;
+    RefreshPreview;
 end;
 
 procedure TWindowDenyBuilderDialog.LoadRuleToEditor(const ARule: TGlobalTitleDenyRule);
@@ -576,8 +596,16 @@ begin
     FEditingIndex := -1;
     RebuildRuleList;
     MarkDirty;
-    RefreshGenerated;
-    RefreshPreview;
+
+    // После удаления правила ничего не выбрано: пустой редактор, иначе
+    // превью блокирует окна по тексту удалённого правила
+    if Length(FRules) = 0 then
+        ResetEditor
+    else
+    begin
+        RefreshGenerated;
+        RefreshPreview;
+    end;
 end;
 
 procedure TWindowDenyBuilderDialog.bCaptureClick(Sender: TObject);
@@ -708,6 +736,14 @@ begin
         FUpdating := False;
     end;
 
+    // Первый пункт выделяется при FUpdating=true без OnSelectItem: либо
+    // загружаем его в редактор явно, либо сбрасываем редактор в «пусто» -
+    // иначе превью строит правило из текста прошлого правила
+    if Length(FRules) > 0 then
+        LoadRuleToEditor(FRules[0])
+    else
+        ResetEditor;
+
     FDirty := False;
     RefreshGenerated;
     RefreshPreview;
@@ -777,9 +813,8 @@ begin
         finally
             FUpdating := False;
         end;
+        ResetEditor;
         FDirty := False;
-        RefreshGenerated;
-        RefreshPreview;
     end
     else
         ApplyTemplate(Name);
