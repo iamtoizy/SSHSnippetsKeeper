@@ -3516,7 +3516,11 @@ begin
     if Length(Snippets) > 0 then
         PreferredUserID := Snippets[0].UserID;
 
-    if not TCategorySelectForm.Execute(Self, AppContext, PreferredUserID, CategoryID) then
+    if not TCategorySelectForm.Execute(Self, AppContext, PreferredUserID, CategoryID,
+        procedure
+        begin
+            FStatus.Flash(TUIStateLoader.GetMessage('MultiSelect.Move.WorkspaceHint'));
+        end) then
         Exit;
 
     Cat := AppContext.CategoryService.GetCategoryByID(CategoryID);

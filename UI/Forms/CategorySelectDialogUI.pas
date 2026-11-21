@@ -28,6 +28,7 @@ type
         procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     private
         FCategoryID: Integer;
+        FOnWorkspaceSelected: TProc;
         procedure BuildTree(PreferredUserID: Integer);
         procedure AddCategoryNode(ParentNode: TTreeNode; const Categories: TArray<TCategoryDTO>; const Cat: TCategoryDTO);
         procedure UpdateOkState;
@@ -35,7 +36,7 @@ type
         procedure DoInitialize; override;
     public
         property CategoryID: Integer read FCategoryID;
-        class function Execute(Owner: TComponent; AppContext: IAppContext; PreferredUserID: Integer; out CategoryID: Integer): Boolean; static;
+        class function Execute(Owner: TComponent; AppContext: IAppContext; PreferredUserID: Integer; out CategoryID: Integer; OnWorkspaceSelected: TProc = nil): Boolean; static;
     end;
 
 implementation
@@ -47,7 +48,7 @@ uses
 
 {$R *.dfm}
 
-class function TCategorySelectForm.Execute(Owner: TComponent; AppContext: IAppContext; PreferredUserID: Integer; out CategoryID: Integer): Boolean;
+class function TCategorySelectForm.Execute(Owner: TComponent; AppContext: IAppContext; PreferredUserID: Integer; out CategoryID: Integer; OnWorkspaceSelected: TProc = nil): Boolean;
 var
     Form: TCategorySelectForm;
 begin
@@ -57,6 +58,7 @@ begin
         Form.Initialize(AppContext);
         Form.BuildTree(PreferredUserID);
         Form.UpdateOkState;
+        Form.FOnWorkspaceSelected := OnWorkspaceSelected;
         Result := Form.ShowModal = mrOk;
         if Result then
             CategoryID := Form.CategoryID;
@@ -146,7 +148,8 @@ begin
     FCategoryID := Integer(IntPtr(tvCategories.Selected.Data));
     if FCategoryID <= 0 then
     begin
-        MessagesHandler.ShowInfo(TUIStateLoader.GetMessage('MultiSelect.Move.WorkspaceSelectedInfo'));
+        if Assigned(FOnWorkspaceSelected) then
+            FOnWorkspaceSelected();
         Exit;
     end;
 

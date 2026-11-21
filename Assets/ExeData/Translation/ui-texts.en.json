@@ -2133,7 +2133,7 @@
       "Move": {
         "Caption": "Move to category",
         "DoneMsg": "Moved: %d, skipped: %d.",
-        "WorkspaceSelectedInfo": "A workspace was selected, not a category: snippets cannot be moved into a workspace itself. Expand it and select a specific category (create one if needed via the category tree on the main form)."
+        "WorkspaceHint": "↳ Pick a category inside the workspace"
       }
     },
     "Security": {
