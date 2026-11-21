@@ -284,6 +284,7 @@
         <DCCReference Include="UI\Controllers\SearchController.pas"/>
         <DCCReference Include="UI\Controllers\CategoryTreeController.pas"/>
         <DCCReference Include="UI\Controllers\LanguageMenuController.pas"/>
+        <DCCReference Include="UI\Controllers\DenySetMenuController.pas"/>
         <DCCReference Include="UI\Controllers\TagListController.pas"/>
         <DCCReference Include="UI\Forms\QuickSearchFormUI.pas">
             <Form>QuickSearchForm</Form>

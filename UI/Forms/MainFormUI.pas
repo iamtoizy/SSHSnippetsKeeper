@@ -19,6 +19,7 @@ uses
     Core.Interfaces.Settings,
     Core.Interfaces.Tools,
     Core.Interfaces.UI,
+    DenySetMenuController,
     GlobalHotkeyManager,
     LanguageMenuController,
     SearchController,
@@ -120,6 +121,7 @@ type
         nDataManagament: TMenuItem;
         nExit: TMenuItem;
         pmLanguage: TPopupMenu;
+        pmDenySets: TPopupMenu;
         pmCategories: TPopupMenu;
         pmSnippets: TPopupMenu;
         pmTags: TPopupMenu;
@@ -321,6 +323,7 @@ type
         FCategoryTree: TCategoryTreeController;
         FTags: TTagListController;
         FLangMenu: TLanguageMenuController;
+        FDenySetsMenu: TDenySetMenuController;
         // Пути пунктов подменю недавних баз, индекс = Tag пункта меню
         FRecentPaths: TArray<string>;
 
@@ -1353,9 +1356,15 @@ begin
         FHotkeyMgr.StopListening;
     try
         if TSettingsForm.ExecuteModal(Self, AppContext) = mrOk then
+        begin
             // Настройки могли затронуть список сниппетов (видимость колонок) -
             // пересобираем колонки и строки с сохранением выделения
             ReloadSnippetListKeepingSelection;
+
+            // Deny-набор и шаблоны могли измениться - обновляем панель
+            if Assigned(FDenySetsMenu) then
+                FDenySetsMenu.BuildMenu;
+        end;
     finally
         if Assigned(FHotkeyMgr) then FHotkeyMgr.StartListening;
     end;
@@ -1405,6 +1414,7 @@ begin
     FreeSnippetListData;
 
     FreeAndNil(FLangMenu);
+    FreeAndNil(FDenySetsMenu);
     FreeAndNil(FTags);
     FreeAndNil(FCategoryTree);
     if Assigned(FSearch) then
@@ -2252,6 +2262,15 @@ begin
     // Строим меню языков в StatusBar
     FLangMenu.BuildMenu;
 
+    // Меню deny-шаблонов в StatusBar: панель с текстом активного набора,
+    // клик открывает выбор шаблона
+    FDenySetsMenu := TDenySetMenuController.Create(pmDenySets, FStatus, AppContext,
+        procedure
+        begin
+            FStatus.Flash(TUIStateLoader.GetMessage('Settings.DenySetsAppliedMsg'));
+        end);
+    FDenySetsMenu.BuildMenu;
+
     // Регистрация подсказок
     RegisterHelp(tvCategories, hipTopRight, 'Help.MainForm.tvCategories', hkCustomForm);
     RegisterHelp(lvSnippets, hipTopRight, 'Help.MainForm.lvSnippets', hkCustomForm, 0, ListViewHelpOffset(lvSnippets));
@@ -2320,6 +2339,11 @@ begin
     actMoveToCategory.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.MoveToCategory');
     actExportBundle.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.ExportBundle');
     actImportBundle.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.ImportBundle');
+
+    // Меню deny-шаблонов: локализованные пункты и текст панели
+    if Assigned(FDenySetsMenu) then
+        FDenySetsMenu.BuildMenu;
+
     // Заголовки колонок lvSnippets могли смениться - пересчитываем ширины
     SizeSnippetListColumns;
 end;
@@ -4149,6 +4173,13 @@ begin
 
                 // Показываем всплывающее меню со списками языков
                 pmLanguage.Popup(Pt.X, Pt.Y);
+            end
+            else if I = DENY_PANEL_INDEX then
+            begin
+                Pt := sbBottom.ClientToScreen(Point(R.Left, R.Top));
+                // Перестраиваем перед показом: набор мог измениться в настройках
+                FDenySetsMenu.BuildMenu;
+                pmDenySets.Popup(Pt.X, Pt.Y);
             end
             else if I = TAppStatusBar.SB_PANEL_DIRTY then
             begin

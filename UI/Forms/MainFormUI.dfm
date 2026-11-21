@@ -95,6 +95,9 @@ object MainForm: TMainForm
       end
       item
         Width = 60
+      end
+      item
+        Width = 90
       end>
     OnMouseDown = sbBottomMouseDown
     OnResize = sbBottomResize
@@ -5949,6 +5952,10 @@ object MainForm: TMainForm
   end
   object pmLanguage: TPopupMenu
     Left = 215
+    Top = 441
+  end
+  object pmDenySets: TPopupMenu
+    Left = 280
     Top = 441
   end
   object pmCategories: TPopupMenu

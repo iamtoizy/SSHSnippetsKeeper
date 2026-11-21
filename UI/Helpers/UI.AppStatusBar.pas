@@ -18,6 +18,7 @@ type
             SB_PANEL_DIRTY = 2;
             SB_PANEL_COUNT = 3;
             SB_PANEL_LANG = 4;
+            SB_PANEL_DENY = 5;
     private
         FStatusBar: TStatusBar;
         FTimer: TTimer;
@@ -33,6 +34,7 @@ type
         procedure SetDirty(ADirty: Boolean);
         procedure SetSnippetCount(Total, Selected: Integer);
         procedure SetLanguage(const Text: string);
+        procedure SetDenySet(const Text: string);
         procedure Layout;
         procedure ForceUpdate;
 
@@ -107,6 +109,16 @@ begin
     Layout;
 end;
 
+procedure TAppStatusBar.SetDenySet(const Text: string);
+begin
+    // 6-я панель опциональна: тесты и альтернативные хосты создают
+    // статус-бар из 5 панелей (0..4)
+    if FStatusBar.Panels.Count <= SB_PANEL_DENY then
+        Exit;
+    FStatusBar.Panels[SB_PANEL_DENY].Text := Text;
+    Layout;
+end;
+
 procedure TAppStatusBar.SetSnippetCount(Total, Selected: Integer);
 begin
     if Selected > 0 then
@@ -135,12 +147,27 @@ begin
     FStatusBar.Panels[SB_PANEL_LANG].Width := FitWidth(
         FStatusBar.Panels[SB_PANEL_LANG].Text, 0, 120);
 
-    FStatusBar.Panels[SB_PANEL_EVENTS].Width := Max(50,
-        FStatusBar.ClientWidth
-        - FStatusBar.Panels[SB_PANEL_DATABASE].Width
-        - FStatusBar.Panels[SB_PANEL_DIRTY].Width
-        - FStatusBar.Panels[SB_PANEL_COUNT].Width
-        - FStatusBar.Panels[SB_PANEL_LANG].Width);
+    // Deny-панель опциональна (см. SetDenySet): без неё EVENTS забирает остаток
+    if FStatusBar.Panels.Count > SB_PANEL_DENY then
+    begin
+        FStatusBar.Panels[SB_PANEL_DENY].Width := FitWidth(
+            FStatusBar.Panels[SB_PANEL_DENY].Text, 0, 200);
+
+        FStatusBar.Panels[SB_PANEL_EVENTS].Width := Max(50,
+            FStatusBar.ClientWidth
+            - FStatusBar.Panels[SB_PANEL_DATABASE].Width
+            - FStatusBar.Panels[SB_PANEL_DIRTY].Width
+            - FStatusBar.Panels[SB_PANEL_COUNT].Width
+            - FStatusBar.Panels[SB_PANEL_LANG].Width
+            - FStatusBar.Panels[SB_PANEL_DENY].Width);
+    end
+    else
+        FStatusBar.Panels[SB_PANEL_EVENTS].Width := Max(50,
+            FStatusBar.ClientWidth
+            - FStatusBar.Panels[SB_PANEL_DATABASE].Width
+            - FStatusBar.Panels[SB_PANEL_DIRTY].Width
+            - FStatusBar.Panels[SB_PANEL_COUNT].Width
+            - FStatusBar.Panels[SB_PANEL_LANG].Width);
 end;
 
 procedure TAppStatusBar.ForceUpdate;

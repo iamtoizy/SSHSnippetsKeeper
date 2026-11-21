@@ -88,7 +88,7 @@ type
         procedure RefreshGenerated;
         procedure RefreshPreview;
         procedure MarkDirty;
-        procedure LoadTemplatesCombo(const ASelectName: string);
+        procedure LoadTemplatesCombo(const ACurrentRules: TArray<TGlobalTitleDenyRule>);
         function HasUnsavedChanges: Boolean;
         function PromptSaveTemplate: Boolean;
         procedure ApplyTemplate(const AName: string);
@@ -213,9 +213,7 @@ begin
         else
         begin
             Instance.FRules := Copy(ARules, 0, Length(ARules));
-            Instance.FActiveTemplateName :=
-                AppContext.SettingsManager.Data.ActiveDenyRuleSet;
-            Instance.LoadTemplatesCombo(Instance.FActiveTemplateName);
+            Instance.LoadTemplatesCombo(ARules);
             Instance.RebuildRuleList;
             if Length(Instance.FRules) > 0 then
                 Instance.lvRules.ItemIndex := 0;
@@ -587,31 +585,32 @@ begin
     RefreshPreview;
 end;
 
-procedure TWindowDenyBuilderDialog.LoadTemplatesCombo(const ASelectName: string);
+procedure TWindowDenyBuilderDialog.LoadTemplatesCombo(
+    const ACurrentRules: TArray<TGlobalTitleDenyRule>);
 var
     Setts: TAppSettings;
     I, SelIdx: Integer;
 begin
-    // Полный режим: «Ничего не запрещено» (нулевой объект) + имена шаблонов.
-    // Одиночный режим комбо не показывает: панель скрыта вместе с pList
+    // Подсветка активного шаблона по совпадению правил с текущим набором
+    // (ARules - источник истины), а не по имени из настроек: набор мог быть
+    // отредактирован вручную и ни с каким шаблоном не совпадать - тогда
+    // комбо остаётся на «Ничего не запрещено» (SelIdx := 0)
     cbTemplates.Items.BeginUpdate;
     try
         cbTemplates.Clear;
         cbTemplates.Items.AddObject(
             TUIStateLoader.GetMessage('Settings.DenySetsEmptyItem'), TObject(0));
         Setts := AppContext.SettingsManager.Data;
+        SelIdx := 0;
         for I := 0 to High(Setts.DenyRuleSets) do
+        begin
             cbTemplates.Items.AddObject(Setts.DenyRuleSets[I].Name,
                 TObject(I + 1));
-
-        SelIdx := 0;
-        if ASelectName <> '' then
-            for I := 0 to cbTemplates.Items.Count - 1 do
-                if SameText(cbTemplates.Items[I], ASelectName) then
-                begin
-                    SelIdx := I;
-                    Break;
-                end;
+            if (SelIdx = 0) and TProcessProfile.SameDenyRules(ACurrentRules,
+                Setts.DenyRuleSets[I].Rules) and
+                (Length(Setts.DenyRuleSets[I].Rules) > 0) then
+                SelIdx := I + 1;
+        end;
         cbTemplates.ItemIndex := SelIdx;
     finally
         cbTemplates.Items.EndUpdate;
@@ -673,7 +672,7 @@ begin
 
     FActiveTemplateName := NewName;
     FDirty := False;
-    LoadTemplatesCombo(NewName);
+    LoadTemplatesCombo(FRules);
     Result := True;
 end;
 
@@ -759,10 +758,7 @@ begin
         begin
             FUpdating := True;
             try
-                if FActiveTemplateName <> '' then
-                    LoadTemplatesCombo(FActiveTemplateName)
-                else
-                    cbTemplates.ItemIndex := 0;
+                LoadTemplatesCombo(FRules);
             finally
                 FUpdating := False;
             end;

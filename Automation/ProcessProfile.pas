@@ -47,6 +47,11 @@ type
         class function EvaluateGlobalDeny(const ATitle: string;
             const ARules: TArray<TGlobalTitleDenyRule>;
             out AMatchedRule: string): Boolean; static;
+
+        // Сравнение deny-наборов по значению (Name/Pattern/Case/Enabled):
+        // подсветка активного шаблона и подмена правил после редактирования.
+        // Порядок правил значим: шаблон - упорядоченный снимок
+        class function SameDenyRules(const A, B: TArray<TGlobalTitleDenyRule>): Boolean; static;
         // Полная проверка окна. Выключенный профиль = без фильтров (только exe-список)
         function MatchesWindow(const AWinClass, ATitle: string): Boolean;
 
@@ -224,6 +229,23 @@ begin
     end;
 
     Result := False;
+end;
+
+class function TProcessProfile.SameDenyRules(const A, B: TArray<TGlobalTitleDenyRule>): Boolean;
+var
+    I: Integer;
+begin
+    if Length(A) <> Length(B) then
+        Exit(False);
+
+    for I := 0 to High(A) do
+        if (A[I].Name <> B[I].Name) or
+            (A[I].Pattern <> B[I].Pattern) or
+            (A[I].CaseSensitive <> B[I].CaseSensitive) or
+            (A[I].Enabled <> B[I].Enabled) then
+            Exit(False);
+
+    Result := True;
 end;
 
 function TProcessProfile.MatchesTitle(const Title: string): Boolean;

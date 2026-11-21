@@ -111,6 +111,18 @@ type
 
         [Test]
         procedure RegexSafety_TitleGate_ToleratesBrokenInclude;
+
+        [Test]
+        procedure SameDenyRules_EmptyAndEmpty_True;
+
+        [Test]
+        procedure SameDenyRules_DifferentLength_False;
+
+        [Test]
+        procedure SameDenyRules_FieldByField;
+
+        [Test]
+        procedure SameDenyRules_OrderMatters;
     end;
 
 implementation
@@ -118,10 +130,10 @@ implementation
 uses
     Common.RegexSafety,
     Core.Interfaces.Settings,
+    ProcessProfile,
     System.Diagnostics,
     System.SysUtils,
     Winapi.Windows,
-    ProcessProfile,
     WindowMonitor
     ;
 
@@ -735,6 +747,72 @@ begin
     Assert.IsTrue(TProcessProfile.EvaluateTitleFilter('abc', '', '(a+')
         = tfrPass,
         'Broken exclude must not block windows');
+end;
+
+function MakeDenyRule(const AName, APattern: string;
+    ACaseSensitive: Boolean = False; AEnabled: Boolean = True): TGlobalTitleDenyRule;
+begin
+    Result := Default(TGlobalTitleDenyRule);
+    Result.Name := AName;
+    Result.Pattern := APattern;
+    Result.CaseSensitive := ACaseSensitive;
+    Result.Enabled := AEnabled;
+end;
+
+procedure TProcessProfileFilterTests.SameDenyRules_EmptyAndEmpty_True;
+var
+    Empty: TArray<TGlobalTitleDenyRule>;
+begin
+    Assert.IsTrue(TProcessProfile.SameDenyRules(nil, nil));
+    SetLength(Empty, 0);
+    Assert.IsTrue(TProcessProfile.SameDenyRules(Empty, nil));
+    Assert.IsTrue(TProcessProfile.SameDenyRules(Empty, Empty));
+end;
+
+procedure TProcessProfileFilterTests.SameDenyRules_DifferentLength_False;
+var
+    A: TArray<TGlobalTitleDenyRule>;
+begin
+    A := [MakeDenyRule('One', 'a')];
+    Assert.IsFalse(TProcessProfile.SameDenyRules(A, nil));
+    Assert.IsFalse(TProcessProfile.SameDenyRules(nil, A));
+    Assert.IsFalse(TProcessProfile.SameDenyRules(A,
+        [MakeDenyRule('One', 'a'), MakeDenyRule('Two', 'b')]));
+end;
+
+procedure TProcessProfileFilterTests.SameDenyRules_FieldByField;
+var
+    A: TArray<TGlobalTitleDenyRule>;
+begin
+    A := [MakeDenyRule('Bank', '.*Bank.*', False, True),
+        MakeDenyRule('Term', '^T$', True, False)];
+
+    Assert.IsTrue(TProcessProfile.SameDenyRules(A, A));
+
+    Assert.IsFalse(TProcessProfile.SameDenyRules(A,
+        [MakeDenyRule('BankX', '.*Bank.*', False, True),
+         MakeDenyRule('Term', '^T$', True, False)]), 'Name differs');
+    Assert.IsFalse(TProcessProfile.SameDenyRules(A,
+        [MakeDenyRule('Bank', '.*Bank.*', False, True),
+         MakeDenyRule('Term', '^T2$', True, False)]), 'Pattern differs');
+    Assert.IsFalse(TProcessProfile.SameDenyRules(A,
+        [MakeDenyRule('Bank', '.*Bank.*', True, True),
+         MakeDenyRule('Term', '^T$', True, False)]), 'CaseSensitive differs');
+    Assert.IsFalse(TProcessProfile.SameDenyRules(A,
+        [MakeDenyRule('Bank', '.*Bank.*', False, True),
+         MakeDenyRule('Term', '^T$', True, True)]), 'Enabled differs');
+end;
+
+procedure TProcessProfileFilterTests.SameDenyRules_OrderMatters;
+var
+    A: TArray<TGlobalTitleDenyRule>;
+begin
+    A := [MakeDenyRule('One', 'a'), MakeDenyRule('Two', 'b')];
+
+    // Тот же набор в другом порядке - другой снимок: порядок правил
+    // определяет приоритет блокировки
+    Assert.IsFalse(TProcessProfile.SameDenyRules(A,
+        [MakeDenyRule('Two', 'b'), MakeDenyRule('One', 'a')]));
 end;
 
 end.
