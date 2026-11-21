@@ -238,8 +238,8 @@ begin
             if RunnerID <= 0 then
                 RunnerID := Snippet.UserID;
 
-            // Авто-Enter - одиночный #10, НЕ sLineBreak: TypeRawText жмёт
-            // PressEnter на каждый #13/#10, CRLF дал бы двойной Enter
+            // Авто-Enter: TypeRawText сжимает CRLF в один Enter, но
+            // одиночный #10 проще и раньше EndsTypingWithEnter-проверки
             if AutoEnter and (Snippet.Content <> '') and
                 (not AppContext.WindowHelper.EndsTypingWithEnter(Snippet.Content)) then
                 Snippet.Content := Snippet.Content + #10;

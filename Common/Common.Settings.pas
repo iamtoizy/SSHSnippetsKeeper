@@ -1071,10 +1071,31 @@ var
     TmpPath: string;
     SafeSettings: TAppSettings;
     Err: DWORD;
+
+    // Глубокая копия динамических массивов record: поверхностное
+    // присваивание делит TArrayRecord.Items с FSettings, и EncryptAIKeys/
+    // EncryptDbKey шифровали бы ключи прямо в живых настройках памяти.
+    // Copy() создаёт новый массив - ссылка в копии заменяется, оригинал
+    // в FSettings остаётся нетронутым
+    procedure DeepCopyArrays(var ATarget: TAppSettings);
+    begin
+        ATarget.AllowedApplications.Items :=
+            Copy(FSettings.AllowedApplications.Items);
+        ATarget.GlobalTitleDenyRules.Items :=
+            Copy(FSettings.GlobalTitleDenyRules.Items);
+        ATarget.AISettings.Items :=
+            Copy(FSettings.AISettings.Items);
+        ATarget.DbProfiles.Items :=
+            Copy(FSettings.DbProfiles.Items);
+        ATarget.RecentDatabases.Items :=
+            Copy(FSettings.RecentDatabases.Items);
+    end;
+
 begin
     try
         // Шифруем копию настроек: в памяти FSettings остается с открытыми ключами
         SafeSettings := FSettings;
+        DeepCopyArrays(SafeSettings);
         EncryptAIKeys(SafeSettings);
         EncryptDbKey(SafeSettings);
 

@@ -200,7 +200,7 @@ const
     POSITIVES: TArray<string> = [
         '{INPUT name}', '{INPUT[SELECT:1|2] name}', '{SLEEP 500}',
         '{ENTER}', '{SENDKEY CTRL+C}', '{SENDKEYEX CTRL+ALT+DEL}',
-        '{KEYDELAY 50}', '{CLEARLINE}', '{UUID}', '{COUNTER}',
+        '{KEYDELAY 50}', '{CLEAR_LINE}', '{UUID}', '{COUNTER}',
         '{COUNTER:start=5;step=2;pad=3}', '{DATETIME:yyyy-MM-dd}',
         '{ENV:HOME}', '{CLIPBOARD}'
     ];

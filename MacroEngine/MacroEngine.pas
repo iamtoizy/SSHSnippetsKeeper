@@ -24,7 +24,7 @@ const
     // через BuildMacroStartExpr. Короткие формы {UUID}, {COUNTER},
     // {DATETIME:fmt}, {ENV:VAR}, {CLIPBOARD} и т.д.
     MACRO_BASE_NAMES: TArray<string> = [
-        'CLEARLINE', 'CLIPBOARD', 'COUNTER', 'DATETIME', 'ENTER', 'ENV',
+        'CLEAR_LINE', 'CLIPBOARD', 'COUNTER', 'DATETIME', 'ENTER', 'ENV',
         'INPUT', 'KEYDELAY', 'RANDOM', 'SENDKEY', 'SENDKEYEX', 'SLEEP', 'UUID'
     ];
 
@@ -535,7 +535,7 @@ begin
                     Token.Text := Args;
                 end;
             end
-            else if Name = 'SENDKEY' then
+            else if (Name = 'SENDKEY') or (Name = 'SENDKEYEX') then
             begin
                 if TryParseSendKeyEx(Args, Token.Value, Token.KeyModifiers, KeyChar) then
                 begin

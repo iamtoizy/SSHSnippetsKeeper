@@ -502,13 +502,22 @@ begin
         if IsMacroCanceled(Context) then
             Exit;
 
-        // Чужое окно в фокусе - пауза: печатать нельзя, уйдёт не туда
+        // Чужое окно в фокусе - пауза: печатать нельзя, уйдет не туда
         if (GetForegroundWindow <> FWindowHelperInfo.Handle) and
             (not WaitForTargetFocus(Context)) then
             Exit;
 
-        if (Text[I] = #13) or (Text[I] = #10) then
+        // CRLF: Enter только на пару #13#10, иначе {CLIPBOARD}/{ENV} с
+        // Windows-переводами строк дают двойной Enter
+        if Text[I] = #13 then
             PressEnter(Context)
+        else if Text[I] = #10 then
+        begin
+            // Одиночный #10 (LF без CR) - тоже Enter; #10 после #13 -
+            // вторая половина CRLF, Enter уже нажат
+            if (I = 1) or (Text[I - 1] <> #13) then
+                PressEnter(Context);
+        end
         else
         begin
             SendUnicodeChar(Ord(Text[I]));
