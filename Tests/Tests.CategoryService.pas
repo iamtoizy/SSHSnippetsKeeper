@@ -65,6 +65,9 @@ type
 
         [Test]
         procedure ImportBundle_UpdatedAt_FallbackToCreatedAt;
+
+        [Test]
+        procedure MoveFavorite_UserScoped_DoesNotTouchOtherUser;
     end;
 
 implementation
@@ -398,6 +401,46 @@ begin
     Assert.AreEqual<Integer>(1, Length(Imported));
     Assert.AreEqual<Int64>(1600000000, Imported[0].CreatedAt);
     Assert.AreEqual<Int64>(1600000000, Imported[0].UpdatedAt);
+end;
+
+procedure TCategoryServiceTests.MoveFavorite_UserScoped_DoesNotTouchOtherUser;
+var
+    SnipA, SnipB, CatID: Integer;
+    Fav1, Fav2: TArray<TSnippetDTO>;
+    Snip: TSnippetDTO;
+begin
+    // Два сниппета user1, в избранном у ОБОИХ пользователей (PK user_id+snippet_id)
+    CatID := FContext.CategoryService.CreateCategory(MakeCategory(1, 'FavCat'));
+
+    Snip := MakeSnippet('FavA', 'fa');
+    Snip.UserID := 1;
+    Snip.CategoryID := CatID;
+    SnipA := FContext.SnippetService.CreateSnippet(Snip, []);
+
+    Snip := MakeSnippet('FavB', 'fb');
+    Snip.UserID := 1;
+    Snip.CategoryID := CatID;
+    SnipB := FContext.SnippetService.CreateSnippet(Snip, []);
+    FContext.SnippetService.AddFavorite(SnipA, 1);
+    FContext.SnippetService.AddFavorite(SnipB, 1);
+    FContext.SnippetService.AddFavorite(SnipA, 2);
+    FContext.SnippetService.AddFavorite(SnipB, 2);
+
+    // Стартовый порядок обоих: [A, B]. Перенос A на позицию 1 у user1
+    // выполняет UPDATE sort_order по двум строкам; до фикса SQL матчил
+    // только по snippet_id и переписывал порядок user2
+    FContext.SnippetService.MoveFavoriteToPosition(SnipA, 1, 1);
+
+    Fav1 := FContext.SnippetService.GetFavorites(1);
+    Assert.AreEqual<Integer>(2, Length(Fav1));
+    Assert.AreEqual(SnipB, Fav1[0].ID);
+    Assert.AreEqual(SnipA, Fav1[1].ID);
+
+    // Порядок user2 обязан остаться [A, B]
+    Fav2 := FContext.SnippetService.GetFavorites(2);
+    Assert.AreEqual<Integer>(2, Length(Fav2));
+    Assert.AreEqual(SnipA, Fav2[0].ID);
+    Assert.AreEqual(SnipB, Fav2[1].ID);
 end;
 
 end.

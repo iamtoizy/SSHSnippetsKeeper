@@ -141,12 +141,16 @@ const
         'ORDER BY f.sort_order, f.created_at';
     SQL_GET_FAVORITE_ORDER = 'SELECT snippet_id FROM snippet_favorites WHERE user_id = ? ORDER BY sort_order, created_at';
     SQL_GET_FAVORITE_ORDER_ALL = 'SELECT snippet_id FROM snippet_favorites ORDER BY user_id, sort_order, created_at';
+    // Пары (snippet_id, user_id) для глобального переноса: UPDATE обязан быть
+    // user-scoped, т.к. PK (user_id, snippet_id) допускает один snippet_id
+    // в избранном у нескольких пользователей
+    SQL_GET_FAVORITE_ORDER_ALL_PAIRS = 'SELECT snippet_id, user_id FROM snippet_favorites ORDER BY user_id, sort_order, created_at';
     SQL_IS_FAVORITE = 'SELECT COUNT(*) FROM snippet_favorites WHERE user_id = ? AND snippet_id = ?';
     SQL_ADD_FAVORITE =
         'INSERT OR IGNORE INTO snippet_favorites (user_id, snippet_id, sort_order) ' +
         'VALUES (?, ?, (SELECT COALESCE(MAX(sort_order) + 1, 0) FROM snippet_favorites WHERE user_id = ?))';
     SQL_REMOVE_FAVORITE = 'DELETE FROM snippet_favorites WHERE user_id = ? AND snippet_id = ?';
-    SQL_UPDATE_FAVORITE_ORDER = 'UPDATE snippet_favorites SET sort_order = ? WHERE snippet_id = ?';
+    SQL_UPDATE_FAVORITE_ORDER = 'UPDATE snippet_favorites SET sort_order = :ord WHERE snippet_id = :sid AND user_id = :uid';
     SQL_GET_LAST_RUN =
         'SELECT snippet_id FROM snippet_runs WHERE executed_by_user_id = ? ORDER BY run_at DESC, id DESC LIMIT 1';
     SQL_GET_LAST_RUN_NO_USER = 'SELECT snippet_id FROM snippet_runs ORDER BY run_at DESC, id DESC LIMIT 1';
@@ -1140,12 +1144,17 @@ end;
 
 procedure TSnippetRepository.MoveFavorite(SnippetID, UserID, NewPosition: Integer);
 var
-    Q: TFDQuery;
+    Q, QUpd: TFDQuery;
     Order: TList<Integer>;
+    // user_id каждой строки для глобального переноса (UserID=0)
+    OrderUsers: TList<Integer>;
+    MovedUserID: Integer;
     I, OldIndex, Target: Integer;
 begin
     Order := TList<Integer>.Create;
+    OrderUsers := TList<Integer>.Create;
     Q := CreateQuery;
+    QUpd := CreateQuery;
     try
         if UserID > 0 then
         begin
@@ -1153,12 +1162,14 @@ begin
             Q.Params[0].AsInteger := UserID;
         end
         else
-            Q.SQL.Text := SQL_GET_FAVORITE_ORDER_ALL;
+            Q.SQL.Text := SQL_GET_FAVORITE_ORDER_ALL_PAIRS;
 
         Q.Open;
         while not Q.Eof do
         begin
             Order.Add(Q.Fields[0].AsInteger);
+            if UserID <= 0 then
+                OrderUsers.Add(Q.Fields[1].AsInteger);
             Q.Next;
         end;
         Q.Close;
@@ -1176,16 +1187,31 @@ begin
             Exit;
 
         Order.Delete(OldIndex);
+        if UserID <= 0 then
+        begin
+            MovedUserID := OrderUsers[OldIndex];
+            OrderUsers.Delete(OldIndex);
+            OrderUsers.Insert(Target, MovedUserID);
+        end;
         Order.Insert(Target, SnippetID);
 
         FConnection.StartTransaction;
         try
-            Q.SQL.Text := SQL_UPDATE_FAVORITE_ORDER;
+            // Отдельный запрос: смена SQL на уже открывавшемся TFDQuery
+            // не пересобирает коллекцию Params, ParamByName не находит
+            QUpd.SQL.Text := SQL_UPDATE_FAVORITE_ORDER;
             for I := 0 to Order.Count - 1 do
             begin
-                Q.Params[0].AsInteger := I;
-                Q.Params[1].AsInteger := Order[I];
-                ExecSQLWithRetry(Q);
+                QUpd.ParamByName('ord').AsInteger := I;
+                QUpd.ParamByName('sid').AsInteger := Order[I];
+                // Перенос в глобальном режиме затрагивает только строки
+                // snippet_id конкретного пользователя (PK user_id+snippet_id
+                // допускает тот же snippet_id в избранном у двух пространств)
+                if UserID > 0 then
+                    QUpd.ParamByName('uid').AsInteger := UserID
+                else
+                    QUpd.ParamByName('uid').AsInteger := OrderUsers[I];
+                ExecSQLWithRetry(QUpd);
             end;
             FConnection.Commit;
         except
@@ -1194,7 +1220,9 @@ begin
         end;
     finally
         Q.Free;
+        QUpd.Free;
         Order.Free;
+        OrderUsers.Free;
     end;
 end;
 
