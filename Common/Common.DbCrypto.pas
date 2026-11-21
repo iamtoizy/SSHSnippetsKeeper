@@ -383,8 +383,13 @@ begin
         raise EDbCryptoError.Create('Export: master key must be exactly 32 bytes');
     if AExportPassword.IsEmpty then
         raise EDbCryptoError.Create('Export: password must not be empty');
-    if AIterations < 1 then
-        raise EDbCryptoError.Create('Export: iteration count must be positive');
+
+    // Границы те же, что при импорте: иначе файл, экспортированный с
+    // ослабленным (или чрезмерным) числом итераций, отвергается при
+    // импорте и ключ оказывается заперт в бесполезном файле
+    if (AIterations < DB_PBKDF2_ITERATIONS_MIN) or
+        (AIterations > DB_PBKDF2_ITERATIONS_MAX) then
+        raise EDbCryptoError.Create('Export: invalid iteration count');
 
     Salt := DbGenerateSalt;
     Nonce := DbGenerateNonce;

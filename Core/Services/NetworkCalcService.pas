@@ -76,17 +76,12 @@ begin
 end;
 
 class function TIPv4Network.StrToIP(const S: string): Cardinal;
-var
-    Octets: TArray<string>;
-    I: Integer;
 begin
-    Result := 0;
-    Octets := S.Split(['.']);
-    if Length(Octets) <> 4 then
-        Exit; // Возвращаем 0 при ошибке (в приложении можно бросить Exception)
-
-    for I := 0 to 3 do
-        Result := Result or (Cardinal(StrToIntDef(Octets[I], 0)) shl ((3 - I) * 8));
+    // Единая строгая валидация с строгой перегрузкой: мусор или октет > 255
+    // дают исключение, а не молча усечённый адрес ('300.300.300.300'
+    // иначе через shl/or превращается в 44.44.44.44)
+    if not StrToIP(S, Result) then
+        raise EArgumentException.CreateFmt('Invalid IPv4 address: "%s"', [S]);
 end;
 
 class function TIPv4Network.IPToStr(AIP: Cardinal): string;
