@@ -8,7 +8,7 @@ uses
     SecurityReport,
     Core.Entities.Snippet,
     Core.Interfaces.Settings,
-    JSONSerializer
+    Common.JsonSerializer
     ;
 
 type
@@ -390,7 +390,7 @@ begin
     Setts := Default(TAppSettings);
     Setts.SecurityScanStrict := True;
 
-    Setts := DSON.fromJson<TAppSettings>(DSON.toJson<TAppSettings>(Setts));
+    Setts := TJsonSerializer.FromJson<TAppSettings>(TJsonSerializer.ToJson<TAppSettings>(Setts));
 
     Assert.IsTrue(Setts.SecurityScanStrict);
     Scanner := TSecurityScanner.Create(TSecurityScanner.ScanModeFromSetting(Setts.SecurityScanStrict));
@@ -404,7 +404,7 @@ var
     Reason: string;
 begin
     // Старый settings.json без нового поля: терпимый режим = прежнее поведение
-    Setts := DSON.fromJson<TAppSettings>('{"TagsMatchAll": true}');
+    Setts := TJsonSerializer.FromJson<TAppSettings>('{"TagsMatchAll": true}');
 
     Assert.IsFalse(Setts.SecurityScanStrict);
     Scanner := TSecurityScanner.Create(TSecurityScanner.ScanModeFromSetting(Setts.SecurityScanStrict));

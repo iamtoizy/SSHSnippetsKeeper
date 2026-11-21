@@ -109,7 +109,7 @@ uses
     ArrayHelper,
     Common.Helpers,
     Common.RegexSafety,
-    JSONSerializer,
+    Common.JsonSerializer,
     System.Generics.Collections,
     System.Hash,
     System.NetEncoding,
@@ -528,7 +528,7 @@ end;
 
 const
     // Единый источник значений дефолтов настроек. Безусловное заполнение
-    // (ApplyDefaults) и восстановление отсутствующего после DSON.fromJson
+    // (ApplyDefaults) и восстановление отсутствующего после FromJson
     // (Load) ссылаются на одни константы, чтобы значения не разъезжались
     // при правках. Guard-условия у блоков разные по замыму: ApplyDefaults
     // перезаписывает всё, Load подставляет только отсутствующее/битое.
@@ -749,7 +749,7 @@ begin
 
     try
         Json := TFile.ReadAllText(TemplatePath, TEncoding.UTF8);
-        FSettings := DSON.fromJson<TAppSettings>(Json);
+        FSettings := TJsonSerializer.FromJson<TAppSettings>(Json);
         SanitizeSettings(FSettings);
         Result := True;
     except
@@ -984,19 +984,19 @@ begin
     try
         JsonString := TFile.ReadAllText(Path, TEncoding.UTF8);
 
-        // TJSONObject.ParseJSONValue возвращает nil на синтаксически битом JSON
-        // (исключения System.JSON не бросает). Без этой проверки битый файл молча
-        // превращался бы в пустой конфиг вместо .corrupt + подстановки шаблона.
+        // Сериализатор возвращает Default(T) на невалидном JSON (SPEC §4),
+        // поэтому битый файл без этой проверки молча превращался бы в пустой
+        // конфиг вместо .corrupt + подстановки шаблона.
         JsonValue := TJSONObject.ParseJSONValue(JsonString);
         if JsonValue = nil then
             raise Exception.Create('settings.json is not valid JSON');
         JsonValue.Free;
 
-        // DSON.fromJson затирает массивы (делает их длину = 0), если они
-        // отсутствуют в загружаемом JSON. Пустой AllowedApplications/AISettings -
+        // FromJson стартует с Default(T): массив, отсутствующий в JSON,
+        // остаётся пустым. Пустой AllowedApplications/AISettings -
         // валидное состояние (пользователь мог удалить все элементы), поэтому
         // дефолты сюда больше не подставляются.
-        FSettings := DSON.fromJson<TAppSettings>(JsonString);
+        FSettings := TJsonSerializer.FromJson<TAppSettings>(JsonString);
         SanitizeSettings(FSettings);
 
         // --- Восстановление пропавших данных (После загрузки) ---
@@ -1183,7 +1183,7 @@ begin
         EncryptAIKeys(SafeSettings);
         EncryptDbKey(SafeSettings);
 
-        JsonString := DSON.toJson<TAppSettings>(SafeSettings);
+        JsonString := TJsonSerializer.ToJson<TAppSettings>(SafeSettings);
 
         // Атомарная замена: целевой файл не исчезает с диска ни на мгновение
         TmpPath := GetSettingsPath + '.tmp';

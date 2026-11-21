@@ -161,7 +161,7 @@
         <DCCReference Include="UI\Forms\MainFormUI.pas">
             <Form>MainForm</Form>
         </DCCReference>
-        <DCCReference Include="ThirdParty\JSONSerializer.pas"/>
+        <DCCReference Include="Common\Common.JsonSerializer.pas"/>
         <DCCReference Include="Data\Data.Database.pas">
             <Form>AppDatabase</Form>
             <DesignClass>TDataModule</DesignClass>

@@ -49,7 +49,7 @@ uses
   System.IOUtils,
   System.SysUtils,
   MainFormUI in 'UI\Forms\MainFormUI.pas' {MainForm},
-  JSONSerializer in 'ThirdParty\JSONSerializer.pas',
+  Common.JsonSerializer in 'Common\Common.JsonSerializer.pas',
    Data.Database in 'Data\Data.Database.pas' {AppDatabase: TDataModule},
    Data.Database.Migrations in 'Data\Data.Database.Migrations.pas',
    Data.Database.Security in 'Data\Data.Database.Security.pas',

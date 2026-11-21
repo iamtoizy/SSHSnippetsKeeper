@@ -7,7 +7,7 @@ uses
     Core.Interfaces.Settings,
     Core.Interfaces.App,
     Common.Settings,
-    JSONSerializer
+    Common.JsonSerializer
     ;
 
 type

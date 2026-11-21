@@ -160,7 +160,7 @@ implementation
 uses
     Common.DbCrypto,
     Data.Database.Security,
-    JSONSerializer,
+    Common.JsonSerializer,
     System.Classes,
     System.IOUtils,
     System.NetEncoding
@@ -428,7 +428,7 @@ begin
 
     S.AISettings.Count := 1;
     S.AISettings.Items[0] := Hub;
-    Json := DSON.toJson<TAppSettings>(S);
+    Json := TJsonSerializer.ToJson<TAppSettings>(S);
     M := nil;
     TFile.WriteAllText(SettingsPath, Json, TEncoding.UTF8);
 

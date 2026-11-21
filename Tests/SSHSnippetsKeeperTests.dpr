@@ -53,7 +53,8 @@ uses
     Tests.AITextCleaner in 'Tests.AITextCleaner.pas',
     Tests.BundleExchange in 'Tests.BundleExchange.pas',
     Tests.CategoryService in 'Tests.CategoryService.pas',
-    Tests.DenyRuleSets in 'Tests.DenyRuleSets.pas'
+    Tests.DenyRuleSets in 'Tests.DenyRuleSets.pas',
+    Tests.JsonSerializer in 'Tests.JsonSerializer.pas'
     ;
 
 var
@@ -121,6 +122,7 @@ begin
         TDUnitX.RegisterTestFixture(TBundleExchangeTests);
         TDUnitX.RegisterTestFixture(TCategoryServiceTests);
         TDUnitX.RegisterTestFixture(TDenyRuleSetsTests);
+        TDUnitX.RegisterTestFixture(TJsonSerializerTests);
         Runner := TDUnitX.CreateRunner([TDUnitXConsoleLogger.Create(False)]);
         Runner.UseRTTI := True;
         Results := Runner.Execute;
