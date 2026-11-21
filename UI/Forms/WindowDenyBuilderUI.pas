@@ -240,20 +240,6 @@ begin
             end;
             Result := True;
         end;
-        Instance.RefreshGenerated;
-        Instance.RefreshPreview;
-
-        Instance.WarmUpPaint;
-        Instance.PrepareGuardedShow;
-
-        if Instance.ShowModal = mrOk then
-        begin
-            if ASingleMode then
-                ANewPattern := Instance.CurrentPattern
-            else
-                ARules := Instance.FRules;
-            Result := True;
-        end;
     finally
         Instance.Free;
     end;
