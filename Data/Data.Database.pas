@@ -169,7 +169,14 @@ begin
         end;
     finally
         if FDConnection.Connected then
+        try
             FDConnection.ExecSQL('PRAGMA foreign_keys = ON');
+        except
+            // Восстановление foreign_keys - best effort: исключение здесь
+            // (например, BUSY при параллельной консольной команде) замаскировало
+            // бы исходную ошибку скрипта. Актуальное состояние флага всё равно
+            // выставляется в ApplyPRAGMA при следующем открытии БД
+        end;
     end;
 
     // PRAGMA user_version = APP_DB_VERSION выставляется в заголовке схемы
@@ -210,6 +217,9 @@ begin
     try
         FDConnection.ExecSQL('INSERT INTO snippet_fts(snippet_fts) VALUES(''optimize'')');
     except
+        // Оптимизация FTS-индекса - best effort: если сниппетов ещё нет
+        // (свежая БД), таблица snippet_fts отсутствует и INSERT упадёт;
+        // это штатный случай, поэтому ошибку молча пропускаем
         on E: EFDDBEngineException do
         begin
         end;

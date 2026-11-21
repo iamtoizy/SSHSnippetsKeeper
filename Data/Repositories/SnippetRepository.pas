@@ -30,7 +30,6 @@ type
         function GetSnippetTags(SnippetID: Integer): TArray<TTagDTO>;
         function GetSnippetsByTag(const TagID: Integer): TArray<TSnippetDTO>;
         function GetSnippetsByTags(const TagIDs: TArray<Integer>; MatchAll: Boolean = False): TArray<TSnippetDTO>;
-        function Search(const Query: string): TArray<TSnippetDTO>;
         function SearchByMaskFTS(const Mask: string; UserID: Integer = 0): TArray<TSnippetDTO>;
         function SearchByMaskSimple(const Mask: string; UserID: Integer = 0): TArray<TSnippetDTO>;
         function SearchAdvanced(const Query: TStructuredQuery; UseFTS: Boolean; UserID: Integer = 0): TArray<TSnippetDTO>;
@@ -91,8 +90,6 @@ const
         'WHERE st.tag_id = ? ' +
         'ORDER BY s.title';
     SQL_SELECT_SNIPPET_TAGS = 'SELECT t.id, t.name FROM tags t JOIN snippet_tags st ON t.id = st.tag_id WHERE st.snippet_id = :SnippetID ORDER BY t.name';
-    SQL_SNIPPET_SEARCH = 'SELECT s.id, s.title, s.category_id, snippet_fts.rank ' + 'FROM snippet_fts ' + 'JOIN snippets s ON s.id = snippet_fts.rowid ' +
-        'WHERE snippet_fts MATCH :search ' + 'ORDER BY rank DESC';
     SQL_RECORD_RUN = 'INSERT INTO snippet_runs (snippet_id, run_at, executed_by_user_id) VALUES (?, strftime(''%s'', ''now''), ?)';
     SQL_RECORD_RUN_NO_USER = 'INSERT INTO snippet_runs (snippet_id, run_at, executed_by_user_id) VALUES (?, strftime(''%s'', ''now''), NULL)';
     SQL_GET_SNIPPET_BY_CATEGORY_ID_WITH_USER_ID = 'SELECT category_id, COUNT(*) AS cnt FROM snippets WHERE user_id = ? GROUP BY category_id';
@@ -678,38 +675,6 @@ begin
         Result := SnippetID;
     finally
         Q.Free;
-    end;
-end;
-
-function TSnippetRepository.Search(const Query: string): TArray<TSnippetDTO>;
-var
-    Q: TFDQuery;
-    List: TList<TSnippetDTO>;
-begin
-    List := TList<TSnippetDTO>.Create;
-    Q := CreateQuery;
-    try
-        Q.SQL.Text := SQL_SNIPPET_SEARCH;
-
-        Q.Params.ParamByName('search').AsString := Query;
-        Q.Open;
-
-        while not Q.Eof do
-        begin
-            var Snippet: TSnippetDTO;
-            // Непронумерованные поля записи не инициализируются компилятором
-            Snippet := Default(TSnippetDTO);
-            Snippet.ID := Q.FieldByName('id').AsInteger;
-            Snippet.Title := Q.FieldByName('title').AsString;
-            Snippet.CategoryID := Q.FieldByName('category_id').AsInteger;
-            List.Add(Snippet);
-            Q.Next;
-        end;
-
-        Result := List.ToArray;
-    finally
-        Q.Free;
-        List.Free;
     end;
 end;
 

@@ -69,7 +69,7 @@ begin
     // и с точными числами.
     if Length(Params) <> Query.Params.Count then
         raise Exception.CreateFmt(
-            'SetQueryParams: в SQL %d параметров, передано %d',
+            TUIStateLoader.GetMessage('DB.QueryParamCountMismatch'),
             [Query.Params.Count, Length(Params)]);
     for I := 0 to High(Params) do
         Query.Params[I].Value := Params[I];

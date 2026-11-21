@@ -1011,7 +1011,13 @@ begin
                 try
                     Script.ExecuteAll;
                 finally
-                    Connection.ExecSQL('PRAGMA foreign_keys = ON');
+                    try
+                        Connection.ExecSQL('PRAGMA foreign_keys = ON');
+                    except
+                        // Восстановление foreign_keys - best effort: исключение
+                        // здесь замаскировало бы исходную ошибку скрипта
+                        // (консоль /newdb всё равно удаляет полусозданный файл)
+                    end;
                 end;
             finally
                 Script.Free;

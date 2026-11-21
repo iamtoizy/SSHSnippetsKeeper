@@ -23,12 +23,14 @@ type
         btnOK: TButton;
         btnCancel: TButton;
         procedure btnOKClick(Sender: TObject);
+        procedure tvCategoriesChange(Sender: TObject; Node: TTreeNode);
         procedure tvCategoriesDblClick(Sender: TObject);
         procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     private
         FCategoryID: Integer;
         procedure BuildTree(PreferredUserID: Integer);
         procedure AddCategoryNode(ParentNode: TTreeNode; const Categories: TArray<TCategoryDTO>; const Cat: TCategoryDTO);
+        procedure UpdateOkState;
     protected
         procedure DoInitialize; override;
     public
@@ -54,6 +56,7 @@ begin
     try
         Form.Initialize(AppContext);
         Form.BuildTree(PreferredUserID);
+        Form.UpdateOkState;
         Result := Form.ShowModal = mrOk;
         if Result then
             CategoryID := Form.CategoryID;
@@ -127,6 +130,14 @@ begin
             AddCategoryNode(Node, Categories, Child);
 end;
 
+procedure TCategorySelectForm.UpdateOkState;
+begin
+    // Пространство (корень дерева, Data <= 0) не является целью переноса:
+    // блокируем OK и ждём выбора конкретной категории
+    btnOK.Enabled := (tvCategories.Selected <> nil)
+        and (Integer(IntPtr(tvCategories.Selected.Data)) > 0);
+end;
+
 procedure TCategorySelectForm.btnOKClick(Sender: TObject);
 begin
     if tvCategories.Selected = nil then
@@ -134,9 +145,17 @@ begin
 
     FCategoryID := Integer(IntPtr(tvCategories.Selected.Data));
     if FCategoryID <= 0 then
+    begin
+        MessagesHandler.ShowInfo(TUIStateLoader.GetMessage('MultiSelect.Move.WorkspaceSelectedInfo'));
         Exit;
+    end;
 
     ModalResult := mrOk;
+end;
+
+procedure TCategorySelectForm.tvCategoriesChange(Sender: TObject; Node: TTreeNode);
+begin
+    UpdateOkState;
 end;
 
 procedure TCategorySelectForm.tvCategoriesDblClick(Sender: TObject);

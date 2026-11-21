@@ -26,6 +26,7 @@ object CategorySelectForm: TCategorySelectForm
     Indent = 19
     ReadOnly = True
     TabOrder = 0
+    OnChange = tvCategoriesChange
     OnDblClick = tvCategoriesDblClick
   end
   object btnOK: TButton
