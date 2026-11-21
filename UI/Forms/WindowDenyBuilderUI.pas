@@ -1,4 +1,4 @@
-unit WindowDenyBuilderUI;
+﻿unit WindowDenyBuilderUI;
 
 interface
 
@@ -358,15 +358,16 @@ begin
     if FUpdating then
         Exit;
 
-    RefreshGenerated;
-    RefreshPreview;
-
-    // Живая привязка редактора к выбранному правилу списка
+    // Живая привязка редактора к выбранному правилу списка - до превью,
+    // иначе превью увидит устаревшее состояние набора (выражение и галка)
     if (FEditingIndex >= 0) and (FEditingIndex <= High(FRules)) then
     begin
         WriteEditorToRule(FEditingIndex);
         UpdateRuleRow(FEditingIndex);
     end;
+
+    RefreshGenerated;
+    RefreshPreview;
 end;
 
 procedure TWindowDenyBuilderDialog.RefreshGenerated;
@@ -388,7 +389,7 @@ procedure TWindowDenyBuilderDialog.RefreshPreview;
 var
     Raw: TArray<TWindowMonitorInfo>;
     Info: TWindowMonitorInfo;
-    PreviewRules: TArray<TGlobalTitleDenyRule>;
+    EvaluateRules: TArray<TGlobalTitleDenyRule>;
     MatchedRule: string;
     Item: TListItem;
     StatusText: string;
@@ -402,17 +403,26 @@ begin
         else
             Raw := nil;
 
-        // Превью оценивает правило как включённое независимо от chkEnabled:
-        // вопрос превью - «что запретит выражение», а не состояние галки
-        SetLength(PreviewRules, 1);
-        PreviewRules[0] := Default(TGlobalTitleDenyRule);
-        PreviewRules[0].Pattern := CurrentPattern;
-        PreviewRules[0].CaseSensitive := chkCase.Checked;
-        PreviewRules[0].Enabled := True;
+        if (not FSingleMode) and (Length(FRules) > 0) then
+        begin
+            // Полный режим: превью показывает фактическое поведение набора -
+            // выключенное правило сразу перестаёт блокировать окна
+            EvaluateRules := FRules;
+        end
+        else
+        begin
+            // Одиночный режим и пустой набор: вопрос превью - «что запретит
+            // выражение из редактора», галка ни на что не влияет
+            SetLength(EvaluateRules, 1);
+            EvaluateRules[0] := Default(TGlobalTitleDenyRule);
+            EvaluateRules[0].Pattern := CurrentPattern;
+            EvaluateRules[0].CaseSensitive := chkCase.Checked;
+            EvaluateRules[0].Enabled := True;
+        end;
 
         for Info in Raw do
         begin
-            if TProcessProfile.EvaluateGlobalDeny(Info.WindowTitle, PreviewRules, MatchedRule) then
+            if TProcessProfile.EvaluateGlobalDeny(Info.WindowTitle, EvaluateRules, MatchedRule) then
                 StatusText := TUIStateLoader.GetMessage('Settings.DenyRulesPreviewBlocked')
             else
                 StatusText := TUIStateLoader.GetMessage('Settings.DenyRulesPreviewPass');
