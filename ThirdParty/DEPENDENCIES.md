@@ -8,7 +8,6 @@
 
 | Файл | Происхождение | Лицензия | Изменения | Статус |
 |---|---|---|---|---|
-| `ArrayHelper.pas` | Willi Kuhnle /ToArrayRecord-хелперы/, из состава стороннего репозитория (точный источник не зафиксирован) | «Licence GNU» (вариант не уточнён) | Используется только `TArrayRecord<T>` (несущий тип настроек) | Внимание: лицензия неоднозначна; вопрос уточнения у автора — отдельная задача, в этой замене не трогался |
 | `Bcrypt.pas` | Delphi-порт bcrypt (внутренние комментар­ии указывают на перевод с C) | Проверить при следующем аудите | Не менялся в этой задаче | Используется прод-кодом |
 
 ## Удалённые
@@ -20,6 +19,15 @@
   `docs\JsonSerializer.FIXTURES.txt` и `Tests\JsonSerializer.pas`. Апстрим
   DSON сохранён вне репозитория (`%TEMP%\rufp\uDSON_upstream.pas`) только для
   справки.
+- `ArrayHelper.pas` — Willi Commer (github.com/WilliCommer/ArrayHelper),
+  шапка «Licence GNU» (вариант не уточнён). Удалён 2026-11-21 в рамках
+  clean-room замены: используется только `TArrayRecord<T>`, собственная
+  реализация живёт в `Common\Common.ArrayRecord.pas`, поведение
+  зафиксировано `docs\ArrayHelper.SPEC.md`, золотые фикстуры —
+  `docs\ArrayHelper.FIXTURES.txt` и `Tests\ArrayRecord.pas`. Апстрим
+  сохранён вне репозитория (`%TEMP%\rufp\dsonprobe\ArrayProbe*.dpr`
+  ссылаются на удалённую копию через junction `C:\temp-links\ssk`
+  только для справки).
 
 ## Связанные документы
 
@@ -27,3 +35,4 @@
   python4delphi, SQLite3MultipleCiphers) с provenance и патчами.
 - `docs\JsonSerializer.SPEC.md` — поведенческая спецификация собственного
   сериализатора.
+- `docs\ArrayHelper.SPEC.md` — поведенческая спецификация `TArrayRecord<T>`.

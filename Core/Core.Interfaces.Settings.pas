@@ -3,7 +3,7 @@ unit Core.Interfaces.Settings;
 interface
 
 uses
-    ArrayHelper,
+    Common.ArrayRecord,
     System.Classes
     ;
 

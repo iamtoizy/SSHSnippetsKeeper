@@ -3,7 +3,7 @@
 interface
 
 uses
-    ArrayHelper,
+    Common.ArrayRecord,
     Core.Interfaces.Settings,
     Winapi.Windows
     ;

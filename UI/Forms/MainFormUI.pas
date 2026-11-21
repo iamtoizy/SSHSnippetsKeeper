@@ -427,7 +427,7 @@ uses
     AllDatabasesFormUI,
     UI.Services.AppStateManager,
     ArchiveBuilderFormUI,
-    ArrayHelper,
+    Common.ArrayRecord,
     ChainEditorFormUI,
     BundleExchange,
     ChainRunnerController,

@@ -1,0 +1,184 @@
+Золотые фикстуры поведенческой пробы TArrayRecord<T> (ThirdParty\ArrayHelper.pas).
+Снято 2026-11-21 программами ArrayProbe / ArrayProbe2 (см. docs\ArrayHelper.SPEC.md).
+Сцены с EXCEPTION — ожидаемое исключение, прогон продолжается (ArrayProbe2).
+
+Верификация замены (2026-11-21): часть 1 совпадает с новой реализацией
+кроме сцен AddRange/InsertRange/IndexOf(comparer) — они в New-пробе помечены
+SKIP (не воспроизводятся: нет call sites, см. SPEC §1); часть 2 (граничные
+случаи, исключения) совпадает байт-в-байт.
+
+=== Часть 1: ArrayProbe (out_arr_old.txt) ===
+=== init
+default-count=0
+default-items-len=0
+=== create-capacity
+cap5:count=5 [
+cap5:  [0]=
+cap5:  [1]=
+cap5:  [2]=
+cap5:  [3]=
+cap5:  [4]=
+cap5:]
+cap5.items-len=5
+=== create-values
+vals:count=3 [
+vals:  [0]=a
+vals:  [1]=b
+vals:  [2]=c
+vals:]
+=== add
+add-ret=0
+add-ret=1
+after:count=2 [
+after:  [0]=x1
+after:  [1]=x2
+after:]
+=== setcount-grow
+grow3:count=3 [
+grow3:  [0]=
+grow3:  [1]=
+grow3:  [2]=
+grow3:]
+grow3.items-len=3
+grow3.item0-empty=True
+=== setcount-shrink
+shrink2:count=2 [
+shrink2:  [0]=a
+shrink2:  [1]=b
+shrink2:]
+=== insert
+insert1:count=3 [
+insert1:  [0]=a
+insert1:  [1]=mid
+insert1:  [2]=b
+insert1:]
+=== insert-head-tail
+ins01:count=4 [
+ins01:  [0]=head
+ins01:  [1]=a
+ins01:  [2]=b
+ins01:  [3]=tail
+ins01:]
+=== delete
+del1:count=2 [
+del1:  [0]=a
+del1:  [1]=c
+del1:]
+del0:count=1 [
+del0:  [0]=c
+del0:]
+=== indexof-contains
+idx-beta=1
+idx-none=-1
+has-beta=True
+has-none=False
+=== indexof-case
+idx-BETA=-1
+idxB-cmp=1
+=== remove
+rm-a=True
+rm1:count=3 [
+rm1:  [0]=b
+rm1:  [1]=a
+rm1:  [2]=c
+rm1:]
+rm-none=False
+rm2:count=3 [
+rm2:  [0]=b
+rm2:  [1]=a
+rm2:  [2]=c
+rm2:]
+=== clear
+cleared:count=0 [
+cleared:]
+items-nil=True
+items-len=0
+=== addrange-open
+ar1:count=4 [
+ar1:  [0]=a
+ar1:  [1]=x
+ar1:  [2]=y
+ar1:  [3]=z
+ar1:]
+=== addrange-record
+ar2:count=6 [
+ar2:  [0]=a
+ar2:  [1]=x
+ar2:  [2]=y
+ar2:  [3]=z
+ar2:  [4]=p
+ar2:  [5]=q
+ar2:]
+=== insertrange-open
+ir1:count=5 [
+ir1:  [0]=a
+ir1:  [1]=X
+ir1:  [2]=Y
+ir1:  [3]=b
+ir1:  [4]=c
+ir1:]
+=== insertrange-record
+ir2:count=7 [
+ir2:  [0]=P1
+ir2:  [1]=P2
+ir2:  [2]=a
+ir2:  [3]=X
+ir2:  [4]=Y
+ir2:  [5]=b
+ir2:  [6]=c
+ir2:]
+=== for-in
+iter:one
+iter:two
+iter:three
+=== default-itemat
+get1=k1
+set1=changed
+after:count=3 [
+after:  [0]=k0
+after:  [1]=changed
+after:  [2]=k2
+after:]
+=== rec-array
+rec:count=2 [
+rec:  [0]=n1/1
+rec:  [1]=n2/2
+rec:]
+rec-del0:count=1 [
+rec-del0:  [0]=n2/2
+rec-del0:]
+=== rtti-view
+type=TArrayRecord<System.string>
+-- properties:
+-- fields:
+  field Items : TRttiRecordField
+-- json-shape-probe:
+=== done
+
+=== Часть 2: ArrayProbe2 (out_arr2_old.txt) ===
+=== delete-bounds
+EXCEPTION: EArgumentOutOfRangeException: Argument out of range
+state-after=3
+=== delete-999
+EXCEPTION: EArgumentOutOfRangeException: Argument out of range
+state-after=3
+=== delete-valid
+del(1) count=2 [0]=a [1]=c
+=== insert-negative
+EXCEPTION: EArgumentOutOfRangeException: Argument out of range
+=== insert-999
+EXCEPTION: EArgumentOutOfRangeException: Argument out of range
+=== setcount-negative
+EXCEPTION: ERangeError: Range check error
+=== getitemat-outofrange
+get(5)=
+=== remove-from-empty
+rm=False
+=== indexof-empty
+idx=-1
+has=False
+=== addifnotcontains
+ain-a=False
+ain-c=True
+count=3
+=== done

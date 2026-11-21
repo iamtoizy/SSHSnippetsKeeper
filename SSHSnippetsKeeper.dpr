@@ -68,7 +68,7 @@ uses
   ChainRepository in 'Data\Repositories\ChainRepository.pas',
   SavedQueryRepository in 'Data\Repositories\SavedQueryRepository.pas',
   RepositoryBase in 'Data\RepositoryBase.pas',
-  ArrayHelper in 'ThirdParty\ArrayHelper.pas',
+  Common.ArrayRecord in 'Common\Common.ArrayRecord.pas',
   WindowHelper in 'Automation\WindowHelper.pas',
   AddEditSnippetFormUI in 'UI\Forms\AddEditSnippetFormUI.pas' {AddEditSnippetForm},
   HintTextEdit in 'UI\Controls\HintTextEdit.pas',

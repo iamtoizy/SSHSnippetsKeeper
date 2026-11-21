@@ -106,7 +106,7 @@ function GetAllDatabasePaths(const Settings: TAppSettings): TArray<string>;
 implementation
 
 uses
-    ArrayHelper,
+    Common.ArrayRecord,
     Common.Helpers,
     Common.RegexSafety,
     Common.JsonSerializer,
