@@ -101,11 +101,23 @@ const
         'WHERE s.user_id = ? ' +
         'ORDER BY st.exec_count DESC, st.last_exec_at DESC ' +
         'LIMIT ?';
+    SQL_GET_TOP_SNIPPETS_ALL =
+        'SELECT ' + SQL_SNIPPET_COLS_S + ' ' +
+        'FROM snippets s ' +
+        'JOIN snippet_stats st ON st.snippet_id = s.id ' +
+        'ORDER BY st.exec_count DESC, st.last_exec_at DESC ' +
+        'LIMIT ?';
     SQL_GET_RECENT_SNIPPETS =
         'SELECT ' + SQL_SNIPPET_COLS_S + ' ' +
         'FROM snippets s ' +
         'JOIN snippet_stats st ON st.snippet_id = s.id ' +
         'WHERE s.user_id = ? ' +
+        'ORDER BY st.last_exec_at DESC ' +
+        'LIMIT ?';
+    SQL_GET_RECENT_SNIPPETS_ALL =
+        'SELECT ' + SQL_SNIPPET_COLS_S + ' ' +
+        'FROM snippets s ' +
+        'JOIN snippet_stats st ON st.snippet_id = s.id ' +
         'ORDER BY st.last_exec_at DESC ' +
         'LIMIT ?';
 
@@ -1045,12 +1057,20 @@ end;
 
 function TSnippetRepository.GetTopSnippets(UserID, Limit: Integer): TArray<TSnippetDTO>;
 begin
-    Result := InternalLoadSnippets(SQL_GET_TOP_SNIPPETS, [UserID, Limit]);
+    // UserID = 0 - режим «Все пространства»: без фильтра по user_id
+    if UserID > 0 then
+        Result := InternalLoadSnippets(SQL_GET_TOP_SNIPPETS, [UserID, Limit])
+    else
+        Result := InternalLoadSnippets(SQL_GET_TOP_SNIPPETS_ALL, [Limit]);
 end;
 
 function TSnippetRepository.GetRecentSnippets(UserID, Limit: Integer): TArray<TSnippetDTO>;
 begin
-    Result := InternalLoadSnippets(SQL_GET_RECENT_SNIPPETS, [UserID, Limit]);
+    // UserID = 0 - режим «Все пространства»: без фильтра по user_id
+    if UserID > 0 then
+        Result := InternalLoadSnippets(SQL_GET_RECENT_SNIPPETS, [UserID, Limit])
+    else
+        Result := InternalLoadSnippets(SQL_GET_RECENT_SNIPPETS_ALL, [Limit]);
 end;
 
 function TSnippetRepository.GetFavorites(UserID: Integer): TArray<TSnippetDTO>;

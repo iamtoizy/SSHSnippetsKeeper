@@ -26,16 +26,42 @@ object WindowDenyBuilderDialog: TWindowDenyBuilderDialog
     Font.Style = [fsBold]
     ParentFont = False
   end
-  object pList: TPanel
+  object pTemplates: TPanel
     Left = 0
     Top = 32
     Width = 520
-    Height = 172
+    Height = 30
     BevelOuter = bvNone
     TabOrder = 0
+    object cbTemplates: TComboBox
+      Left = 8
+      Top = 3
+      Width = 340
+      Height = 23
+      Style = csDropDownList
+      TabOrder = 0
+      OnChange = cbTemplatesChange
+    end
+    object bSaveTemplate: TButton
+      Left = 356
+      Top = 3
+      Width = 156
+      Height = 25
+      Caption = 'SaveTemplate'
+      TabOrder = 1
+      OnClick = bSaveTemplateClick
+    end
+  end
+  object pList: TPanel
+    Left = 0
+    Top = 62
+    Width = 520
+    Height = 142
+    BevelOuter = bvNone
+    TabOrder = 1
     object pListButtons: TPanel
       Left = 0
-      Top = 141
+      Top = 111
       Width = 520
       Height = 31
       Align = alBottom
@@ -64,7 +90,7 @@ object WindowDenyBuilderDialog: TWindowDenyBuilderDialog
       Left = 8
       Top = 0
       Width = 504
-      Height = 138
+      Height = 108
       Columns = <
         item
           Caption = 'Name'
@@ -92,7 +118,7 @@ object WindowDenyBuilderDialog: TWindowDenyBuilderDialog
     Width = 520
     Height = 262
     BevelOuter = bvNone
-    TabOrder = 1
+    TabOrder = 2
     object leName: TLabeledEdit
       Left = 12
       Top = 26
@@ -190,7 +216,7 @@ object WindowDenyBuilderDialog: TWindowDenyBuilderDialog
     Width = 520
     Height = 169
     BevelOuter = bvNone
-    TabOrder = 2
+    TabOrder = 3
     object lvPreview: TListView
       Left = 8
       Top = 4
@@ -230,7 +256,7 @@ object WindowDenyBuilderDialog: TWindowDenyBuilderDialog
     Height = 41
     Align = alBottom
     BevelOuter = bvNone
-    TabOrder = 3
+    TabOrder = 4
     object bOK: TButton
       Left = 282
       Top = 8

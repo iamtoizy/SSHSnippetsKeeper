@@ -739,10 +739,16 @@ begin
     Item := lvQuickResults.Selected;
     if Item = nil then Exit;
 
-    Snippet.ID := TSnippetViewData(Item.Data).ID;
-    Snippet.Title := TSnippetViewData(Item.Data).Title;
-    Snippet.Content := TSnippetViewData(Item.Data).Content;
-    Snippet.Comment := TSnippetViewData(Item.Data).Comment;
+    // DTO из БД вместо ручной сборки: нужен UserID владельца — статистика
+    // запуска пишется в пространство владельца сниппета, а не в активный
+    // фильтр HUD-поиска (глобальный хоткей показывает «Все пространства»)
+    Snippet := FSnippetService.GetSnippetByID(TSnippetViewData(Item.Data).ID);
+    if Snippet.ID = 0 then
+    begin
+        // Сниппет удалён после обновления списка: тихо закрываем HUD
+        Close;
+        Exit;
+    end;
 
     if IsWindow(FTargetHWND) then
     begin
@@ -766,7 +772,7 @@ begin
 
     Hide;
 
-    Runner := TSnippetRunner.Create(FUserID, AppContext);
+    Runner := TSnippetRunner.Create(Snippet.UserID, AppContext);
     try
         if IsWindow(FTargetHWND) then
             Runner.ExecuteSnippetInWindow(Snippet, FTargetHWND)
@@ -776,6 +782,7 @@ begin
         Runner.Free;
     end;
 end;
+
 
 procedure TQuickSearchForm.UpdateResults;
 var

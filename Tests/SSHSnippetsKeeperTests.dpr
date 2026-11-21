@@ -52,7 +52,8 @@ uses
     Tests.TypingGuard in 'Tests.TypingGuard.pas',
     Tests.AITextCleaner in 'Tests.AITextCleaner.pas',
     Tests.BundleExchange in 'Tests.BundleExchange.pas',
-    Tests.CategoryService in 'Tests.CategoryService.pas'
+    Tests.CategoryService in 'Tests.CategoryService.pas',
+    Tests.DenyRuleSets in 'Tests.DenyRuleSets.pas'
     ;
 
 var
@@ -119,6 +120,7 @@ begin
         TDUnitX.RegisterTestFixture(TAITextCleanerTests);
         TDUnitX.RegisterTestFixture(TBundleExchangeTests);
         TDUnitX.RegisterTestFixture(TCategoryServiceTests);
+        TDUnitX.RegisterTestFixture(TDenyRuleSetsTests);
         Runner := TDUnitX.CreateRunner([TDUnitXConsoleLogger.Create(False)]);
         Runner.UseRTTI := True;
         Results := Runner.Execute;

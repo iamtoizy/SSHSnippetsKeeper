@@ -2057,9 +2057,9 @@ begin
     begin
         case CatID of
             -1:
-                Snippets := AppContext.SnippetService.GetTopSnippets(FUserID, 10);
+                Snippets := AppContext.SnippetService.GetTopSnippets(FFilterUserID, 10);
             -2:
-                Snippets := AppContext.SnippetService.GetRecentSnippets(FUserID, 10);
+                Snippets := AppContext.SnippetService.GetRecentSnippets(FFilterUserID, 10);
             -3:
                 Snippets := AppContext.SnippetService.GetFavorites(FFilterUserID);
         else
@@ -3201,6 +3201,7 @@ procedure TMainForm.actRunSnippetExecute(Sender: TObject);
 var
     Item: TListItem;
     Runner: TSnippetRunner;
+    Snip: TSnippetDTO;
 begin
     if TChainRunner.IsChainRunning then
         Exit;
@@ -3209,10 +3210,16 @@ begin
     if Item = nil then
         Exit;
 
-    Runner := TSnippetRunner.Create(FUserID, AppContext);
+    Snip := ExtractSnippetByListItem(Item);
+    if Snip.ID = 0 then
+        Exit;
+
+    // Исполнитель = пространство сниппета (как в цепочках и хоткеях):
+    // статистика запусков всегда пишется в пространство владельца
+    Runner := TSnippetRunner.Create(Snip.UserID, AppContext);
     Runner.OnRunRecorded := UpdateSnippetLastRunRow;
     try
-        Runner.ExecuteSnippet(ExtractSnippetByListItem(Item));
+        Runner.ExecuteSnippet(Snip);
     finally
         Runner.Free;
     end;
@@ -3222,6 +3229,7 @@ procedure TMainForm.actDryRunSnippetExecute(Sender: TObject);
 var
     Item: TListItem;
     Runner: TSnippetRunner;
+    Snip: TSnippetDTO;
 begin
     if TChainRunner.IsChainRunning then
         Exit;
@@ -3230,10 +3238,15 @@ begin
     if Item = nil then
         Exit;
 
-    Runner := TSnippetRunner.Create(FUserID, AppContext);
+    Snip := ExtractSnippetByListItem(Item);
+    if Snip.ID = 0 then
+        Exit;
+
+    // DryRun не пишет статистику, но контекст требует UserID: владельца сниппета
+    Runner := TSnippetRunner.Create(Snip.UserID, AppContext);
     Runner.OnRunRecorded := UpdateSnippetLastRunRow;
     try
-        Runner.DryRunSnippet(ExtractSnippetByListItem(Item));
+        Runner.DryRunSnippet(Snip);
     finally
         Runner.Free;
     end;
@@ -3762,10 +3775,28 @@ begin
 end;
 
 procedure TMainForm.SetUserFilter(UserID: Integer);
+var
+    Setts: TAppSettings;
 begin
     FFilterUserID := UserID;
     FCategoryTree.FilterUserID := UserID;
     GetSearchEngine.SetUserFilter(UserID);
+
+    // FUserID следует за фильтром: конкретное пространство - его ID, «Все» -
+    // seeded-пространство 1 как fallback для создающих операций и запусков.
+    // Читатели Топ/Недавних/избранного идут через FFilterUserID напрямую
+    if UserID > 0 then
+        FUserID := UserID
+    else
+        FUserID := WORKSPACE_SEEDED_USER_ID;
+    FCategoryTree.DefaultUserID := FUserID;
+
+    // Запоминаем выбор: восстановится в LoadUsersToComboBox при следующем
+    // старте с этой базой или после менеджера пространств
+    Setts := AppContext.SettingsManager.Data;
+    Setts.UISettings.LastWorkspaceID := UserID;
+    AppContext.SettingsManager.Data := Setts;
+    AppContext.SettingsManager.Save;
 
     // 1. Сначала перестраиваем дерево категорий (слева) для нового пространства
     ReloadUI(PRESERVE_CATEGORY_EMPTY_ID);
@@ -3863,6 +3894,7 @@ procedure TMainForm.LoadUsersToComboBox;
 var
     Users: TArray<TUserDTO>;
     User: TUserDTO;
+    SavedID, I: Integer;
 begin
     cbUser.Items.BeginUpdate;
     try
@@ -3871,7 +3903,19 @@ begin
         Users := AppContext.UserService.GetAllUsers;
         for User in Users do
             cbUser.Items.AddObject(User.Name, TObject(Integer(User.ID)));
+
+        // Восстановление последнего выбранного пространства: сохранённый ID
+        // ищем в списке; пропавший workspace или «Все» (0) даёт первый пункт.
+        // bManageWorkspacesClick и открытие БД проходят через эту же точку
+        SavedID := AppContext.SettingsManager.Data.UISettings.LastWorkspaceID;
         cbUser.ItemIndex := 0;
+        if SavedID <> 0 then
+            for I := 0 to cbUser.Items.Count - 1 do
+                if Integer(IntPtr(cbUser.Items.Objects[I])) = SavedID then
+                begin
+                    cbUser.ItemIndex := I;
+                    Break;
+                end;
     finally
         cbUser.Items.EndUpdate;
     end;

@@ -44,6 +44,9 @@ type
         chkEnabled: TCheckBox;
         lePattern: TLabeledEdit;
         lbHint: TLabel;
+        pTemplates: TPanel;
+        cbTemplates: TComboBox;
+        bSaveTemplate: TButton;
         pPreview: TPanel;
         lvPreview: TListView;
         lbPreviewEmpty: TLabel;
@@ -53,6 +56,8 @@ type
         procedure bAddClick(Sender: TObject);
         procedure bCaptureClick(Sender: TObject);
         procedure bDeleteClick(Sender: TObject);
+        procedure bSaveTemplateClick(Sender: TObject);
+        procedure cbTemplatesChange(Sender: TObject);
         procedure cbModeChange(Sender: TObject);
         procedure chkCaseClick(Sender: TObject);
         procedure chkEnabledClick(Sender: TObject);
@@ -67,6 +72,8 @@ type
     FEditingIndex: Integer;
     FUpdating: Boolean;
     FColFitter: TListViewColumnFitter;
+    FDirty: Boolean;
+    FActiveTemplateName: string;
         function CurrentMode: TTitlePatternMode;
         function CurrentPattern: string;
         function BuildPattern(const AText: string; AMode: TTitlePatternMode): string;
@@ -80,6 +87,12 @@ type
         procedure EditorChanged;
         procedure RefreshGenerated;
         procedure RefreshPreview;
+        procedure MarkDirty;
+        procedure LoadTemplatesCombo(const ASelectName: string);
+        function HasUnsavedChanges: Boolean;
+        function PromptSaveTemplate: Boolean;
+        procedure ApplyTemplate(const AName: string);
+        procedure SaveActiveTemplateName;
         class function RunDialog(AOwner: TComponent; AppContext: IAppContext;
             ASingleMode: Boolean; const APattern: string;
             var ARules: TArray<TGlobalTitleDenyRule>;
@@ -146,13 +159,15 @@ begin
         Instance.Initialize(AppContext);
         Instance.FSingleMode := ASingleMode;
         Instance.FEditingIndex := -1;
+        Instance.FDirty := False;
         Instance.FColFitter := TListViewColumnFitter.Create(Instance, Instance.lvPreview);
 
         if ASingleMode then
         begin
             Instance.Caption := TUIStateLoader.GetMessage('Settings.DenyRulesSingleTitle');
             Instance.lblTitle.Caption := TUIStateLoader.GetMessage('Settings.DenyRulesSingleTitle');
-            // Список правил скрывается, блок редактора поднимается наверх
+            // Список правил и панель шаблонов скрываются, редактор поднимается наверх
+            Instance.pTemplates.Visible := False;
             Instance.pList.Visible := False;
             Instance.pEditor.Top := 32;
             Instance.pPreview.Top := 298;
@@ -162,6 +177,9 @@ begin
         begin
             Instance.Caption := TUIStateLoader.GetMessage('Settings.DenyRulesTitle');
             Instance.lblTitle.Caption := TUIStateLoader.GetMessage('Settings.DenyRulesTitle');
+            Instance.pList.Top := 62;
+            Instance.pEditor.Top := 204;
+            Instance.pPreview.Top := 470;
         end;
 
         Instance.leName.EditLabel.Caption := TUIStateLoader.GetMessage('Settings.DenyRulesName');
@@ -183,19 +201,45 @@ begin
         Instance.lvRules.Columns[2].Caption := TUIStateLoader.GetMessage('Settings.DenyRulesColEnabled');
         Instance.lvPreview.Columns[0].Caption := TUIStateLoader.GetMessage('Settings.DenyRulesPreviewColTitle');
         Instance.lvPreview.Columns[1].Caption := TUIStateLoader.GetMessage('Settings.DenyRulesPreviewColStatus');
+        Instance.bSaveTemplate.Caption := TUIStateLoader.GetMessage('Settings.DenySetsSaveBtn');
         Instance.bOK.Caption := TUIStateLoader.GetMessage('Common.OK');
         Instance.bCancel.Caption := TUIStateLoader.GetMessage('Common.Cancel');
 
         if ASingleMode then
-            Instance.leText.Text := APattern
+        begin
+            Instance.leText.Text := APattern;
+            Instance.pTemplates.Visible := False;
+        end
         else
         begin
             Instance.FRules := Copy(ARules, 0, Length(ARules));
+            Instance.FActiveTemplateName :=
+                AppContext.SettingsManager.Data.ActiveDenyRuleSet;
+            Instance.LoadTemplatesCombo(Instance.FActiveTemplateName);
             Instance.RebuildRuleList;
             if Length(Instance.FRules) > 0 then
                 Instance.lvRules.ItemIndex := 0;
         end;
 
+        Instance.RefreshGenerated;
+        Instance.RefreshPreview;
+
+        Instance.WarmUpPaint;
+        Instance.PrepareGuardedShow;
+
+        if Instance.ShowModal = mrOk then
+        begin
+            if ASingleMode then
+                ANewPattern := Instance.CurrentPattern
+            else
+            begin
+                ARules := Instance.FRules;
+                // Запоминаем, какой шаблон был активен при закрытии: при
+                // следующем открытии диалога комбо подсветит его
+                Instance.SaveActiveTemplateName;
+            end;
+            Result := True;
+        end;
         Instance.RefreshGenerated;
         Instance.RefreshPreview;
 
@@ -366,8 +410,14 @@ begin
         UpdateRuleRow(FEditingIndex);
     end;
 
+    MarkDirty;
     RefreshGenerated;
     RefreshPreview;
+end;
+
+procedure TWindowDenyBuilderDialog.MarkDirty;
+begin
+    FDirty := True;
 end;
 
 procedure TWindowDenyBuilderDialog.RefreshGenerated;
@@ -518,6 +568,7 @@ begin
         FUpdating := False;
     end;
     FEditingIndex := NewIndex;
+    MarkDirty;
 end;
 
 procedure TWindowDenyBuilderDialog.bDeleteClick(Sender: TObject);
@@ -540,6 +591,7 @@ begin
 
     FEditingIndex := -1;
     RebuildRuleList;
+    MarkDirty;
     RefreshGenerated;
     RefreshPreview;
 end;
@@ -547,6 +599,208 @@ end;
 procedure TWindowDenyBuilderDialog.bCaptureClick(Sender: TObject);
 begin
     RefreshPreview;
+end;
+
+procedure TWindowDenyBuilderDialog.LoadTemplatesCombo(const ASelectName: string);
+var
+    Setts: TAppSettings;
+    I, SelIdx: Integer;
+begin
+    // Полный режим: «Ничего не запрещено» (нулевой объект) + имена шаблонов.
+    // Одиночный режим комбо не показывает: панель скрыта вместе с pList
+    cbTemplates.Items.BeginUpdate;
+    try
+        cbTemplates.Clear;
+        cbTemplates.Items.AddObject(
+            TUIStateLoader.GetMessage('Settings.DenySetsEmptyItem'), TObject(0));
+        Setts := AppContext.SettingsManager.Data;
+        for I := 0 to High(Setts.DenyRuleSets) do
+            cbTemplates.Items.AddObject(Setts.DenyRuleSets[I].Name,
+                TObject(I + 1));
+
+        SelIdx := 0;
+        if ASelectName <> '' then
+            for I := 0 to cbTemplates.Items.Count - 1 do
+                if SameText(cbTemplates.Items[I], ASelectName) then
+                begin
+                    SelIdx := I;
+                    Break;
+                end;
+        cbTemplates.ItemIndex := SelIdx;
+    finally
+        cbTemplates.Items.EndUpdate;
+    end;
+end;
+
+function TWindowDenyBuilderDialog.HasUnsavedChanges: Boolean;
+begin
+    Result := FDirty;
+end;
+
+function TWindowDenyBuilderDialog.PromptSaveTemplate: Boolean;
+var
+    Setts: TAppSettings;
+    NewName: string;
+    ExistingIdx, I: Integer;
+    NewSet: TDenyRuleSet;
+begin
+    Result := False;
+
+    NewName := '';
+    if not MessagesHandler.AskInput(
+        TUIStateLoader.GetMessage('Settings.DenySetsSaveTitle'),
+        TUIStateLoader.GetMessage('Settings.DenySetsSavePrompt'),
+        NewName) then
+        Exit;
+
+    NewName := Trim(NewName);
+    if NewName = '' then
+        Exit;
+
+    Setts := AppContext.SettingsManager.Data;
+
+    // Повторное сохранение под существующим именем = перезапись шаблона
+    ExistingIdx := -1;
+    for I := 0 to High(Setts.DenyRuleSets) do
+        if SameText(Setts.DenyRuleSets[I].Name, NewName) then
+        begin
+            ExistingIdx := I;
+            Break;
+        end;
+
+    NewSet := Default(TDenyRuleSet);
+    NewSet.Name := NewName;
+    // Копия правил: шаблон - снимок, не ссылка на живой набор
+    NewSet.Rules := Copy(FRules, 0, Length(FRules));
+
+    if ExistingIdx >= 0 then
+        Setts.DenyRuleSets[ExistingIdx] := NewSet
+    else
+    begin
+        SetLength(Setts.DenyRuleSets, Length(Setts.DenyRuleSets) + 1);
+        Setts.DenyRuleSets[High(Setts.DenyRuleSets)] := NewSet;
+    end;
+
+    Setts.ActiveDenyRuleSet := NewName;
+    AppContext.SettingsManager.Data := Setts;
+    AppContext.SettingsManager.Save;
+
+    FActiveTemplateName := NewName;
+    FDirty := False;
+    LoadTemplatesCombo(NewName);
+    Result := True;
+end;
+
+procedure TWindowDenyBuilderDialog.ApplyTemplate(const AName: string);
+var
+    Setts: TAppSettings;
+    I, SetIdx: Integer;
+begin
+    Setts := AppContext.SettingsManager.Data;
+    SetIdx := -1;
+    for I := 0 to High(Setts.DenyRuleSets) do
+        if SameText(Setts.DenyRuleSets[I].Name, AName) then
+        begin
+            SetIdx := I;
+            Break;
+        end;
+    if SetIdx < 0 then
+        Exit;
+
+    // Копия правил шаблона в редактор; активное имя запоминаем, чтобы
+    // bOK мог сохранить выбор ActiveDenyRuleSet
+    FRules := Copy(Setts.DenyRuleSets[SetIdx].Rules, 0,
+        Length(Setts.DenyRuleSets[SetIdx].Rules));
+    FActiveTemplateName := Setts.DenyRuleSets[SetIdx].Name;
+    FEditingIndex := -1;
+
+    FUpdating := True;
+    try
+        RebuildRuleList;
+        if Length(FRules) > 0 then
+            lvRules.ItemIndex := 0;
+    finally
+        FUpdating := False;
+    end;
+
+    FDirty := False;
+    RefreshGenerated;
+    RefreshPreview;
+end;
+
+procedure TWindowDenyBuilderDialog.bSaveTemplateClick(Sender: TObject);
+begin
+    PromptSaveTemplate;
+end;
+
+procedure TWindowDenyBuilderDialog.SaveActiveTemplateName;
+var
+    Setts: TAppSettings;
+begin
+    Setts := AppContext.SettingsManager.Data;
+    Setts.ActiveDenyRuleSet := FActiveTemplateName;
+    AppContext.SettingsManager.Data := Setts;
+    AppContext.SettingsManager.Save;
+end;
+
+procedure TWindowDenyBuilderDialog.cbTemplatesChange(Sender: TObject);
+var
+    Name: string;
+    Idx: Integer;
+    Confirmed: Boolean;
+begin
+    if FUpdating then
+        Exit;
+    if cbTemplates.ItemIndex < 0 then
+        Exit;
+
+    Idx := Integer(IntPtr(cbTemplates.Items.Objects[cbTemplates.ItemIndex]));
+
+    // Пункт 0 - «Ничего не запрещено»: очистка списка правил
+    if Idx = 0 then
+        Name := ''
+    else
+        Name := cbTemplates.Items[cbTemplates.ItemIndex];
+
+    // Переключение с несохранёнными правками требует подтверждения:
+    // текущий набор не записан в шаблон и будет потерян
+    if HasUnsavedChanges then
+    begin
+        Confirmed := MessagesHandler.AskWarning(
+            TUIStateLoader.GetMessage('Settings.DenySetsSwitchConfirm'),
+            TUIStateLoader.GetMessage('Common.Warning'));
+        if not Confirmed then
+        begin
+            FUpdating := True;
+            try
+                if FActiveTemplateName <> '' then
+                    LoadTemplatesCombo(FActiveTemplateName)
+                else
+                    cbTemplates.ItemIndex := 0;
+            finally
+                FUpdating := False;
+            end;
+            Exit;
+        end;
+    end;
+
+    if Name = '' then
+    begin
+        FRules := nil;
+        FActiveTemplateName := '';
+        FEditingIndex := -1;
+        FUpdating := True;
+        try
+            RebuildRuleList;
+        finally
+            FUpdating := False;
+        end;
+        FDirty := False;
+        RefreshGenerated;
+        RefreshPreview;
+    end
+    else
+        ApplyTemplate(Name);
 end;
 
 procedure TWindowDenyBuilderDialog.lvPreviewDblClick(Sender: TObject);

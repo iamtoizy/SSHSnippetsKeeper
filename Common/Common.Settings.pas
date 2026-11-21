@@ -767,9 +767,13 @@ end;
 procedure TSettingsManager.SanitizeSettings(var ASettings: TAppSettings);
 var
     I, J, K, Kept, DroppedApps, DroppedItems, DroppedRules: Integer;
+    DroppedSets: Integer;
+    Found: Boolean;
+    Duplicate: Boolean;
     Classes: TArray<string>;
     ExeName, Pattern: string;
     DenyRule: TGlobalTitleDenyRule;
+    DenySet: TDenyRuleSet;
 
     function TryCompileRegex(const APattern: string): Boolean;
     var
@@ -842,6 +846,70 @@ begin
     end;
     SetLength(ASettings.GlobalTitleDenyRules.Items, Kept);
 
+    // DenyRuleSets: те же инварианты, что для GlobalTitleDenyRules, плюс
+    // требование уникального непустого имени шаблона (первый дубликат
+    // выживает). Активное имя, оставшееся без шаблона, сбрасывается
+    Kept := 0;
+    DroppedSets := 0;
+    for I := 0 to High(ASettings.DenyRuleSets) do
+    begin
+        DenySet := ASettings.DenyRuleSets[I];
+        DenySet.Name := Trim(DenySet.Name);
+
+        if DenySet.Name = '' then
+        begin
+            Inc(DroppedSets);
+            Continue;
+        end;
+
+        Duplicate := False;
+        for J := 0 to Kept - 1 do
+            if SameText(ASettings.DenyRuleSets[J].Name, DenySet.Name) then
+            begin
+                Duplicate := True;
+                Break;
+            end;
+        if Duplicate then
+        begin
+            Inc(DroppedSets);
+            Continue;
+        end;
+
+        K := 0;
+        for J := 0 to High(DenySet.Rules) do
+        begin
+            DenyRule := DenySet.Rules[J];
+            DenyRule.Name := Trim(DenyRule.Name);
+            DenyRule.Pattern := Trim(DenyRule.Pattern);
+            if (DenyRule.Pattern <> '') and TryCompileRegex(DenyRule.Pattern) then
+            begin
+                DenySet.Rules[K] := DenyRule;
+                Inc(K);
+            end
+            else
+                Inc(DroppedRules);
+        end;
+        SetLength(DenySet.Rules, K);
+
+        ASettings.DenyRuleSets[Kept] := DenySet;
+        Inc(Kept);
+    end;
+    SetLength(ASettings.DenyRuleSets, Kept);
+
+    ASettings.ActiveDenyRuleSet := Trim(ASettings.ActiveDenyRuleSet);
+    if ASettings.ActiveDenyRuleSet <> '' then
+    begin
+        Found := False;
+        for I := 0 to High(ASettings.DenyRuleSets) do
+            if SameText(ASettings.DenyRuleSets[I].Name, ASettings.ActiveDenyRuleSet) then
+            begin
+                Found := True;
+                Break;
+            end;
+        if not Found then
+            ASettings.ActiveDenyRuleSet := '';
+    end;
+
     // AISettings
     Kept := 0;
     for I := 0 to High(ASettings.AISettings.Items) do
@@ -884,9 +952,10 @@ begin
     end;
     SetLength(ASettings.AISettings.Items, Kept);
 
-    if (DroppedApps > 0) or (DroppedItems > 0) or (DroppedRules > 0) then
-        LogMsg(Format('TSettingsManager.Sanitize: dropped %d app(s), %d AI item(s), %d deny rule(s)',
-            [DroppedApps, DroppedItems, DroppedRules]));
+    if (DroppedApps > 0) or (DroppedItems > 0) or (DroppedRules > 0) or
+        (DroppedSets > 0) then
+        LogMsg(Format('TSettingsManager.Sanitize: dropped %d app(s), %d AI item(s), %d deny rule(s), %d deny set(s)',
+            [DroppedApps, DroppedItems, DroppedRules, DroppedSets]));
 end;
 
 // =============================================================================
@@ -1078,6 +1147,19 @@ var
     // Copy() создаёт новый массив - ссылка в копии заменяется, оригинал
     // в FSettings остаётся нетронутым
     procedure DeepCopyArrays(var ATarget: TAppSettings);
+
+        // Rules внутри шаблона - тоже динамический массив: Copy() внешнего
+        // массива делит вложенные Rules с оригиналом. Шифрование их не
+        // трогает, но глубокая копия гарантирует независимость копии
+        procedure DeepCopyDenyRuleSets;
+        var
+            K: Integer;
+        begin
+            for K := 0 to High(ATarget.DenyRuleSets) do
+                ATarget.DenyRuleSets[K].Rules :=
+                    Copy(FSettings.DenyRuleSets[K].Rules);
+        end;
+
     begin
         ATarget.AllowedApplications.Items :=
             Copy(FSettings.AllowedApplications.Items);
@@ -1089,6 +1171,8 @@ var
             Copy(FSettings.DbProfiles.Items);
         ATarget.RecentDatabases.Items :=
             Copy(FSettings.RecentDatabases.Items);
+        ATarget.DenyRuleSets := Copy(FSettings.DenyRuleSets);
+        DeepCopyDenyRuleSets;
     end;
 
 begin

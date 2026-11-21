@@ -37,6 +37,9 @@ type
         SnippetListColumns: Integer;
         // Маркер инициализации: False = старый settings.json без маски колонок
         SnippetListColumnsDefined: Boolean;
+        // Последнее выбранное рабочее пространство (cbUser): 0 = «Все пространства».
+        // Восстанавливается при загрузке БД; несуществующий ID молча даёт «Все»
+        LastWorkspaceID: Integer;
     end;
 
     TWindowHelperNode = record
@@ -66,6 +69,14 @@ type
         Pattern: string;         // Regex заголовка окна
         CaseSensitive: Boolean;  // False = сравнение без учёта регистра
         Enabled: Boolean;
+    end;
+
+    // Именованный шаблон deny-правил: копия набора правил для повторного
+    // использования в конструкторе. Активный набор не связан с текущими
+    // GlobalTitleDenyRules: шаблон - только заготовка для редактора
+    TDenyRuleSet = record
+        Name: string;                          // Уникальное имя шаблона
+        Rules: TArray<TGlobalTitleDenyRule>;   // Копия правил на момент сохранения
     end;
 
     TAIParams = record
@@ -193,6 +204,11 @@ type
         AllowedApplications: TArrayRecord<TAllowedApplicationsItem>;
         // Глобальный deny-набор заголовков окон (поверх всех профилей)
         GlobalTitleDenyRules: TArrayRecord<TGlobalTitleDenyRule>;
+        // Сохранённые шаблоны deny-правил + имя последнего шаблона,
+        // применённого в конструкторе (пусто = не выбран). Не связан жёстко
+        // с GlobalTitleDenyRules: черновик настроек применяется отдельно
+        DenyRuleSets: TArray<TDenyRuleSet>;
+        ActiveDenyRuleSet: string;
         AISettings: TArrayRecord<TAIHub>;
         CurrentLanguage: string;
         ChmodPresets: TArray<TChmodPreset>;

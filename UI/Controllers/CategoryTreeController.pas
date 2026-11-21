@@ -27,6 +27,9 @@ const
     // Секция appstate.json с состоянием дерева, скоуп по файлу БД:
     // {"version":1,"databases":{"<путь БД>":{"expanded":[ключи узлов],"selected":"ключ выделенного узла"}}}
     TREE_STATE_SECTION = 'tree';
+    // Seeded-пространство «Local User»: fallback FUserID при режиме
+    // «Все пространства» для создающих операций и записи исполнителя запусков
+    WORKSPACE_SEEDED_USER_ID = 1;
 
 type
     // Логика дерева категорий: предикаты узлов, разрешение workspace,
