@@ -29,6 +29,8 @@ type
         [Test]
         procedure StructuralMiss_KindInvalidStructure;
         [Test]
+        procedure MessagesRootMissing_RecordsInvalidStructure;
+        [Test]
         procedure FormatError_KindFormatError;
         [Test]
         procedure ExistingKey_NoIssue;
@@ -129,6 +131,22 @@ begin
     Issues := TUIStateLoader.TakePendingLocalizationIssues;
     Assert.AreEqual<Integer>(1, Length(Issues));
     Assert.AreEqual('A.C.D', Issues[0].Key);
+    Assert.AreEqual(Ord(likInvalidStructure), Ord(Issues[0].Kind));
+end;
+
+procedure TLocalizationDiagnosticsTests.MessagesRootMissing_RecordsInvalidStructure;
+var
+    Text: string;
+    Issues: TArray<TLocalizationIssue>;
+begin
+    TUIStateLoader.LoadLanguageFile(WriteLanguageFile('noroot', '{"Messages": "not-an-object"}'));
+
+    Text := TUIStateLoader.GetMessage('Known.Text');
+    Assert.IsTrue(Text.StartsWith('[ERROR: Root node'));
+
+    Issues := TUIStateLoader.TakePendingLocalizationIssues;
+    Assert.AreEqual<Integer>(1, Length(Issues));
+    Assert.AreEqual('Known.Text', Issues[0].Key);
     Assert.AreEqual(Ord(likInvalidStructure), Ord(Issues[0].Kind));
 end;
 

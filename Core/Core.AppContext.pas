@@ -272,6 +272,13 @@ begin
     BgUserRepo := TUserRepository.Create(BgConnection);
     Result := TSnippetService.Create(BgSnippetRepo, BgCategoryRepo, BgTagRepo, BgUserRepo);
 
+    // Та же политика, что в CreateIsolatedContext: без busy_timeout фоновая
+    // запись падает мгновенным SQLITE_BUSY при активном главном потоке,
+    // а выключенные foreign_keys дают расхождение с полноценным фоном
+    BgConnection.ExecSQL('PRAGMA foreign_keys = ON;');
+    BgConnection.ExecSQL('PRAGMA journal_mode = WAL;');
+    BgConnection.ExecSQL('PRAGMA busy_timeout = 5000;');
+
     BackgroundConnection := BgConnection;
 end;
 

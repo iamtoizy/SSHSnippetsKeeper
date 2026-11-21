@@ -305,9 +305,14 @@ begin
     Snapshot := GCachedLanguageData;
     if not Assigned(Snapshot) then Exit;
 
-    // 1. Входим в корень "Messages"
+    // 1. Входим в корень "Messages"; отсутствие узла - структурный промах,
+    // чтобы целиком сломанный файл тоже попадал в отчёт диагностики
     MessagesVal := Snapshot.GetValue('Messages');
-    if not (MessagesVal is TJSONObject) then Exit;
+    if not (MessagesVal is TJSONObject) then
+    begin
+        RecordLocalizationIssue(BasePath, likInvalidStructure);
+        Exit;
+    end;
 
     CurrentObj := TJSONObject(MessagesVal);
     Tokens := BasePath.Split(['.']);
@@ -386,11 +391,13 @@ begin
         Exit;
     end;
 
-    // 1. Входим в корневой узел "Messages"
+    // 1. Входим в корневой узел "Messages": его отсутствие - не синтаксическая
+    // ошибка файла (парсинг уже прошёл), а промах структуры, как и битый путь
     MessagesVal := Snapshot.GetValue('Messages');
     if not (MessagesVal is TJSONObject) then
     begin
         Result := '[ERROR: Root node "Messages" is missing or not an object]';
+        RecordLocalizationIssue(MessageKey, likInvalidStructure);
         Exit;
     end;
 
