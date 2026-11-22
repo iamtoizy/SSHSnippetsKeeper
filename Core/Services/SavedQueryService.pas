@@ -19,6 +19,7 @@ type
         function GetSavedQueryByID(ID: Integer): TSavedQueryDTO;
         function CreateSavedQuery(UserID: Integer; const Name, QueryText: string): Integer;
         procedure RenameSavedQuery(ID: Integer; const NewName: string);
+        procedure UpdateSavedQuery(ID: Integer; const NewName, NewQueryText: string);
         procedure DeleteSavedQuery(ID: Integer);
     end;
 
@@ -87,6 +88,32 @@ begin
         raise Exception.Create(TUIStateLoader.GetMessage('SavedQueries.Error.DuplicateName', [TrimmedName]));
 
     FRepository.UpdateName(ID, TrimmedName);
+end;
+
+procedure TSavedQueryService.UpdateSavedQuery(ID: Integer; const NewName, NewQueryText: string);
+var
+    SavedQuery: TSavedQueryDTO;
+    TrimmedName, TrimmedQuery: string;
+begin
+    TrimmedName := Trim(NewName);
+    if TrimmedName = '' then
+        raise Exception.Create(TUIStateLoader.GetMessage('SavedQueries.Error.EmptyName'));
+
+    TrimmedQuery := Trim(NewQueryText);
+    if TrimmedQuery = '' then
+        raise Exception.Create(TUIStateLoader.GetMessage('SavedQueries.Error.EmptyQuery'));
+
+    SavedQuery := FRepository.GetByID(ID);
+    if SavedQuery.ID = 0 then
+        raise Exception.Create(TUIStateLoader.GetMessage('SavedQueries.Error.NotFound'));
+
+    if FRepository.NameExists(TrimmedName, SavedQuery.UserID, ID) then
+        raise Exception.Create(TUIStateLoader.GetMessage('SavedQueries.Error.DuplicateName', [TrimmedName]));
+
+    if TrimmedName <> SavedQuery.Name then
+        FRepository.UpdateName(ID, TrimmedName);
+    if TrimmedQuery <> SavedQuery.QueryText then
+        FRepository.UpdateQueryText(ID, TrimmedQuery);
 end;
 
 procedure TSavedQueryService.DeleteSavedQuery(ID: Integer);

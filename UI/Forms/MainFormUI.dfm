@@ -5992,6 +5992,9 @@ object MainForm: TMainForm
     object puSavedQueryCreate: TMenuItem
       Action = actSavedQueryCreate
     end
+    object puSavedQueryEdit: TMenuItem
+      Action = actSavedQueryEdit
+    end
     object puSavedQueryDelete: TMenuItem
       Action = actSavedQueryDelete
     end
@@ -6254,6 +6257,11 @@ object MainForm: TMainForm
       Category = 'SavedQueries'
       Caption = 'actSavedQueryCreateFromSearch'
       OnExecute = actSavedQueryCreateFromSearchExecute
+    end
+    object actSavedQueryEdit: TAction
+      Category = 'SavedQueries'
+      Caption = 'actSavedQueryEdit'
+      OnExecute = actSavedQueryEditExecute
     end
     object actSavedQueryDelete: TAction
       Category = 'SavedQueries'

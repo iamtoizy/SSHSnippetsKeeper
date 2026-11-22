@@ -192,6 +192,7 @@ type
         actChainCreateFromSnippet: TAction;
         actSavedQueryCreate: TAction;
         actSavedQueryCreateFromSearch: TAction;
+        actSavedQueryEdit: TAction;
         actSavedQueryDelete: TAction;
         puFavMove: TMenuItem;
         actSnippetHistory: TAction;
@@ -230,6 +231,7 @@ type
         procedure actRunSequenceExecute(Sender: TObject);
         procedure actSavedQueryCreateExecute(Sender: TObject);
         procedure actSavedQueryCreateFromSearchExecute(Sender: TObject);
+        procedure actSavedQueryEditExecute(Sender: TObject);
         procedure actSavedQueryDeleteExecute(Sender: TObject);
         procedure actSecurityReportExecute(Sender: TObject);
         procedure actExportSnippetsExecute(Sender: TObject);
@@ -309,6 +311,9 @@ type
         FCloseAfterTypingStop: Boolean;
         tmrCloseAfterTyping: TTimer;
         FNoSyncMode: Boolean;
+        // Запрос, подставленный в ebSearch при входе в умную папку (маркер
+        // сессии): '' = вне умной папки; при уходе с узла сбрасывается всегда
+        FInjectedQueryText: string;
         // Точка отсчёта периодического экспорта в Vault: 0 = не запущен
         FAutoExportLast: TDateTime;
         FCmdProcessed: Boolean;
@@ -391,6 +396,8 @@ type
         function GetSelectedChainID: Integer;
         function ShowChainEditor(ChainID: Integer; InitialSnippetID: Integer = 0): Integer;
         procedure SaveCurrentSearchAsSavedQuery;
+        procedure SetSearchBoxText(const AText: string);
+        procedure ClearInjectedSearchIfAny;
         procedure RefreshCurrentSnippetList;
         procedure ChainStarted;
         procedure ChainFinished;
@@ -459,6 +466,7 @@ uses
     PasswordGenFormUI,
     ProcessProfile,
     QuickSearchFormUI,
+    SavedQueryEditorFormUI,
     SequenceOrderDialogUI,
     SettingsFormUI,
     SecurityReportFormUI,
@@ -513,6 +521,7 @@ end;
 procedure TMainForm.actCreateDatabaseExecute(Sender: TObject);
 var
     WithDemoData: Boolean;
+    Setts: TAppSettings;
 begin
     SaveDialog.InitialDir := GetDefaultDataDir;
     SaveDialog.FileName := 'snippets.sqlite';
@@ -533,6 +542,14 @@ begin
             if EnableDbEncryptionNow(True) then
                 MessagesHandler.ShowInfo(
                     TUIStateLoader.GetMessage('DB.EncryptedOnCreateNotice'));
+
+            // Новая база попадает в подменю «Недавние базы»: если список
+            // был пуст, пункт меню активируется и база станет доступна
+            Setts := AppContext.SettingsManager.Data;
+            AddRecentDatabase(Setts, SaveDialog.FileName);
+            AppContext.SettingsManager.Data := Setts;
+            AppContext.SettingsManager.Save;
+            UpdateRecentDatabasesMenu;
 
             LoadUsersToComboBox;  // Сначала выпадающий список
             cbUserChange(cbUser); // Применяем и перерисовываем дерево (ReloadUI)
@@ -1542,6 +1559,9 @@ begin
                 actDuplicateSnippet.Enabled := False;
                 actRunSnippet.Enabled := False;
                 actDryRunSnippet.Enabled := False;
+                actExportSnippets.Enabled := False;
+                actExportBundle.Enabled := False;
+                actImportBundle.Enabled := False;
 
                 actAddTag.Enabled := False;
                 actEditTag.Enabled := False;
@@ -1636,6 +1656,10 @@ begin
     actChainCreateFromSnippet.Enabled := SingleSelection;
     actRunSequence.Enabled := (lvSnippets.SelCount >= 2);
     actExportSnippets.Enabled := (lvSnippets.Selected <> nil);
+    // Импорт/экспорт набора: экспорт осмыслен только с выделением, импорт -
+    // при подключённой БД (цель импорта - текущее пространство)
+    actExportBundle.Enabled := (lvSnippets.Selected <> nil);
+    actImportBundle.Enabled := AppContext.DatabaseManager.IsConnected;
     actAddTagToSnippets.Enabled := (lvSnippets.Selected <> nil);
     actRemoveTagFromSnippets.Enabled := (lvSnippets.Selected <> nil);
     actMoveToCategory.Enabled := (lvSnippets.Selected <> nil);
@@ -1741,6 +1765,7 @@ begin
     // «Создать умную папку» доступна только на корневом узле умных папок
     actSavedQueryCreate.Visible := (Node <> nil) and
         (NodeValue = SAVED_QUERIES_ROOT_NODE_ID);
+    actSavedQueryEdit.Visible := TryGetSavedQueryID(NodeValue, SavedQueryID);
     actSavedQueryDelete.Visible := TryGetSavedQueryID(NodeValue, SavedQueryID);
 
     // «Сохранить поиск» активна, пока в строке поиска есть текст
@@ -1908,9 +1933,66 @@ begin
     SaveCurrentSearchAsSavedQuery;
 end;
 
+procedure TMainForm.SetSearchBoxText(const AText: string);
+begin
+    // Пишем текст запроса без запуска автопоиска: список уже отфильтрован
+    // по этому запросу веткой умной папки, а OnChange запустил бы параллельный
+    // фоновый поиск
+    ebSearch.OnChange := nil;
+    try
+        ebSearch.Text := AText;
+    finally
+        ebSearch.OnChange := ebSearchChange;
+    end;
+    FInjectedQueryText := AText;
+end;
+
+procedure TMainForm.ClearInjectedSearchIfAny;
+begin
+    // Уход с умной папки: строку поиска сбрасываем всегда - подставленный
+    // запрос описывал только содержимое этой папки
+    if FInjectedQueryText <> '' then
+        SetSearchBoxText('');
+end;
+
 procedure TMainForm.actSavedQueryCreateFromSearchExecute(Sender: TObject);
 begin
     SaveCurrentSearchAsSavedQuery;
+end;
+
+procedure TMainForm.actSavedQueryEditExecute(Sender: TObject);
+var
+    Node: TTreeNode;
+    NodeValue, SavedQueryID: Integer;
+    SavedQuery: TSavedQueryDTO;
+    NewName, NewQueryText: string;
+begin
+    Node := tvCategories.Selected;
+    if Node = nil then
+        Exit;
+    NodeValue := Integer(IntPtr(Node.Data));
+    if not TryGetSavedQueryID(NodeValue, SavedQueryID) then
+        Exit;
+
+    SavedQuery := AppContext.SavedQueryService.GetSavedQueryByID(SavedQueryID);
+    if SavedQuery.ID = 0 then
+        Exit;
+
+    if not TSavedQueryEditorForm.Execute(Self, AppContext, SavedQueryID,
+        SavedQuery.Name, SavedQuery.QueryText, NewName, NewQueryText) then
+        Exit;
+
+    try
+        AppContext.SavedQueryService.UpdateSavedQuery(SavedQueryID, NewName, NewQueryText);
+        // Узел остаётся выбранным: ReloadUI переподставит новый запрос в поле
+        // поиска веткой умной папки RefreshCurrentSnippetList
+        ReloadUI(NodeValue);
+        FStatus.Flash(TUIStateLoader.GetMessage('SavedQueries.UpdatedMsg', [NewName]));
+        MarkDataChanged;
+    except
+        on E: Exception do
+            AppContext.MessagesHandler.ShowError(E.Message);
+    end;
 end;
 
 procedure TMainForm.actSavedQueryDeleteExecute(Sender: TObject);
@@ -2025,6 +2107,7 @@ procedure TMainForm.RefreshCurrentSnippetList;
 var
     Node: TTreeNode;
     CatID, ChainID, I, ActiveSnippetID, SavedQueryID: Integer;
+    SavedQuery: TSavedQueryDTO;
     Snippets: TArray<TSnippetDTO>;
     Steps: TArray<TChainStepDTO>;
 begin
@@ -2055,12 +2138,21 @@ begin
     // диапазоны ID узлов не пересекаются, но порядок проверок явный)
     if TryGetSavedQueryID(Integer(IntPtr(Node.Data)), SavedQueryID) then
     begin
+        SavedQuery := AppContext.SavedQueryService.GetSavedQueryByID(SavedQueryID);
+        // Показываем запрос в поле поиска: пользователь видит критерий умной
+        // папки и может «Сохранить поиск» как копию или править папку
+        SetSearchBoxText(SavedQuery.QueryText);
         Snippets := AppContext.SnippetService.SearchSnippets(
-            AppContext.SavedQueryService.GetSavedQueryByID(SavedQueryID).QueryText,
-            rbFTS.Checked, FFilterUserID);
+            SavedQuery.QueryText, rbFTS.Checked, FFilterUserID);
         FillSnippetListView(Snippets);
         Exit;
     end;
+
+    // Ушли с умной папки: подставленный текст запроса больше не описывает
+    // содержимое списка - очищаем поле, если пользователь его не правил
+    // (до ветки цепочек: их шаги - просто список сниппетов, не результат
+    // сохранённого запроса)
+    ClearInjectedSearchIfAny;
 
     if TChainRunner.TryGetChainID(Integer(IntPtr(Node.Data)), ChainID) then
     begin
@@ -2344,6 +2436,7 @@ begin
     actChainDelete.Caption := TUIStateLoader.GetMessage('Chains.Menu.Delete');
     actSavedQueryCreate.Caption := TUIStateLoader.GetMessage('SavedQueries.Menu.Create');
     actSavedQueryCreateFromSearch.Caption := TUIStateLoader.GetMessage('SavedQueries.Menu.CreateFromSearch');
+    actSavedQueryEdit.Caption := TUIStateLoader.GetMessage('SavedQueries.Menu.Edit');
     actSavedQueryDelete.Caption := TUIStateLoader.GetMessage('SavedQueries.Menu.Delete');
     actRunSequence.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.RunSequence');
     actExportSnippets.Caption := TUIStateLoader.GetMessage('MultiSelect.Menu.Export');

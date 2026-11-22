@@ -110,6 +110,7 @@ type
         function GetSavedQueryByID(ID: Integer): TSavedQueryDTO;
         function CreateSavedQuery(UserID: Integer; const Name, QueryText: string): Integer;
         procedure RenameSavedQuery(ID: Integer; const NewName: string);
+        procedure UpdateSavedQuery(ID: Integer; const NewName, NewQueryText: string);
         procedure DeleteSavedQuery(ID: Integer);
     end;
 

@@ -6,6 +6,7 @@ uses
     DUnitX.TestFramework,
     FireDAC.Comp.Client,
     SavedQueryRepository,
+    SavedQueryService,
     Core.Entities.Chain,
     Core.Entities.SavedQuery
     ;
@@ -44,6 +45,14 @@ type
         procedure DeleteUser_CascadesQueries;
         [Test]
         procedure NodeID_RoundTrip_AndRanges;
+        [Test]
+        procedure ServiceUpdate_ChangesNameAndQueryText;
+        [Test]
+        procedure ServiceUpdate_EmptyName_Raises;
+        [Test]
+        procedure ServiceUpdate_EmptyQuery_Raises;
+        [Test]
+        procedure ServiceUpdate_DuplicateName_Raises;
     end;
 
 implementation
@@ -51,6 +60,7 @@ implementation
 uses
     System.SysUtils,
     System.IOUtils,
+    Common.Localization,
     Data.Database.Security,
     FireDAC.Comp.Script,
     FireDAC.Comp.ScriptCommands,
@@ -66,6 +76,21 @@ uses
 
 var
     GDriverLink: TFDPhysSQLiteDriverLink;
+
+function TranslationPath: string;
+var
+    Dir: string;
+begin
+    Dir := TPath.GetDirectoryName(ParamStr(0));
+    repeat
+        Result := TPath.Combine(Dir,
+            TPath.Combine('Assets', TPath.Combine('ExeData', TPath.Combine('Translation', 'ui-texts.ru.json'))));
+        if TFile.Exists(Result) then
+            Exit;
+        Dir := TPath.GetDirectoryName(Dir);
+    until Dir = '';
+    raise Exception.Create('Translation file not found: ' + Result);
+end;
 
 function TSavedQueriesTests.SchemaPath(const Filename: string): string;
 var
@@ -107,6 +132,9 @@ end;
 
 procedure TSavedQueriesTests.Setup;
 begin
+    // Сервисные тесты берут тексты ошибок из локализации
+    TUIStateLoader.LoadLanguageFile(TranslationPath);
+
     FConn := TFDConnection.Create(nil);
     FConn.Params.Add('DriverID=SQLite');
     FConn.Params.Add('Database=:memory:');
@@ -255,6 +283,73 @@ begin
     Assert.IsTrue(TryGetSavedQueryID(-(SAVED_QUERY_NODE_ID_BASE + 1), ID));
     Assert.AreEqual(1, ID);
     Assert.IsFalse(TryGetSavedQueryID(-(SAVED_QUERY_NODE_ID_BASE - 1), ID));
+end;
+
+procedure TSavedQueriesTests.ServiceUpdate_ChangesNameAndQueryText;
+var
+    ID: Integer;
+    Service: TSavedQueryService;
+begin
+    // Отдельный экземпляр репозитория: владение интерфейсом у сервиса,
+    // FRepo остаётся во владении фикстуры (общее in-memory соединение)
+    ID := AddQuery('deploy', 'tag:old', 1);
+    Service := TSavedQueryService.Create(TSavedQueryRepository.Create(FConn));
+    try
+        Service.UpdateSavedQuery(ID, 'deploy-new', 'tag:new fav');
+        Assert.AreEqual('deploy-new', FRepo.GetByID(ID).Name);
+        Assert.AreEqual('tag:new fav', FRepo.GetByID(ID).QueryText);
+    finally
+        Service.Free;
+    end;
+end;
+
+procedure TSavedQueriesTests.ServiceUpdate_EmptyName_Raises;
+var
+    ID: Integer;
+    Service: TSavedQueryService;
+begin
+    ID := AddQuery('deploy', 'tag:prod', 1);
+    Service := TSavedQueryService.Create(TSavedQueryRepository.Create(FConn));
+    try
+        Assert.WillRaise(
+            procedure begin Service.UpdateSavedQuery(ID, '  ', 'tag:prod'); end,
+            Exception);
+    finally
+        Service.Free;
+    end;
+end;
+
+procedure TSavedQueriesTests.ServiceUpdate_EmptyQuery_Raises;
+var
+    ID: Integer;
+    Service: TSavedQueryService;
+begin
+    ID := AddQuery('deploy', 'tag:prod', 1);
+    Service := TSavedQueryService.Create(TSavedQueryRepository.Create(FConn));
+    try
+        Assert.WillRaise(
+            procedure begin Service.UpdateSavedQuery(ID, 'deploy', '   '); end,
+            Exception);
+    finally
+        Service.Free;
+    end;
+end;
+
+procedure TSavedQueriesTests.ServiceUpdate_DuplicateName_Raises;
+var
+    ID: Integer;
+    Service: TSavedQueryService;
+begin
+    AddQuery('deploy', 'tag:prod', 1);
+    ID := AddQuery('other', 'tag:dev', 1);
+    Service := TSavedQueryService.Create(TSavedQueryRepository.Create(FConn));
+    try
+        Assert.WillRaise(
+            procedure begin Service.UpdateSavedQuery(ID, 'deploy', 'tag:dev'); end,
+            Exception);
+    finally
+        Service.Free;
+    end;
 end;
 
 initialization

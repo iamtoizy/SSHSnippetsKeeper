@@ -2087,14 +2087,22 @@
       "Menu": {
         "Create": "Save search",
         "CreateFromSearch": "Save search",
+        "Edit": "Edit saved search",
         "Delete": "Delete saved search"
       },
       "SaveTitle": "Saved search",
       "NamePrompt": "Saved search name:",
       "DeleteConfirm": "Delete saved search \"%s\"?",
       "CreatedMsg": "Saved search \"%s\" created.",
+      "UpdatedMsg": "Saved search \"%s\" updated.",
       "DeletedMsg": "Saved search \"%s\" deleted.",
       "RenameError": "Failed to rename saved search: %s",
+      "Editor": {
+        "Caption": "Edit saved search",
+        "NameLabel": "Name:",
+        "QueryLabel": "Search query:",
+        "Hint": "Supported syntax: tag:, cat:, title:, comment:, lang:, content:, created:, updated: or free text."
+      },
       "Error": {
         "EmptyName": "Enter the saved search name.",
         "EmptyQuery": "The search box is empty — nothing to save.",

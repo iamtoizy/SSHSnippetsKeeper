@@ -305,6 +305,9 @@
         <DCCReference Include="UI\Forms\TagSelectDialogUI.pas">
             <Form>TagSelectForm</Form>
         </DCCReference>
+        <DCCReference Include="UI\Forms\SavedQueryEditorFormUI.pas">
+            <Form>SavedQueryEditorForm</Form>
+        </DCCReference>
         <DCCReference Include="UI\Forms\CompletionImportDialogUI.pas">
             <Form>CompletionImportForm</Form>
         </DCCReference>
