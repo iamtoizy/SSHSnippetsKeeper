@@ -284,6 +284,8 @@ type
         procedure rbTextClick(Sender: TObject);
         procedure sbBottomMouseDown(Sender: TObject; Button: TMouseButton; Shift:
             TShiftState; X, Y: Integer);
+        procedure sbBottomMouseMove(Sender: TObject; Shift: TShiftState; X,
+            Y: Integer);
         procedure sbBottomResize(Sender: TObject);
         procedure ListSplitterMoved(Sender: TObject);
         procedure FormResize(Sender: TObject);
@@ -1401,6 +1403,9 @@ begin
     lvSnippets.OwnerData := False;
     // Item.Data у lvSnippets - объекты TSnippetViewData, у lvTags - Integer-ID
     lvSnippets.OwnsItemData := True;
+
+    // Подсказки панелей статус-бара (тексты назначаются в sbBottomMouseMove)
+    ShowHint := True;
 end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
@@ -4189,6 +4194,56 @@ begin
 
             Break; // Нашли нужную панель - выходим из цикла
         end;
+    end;
+end;
+
+procedure TMainForm.sbBottomMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+const
+    // Локализованные подсказки панелей статус-бара (Messages.Common.StatusHint*)
+    HINT_KEYS: array [0..5] of string = (
+        'Common.StatusHintEvents',
+        'Common.StatusHintDatabase',
+        'Common.StatusHintDirty',
+        'Common.StatusHintCount',
+        'Common.StatusHintLanguage',
+        'Common.StatusHintDenySets'
+    );
+var
+    I: Integer;
+    R: TRect;
+    NewHint: string;
+begin
+    // Подсказка панели определяется тем же hit-тестом, что и клик (sbBottomMouseDown):
+    // SB_GETRECT возвращает границы каждой панели в клиентских координатах
+    for I := 0 to High(HINT_KEYS) do
+    begin
+        if I >= sbBottom.Panels.Count then
+            Break;
+
+        SendMessage(sbBottom.Handle, SB_GETRECT, I, NativeInt(@R));
+
+        if PtInRect(R, Point(X, Y)) then
+        begin
+            NewHint := TUIStateLoader.GetMessage(HINT_KEYS[I]);
+            if NewHint.StartsWith('[ERROR') then
+                NewHint := '';
+
+            // Смена панели под курсором: активную подсказку отменяем, чтобы
+            // VCL показал новую без ожидания паузы предыдущей панели
+            if sbBottom.Hint <> NewHint then
+            begin
+                Application.CancelHint;
+                sbBottom.Hint := NewHint;
+            end;
+            Exit;
+        end;
+    end;
+
+    // Мышь над стыком/границей панелей - подсказка не нужна
+    if sbBottom.Hint <> '' then
+    begin
+        Application.CancelHint;
+        sbBottom.Hint := '';
     end;
 end;
 

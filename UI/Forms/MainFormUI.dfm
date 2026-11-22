@@ -100,6 +100,7 @@ object MainForm: TMainForm
         Width = 90
       end>
     OnMouseDown = sbBottomMouseDown
+    OnMouseMove = sbBottomMouseMove
     OnResize = sbBottomResize
   end
   object pnlTop: TPanel
