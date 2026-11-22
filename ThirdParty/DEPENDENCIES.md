@@ -16,18 +16,16 @@
   у апстрима нет (all rights reserved). Удалён 2026-11-21 в рамках clean-room
   замены: собственный сериализатор живёт в `Common\Common.JsonSerializer.pas`,
   поведение зафиксировано `docs\JsonSerializer.SPEC.md`, золотые фикстуры —
-  `docs\JsonSerializer.FIXTURES.txt` и `Tests\JsonSerializer.pas`. Апстрим
-  DSON сохранён вне репозитория (`%TEMP%\rufp\uDSON_upstream.pas`) только для
-  справки.
+  `docs\JsonSerializer.FIXTURES.txt` и `Tests\JsonSerializer.pas`.
 - `ArrayHelper.pas` — Willi Commer (github.com/WilliCommer/ArrayHelper),
   шапка «Licence GNU» (вариант не уточнён). Удалён 2026-11-21 в рамках
   clean-room замены: используется только `TArrayRecord<T>`, собственная
   реализация живёт в `Common\Common.ArrayRecord.pas`, поведение
   зафиксировано `docs\ArrayHelper.SPEC.md`, золотые фикстуры —
-  `docs\ArrayHelper.FIXTURES.txt` и `Tests\ArrayRecord.pas`. Апстрим
-  сохранён вне репозитория (`%TEMP%\rufp\dsonprobe\ArrayProbe*.dpr`
-  ссылаются на удалённую копию через junction `C:\temp-links\ssk`
-  только для справки).
+  `docs\ArrayHelper.FIXTURES.txt` и `Tests\ArrayRecord.pas`. Прежние копии
+  удалённых файлов и probe-артефакты уничтожены (последний коммит с их
+  содержимым: `0ece22b^`; эталон для сверки при необходимости извлекается
+  из git-истории).
 
 ## Связанные документы
 
