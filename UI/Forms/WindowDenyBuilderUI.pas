@@ -15,7 +15,7 @@ uses
     Vcl.ExtCtrls,
     Vcl.Forms,
     Vcl.Graphics,
-    Vcl.StdCtrls
+    Vcl.StdCtrls, Vcl.Mask
     ;
 
 type
@@ -47,6 +47,8 @@ type
         pTemplates: TPanel;
         cbTemplates: TComboBox;
         bSaveTemplate: TButton;
+        bRenameTemplate: TButton;
+        bDeleteTemplate: TButton;
         pPreview: TPanel;
         lvPreview: TListView;
         lbPreviewEmpty: TLabel;
@@ -57,6 +59,8 @@ type
         procedure bCaptureClick(Sender: TObject);
         procedure bDeleteClick(Sender: TObject);
         procedure bSaveTemplateClick(Sender: TObject);
+        procedure bRenameTemplateClick(Sender: TObject);
+        procedure bDeleteTemplateClick(Sender: TObject);
         procedure cbTemplatesChange(Sender: TObject);
         procedure cbModeChange(Sender: TObject);
         procedure chkCaseClick(Sender: TObject);
@@ -90,6 +94,8 @@ type
         procedure MarkDirty;
         procedure ResetEditor;
         procedure LoadTemplatesCombo(const ACurrentRules: TArray<TGlobalTitleDenyRule>);
+        procedure UpdateTemplateButtons;
+        function SelectedTemplateIndex: Integer;
         function HasUnsavedChanges: Boolean;
         function PromptSaveTemplate: Boolean;
         procedure ApplyTemplate(const AName: string);
@@ -203,6 +209,12 @@ begin
         Instance.lvPreview.Columns[0].Caption := TUIStateLoader.GetMessage('Settings.DenyRulesPreviewColTitle');
         Instance.lvPreview.Columns[1].Caption := TUIStateLoader.GetMessage('Settings.DenyRulesPreviewColStatus');
         Instance.bSaveTemplate.Caption := TUIStateLoader.GetMessage('Settings.DenySetsSaveBtn');
+        Instance.bSaveTemplate.ShowHint := True;
+        Instance.bSaveTemplate.Hint := TUIStateLoader.GetMessage('Settings.DenySetsSaveHint');
+        Instance.bRenameTemplate.ShowHint := True;
+        Instance.bRenameTemplate.Hint := TUIStateLoader.GetMessage('Settings.DenySetsRenameHint');
+        Instance.bDeleteTemplate.ShowHint := True;
+        Instance.bDeleteTemplate.Hint := TUIStateLoader.GetMessage('Settings.DenySetsDeleteHint');
         Instance.bOK.Caption := TUIStateLoader.GetMessage('Common.OK');
         Instance.bCancel.Caption := TUIStateLoader.GetMessage('Common.Cancel');
 
@@ -219,6 +231,8 @@ begin
             if Length(Instance.FRules) > 0 then
                 Instance.lvRules.ItemIndex := 0;
         end;
+
+        Instance.UpdateTemplateButtons;
 
         Instance.RefreshGenerated;
         Instance.RefreshPreview;
@@ -650,6 +664,109 @@ begin
     Result := FDirty;
 end;
 
+// Кнопки переименования/удаления активны только при выборе конкретного
+// шаблона: пункт 0 «Ничего не запрещено» шаблоном не является
+procedure TWindowDenyBuilderDialog.UpdateTemplateButtons;
+begin
+    bRenameTemplate.Enabled := cbTemplates.ItemIndex > 0;
+    bDeleteTemplate.Enabled := cbTemplates.ItemIndex > 0;
+end;
+
+// Индекс в TAppSettings.DenyRuleSets для выбранного пункта комбо
+// (LoadTemplatesCombo хранит TObject(индекс + 1)); -1 = псевдопункт/пусто
+function TWindowDenyBuilderDialog.SelectedTemplateIndex: Integer;
+begin
+    Result := -1;
+    if cbTemplates.ItemIndex <= 0 then
+        Exit;
+    Result := Integer(IntPtr(cbTemplates.Items.Objects[cbTemplates.ItemIndex])) - 1;
+end;
+
+procedure TWindowDenyBuilderDialog.bRenameTemplateClick(Sender: TObject);
+var
+    Setts: TAppSettings;
+    SetIdx, I: Integer;
+    OldName, NewName: string;
+begin
+    Setts := AppContext.SettingsManager.Data;
+    SetIdx := SelectedTemplateIndex;
+    if (SetIdx < 0) or (SetIdx > High(Setts.DenyRuleSets)) then
+        Exit;
+
+    OldName := Setts.DenyRuleSets[SetIdx].Name;
+
+    NewName := OldName;
+    if not MessagesHandler.AskInput(
+        TUIStateLoader.GetMessage('Settings.DenySetsRenameTitle'),
+        TUIStateLoader.GetMessage('Settings.DenySetsRenamePrompt'),
+        NewName) then
+        Exit;
+
+    NewName := Trim(NewName);
+    if (NewName = '') or SameText(NewName, OldName) then
+        Exit;
+
+    // Уникальность имён - инвариант санитайзера настроек: конфликт отклоняем
+    for I := 0 to High(Setts.DenyRuleSets) do
+        if (I <> SetIdx) and SameText(Setts.DenyRuleSets[I].Name, NewName) then
+        begin
+            MessagesHandler.ShowError(TUIStateLoader.GetMessage(
+                'Settings.DenySetsNameExistsFormat', [NewName]));
+            Exit;
+        end;
+
+    Setts.DenyRuleSets[SetIdx].Name := NewName;
+
+    // Переименование активного шаблона не должно осиротить имя: санитайзер
+    // сбросил бы набор в «Ничего не запрещено» при следующем запуске
+    if SameText(Setts.ActiveDenyRuleSet, OldName) then
+        Setts.ActiveDenyRuleSet := NewName;
+
+    AppContext.SettingsManager.Data := Setts;
+    AppContext.SettingsManager.Save;
+
+    if SameText(FActiveTemplateName, OldName) then
+        FActiveTemplateName := NewName;
+
+    LoadTemplatesCombo(FRules);
+    UpdateTemplateButtons;
+end;
+
+procedure TWindowDenyBuilderDialog.bDeleteTemplateClick(Sender: TObject);
+var
+    Setts: TAppSettings;
+    SetIdx: Integer;
+    Name: string;
+begin
+    Setts := AppContext.SettingsManager.Data;
+    SetIdx := SelectedTemplateIndex;
+    if (SetIdx < 0) or (SetIdx > High(Setts.DenyRuleSets)) then
+        Exit;
+
+    Name := Setts.DenyRuleSets[SetIdx].Name;
+    if not MessagesHandler.AskConfirmation(
+        Format(TUIStateLoader.GetMessage('Settings.DenySetsDeleteConfirmFormat'), [Name]),
+        TUIStateLoader.GetMessage('Settings.DenySetsDeleteTitle')) then
+        Exit;
+
+    // Шаблон - снимок: удаление не трогает ни текущий набор в редакторе,
+    // ни активный GlobalTitleDenyRules; галочка в меню сместится по значению
+    Delete(Setts.DenyRuleSets, SetIdx, 1);
+
+    // Имя удалённого шаблона не должно остаться активным
+    if SameText(Setts.ActiveDenyRuleSet, Name) then
+        Setts.ActiveDenyRuleSet := '';
+
+    AppContext.SettingsManager.Data := Setts;
+    AppContext.SettingsManager.Save;
+
+    if SameText(FActiveTemplateName, Name) then
+        FActiveTemplateName := '';
+
+    LoadTemplatesCombo(FRules);
+    UpdateTemplateButtons;
+end;
+
 function TWindowDenyBuilderDialog.PromptSaveTemplate: Boolean;
 var
     Setts: TAppSettings;
@@ -701,6 +818,7 @@ begin
     FActiveTemplateName := NewName;
     FDirty := False;
     LoadTemplatesCombo(FRules);
+    UpdateTemplateButtons;
     Result := True;
 end;
 
@@ -795,12 +913,15 @@ begin
             FUpdating := True;
             try
                 LoadTemplatesCombo(FRules);
+                UpdateTemplateButtons;
             finally
                 FUpdating := False;
             end;
             Exit;
         end;
     end;
+
+    UpdateTemplateButtons;
 
     if Name = '' then
     begin

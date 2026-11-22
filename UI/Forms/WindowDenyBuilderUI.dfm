@@ -2,7 +2,6 @@ object WindowDenyBuilderDialog: TWindowDenyBuilderDialog
   Left = 0
   Top = 0
   BorderStyle = bsDialog
-  Caption = ''
   ClientHeight = 680
   ClientWidth = 520
   Color = clBtnFace
@@ -16,7 +15,7 @@ object WindowDenyBuilderDialog: TWindowDenyBuilderDialog
   object lblTitle: TLabel
     Left = 12
     Top = 12
-    Width = 260
+    Width = 38
     Height = 15
     Caption = 'lblTitle'
     Font.Charset = DEFAULT_CHARSET
@@ -36,20 +35,38 @@ object WindowDenyBuilderDialog: TWindowDenyBuilderDialog
     object cbTemplates: TComboBox
       Left = 8
       Top = 3
-      Width = 340
+      Width = 290
       Height = 23
       Style = csDropDownList
       TabOrder = 0
       OnChange = cbTemplatesChange
     end
     object bSaveTemplate: TButton
-      Left = 356
+      Left = 357
       Top = 3
-      Width = 156
-      Height = 25
+      Width = 154
+      Height = 23
       Caption = 'SaveTemplate'
       TabOrder = 1
       OnClick = bSaveTemplateClick
+    end
+    object bRenameTemplate: TButton
+      Left = 302
+      Top = 3
+      Width = 23
+      Height = 23
+      Caption = #9999#65023
+      TabOrder = 2
+      OnClick = bRenameTemplateClick
+    end
+    object bDeleteTemplate: TButton
+      Left = 330
+      Top = 3
+      Width = 23
+      Height = 23
+      Caption = #55357#56785
+      TabOrder = 3
+      OnClick = bDeleteTemplateClick
     end
   end
   object pList: TPanel
@@ -119,24 +136,32 @@ object WindowDenyBuilderDialog: TWindowDenyBuilderDialog
     Height = 262
     BevelOuter = bvNone
     TabOrder = 2
+    object lblMode: TLabel
+      Left = 12
+      Top = 68
+      Width = 31
+      Height = 15
+      Caption = 'Mode'
+    end
+    object lbHint: TLabel
+      Left = 12
+      Top = 226
+      Width = 496
+      Height = 30
+      AutoSize = False
+      WordWrap = True
+    end
     object leName: TLabeledEdit
       Left = 12
       Top = 26
       Width = 496
       Height = 23
-      EditLabel.Width = 150
+      EditLabel.Width = 32
       EditLabel.Height = 15
       EditLabel.Caption = 'Name'
-      LabelPosition = lpAbove
       TabOrder = 0
+      Text = ''
       OnChange = leNameChange
-    end
-    object lblMode: TLabel
-      Left = 12
-      Top = 68
-      Width = 40
-      Height = 15
-      Caption = 'Mode'
     end
     object cbMode: TComboBox
       Left = 12
@@ -161,11 +186,11 @@ object WindowDenyBuilderDialog: TWindowDenyBuilderDialog
       Top = 130
       Width = 496
       Height = 23
-      EditLabel.Width = 140
+      EditLabel.Width = 21
       EditLabel.Height = 15
       EditLabel.Caption = 'Text'
-      LabelPosition = lpAbove
       TabOrder = 3
+      Text = ''
       OnChange = leTextChange
     end
     object chkCase: TCheckBox
@@ -193,21 +218,12 @@ object WindowDenyBuilderDialog: TWindowDenyBuilderDialog
       Top = 196
       Width = 496
       Height = 23
-      EditLabel.Width = 160
+      EditLabel.Width = 54
       EditLabel.Height = 15
       EditLabel.Caption = 'Generated'
-      LabelPosition = lpAbove
       ReadOnly = True
       TabOrder = 6
-    end
-    object lbHint: TLabel
-      Left = 12
-      Top = 226
-      Width = 496
-      Height = 30
-      AutoSize = False
-      Caption = ''
-      WordWrap = True
+      Text = ''
     end
   end
   object pPreview: TPanel
@@ -217,6 +233,15 @@ object WindowDenyBuilderDialog: TWindowDenyBuilderDialog
     Height = 169
     BevelOuter = bvNone
     TabOrder = 3
+    object lbPreviewEmpty: TLabel
+      Left = 16
+      Top = 80
+      Width = 488
+      Height = 30
+      AutoSize = False
+      Visible = False
+      WordWrap = True
+    end
     object lvPreview: TListView
       Left = 8
       Top = 4
@@ -238,16 +263,6 @@ object WindowDenyBuilderDialog: TWindowDenyBuilderDialog
       ViewStyle = vsReport
       OnDblClick = lvPreviewDblClick
     end
-    object lbPreviewEmpty: TLabel
-      Left = 16
-      Top = 80
-      Width = 488
-      Height = 30
-      AutoSize = False
-      Caption = ''
-      Visible = False
-      WordWrap = True
-    end
   end
   object pBottom: TPanel
     Left = 0
@@ -257,6 +272,9 @@ object WindowDenyBuilderDialog: TWindowDenyBuilderDialog
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 4
+    DesignSize = (
+      520
+      41)
     object bOK: TButton
       Left = 282
       Top = 8
