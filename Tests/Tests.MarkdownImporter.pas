@@ -53,7 +53,7 @@ type
         SnapshotResult: string;
         SnapshotCalls: Integer;
         procedure OpenDatabase(const Filename: string);
-        procedure CreateDatabase(const Filename: string);
+        procedure CreateDatabase(const Filename: string; WithSeedData: Boolean = True);
         procedure CloseDatabase;
         function IsConnected: Boolean;
         function GetConnectionString: string;
@@ -270,7 +270,7 @@ procedure TTestDatabaseManager.OpenDatabase(const Filename: string);
 begin
 end;
 
-procedure TTestDatabaseManager.CreateDatabase(const Filename: string);
+procedure TTestDatabaseManager.CreateDatabase(const Filename: string; WithSeedData: Boolean);
 begin
 end;
 

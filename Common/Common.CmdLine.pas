@@ -16,6 +16,8 @@ type
         CheckDB: Boolean;
         // Путь для создания новой БД с базовой схемой
         NewDB: string;
+        // /newdb без демо-набора: только схема, без пространств и сниппетов
+        NoDemoData: Boolean;
         Version: Boolean;
         Help: Boolean;
 
@@ -111,6 +113,8 @@ begin
                 Result.CheckDB := True
             else if Name = 'newdb' then
                 Result.NewDB := Value
+            else if (Name = 'nodemo') or (Name = 'no-demo') then
+                Result.NoDemoData := True
             else if Name = 'version' then
                 Result.Version := True
             else if (Name = 'help') or (Name = 'h') or (Name = '?') then

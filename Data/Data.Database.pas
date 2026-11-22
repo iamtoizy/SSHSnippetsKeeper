@@ -45,13 +45,13 @@ type
         FEncryptionKey: string;
 
         procedure Connect(const Filename: string);
-        procedure InitializeDatabase(Filename: string);
+        procedure InitializeDatabase(Filename: string; WithSeedData: Boolean);
         procedure ApplyPRAGMA;
         procedure ApplySchemaMigrations;
         procedure OptimizeFTS;
         procedure FlushToDisk;
     public
-        procedure CreateDatabase(const Filename: string);
+        procedure CreateDatabase(const Filename: string; WithSeedData: Boolean = True);
         procedure OpenDatabase(const Filename: string);
         procedure CloseDatabase;
         function IsConnected: Boolean;
@@ -79,9 +79,9 @@ uses
 
 {$R *.dfm}
 
-procedure TAppDatabase.CreateDatabase(const Filename: string);
+procedure TAppDatabase.CreateDatabase(const Filename: string; WithSeedData: Boolean);
 begin
-    InitializeDatabase(Filename);
+    InitializeDatabase(Filename, WithSeedData);
 end;
 
 procedure TAppDatabase.OpenDatabase(const Filename: string);
@@ -123,7 +123,7 @@ begin
     ApplyPRAGMA;
 end;
 
-procedure TAppDatabase.InitializeDatabase(Filename: string);
+procedure TAppDatabase.InitializeDatabase(Filename: string; WithSeedData: Boolean);
 begin
     Connect(Filename);
 
@@ -142,11 +142,16 @@ begin
     FDConnection.ExecSQL('PRAGMA foreign_keys = OFF');
     try
         with FDScript.SQLScripts.Add do
+        begin
             SQL.Text :=
                 'BEGIN;' + sLineBreak +
-                LoadSQLResource('SCHEMA_INIT_SQL') +
-                LoadSQLResource('SCHEMA_SEED_SQL') +
-                sLineBreak + 'COMMIT;';
+                LoadSQLResource('SCHEMA_INIT_SQL');
+            // Демо-набор опционален: чистая база получает только схему
+            if WithSeedData then
+                SQL.Text := SQL.Text +
+                    LoadSQLResource('SCHEMA_SEED_SQL');
+            SQL.Text := SQL.Text + sLineBreak + 'COMMIT;';
+        end;
 
         try
             FDScript.ExecuteAll;

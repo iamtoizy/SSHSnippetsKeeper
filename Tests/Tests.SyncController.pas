@@ -57,7 +57,7 @@ type
         ConnectionString: string;
         DbFile: string;
         procedure OpenDatabase(const Filename: string);
-        procedure CreateDatabase(const Filename: string);
+        procedure CreateDatabase(const Filename: string; WithSeedData: Boolean = True);
         procedure CloseDatabase;
         function IsConnected: Boolean;
         function GetConnectionString: string;
@@ -247,7 +247,7 @@ procedure TSyncTestDatabaseManager.OpenDatabase(const Filename: string);
 begin
 end;
 
-procedure TSyncTestDatabaseManager.CreateDatabase(const Filename: string);
+procedure TSyncTestDatabaseManager.CreateDatabase(const Filename: string; WithSeedData: Boolean);
 begin
 end;
 

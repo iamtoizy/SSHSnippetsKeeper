@@ -17,7 +17,9 @@ type
     IDatabaseManager = interface
         ['{819F7354-9343-4C93-9F93-72782A021008}']
         procedure OpenDatabase(const Filename: string);
-        procedure CreateDatabase(const Filename: string);
+        // WithSeedData=False - чистая схема без демо-набора (пространств,
+        // сниппетов, поисков и цепочек)
+        procedure CreateDatabase(const Filename: string; WithSeedData: Boolean = True);
         procedure CloseDatabase;
         function IsConnected: Boolean;
         function GetConnectionString: string;

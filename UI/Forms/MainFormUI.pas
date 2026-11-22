@@ -511,13 +511,21 @@ begin
 end;
 
 procedure TMainForm.actCreateDatabaseExecute(Sender: TObject);
+var
+    WithDemoData: Boolean;
 begin
     SaveDialog.InitialDir := GetDefaultDataDir;
     SaveDialog.FileName := 'snippets.sqlite';
     if SaveDialog.Execute(Handle) then
     begin
+        // Да - с демо-набором, Нет - только схема
+        WithDemoData := AppContext.MessagesHandler.AskConfirmation(
+            TUIStateLoader.GetMessage('DB.CreateWithDemoAsk'),
+            TUIStateLoader.GetMessage('Common.Confirmation'),
+            MB_YESNO or MB_ICONQUESTION
+        );
         try
-            AppContext.DatabaseManager.CreateDatabase(SaveDialog.FileName);
+            AppContext.DatabaseManager.CreateDatabase(SaveDialog.FileName, WithDemoData);
             TStateMgr.Instance.CreateDatabase;
 
             // Новая база сразу шифруется DPAPI: уведомляем, что ключ

@@ -1,6 +1,7 @@
 PRAGMA foreign_keys = OFF;
 DELETE FROM snippet_chain_steps;
 DELETE FROM snippet_chains;
+DELETE FROM saved_queries;
 DELETE FROM snippet_favorites;
 DELETE FROM snippet_runs;
 DELETE FROM snippet_stats;
@@ -17,7 +18,8 @@ INSERT INTO users(id, name) VALUES
 (2, 'Admin'),
 (3, 'DevOps'),
 (4, 'SRE'),
-(5, 'DBA');
+(5, 'DBA'),
+(6, 'Macros Demo');
 
 -- CATEGORIES (изолированные деревья для каждого workspace)
 INSERT INTO snippet_categories(id, user_id, name, parent_id) VALUES
@@ -72,10 +74,10 @@ INSERT INTO snippet_categories(id, user_id, name, parent_id) VALUES
 (40, 5, 'Storage',      NULL),
 (41, 5, 'Backup',       NULL),
 
--- Макросы (демо движка макросов)
-(42, 1, 'Macros',       NULL),
-(43, 3, 'Macros',       NULL),
-(44, 4, 'Macros',       NULL);
+-- Macros Demo (6) - единое демо движка макросов
+(42, 6, 'Макросы',          NULL),
+(43, 6, 'Макросы в работе', NULL),
+(44, 6, 'Диагностика',      NULL);
 
 -- TAGS (глобальные)
 INSERT INTO tags(id, name) VALUES
@@ -91,7 +93,7 @@ INSERT INTO tags(id, name) VALUES
 (37, 'cleanup'),    (38, 'automation'),(39, 'config'),     (40, 'troubleshoot'),
 (41, 'macros');
 
--- SNIPPETS (96 записей с явным указанием is_security_ignored)
+-- SNIPPETS (103 записи с явным указанием is_security_ignored)
 INSERT INTO snippets(id, user_id, category_id, title, content, comment, is_security_ignored) VALUES
 -- Local User (1) - категории 1-9
 (1,  1, 4,  'Очистка логов',           'find /var/log -type f -name "*.log" -delete',              'Использовать осторожно! Сначала проверить через find ... -print', 1),
@@ -187,59 +189,177 @@ INSERT INTO snippets(id, user_id, category_id, title, content, comment, is_secur
 (83, 5, 38, 'Оптимизация SQLite',      'PRAGMA optimize;',                                          'Выполнять периодически, не перед каждым запросом', 0),
 (84, 5, 38, 'Проверка целостности',    'PRAGMA integrity_check;',                                   'Возвращает "ok" если БД не повреждена', 0),
 
--- Макросы: самодокументация движка (Local User, категория 42)
-(85, 1, 42, 'SSH-вход с вводом пароля',
+-- Макросы: самодокументация движка (Macros Demo, категория 42)
+(85, 6, 42, 'SSH-вход с вводом пароля',
 'ssh admin@{INPUT [STRING:host.example.com]Хост}
 {SLEEP 1500}
 {INPUT [PASSWORD]Пароль}
 {ENTER}',
 'INPUT [STRING] спрашивает хост, [PASSWORD] скрывает ввод, SLEEP ждёт указанные мс, ENTER жмёт Enter. Пауза нужна, чтобы сервер успел показать приглашение', 0),
-(86, 1, 42, 'Очистка Docker с подтверждением',
+(86, 6, 42, 'Очистка Docker с подтверждением',
 '{INPUT [CONFIRM]Выполнить очистку Docker?}
 docker system prune -af --volumes',
 'CONFIRM задаёт вопрос да/нет: при отказе остаток сниппета не выполняется. Так стоит оформлять любые необратимые команды', 1),
-(87, 1, 42, 'Выбор окружения',
+(87, 6, 42, 'Выбор окружения',
 'kubectl config use-context {INPUT [SELECT:dev|staging|prod]Кластер}
 kubectl get nodes',
 'SELECT показывает выпадающий список вариантов (разделитель |), по умолчанию выбран первый', 0),
-(88, 1, 42, 'Бэкап с меткой времени',
+(88, 6, 42, 'Бэкап с меткой времени',
 'tar -czf /tmp/backup-{DATETIME:yyyyMMdd-HHmmss}.tar.gz --exclude="*.cache" /home',
 'DATETIME вычисляется при каждом запуске, поэтому старые архивы не перезаписываются. Формат строки — как в Delphi FormatDateTime', 0),
-(89, 1, 42, 'Паузы, клавиши и очистка ввода',
+(89, 6, 42, 'Паузы, клавиши и очистка ввода',
 '{SENDKEY CTRL+L}
 {KEYDELAY 30}
 sudo systemctl restart {INPUT [STRING:nginx]Сервис}
 {SLEEP 800}
 systemctl status',
 'SENDKEY жмёт сочетания клавиш, KEYDELAY ставит паузу между нажатиями (мс), SLEEP выдерживает паузу перед следующими шагами. Все INPUT спрашиваются в одном диалоге перед запуском', 0),
-(90, 1, 42, 'Счётчик сборок',
+(90, 6, 42, 'Счётчик сборок',
 'docker build -t myapp:{COUNTER:start=100;step=5} .',
 'COUNTER увеличивается при каждом запуске: параметры start=, step=, pad= (нули слева), флаги volatile (сброс) и current (текущее без инкремента)', 0),
-(91, 1, 42, 'Токен из окружения и буфера',
+(91, 6, 42, 'Токен из окружения и буфера',
 'curl -s -H "Authorization: Bearer {ENV:GH_TOKEN}" https://api.github.com/user
 echo "Из буфера обмена: {CLIPBOARD}"',
 'ENV подставляет переменную окружения, CLIPBOARD — текущий буфер обмена. Полезно для токенов, которые не хочется хранить в сниппете', 0),
 
--- Макросы в работе (DevOps, категория 43)
-(92, 3, 43, 'Деплой с выбором версии',
+-- Макросы в работе (Macros Demo, категория 43)
+(92, 6, 43, 'Деплой с выбором версии',
 'ansible-playbook deploy.yml --extra-vars "version={INPUT [STRING:latest]Версия} env={INPUT [SELECT:dev|staging|prod]Окружение}"',
 'Несколько INPUT в одном сниппете собираются в единый диалог параметров перед выполнением', 0),
-(93, 3, 43, 'Terraform apply с подтверждением',
+(93, 6, 43, 'Terraform apply с подтверждением',
 '{INPUT [CONFIRM]Применить план к prod?}
 terraform apply tfplan',
 'CONFIRM защищает от случайного apply; план создаётся заранее через terraform plan -out=tfplan', 0),
-(94, 3, 43, 'Логи юнита за сегодня',
+(94, 6, 43, 'Логи юнита за сегодня',
 'journalctl -u {INPUT [STRING:nginx]Юнит} --since "{DATETIME:yyyy-MM-dd} 00:00:00" --no-pager',
 'INPUT и DATETIME в одной строке: юнит спрашивается, дата подставляется автоматически', 0),
 
--- Макросы в работе (SRE, категория 44)
-(95, 4, 44, 'SSH-туннель с вводом порта',
+-- Макросы в работе (Macros Demo, категория 44)
+(95, 6, 44, 'SSH-туннель с вводом порта',
 'ssh -L {INPUT [NUMBER:3306]Локальный порт}:db-host:3306 bastion',
 'NUMBER проверяет, что введено целое число; нечисловой ввод будет отклонён', 0),
-(96, 4, 44, 'Ротация SSH-ключа',
+(96, 6, 44, 'Ротация SSH-ключа',
 'ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_{DATETIME:yyyyMMdd} -C "{INPUT [STRING:ops@company]Метка}"
 ssh-copy-id -i ~/.ssh/id_ed25519_{DATETIME:yyyyMMdd}.pub {INPUT [STRING:root@server]Хост}',
-'Оба INPUT спрашиваются в одном диалоге до начала выполнения; дата в имени ключа делает ротацию повторяемой', 0);
+'Оба INPUT спрашиваются в одном диалоге до начала выполнения; дата в имени ключа делает ротацию повторяемой', 0),
+
+-- Макросы: расширенное демо (Macros Demo, категория 42)
+(97, 6, 42, 'Сводка сервера',
+'{CLEAR_LINE}
+echo "=== Сводка от {DATETIME:yyyy-MM-dd HH:nn:ss} ==="
+echo "Run-ID: {UUID}"
+echo "Сервер: {INPUT [STRING:web-01]Имя сервера}, окружение: {INPUT [SELECT:dev|staging|prod]Окружение}"
+uname -a
+uptime',
+'CLEAR_LINE очищает строку терминала (Ctrl+C, Ctrl+U) перед печатью. DATETIME и UUID вычисляются при каждом запуске. Оба INPUT собираются в одном диалоге до начала печати. Все команды только читают систему', 0),
+(98, 6, 42, 'Диск, память и расчёт',
+'{INPUT [CONFIRM]Показать диск и память?}
+df -h | head -n {INPUT [NUMBER:6]Сколько строк df показать}
+echo
+free -h
+echo
+ps aux --sort=-%cpu | head -n 4
+echo "scale=2; {INPUT [FLOAT:2.5]Число} * 4" | bc',
+'CONFIRM отменяет выполнение при отказе. NUMBER и FLOAT проверяют тип ввода: нечисловое значение диалог не пропустит. Для последней строки нужна утилита bc. Всё только для чтения', 0),
+(99, 6, 42, 'Генератор значений',
+'echo "Тикет: {INPUT [STRING:TCK]Префикс}-{COUNTER:start=1;step=1;pad=3}"
+echo "Временный токен: {RANDOM:12}"
+echo "Пользователь Windows: {ENV:USERNAME}"
+echo "Буфер обмена: {CLIPBOARD}"',
+'RANDOM - криптостойкая строка (1..1024 символа, без похожих символов). COUNTER помнит значение между запусками (start/step/pad/volatile/current). ENV берёт переменную окружения Windows, CLIPBOARD - буфер обмена (скопируйте одну строку)', 0),
+(100, 6, 42, 'Печать и клавиши',
+'{CLEAR_LINE}
+{KEYDELAY 25}
+echo "один два три"{SENDKEY HOME}{SLEEP 800}{SENDKEYEX ALT+F}{SLEEP 800}{SENDKEYEX ALT+F}{SLEEP 800}{SENDKEY END}{ENTER}
+{SLEEP 600}
+{SENDKEYEX CTRL+L}
+echo "Клавиши нажаты, состояние системы не изменено"',
+'KEYDELAY замедляет печать (25 мс между символами), SLEEP выдерживает паузы. SENDKEY жмёт одиночные клавиши (HOME, END), SENDKEYEX - сочетания (ALT+F - на слово вперёд в bash, CTRL+L - очистка экрана). Смотрите, как курсор бегает по строке до Enter', 0),
+(101, 6, 42, 'Дата и время',
+'{CLEAR_LINE}
+echo "Сейчас: {DATETIME:dd.mm.yyyy HH:nn:ss}"
+date -d "{INPUT [DATE]Дата (ГГГГ-ММ-ДД)}" "+%A"
+date -d "{INPUT [TIME]Время (ЧЧ:ММ)}" "+%R"
+date -d "{INPUT [DATETIME]Дата_время (ГГГГ-ММ-ДД_ЧЧ:ММ)}" "+%s"',
+'Три типа ввода с валидацией: DATE, TIME и DATETIME (подчёркивание в значении заменяется на пробел - удобно для терминала). date -d печатает день недели, время и epoch; нужен GNU date (Linux)', 0),
+(102, 6, 42, 'HEX и пароль',
+'H={INPUT [HEX:FF]Hex без 0x}; echo "0x$H = $((16#$H))"
+printf "Символов в пароле: %s\n" "$(printf %s "{INPUT [PASSWORD]Пароль}" | wc -c)"',
+'HEX принимает 0-9A-F до 8 цифр (префикс 0x необязателен), bash считает 16#. PASSWORD скрывает ввод в диалоге звёздами; в сам терминал пароль печатается посимвольно, как и любой макрос, поэтому показываем только длину', 0),
+
+-- Диагностика: длинный скрипт для проверки медленной печати и автодополнения (категория 44)
+(103, 6, 44, 'Safe System Diagnostics Script',
+'#!/bin/bash
+# ==============================================================================
+# Safe System Diagnostics Script
+# Purpose: Read-only system check for snippet auto-complete testing.
+# Date: 2026-11-02
+# ==============================================================================
+#
+# Define checks as a simple space-separated string (no arrays with {})
+CHECKS="uptime memory disk network environment"
+#
+# Function to print formatted headers
+print_header() {
+    local title=$1
+    echo "========================================================"
+    echo "  $title"
+    echo "========================================================"
+}
+
+print_header "SYSTEM DIAGNOSTICS STARTED"
+echo "Timestamp: $(date ''+%Y-%m-%d %H:%M:%S %Z'')"
+echo "Hostname:  $(hostname)"
+echo "Kernel:    $(uname -srm)"
+echo ""
+
+# Loop through the checks using word splitting
+for check in $CHECKS; do
+    case "$check" in
+        uptime)
+            print_header "1. SYSTEM UPTIME & LOAD"
+            uptime -p 2>/dev/null || uptime
+            echo ""
+            ;;
+        memory)
+            print_header "2. MEMORY STATISTICS"
+            free -h
+            echo ""
+            ;;
+        disk)
+            print_header "3. DISK USAGE (Excluding virtual FS)"
+            df -h -x tmpfs -x devtmpfs -x squashfs -x overlay 2>/dev/null || df -h
+            echo ""
+            ;;
+        network)
+            print_header "4. NETWORK INTERFACES"
+            if command -v ip > /dev/null 2>&1; then
+                ip -br addr show
+            else
+                echo "ip command not found, falling back to ifconfig."
+                ifconfig 2>/dev/null | grep -E ''^[a-z]|inet ''
+            fi
+            echo ""
+            ;;
+        environment)
+            print_header "5. USER ENVIRONMENT"
+            echo "User:      $(whoami)"
+            echo "Shell:     $SHELL"
+            echo "Terminal:  $TERM"
+            echo "Home Dir:  $HOME"
+            echo ""
+            ;;
+        *)
+            echo "Unknown check: $check"
+            ;;
+    esac
+done
+
+print_header "DIAGNOSTICS COMPLETED SUCCESSFULLY"
+echo "No system files or configurations were modified."
+echo "Have a great day and happy coding!"
+echo "========================================================"',
+'Только чтение: uptime, free, df, ip/ifconfig, окружение. Много строк и вложенные кавычки - тест долгой печати, подсветки и автодополнения bash', 0);
 
 -- SNIPPET_TAGS
 INSERT INTO snippet_tags(snippet_id, tag_id) VALUES
@@ -262,32 +382,50 @@ INSERT INTO snippet_tags(snippet_id, tag_id) VALUES
 (85,17),(85,41),(85,38),(86,3),(86,37),(86,10),(87,4),(87,41),
 (88,7),(88,41),(89,11),(89,38),(89,41),(90,3),(90,38),(90,41),(91,38),(91,41),
 (92,12),(92,33),(92,41),(93,21),(93,33),(93,41),(94,23),(94,41),
-(95,17),(95,8),(95,41),(96,17),(96,10),(96,41);
+(95,17),(95,8),(95,41),(96,17),(96,10),(96,41),
+(97,1),(97,41),(98,1),(98,41),(99,38),(99,41),(100,38),(100,41),
+(101,1),(101,41),(102,1),(102,41),(103,1),(103,2),(103,40);
 
 -- FAVORITES (избранное: порядок для горячих слотов 1..0)
 INSERT INTO snippet_favorites(user_id, snippet_id, sort_order) VALUES
-(1,13,0),(1,9,1),(1,12,2),(1,6,3),(1,85,4),(1,87,5),
+(1,13,0),(1,9,1),(1,12,2),(1,6,3),
 (2,21,0),(2,30,1),(2,40,2),
-(3,46,0),(3,47,1),(3,53,2),(3,92,3),
-(4,61,0),(4,68,1),(4,66,2),(4,95,3),
-(5,81,0),(5,79,1),(5,83,2);
+(3,46,0),(3,47,1),(3,53,2),
+(4,61,0),(4,68,1),(4,66,2),
+(5,81,0),(5,79,1),(5,83,2),
+(6,85,0),(6,87,1),(6,97,2),(6,92,3),(6,103,4);
 
 -- CHAINS (цепочки сниппетов: имя уникально в рамках workspace)
-INSERT INTO snippet_chains(id, user_id, name) VALUES
-(1, 1, 'Утренняя проверка сервера'),
-(2, 1, 'Диагностика сети'),
-(3, 2, 'Проверка здоровья MySQL'),
-(4, 3, 'Деплой с проверкой'),
-(5, 4, 'Разбор инцидента'),
-(6, 5, 'Обслуживание БД');
+INSERT INTO snippet_chains(id, user_id, name, auto_enter) VALUES
+(1, 1, 'Утренняя проверка сервера', 0),
+(2, 1, 'Диагностика сети', 0),
+(3, 2, 'Проверка здоровья MySQL', 0),
+(4, 3, 'Деплой с проверкой', 1),
+(5, 4, 'Разбор инцидента', 0),
+(6, 5, 'Обслуживание БД', 0),
+(7, 6, 'Тур по макросам', 1),
+(8, 6, 'Диагностика Linux', 0);
 
 INSERT INTO snippet_chain_steps(chain_id, position, snippet_id, pause_ms) VALUES
 (1,1,19,500),(1,2,6,0),(1,3,16,0),(1,4,18,0),(1,5,9,500),
 (2,1,6,0),(2,2,7,0),(2,3,8,500),
 (3,1,22,0),(3,2,24,500),(3,3,23,500),
-(4,1,54,0),(4,2,53,1000),(4,3,58,500),(4,4,12,500),
+(4,1,54,0),(4,2,53,1000),(4,3,58,500),(4,4,59,500),
 (5,1,64,0),(5,2,61,500),(5,3,62,500),(5,4,65,500),
-(6,1,76,0),(6,2,83,500),(6,3,84,500);
+(6,1,76,0),(6,2,83,500),(6,3,84,500),
+(7,1,85,800),(7,2,87,500),(7,3,88,500),(7,4,90,0),
+(8,1,103,500),(8,2,98,500),(8,3,101,0);
+
+-- SAVED QUERIES (умные папки: запросы в синтаксисе панели поиска)
+INSERT INTO saved_queries(id, user_id, name, query_text) VALUES
+(1, 1, 'Осторожные команды',            'tag:cleanup OR tag:rollback'),
+(2, 1, 'Недавние Linux-команды',        'tag:linux tag:bash -docker'),
+(3, 2, 'Дампы и бэкапы',                'tag:backup'),
+(4, 3, 'Всё по Kubernetes',             'cat:kubernetes'),
+(5, 4, 'Мониторинг и логи',             'tag:monitoring OR tag:logs'),
+(6, 6, 'Все макросы',                   'tag:macros'),
+(7, 6, 'Ввод и валидация',              'tag:macros "INPUT"'),
+(8, 6, 'Автоматизация и клавиши',       'tag:macros tag:automation');
 
 -- RUN HISTORY
 INSERT INTO snippet_runs(snippet_id, run_at, executed_by_user_id) VALUES
@@ -335,7 +473,10 @@ INSERT INTO snippet_runs(snippet_id, run_at, executed_by_user_id) VALUES
 (77, strftime('%s','now')-500,       2),(77, strftime('%s','now')-100,       2),(78, strftime('%s','now')-86400*7,  1),
 (79, strftime('%s','now')-86400*10, 1),(80, strftime('%s','now')-86400*5,  3),(81, strftime('%s','now')-86400*3,  4),
 (82, strftime('%s','now')-86400*2,  4),(83, strftime('%s','now')-86400*1,  4),(84, strftime('%s','now')-86400*4,  4),
-(85, strftime('%s','now')-86400*2,  1),(86, strftime('%s','now')-86400*6,  1),(87, strftime('%s','now')-86400*1,  1),
-(88, strftime('%s','now')-86400*3,  2),(89, strftime('%s','now')-86400*4,  1),(90, strftime('%s','now')-86400*2,  3),
-(91, strftime('%s','now')-86400*5,  4),(92, strftime('%s','now')-86400*1,  3),(93, strftime('%s','now')-86400*2,  3),
-(94, strftime('%s','now')-86400*3,  3),(95, strftime('%s','now')-86400*4,  4),(96, strftime('%s','now')-86400*9,  4);
+(85, strftime('%s','now')-86400*2,  6),(86, strftime('%s','now')-86400*6,  6),(87, strftime('%s','now')-86400*1,  6),
+(88, strftime('%s','now')-86400*3,  6),(89, strftime('%s','now')-86400*4,  6),(90, strftime('%s','now')-86400*2,  6),
+(91, strftime('%s','now')-86400*5,  6),(92, strftime('%s','now')-86400*1,  6),(93, strftime('%s','now')-86400*2,  6),
+(94, strftime('%s','now')-86400*3,  6),(95, strftime('%s','now')-86400*4,  6),(96, strftime('%s','now')-86400*9,  6),
+(97, strftime('%s','now')-86400*2,  6),(98, strftime('%s','now')-86400*5,  6),(99, strftime('%s','now')-86400*1,  6),
+(100, strftime('%s','now')-86400*4, 6),(101, strftime('%s','now')-86400*7, 6),(102, strftime('%s','now')-86400*3, 6),
+(103, strftime('%s','now')-86400*1, 6),(103, strftime('%s','now')-7200,     6);

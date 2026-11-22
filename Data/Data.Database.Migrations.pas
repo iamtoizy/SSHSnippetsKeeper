@@ -991,7 +991,8 @@ begin
 
             // Baseline-схема: тот же набор ресурсов, что и при создании БД
             // из GUI (TAppDatabase.InitializeDatabase); завершается
-            // PRAGMA user_version = APP_DB_VERSION, отдельный раннер не нужен
+            // PRAGMA user_version = APP_DB_VERSION, отдельный раннер не нужен.
+            // /nodemo исключает демо-набор - база остаётся с пустыми таблицами
             Script := TFDScript.Create(nil);
             try
                 Script.Connection := Connection;
@@ -1002,11 +1003,16 @@ begin
                 // Baseline одной транзакцией - как в GUI. foreign_keys
                 // отключаем снаружи: внутри транзакции этот PRAGMA - no-op,
                 // а seed грузится без проверки связей
-                Script.SQLScripts.Add.SQL.Text :=
-                    'BEGIN;' + sLineBreak +
-                    LoadSQLResource('SCHEMA_INIT_SQL') +
-                    LoadSQLResource('SCHEMA_SEED_SQL') +
-                    sLineBreak + 'COMMIT;';
+                with Script.SQLScripts.Add do
+                begin
+                    SQL.Text :=
+                        'BEGIN;' + sLineBreak +
+                        LoadSQLResource('SCHEMA_INIT_SQL');
+                    if not Params.NoDemoData then
+                        SQL.Text := SQL.Text +
+                            LoadSQLResource('SCHEMA_SEED_SQL');
+                    SQL.Text := SQL.Text + sLineBreak + 'COMMIT;';
+                end;
                 Connection.ExecSQL('PRAGMA foreign_keys = OFF');
                 try
                     Script.ExecuteAll;
