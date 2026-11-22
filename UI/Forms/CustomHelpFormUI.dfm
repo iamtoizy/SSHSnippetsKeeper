@@ -28,10 +28,11 @@ object CustomHelpForm: TCustomHelpForm
     BevelOuter = bvNone
     TabOrder = 0
     object bCopyText: TButton
-      Left = 3
-      Top = 5
+      Left = 313
+      Top = 4
       Width = 140
       Height = 25
+      Anchors = [akTop, akRight]
       Caption = 'Copy text'
       TabOrder = 0
       OnClick = bCopyTextClick

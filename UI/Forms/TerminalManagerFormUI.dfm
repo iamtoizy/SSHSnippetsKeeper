@@ -60,17 +60,18 @@ object TerminalManagerForm: TTerminalManagerForm
     TabOrder = 1
     ExplicitWidth = 600
     object lbStatus: TLabel
-      Left = 272
+      Left = 12
       Top = 15
-      Width = 325
+      Width = 340
       Height = 15
       AutoSize = False
     end
     object bApply: TButton
-      Left = 3
+      Left = 361
       Top = 8
       Width = 150
       Height = 25
+      Anchors = [akTop, akRight]
       Caption = #1055#1088#1080#1084#1077#1085#1080#1090#1100
       Default = True
       ModalResult = 1
@@ -78,10 +79,11 @@ object TerminalManagerForm: TTerminalManagerForm
       OnClick = bApplyClick
     end
     object bCancel: TButton
-      Left = 159
+      Left = 517
       Top = 8
       Width = 100
       Height = 25
+      Anchors = [akTop, akRight]
       Cancel = True
       Caption = #1054#1090#1084#1077#1085#1072
       ModalResult = 2

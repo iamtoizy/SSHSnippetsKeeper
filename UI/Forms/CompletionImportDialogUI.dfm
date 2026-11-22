@@ -87,7 +87,7 @@ object CompletionImportForm: TCompletionImportForm
       Left = 4
       Top = 8
       Width = 100
-      Height = 23
+      Height = 25
       Caption = 'All'
       TabOrder = 0
       OnClick = btnAllClick
@@ -96,7 +96,7 @@ object CompletionImportForm: TCompletionImportForm
       Left = 112
       Top = 8
       Width = 100
-      Height = 23
+      Height = 25
       Caption = 'None'
       TabOrder = 1
       OnClick = btnNoneClick
@@ -105,7 +105,7 @@ object CompletionImportForm: TCompletionImportForm
       Left = 228
       Top = 8
       Width = 60
-      Height = 23
+      Height = 25
       Caption = 'OK'
       Default = True
       TabOrder = 2
@@ -115,7 +115,7 @@ object CompletionImportForm: TCompletionImportForm
       Left = 296
       Top = 8
       Width = 60
-      Height = 23
+      Height = 25
       Cancel = True
       Caption = 'Cancel'
       ModalResult = 2

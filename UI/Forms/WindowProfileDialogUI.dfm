@@ -3,7 +3,7 @@ object WindowProfileDialog: TWindowProfileDialog
   Top = 0
   BorderStyle = bsDialog
   Caption = ''
-  ClientHeight = 434
+  ClientHeight = 414
   ClientWidth = 460
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -110,7 +110,7 @@ object WindowProfileDialog: TWindowProfileDialog
     Left = 12
     Top = 268
     Width = 436
-    Height = 125
+    Height = 105
     Columns = <
       item
         Caption = 'Title'
@@ -142,27 +142,29 @@ object WindowProfileDialog: TWindowProfileDialog
   end
   object pBottom: TPanel
     Left = 0
-    Top = 393
+    Top = 373
     Width = 460
     Height = 41
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 5
     object bOK: TButton
-      Left = 3
+      Left = 220
       Top = 8
       Width = 110
       Height = 25
+      Anchors = [akTop, akRight]
       Caption = 'OK'
       Default = True
       TabOrder = 0
       OnClick = bOKClick
     end
     object bCancel: TButton
-      Left = 119
+      Left = 338
       Top = 8
       Width = 110
       Height = 25
+      Anchors = [akTop, akRight]
       Cancel = True
       ModalResult = 2
       TabOrder = 1

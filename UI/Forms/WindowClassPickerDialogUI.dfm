@@ -40,27 +40,29 @@ object WindowClassPickerDialog: TWindowClassPickerDialog
     BevelOuter = bvNone
     TabOrder = 1
     object bAdd: TButton
-      Left = 3
+      Left = 305
       Top = 8
       Width = 150
       Height = 25
+      Anchors = [akTop, akRight]
       Default = True
       ModalResult = 1
-      TabOrder = 0
+      TabOrder = 2
     end
     object bCancel: TButton
-      Left = 159
+      Left = 462
       Top = 8
       Width = 100
       Height = 25
+      Anchors = [akTop, akRight]
       Cancel = True
       ModalResult = 2
       TabOrder = 1
     end
     object lbStatus: TLabel
-      Left = 272
+      Left = 12
       Top = 15
-      Width = 295
+      Width = 285
       Height = 15
       AutoSize = False
       Caption = ''

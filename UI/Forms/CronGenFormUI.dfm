@@ -55,9 +55,9 @@ object CronGenForm: TCronGenForm
     end
     object bCopy: TButton
       Left = 510
-      Top = 20
+      Top = 19
       Width = 140
-      Height = 23
+      Height = 25
       Caption = #1057#1082#1086#1087#1080#1088#1086#1074#1072#1090#1100
       TabOrder = 1
       OnClick = bCopyClick

@@ -30,27 +30,30 @@ object AllDatabasesForm: TAllDatabasesForm
     OnSelectItem = lvDatabasesSelectItem
   end
   object bOpen: TButton
-    Left = 12
+    Left = 10
     Top = 396
     Width = 110
     Height = 25
+    Anchors = [akTop, akRight]
     Default = True
     TabOrder = 1
     OnClick = bOpenClick
   end
   object bCleanup: TButton
-    Left = 132
+    Left = 126
     Top = 396
     Width = 190
     Height = 25
+    Anchors = [akTop, akRight]
     TabOrder = 2
     OnClick = bCleanupClick
   end
   object bDelete: TButton
-    Left = 332
+    Left = 322
     Top = 396
     Width = 130
     Height = 25
+    Anchors = [akTop, akRight]
     TabOrder = 3
     OnClick = bDeleteClick
   end
@@ -59,6 +62,7 @@ object AllDatabasesForm: TAllDatabasesForm
     Top = 396
     Width = 150
     Height = 25
+    Anchors = [akTop, akRight]
     Cancel = True
     ModalResult = 1
     TabOrder = 4

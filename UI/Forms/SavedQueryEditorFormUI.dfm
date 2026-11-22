@@ -54,10 +54,10 @@ object SavedQueryEditorForm: TSavedQueryEditorForm
     WordWrap = True
   end
   object btnOK: TButton
-    Left = 12
-    Top = 148
+    Left = 156
+    Top = 153
     Width = 120
-    Height = 30
+    Height = 25
     Caption = 'OK'
     Default = True
     TabOrder = 2
@@ -65,9 +65,9 @@ object SavedQueryEditorForm: TSavedQueryEditorForm
   end
   object btnCancel: TButton
     Left = 288
-    Top = 148
+    Top = 153
     Width = 120
-    Height = 30
+    Height = 25
     Cancel = True
     Caption = 'Cancel'
     ModalResult = 2

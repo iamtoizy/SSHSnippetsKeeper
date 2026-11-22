@@ -82,11 +82,14 @@ begin
     if lvDatabases.Columns.Count = 0 then
     begin
         Col := lvDatabases.Columns.Add;
+        Col.Caption := TUIStateLoader.GetMessage('AllDatabases.ColName');
+        Col.Width := 170;
+        Col := lvDatabases.Columns.Add;
         Col.Caption := TUIStateLoader.GetMessage('AllDatabases.ColPath');
-        Col.Width := 420;
+        Col.Width := 330;
         Col := lvDatabases.Columns.Add;
         Col.Caption := TUIStateLoader.GetMessage('AllDatabases.ColStatus');
-        Col.Width := 130;
+        Col.Width := 120;
     end;
 end;
 
@@ -131,7 +134,8 @@ begin
         for I := 0 to High(Paths) do
         begin
             Item := lvDatabases.Items.Add;
-            Item.Caption := Paths[I];
+            Item.Caption := ExtractFileName(Paths[I]);
+            Item.SubItems.Add(Paths[I]);
             if SameText(Paths[I], FCurrentDb) then
                 Item.SubItems.Add(TUIStateLoader.GetMessage('AllDatabases.StatusOpen'))
             else if TFile.Exists(Paths[I]) then
@@ -147,8 +151,10 @@ end;
 
 procedure TAllDatabasesForm.UpdateButtonsState;
 begin
+    // Caption строки - имя файла, путь берём из FPaths по индексу строки
     bOpen.Enabled := (lvDatabases.Selected <> nil) and
-        TFile.Exists(lvDatabases.Selected.Caption);
+        (lvDatabases.Selected.Index <= High(FPaths)) and
+        TFile.Exists(FPaths[lvDatabases.Selected.Index]);
     bDelete.Enabled := lvDatabases.SelCount > 0;
 end;
 
@@ -166,7 +172,7 @@ begin
         if lvDatabases.Items[I].Selected then
         begin
             SetLength(Result, Length(Result) + 1);
-            Result[High(Result)] := lvDatabases.Items[I].Caption;
+            Result[High(Result)] := FPaths[lvDatabases.Items[I].Index];
         end;
 end;
 
@@ -174,7 +180,7 @@ procedure TAllDatabasesForm.bOpenClick(Sender: TObject);
 begin
     if not bOpen.Enabled then
         Exit;
-    FSelectedPath := lvDatabases.Selected.Caption;
+    FSelectedPath := FPaths[lvDatabases.Selected.Index];
     ModalResult := mrOk;
 end;
 

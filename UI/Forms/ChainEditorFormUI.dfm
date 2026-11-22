@@ -100,7 +100,7 @@ object ChainEditorForm: TChainEditorForm
         Width = 72
       end>
     DragMode = dmAutomatic
-    GridLines = True
+    GridLines = False
     HideSelection = False
     ReadOnly = True
     RowSelect = True
@@ -124,7 +124,7 @@ object ChainEditorForm: TChainEditorForm
     Left = 12
     Top = 414
     Width = 64
-    Height = 28
+    Height = 25
     Caption = 'Up'
     TabOrder = 3
     OnClick = btnMoveUpClick
@@ -133,7 +133,7 @@ object ChainEditorForm: TChainEditorForm
     Left = 82
     Top = 414
     Width = 64
-    Height = 28
+    Height = 25
     Caption = 'Down'
     TabOrder = 4
     OnClick = btnMoveDownClick
@@ -142,7 +142,7 @@ object ChainEditorForm: TChainEditorForm
     Left = 228
     Top = 414
     Width = 104
-    Height = 28
+    Height = 25
     Caption = 'Remove step'
     TabOrder = 5
     OnClick = btnRemoveStepClick
@@ -170,7 +170,7 @@ object ChainEditorForm: TChainEditorForm
         Caption = 'Workspace'
         Width = 118
       end>
-    GridLines = True
+    GridLines = False
     HideSelection = False
     ReadOnly = True
     RowSelect = True
@@ -183,7 +183,7 @@ object ChainEditorForm: TChainEditorForm
     Left = 352
     Top = 345
     Width = 140
-    Height = 28
+    Height = 25
     Caption = 'Add step'
     Enabled = False
     TabOrder = 8
@@ -193,7 +193,7 @@ object ChainEditorForm: TChainEditorForm
     Left = 492
     Top = 466
     Width = 94
-    Height = 28
+    Height = 25
     Caption = 'OK'
     Default = True
     TabOrder = 9
@@ -203,7 +203,7 @@ object ChainEditorForm: TChainEditorForm
     Left = 594
     Top = 466
     Width = 94
-    Height = 28
+    Height = 25
     Cancel = True
     Caption = 'Cancel'
     ModalResult = 2

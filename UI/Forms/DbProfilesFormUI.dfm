@@ -29,18 +29,20 @@ object DbProfilesForm: TDbProfilesForm
     OnSelectItem = lvProfilesSelectItem
   end
   object bCleanup: TButton
-    Left = 12
+    Left = 126
     Top = 316
     Width = 220
     Height = 25
+    Anchors = [akTop, akRight]
     TabOrder = 1
     OnClick = bCleanupClick
   end
   object bDelete: TButton
-    Left = 240
+    Left = 352
     Top = 316
     Width = 150
     Height = 25
+    Anchors = [akTop, akRight]
     TabOrder = 2
     OnClick = bDeleteClick
   end

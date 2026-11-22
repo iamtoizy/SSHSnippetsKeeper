@@ -28,9 +28,9 @@ object ChainRunPanel: TChainRunPanel
   end
   object btnStop: TButton
     Left = 278
-    Top = 60
+    Top = 62
     Width = 90
-    Height = 28
+    Height = 25
     Cancel = True
     Caption = 'Stop'
     TabOrder = 0

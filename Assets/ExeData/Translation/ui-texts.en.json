@@ -1317,6 +1317,7 @@
       "DeleteMissing": "Delete missing",
       "DeleteAsk": "Remove the selected databases from the recent list along with their stored encryption keys?",
       "CleanupDone": "Missing databases removed: %d",
+      "ColName": "Name",
       "ColPath": "Path",
       "ColStatus": "Status",
       "StatusOpen": "Open",

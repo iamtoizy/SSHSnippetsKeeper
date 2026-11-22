@@ -30,10 +30,10 @@ object CategorySelectForm: TCategorySelectForm
     OnDblClick = tvCategoriesDblClick
   end
   object btnOK: TButton
-    Left = 12
-    Top = 324
+    Left = 96
+    Top = 326
     Width = 120
-    Height = 30
+    Height = 25
     Caption = 'OK'
     Default = True
     TabOrder = 1
@@ -41,9 +41,9 @@ object CategorySelectForm: TCategorySelectForm
   end
   object btnCancel: TButton
     Left = 228
-    Top = 324
+    Top = 326
     Width = 120
-    Height = 30
+    Height = 25
     Cancel = True
     Caption = 'Cancel'
     ModalResult = 2

@@ -343,7 +343,7 @@ object CompletionManagerForm: TCompletionManagerForm
       Left = 6
       Top = 6
       Width = 75
-      Height = 23
+      Height = 25
       Caption = #1048#1084#1087#1086#1088#1090
       TabOrder = 0
       OnClick = btnImportClick
@@ -352,7 +352,7 @@ object CompletionManagerForm: TCompletionManagerForm
       Left = 88
       Top = 6
       Width = 75
-      Height = 23
+      Height = 25
       Caption = #1069#1082#1089#1087#1086#1088#1090
       TabOrder = 1
       OnClick = btnExportClick
@@ -361,7 +361,7 @@ object CompletionManagerForm: TCompletionManagerForm
       Left = 454
       Top = 6
       Width = 88
-      Height = 23
+      Height = 25
       Anchors = [akTop, akRight]
       Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100
       TabOrder = 2
@@ -371,7 +371,7 @@ object CompletionManagerForm: TCompletionManagerForm
       Left = 548
       Top = 6
       Width = 82
-      Height = 23
+      Height = 25
       Anchors = [akTop, akRight]
       Cancel = True
       Caption = #1047#1072#1082#1088#1099#1090#1100

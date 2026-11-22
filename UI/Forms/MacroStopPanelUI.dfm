@@ -25,9 +25,9 @@ object MacroStopPanel: TMacroStopPanel
   end
   object btnStop: TButton
     Left = 198
-    Top = 46
+    Top = 48
     Width = 90
-    Height = 28
+    Height = 25
     Caption = 'Stop'
     TabOrder = 0
     OnClick = btnStopClick

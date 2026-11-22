@@ -41,29 +41,31 @@ object AppPickerForm: TAppPickerForm
     BevelOuter = bvNone
     TabOrder = 1
     object bAdd: TButton
-      Left = 3
+      Left = 305
       Top = 8
       Width = 150
       Height = 25
+      Anchors = [akTop, akRight]
       Caption = #1044#1086#1073#1072#1074#1080#1090#1100' '#1074#1099#1073#1088#1072#1085#1085#1099#1077
       Default = True
       ModalResult = 1
-      TabOrder = 0
+      TabOrder = 2
     end
     object bCancel: TButton
-      Left = 159
+      Left = 462
       Top = 8
       Width = 100
       Height = 25
+      Anchors = [akTop, akRight]
       Cancel = True
       Caption = #1054#1090#1084#1077#1085#1072
       ModalResult = 2
       TabOrder = 1
     end
     object lbStatus: TLabel
-      Left = 272
+      Left = 12
       Top = 15
-      Width = 295
+      Width = 285
       Height = 15
       AutoSize = False
       Caption = ''

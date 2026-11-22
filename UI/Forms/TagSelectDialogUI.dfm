@@ -51,10 +51,10 @@ object TagSelectForm: TTagSelectForm
     OnDblClick = lvTagsDblClick
   end
   object btnOK: TButton
-    Left = 12
-    Top = 358
+    Left = 96
+    Top = 361
     Width = 120
-    Height = 30
+    Height = 25
     Caption = 'OK'
     Default = True
     TabOrder = 2
@@ -62,9 +62,9 @@ object TagSelectForm: TTagSelectForm
   end
   object btnCancel: TButton
     Left = 228
-    Top = 358
+    Top = 361
     Width = 120
-    Height = 30
+    Height = 25
     Cancel = True
     Caption = 'Cancel'
     ModalResult = 2

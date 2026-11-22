@@ -50,36 +50,36 @@ object SequenceOrderForm: TSequenceOrderForm
   end
   object btnUp: TButton
     Left = 12
-    Top = 318
+    Top = 321
     Width = 124
-    Height = 28
+    Height = 25
     Caption = 'Up'
     TabOrder = 1
     OnClick = btnUpClick
   end
   object btnDown: TButton
     Left = 148
-    Top = 318
+    Top = 321
     Width = 124
-    Height = 28
+    Height = 25
     Caption = 'Down'
     TabOrder = 2
     OnClick = btnDownClick
   end
   object btnRemove: TButton
     Left = 284
-    Top = 318
+    Top = 321
     Width = 124
-    Height = 28
+    Height = 25
     Caption = 'Remove'
     TabOrder = 3
     OnClick = btnRemoveClick
   end
   object btnRun: TButton
-    Left = 12
-    Top = 356
+    Left = 16
+    Top = 359
     Width = 190
-    Height = 30
+    Height = 25
     Caption = 'Run'
     Default = True
     TabOrder = 4
@@ -87,9 +87,9 @@ object SequenceOrderForm: TSequenceOrderForm
   end
   object btnCancel: TButton
     Left = 218
-    Top = 356
+    Top = 359
     Width = 190
-    Height = 30
+    Height = 25
     Cancel = True
     Caption = 'Cancel'
     ModalResult = 2
