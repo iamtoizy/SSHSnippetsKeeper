@@ -100,3 +100,6 @@ vendor/SQLite3MultipleCiphers/
 # Generated version resource (built by Tools\make-version.ps1)
 Resources/SSHSnippetsKeeperVersion.rc
 Resources/SSHSnippetsKeeperVersion.res
+
+# Скомпилированные SQL-ресурсы схемы (пересобираются BRCC32 из Database\Schema\*.rc при сборке)
+Resources/000_schema_init.res
