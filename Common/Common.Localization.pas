@@ -54,7 +54,8 @@ uses
     System.SyncObjs,
     System.SysUtils,
     System.TypInfo,
-    Vcl.ComCtrls;
+    Vcl.ComCtrls,
+    Vcl.StdCtrls;
 
 const
     ERR_KEY_NOT_FOUND     = '[ERROR: Key "%s" not found]';
@@ -261,10 +262,25 @@ begin
                         end;
                     end;
                     // ---------------------------------------------
+                    // Обработка элементов TComboBox через индекс
+                    if (Comp is TComboBox) and (CompObj.GetValue('Items') is TJSONObject) then
+                    begin
+                        var ItemsObj := TJSONObject(CompObj.GetValue('Items'));
+                        var CB := TComboBox(Comp);
+                        for var ItemPair in ItemsObj do
+                        begin
+                            var ItemIdx: Integer;
+                            if TryStrToInt(ItemPair.JsonString.Value, ItemIdx) and
+                                (ItemIdx >= 0) and (ItemIdx < CB.Items.Count) then
+                                CB.Items[ItemIdx] := ItemPair.JsonValue.Value;
+                        end;
+                    end;
+                    // ---------------------------------------------
                     //Применяем стандартные свойства к компоненту
                     for CompPropPair in CompObj do
                     begin
-                        if CompPropPair.JsonString.Value <> 'Columns' then // Игнорируем узел колонок
+                        if (CompPropPair.JsonString.Value <> 'Columns') and
+                           (CompPropPair.JsonString.Value <> 'Items') then // Игнорируем узлы колонок и элементов
                         begin
                             // Используем новую функцию для применения свойства
                             SetNestedPropValue(Comp, CompPropPair.JsonString.Value, CompPropPair.JsonValue.Value);

@@ -367,6 +367,9 @@ object MainForm: TMainForm
           Action = actAllDatabases
         end
       end
+      object nDbLauncher: TMenuItem
+        Action = actDbLauncher
+      end
       object nCloseDatabase: TMenuItem
         Action = actCloseDatabase
       end
@@ -6157,6 +6160,11 @@ object MainForm: TMainForm
       Category = 'Database'
       Caption = 'actAllDatabases'
       OnExecute = actAllDatabasesExecute
+    end
+    object actDbLauncher: TAction
+      Category = 'Database'
+      Caption = 'actDbLauncher'
+      OnExecute = actDbLauncherExecute
     end
     object actCloseDatabase: TAction
       Category = 'Database'

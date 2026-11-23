@@ -109,6 +109,7 @@ implementation
 
 uses
     Common.Localization,
+    Common.VCLStyleService,
     SynEdit,
     SynThemeAdapter,
     UI.BusyIndicator,
@@ -184,6 +185,13 @@ begin
     // а висячий указатель в FInstances уронил бы следующий ExecuteGlobal
     if FInstances <> nil then
         FInstances.Remove(Self.ClassType);
+
+    // Вычищаем пару (форма, style-hook) из карты движка ДО разрушения:
+    // при системном стиле VCL пропускает snControlDestroyed (гейт
+    // sfHandleMessages), мёртвая форма остаётся ключом в
+    // TStyleEngine.FControls, и последующий recycle хуков разыменовывает
+    // её - отсюда AV в TStyleHook.GetHandle после смены темы на 'Windows'
+    TVCLStyleService.PurgeStyleHooks(Self);
 
     // 1. Менеджер справки уничтожаем первым: его всплывающая кнопка
     // является самостоятельным окном и иначе переживёт разрушение формы.

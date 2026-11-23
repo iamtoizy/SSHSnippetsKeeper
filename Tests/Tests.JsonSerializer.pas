@@ -87,7 +87,7 @@ const
       '"TerminalChooserPreviewVisible":false,"TerminalChooserWidth":0,"TerminalChooserHeight":0,' +
       '"TerminalChooserPreviewHeight":0,"SecurityScanStrict":false,' +
       '"SecurityBackgroundScanEnabled":false,"SecurityBackgroundScanIntervalMinutes":0,' +
-      '"SecurityBackgroundScanDefined":false}';
+      '"SecurityBackgroundScanDefined":false,"DbLauncherShowMode":"","DbLauncherDefined":false}';
 
 { TJsonSerializerTests }
 

@@ -113,6 +113,7 @@ begin
         TDUnitX.RegisterTestFixture(TCompletionEngineTests);
         TDUnitX.RegisterTestFixture(TSettingsDbSecurityTests);
         TDUnitX.RegisterTestFixture(TSettingsRecentDatabasesTests);
+        TDUnitX.RegisterTestFixture(TSettingsDbLauncherTests);
         TDUnitX.RegisterTestFixture(TDbCryptoPbkdf2Tests);
         TDUnitX.RegisterTestFixture(TDbCryptoGcmTests);
         TDUnitX.RegisterTestFixture(TDbCryptoKeyFileTests);

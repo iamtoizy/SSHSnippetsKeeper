@@ -127,6 +127,25 @@ type
     end;
 
     [TestFixture]
+    TSettingsDbLauncherTests = class(TObject)
+    public
+        [Test]
+        procedure ShouldShow_NeverMode_AlwaysFalse;
+        [Test]
+        procedure ShouldShow_AlwaysMode_EvenWithoutDatabases;
+        [Test]
+        procedure ShouldShow_IfMultiple_RequiresTwoKnownPaths;
+        [Test]
+        procedure ShouldShow_BrokenMode_TreatedAsIfMultiple;
+        [Test]
+        procedure Load_MissingLauncherNode_RestoresDefaultMode;
+        [Test]
+        procedure Load_BrokenLauncherMode_FallsBackToDefault;
+        [Test]
+        procedure SaveLoad_Roundtrip_PreservesLauncherMode;
+    end;
+
+    [TestFixture]
     TSettingsRecentDatabasesTests = class(TObject)
     private
         function SettingsPath: string;
@@ -1172,6 +1191,113 @@ begin
     Assert.AreEqual('', DbStoredKeyMaterial(P));
     P.Key := 'zzz';
     Assert.AreEqual('', DbStoredKeyMaterial(P));
+end;
+
+{ TSettingsDbLauncherTests }
+
+procedure TSettingsDbLauncherTests.ShouldShow_NeverMode_AlwaysFalse;
+var
+    S: TAppSettings;
+begin
+    S := Default(TAppSettings);
+    S.DbLauncherShowMode := LAUNCHER_SHOW_NEVER;
+    AddRecentDatabase(S, 'C:\db\a.sqlite');
+    AddRecentDatabase(S, 'C:\db\b.sqlite');
+    Assert.IsFalse(ShouldShowDbLauncher(S));
+end;
+
+procedure TSettingsDbLauncherTests.ShouldShow_AlwaysMode_EvenWithoutDatabases;
+var
+    S: TAppSettings;
+begin
+    S := Default(TAppSettings);
+    S.DbLauncherShowMode := LAUNCHER_SHOW_ALWAYS;
+    Assert.IsTrue(ShouldShowDbLauncher(S));
+end;
+
+procedure TSettingsDbLauncherTests.ShouldShow_IfMultiple_RequiresTwoKnownPaths;
+var
+    S: TAppSettings;
+begin
+    S := Default(TAppSettings);
+    S.DbLauncherShowMode := LAUNCHER_SHOW_IF_MULTIPLE;
+    // Ни недавних, ни профилей - плитки не показываем
+    Assert.IsFalse(ShouldShowDbLauncher(S));
+    // Одна база - выбор не из чего делать
+    AddRecentDatabase(S, 'C:\db\a.sqlite');
+    Assert.IsFalse(ShouldShowDbLauncher(S));
+    // Вторая известная база появляется через профиль шифрования
+    SaveDbProfile(S, GetDbProfile(S, 'C:\db\b.sqlite'));
+    Assert.IsTrue(ShouldShowDbLauncher(S));
+end;
+
+procedure TSettingsDbLauncherTests.ShouldShow_BrokenMode_TreatedAsIfMultiple;
+var
+    S: TAppSettings;
+begin
+    S := Default(TAppSettings);
+    S.DbLauncherShowMode := 'sometimes';
+    Assert.IsFalse(ShouldShowDbLauncher(S));
+    AddRecentDatabase(S, 'C:\db\a.sqlite');
+    AddRecentDatabase(S, 'C:\db\b.sqlite');
+    Assert.IsTrue(ShouldShowDbLauncher(S));
+end;
+
+procedure TSettingsDbLauncherTests.Load_MissingLauncherNode_RestoresDefaultMode;
+var
+    M: ISettingsManager;
+    S: TAppSettings;
+    Path: string;
+begin
+    // Файл от версии без узла лаунчера
+    Path := TPath.Combine(TPath.GetDirectoryName(ParamStr(0)), 'settings.json');
+    SafeDeleteIfPresent(Path);
+    TFile.WriteAllText(Path, '{"CurrentLanguage":"en"}', TEncoding.UTF8);
+
+    M := TSettingsManager.Create;
+    M.Load;
+    S := M.Data;
+    Assert.AreEqual(LAUNCHER_SHOW_IF_MULTIPLE, S.DbLauncherShowMode);
+    Assert.IsTrue(S.DbLauncherDefined);
+    M := nil;
+end;
+
+procedure TSettingsDbLauncherTests.Load_BrokenLauncherMode_FallsBackToDefault;
+var
+    M: ISettingsManager;
+    S: TAppSettings;
+    Path: string;
+begin
+    Path := TPath.Combine(TPath.GetDirectoryName(ParamStr(0)), 'settings.json');
+    SafeDeleteIfPresent(Path);
+    TFile.WriteAllText(Path,
+        '{"DbLauncherShowMode":"sometimes","DbLauncherDefined":true}',
+        TEncoding.UTF8);
+
+    M := TSettingsManager.Create;
+    M.Load;
+    S := M.Data;
+    Assert.AreEqual(LAUNCHER_SHOW_IF_MULTIPLE, S.DbLauncherShowMode);
+    M := nil;
+end;
+
+procedure TSettingsDbLauncherTests.SaveLoad_Roundtrip_PreservesLauncherMode;
+var
+    M: ISettingsManager;
+    S: TAppSettings;
+begin
+    M := TSettingsManager.Create;
+    S := M.Data;
+    S.DbLauncherShowMode := LAUNCHER_SHOW_ALWAYS;
+    S.DbLauncherDefined := True;
+    M.Data := S;
+    M.Save;
+    M := nil;
+
+    M := TSettingsManager.Create;
+    M.Load;
+    Assert.AreEqual(LAUNCHER_SHOW_ALWAYS, M.Data.DbLauncherShowMode);
+    M := nil;
 end;
 
 { TSettingsRecentDatabasesTests }

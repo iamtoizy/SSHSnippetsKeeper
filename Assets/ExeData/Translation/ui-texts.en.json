@@ -32,6 +32,9 @@
     "nAllDatabases": {
       "Caption": "All databases..."
     },
+    "nDbLauncher": {
+      "Caption": "Database tiles..."
+    },
     "nCloseDatabase": {
       "Caption": "Close database"
     },
@@ -1198,6 +1201,19 @@
     "lbVCLStyle": {
       "Caption": "Interface style:"
     },
+    "lbDbLauncherMode": {
+      "Caption": "Database tiles at startup:"
+    },
+    "cbDbLauncherMode": {
+      "Items": {
+        "0": "Never",
+        "1": "Always",
+        "2": "If multiple databases"
+      }
+    },
+    "bDbLauncherHelp": {
+      "Caption": "Help"
+    },
     "gbSnippetColumns": {
       "Caption": "Snippet list columns"
     },
@@ -1323,6 +1339,13 @@
       "StatusOpen": "Open",
       "StatusAvailable": "Available",
       "StatusMissing": "Not found"
+    },
+    "Launcher": {
+      "Title": "Choose Database",
+      "FilterHint": "Filter: type a database name or path",
+      "AllDatabases": "All databases...",
+      "NoDatabases": "No known databases",
+      "NoMatches": "No matches"
     },
     "Help": {
       "MainForm": {
@@ -1518,6 +1541,13 @@
           "Main": "The list of all open windows of applications from the allowed list (configured in \"Settings → Applications\"). A checkmark means the window is remembered and can become the auto-typing target for a snippet. Unchecking and pressing \"Apply\" forgets the window; the next time you activate it, it will be remembered again. The window opens from the \"File\" menu (<code>ALT+T</code>) or via the \"Manager\" button in the terminal chooser dialog.",
           "Expanded": "<b>How to use</b><br>• Checked — the window stays in history, unchecked — the window is removed from history. The state is applied by the \"Apply\" button (<code>ENTER</code>); \"Cancel\" (<code>ESC</code>) changes nothing.<br>• \"Select all\" checks every row, \"Clear history\" immediately forgets all windows (including those not visible in the list).<br>• Double-clicking a row toggles its checkmark.<br>• The filter matches by title and process name; only rows remaining in the list are affected.<br>• If a window was closed while the dialog was open, \"Apply\" safely skips it.<br><br><b>History</b> keeps the last 50 windows; only windows of allowed applications are added at the moment of their activation."
         }
+      },
+      "SettingsForm": {
+        "DbLauncherMode": {
+          "Title": "Database Tiles",
+          "Main": "This setting controls when the database tiles are shown. <blockquote><b>Never:</b> tiles are never shown automatically; the chooser remains available from the \"Database\" menu (CTRL+L).</blockquote><blockquote><b>Always:</b> tiles appear at every application start, even when a single database is known.</blockquote><blockquote><b>If multiple databases:</b> tiles are shown at startup when the application knows more than one database (recent files plus profiles); with a single database the app opens it right away.</blockquote>Tiles are also shown after the current database is closed, if more than one database is known. Choosing a tile is not mandatory: \"Cancel\" closes the window, and the \"All databases...\" button opens the full list with search.",
+          "Expanded": ""
+        }
       }
     },
     "Actions": {
@@ -1539,6 +1569,7 @@
           "CreateDatabase": "Create Database",
           "OpenDatabase": "Open Database",
           "AllDatabases": "All Databases",
+          "DbLauncher": "Database Tiles",
           "CloseDatabase": "Close Database",
           "SyncDatabase": "Sync with Markdown vault"
         },

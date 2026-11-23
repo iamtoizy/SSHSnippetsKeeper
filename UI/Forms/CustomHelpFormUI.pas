@@ -1,4 +1,4 @@
-﻿unit CustomHelpFormUI;
+unit CustomHelpFormUI;
 
 interface
 
@@ -30,9 +30,10 @@ type
         FBodyHtml: string;
         function ColorToHtmlHex(AColor: TColor): string;
         function GetHtmlTemplate(const BgColor, TxtColor, AccentColor, PreBgColor, BorderColor: string): string;
-        procedure GetThemeColors(out VclBg, VclText, VclAccent, VclPreBg, VclBorder: string);
+        procedure GetThemeColors(out VclBg, VclText, VclAccent, VclPreBg, VclBorderColor: string);
         procedure BuildAndLoad(const ABodyContent: string);
     public
+        destructor Destroy; override;
         procedure SetContent(Title, MainText, ExpandedText: string);
         procedure SetContentHtml(const ATitle, ABodyHtml: string);
         procedure CopyPlainTextToClipboard;
@@ -45,6 +46,7 @@ implementation
 
 uses
     Common.Helpers,
+    Common.VCLStyleService,
     System.RegularExpressions,
     System.SysUtils,
     Common.Localization,
@@ -54,6 +56,15 @@ uses
     ;
 
 {$R *.dfm}
+
+destructor TCustomHelpForm.Destroy;
+begin
+    // Вычищаем пару (форма, style-hook) из карты движка до разрушения:
+    // прямые наследники TForm не проходят через TBaseForm.Destroy, где
+    // сделан тот же purge (подробности в Common.VCLStyleService)
+    TVCLStyleService.PurgeStyleHooks(Self);
+    inherited Destroy;
+end;
 
 procedure TCustomHelpForm.FormCreate(Sender: TObject);
 begin
@@ -113,7 +124,7 @@ begin
     ActiveControl := FFocusCatcher;
 end;
 
-procedure TCustomHelpForm.GetThemeColors(out VclBg, VclText, VclAccent, VclPreBg, VclBorder: string);
+procedure TCustomHelpForm.GetThemeColors(out VclBg, VclText, VclAccent, VclPreBg, VclBorderColor: string);
 begin
     VclBg := ColorToHtmlHex(StyleServices.GetSystemColor(clBtnFace));
     VclText := ColorToHtmlHex(StyleServices.GetSystemColor(clWindowText));
@@ -125,24 +136,24 @@ begin
         // СВЕТЛАЯ ТЕМА
         VclAccent := '#005A9E';  // Глубокий синий
         VclPreBg := '#F3F4F6';   // Светло-серый фон для кода
-        VclBorder := '#D1D5DB';  // Контрастная серая граница
+        VclBorderColor := '#D1D5DB';  // Контрастная серая граница
     end
     else
     begin
         // ТЁМНАЯ ТЕМА
         VclAccent := '#56B6C2';  // Пастельный бирюзовый
         VclPreBg := '#252526';   // Глубокий темно-серый фон для кода
-        VclBorder := '#3F3F46';  // Серая граница
+        VclBorderColor := '#3F3F46';  // Серая граница
     end;
 end;
 
 procedure TCustomHelpForm.SetContent(Title, MainText, ExpandedText: string);
 var
     VclAccent: string;
-    VclBg, VclText, VclPreBg, VclBorder: string;
+    VclBg, VclText, VclPreBg, VclBorderColor: string;
     BodyContent: string;
 begin
-    GetThemeColors(VclBg, VclText, VclAccent, VclPreBg, VclBorder);
+    GetThemeColors(VclBg, VclText, VclAccent, VclPreBg, VclBorderColor);
 
     // Формируем чистое тело (Body) страницы блоками
     BodyContent := '<h2>' + Title + '</h2>';
@@ -170,10 +181,10 @@ end;
 
 procedure TCustomHelpForm.BuildAndLoad(const ABodyContent: string);
 var
-    VclBg, VclText, VclAccent, VclPreBg, VclBorder: string;
+    VclBg, VclText, VclAccent, VclPreBg, VclBorderColor: string;
     Content, FinalHtml: string;
 begin
-    GetThemeColors(VclBg, VclText, VclAccent, VclPreBg, VclBorder);
+    GetThemeColors(VclBg, VclText, VclAccent, VclPreBg, VclBorderColor);
 
     // Явно перекрашиваем сам компонент, чтобы при рендеринге не было старых артефактов
     HtmlViewer.DefBackground := StyleServices.GetSystemColor(clBtnFace);
@@ -187,7 +198,7 @@ begin
     );
 
     // Собираем финальный HTML, внедряя контент CSS-шаблон
-    FinalHtml := Format(GetHtmlTemplate(VclBg, VclText, VclAccent, VclPreBg, VclBorder), [Content]);
+    FinalHtml := Format(GetHtmlTemplate(VclBg, VclText, VclAccent, VclPreBg, VclBorderColor), [Content]);
 
     // Загружаем в память
     HtmlViewer.LoadFromString(FinalHtml);

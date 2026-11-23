@@ -31,9 +31,10 @@ type
         // идёт в чужое приложение (как у TMacroStopPanel)
         procedure CreateParams(var Params: TCreateParams); override;
     public
+        destructor Destroy; override;
         procedure Initialize(const PanelCaption, SequenceName: string; TotalSteps: Integer);
         procedure SetStep(Index, Total: Integer; const SnippetTitle: string);
-        // Живой статус печати шага: пауза фокуса / остаток сна / прогресс символов
+        // �-��?�?�� �?�'���'�?�? ����ؐ��'�� �?���?��: �����?���� �"�?��?�?�� / �?�?�'���'�?�� �?�?�� / ���?�?�?�?��?�? �?��?�?�?�>�?�?
         procedure SetTypingStatus(Paused, SleepRemainingMs, TypedChars, TotalChars: Integer);
         procedure EnsureTopMost;
         procedure ShowNoActivate;
@@ -43,12 +44,22 @@ type
 implementation
 
 uses
-    Common.Localization
+    Common.Localization,
+    Common.VCLStyleService
     ;
 
 {$R *.dfm}
 
 { TChainRunPanel }
+
+destructor TChainRunPanel.Destroy;
+begin
+    // Вычищаем пару (окно, style-hook) из карты движка до разрушения:
+    // прямой наследник TForm, в TBaseForm.Destroy purge не попадает
+    // (подробности в Common.VCLStyleService)
+    TVCLStyleService.PurgeStyleHooks(Self);
+    inherited Destroy;
+end;
 
 procedure TChainRunPanel.CreateParams(var Params: TCreateParams);
 begin

@@ -414,6 +414,35 @@ object SettingsForm: TSettingsForm
         TabOrder = 1
         OnChange = cbVCLStyleChange
       end
+      object lbDbLauncherMode: TLabel
+        Left = 240
+        Top = 32
+        Width = 180
+        Height = 13
+        Caption = 'lbDbLauncherMode'
+      end
+      object cbDbLauncherMode: TComboBox
+        Left = 240
+        Top = 48
+        Width = 220
+        Height = 21
+        Style = csDropDownList
+        ItemIndex = 0
+        Items.Strings = (
+          'cbDbLauncherMode0'
+          'cbDbLauncherMode1'
+          'cbDbLauncherMode2')
+        TabOrder = 2
+      end
+      object bDbLauncherHelp: TButton
+        Left = 464
+        Top = 47
+        Width = 86
+        Height = 23
+        Caption = 'bDbLauncherHelp'
+        TabOrder = 3
+        OnClick = bDbLauncherHelpClick
+      end
       object gbSnippetColumns: TGroupBox
         Left = 3
         Top = 88

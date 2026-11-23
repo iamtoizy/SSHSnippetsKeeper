@@ -3,6 +3,7 @@
 interface
 
 uses
+    Common.VCLStyleService,
     Core.Interfaces.Passwords,
     Core.Interfaces.Settings,
     System.Classes,
@@ -248,6 +249,10 @@ begin
 
     UnhookTarget;
     FTimer.Free;
+    // Вычищаем пару (окно, style-hook) из карты движка до разрушения:
+    // прямой наследник TForm, в TBaseForm.Destroy purge не попадает
+    // (подробности в Common.VCLStyleService)
+    TVCLStyleService.PurgeStyleHooks(FSharedButton);
     FSharedButton.Free;
     FRegistered.Free;
     inherited Destroy;

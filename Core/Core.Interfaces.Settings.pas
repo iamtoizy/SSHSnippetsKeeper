@@ -14,6 +14,11 @@ const
     DB_KEYMODE_DPAPI = 'dpapi';
     DB_KEYMODE_PASSPHRASE = 'passphrase';
 
+    // Режим показа лаунчера баз при старте программы
+    LAUNCHER_SHOW_NEVER = 'never';
+    LAUNCHER_SHOW_ALWAYS = 'always';
+    LAUNCHER_SHOW_IF_MULTIPLE = 'ifMultiple';
+
     // Максимальная длина списка недавних баз данных
     RECENT_DATABASES_LIMIT = 10;
 
@@ -292,6 +297,12 @@ type
         SecurityBackgroundScanIntervalMinutes: Integer;
         // Маркер инициализации: False = старый settings.json без этих полей
         SecurityBackgroundScanDefined: Boolean;
+
+        // Лаунчер баз данных: когда показывать плитки выбора базы при старте
+        // (LAUNCHER_SHOW_NEVER | ALWAYS | IF_MULTIPLE)
+        DbLauncherShowMode: string;
+        // Маркер инициализации: False = старый settings.json без этого поля
+        DbLauncherDefined: Boolean;
     end;
 
     // Интерфейс менеджера

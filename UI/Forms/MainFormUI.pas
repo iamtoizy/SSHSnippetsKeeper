@@ -139,6 +139,7 @@ type
         actCreateDatabase: TAction;
         actOpenDatabase: TAction;
         actAllDatabases: TAction;
+        actDbLauncher: TAction;
         actCloseDatabase: TAction;
         actAddCategory: TAction;
         actDeleteCategory: TAction;
@@ -225,6 +226,7 @@ type
         procedure actNetworkCalculatorExecute(Sender: TObject);
         procedure actOpenDatabaseExecute(Sender: TObject);
         procedure actAllDatabasesExecute(Sender: TObject);
+        procedure actDbLauncherExecute(Sender: TObject);
         procedure actPasswordGeneratorExecute(Sender: TObject);
         procedure actRunSnippetExecute(Sender: TObject);
         procedure actDryRunSnippetExecute(Sender: TObject);
@@ -333,11 +335,18 @@ type
         FDenySetsMenu: TDenySetMenuController;
         // Пути пунктов подменю недавних баз, индекс = Tag пункта меню
         FRecentPaths: TArray<string>;
+        // Лаунчер баз показывается один раз за сессию
+        FLauncherShown: Boolean;
+        // Приложение завершается: послезакрытные окна (лаунчер) не нужны
+        FShuttingDown: Boolean;
 
         procedure MarkDataChanged;
         procedure tmrCloseAfterTypingTimer(Sender: TObject);
         procedure UpdateRecentDatabasesMenu;
         procedure RecentDatabaseItemClick(Sender: TObject);
+        procedure ShowDbLauncherAndOpen;
+        procedure ShowDbLauncherIfConfigured;
+        procedure ShowDbLauncherAfterClose;
         function GetSyncEngine: TSyncController;
         function GetSearchEngine: TMainSearchController;
         function GetSecurityScan: TSecurityScanController;
@@ -434,6 +443,7 @@ implementation
 uses
     AddEditSnippetFormUI,
     AllDatabasesFormUI,
+    DbLauncherFormUI,
     UI.Services.AppStateManager,
     ArchiveBuilderFormUI,
     Common.ArrayRecord,
@@ -448,6 +458,7 @@ uses
     Common.DraftStore,
     Common.Helpers,
     Common.Settings,
+    Common.VCLStyleService,
     Core.MarkdownExporter,
     Core.MarkdownImporter,
     CronGenFormUI,
@@ -696,6 +707,63 @@ begin
         OpenDatabaseFile(Chosen);
     // Удаления в окне меняют список недавних - перестраиваем меню
     UpdateRecentDatabasesMenu;
+end;
+
+// Общий показ плиток с открытием выбранной базы и обновлением меню
+// недавних; «Отмена» ничего не делает. Из меню/хоткея доступен в любой
+// момент сессии, после закрытия базы и на старте
+procedure TMainForm.ShowDbLauncherAndOpen;
+var
+    Chosen: string;
+begin
+    if FShuttingDown then
+        Exit;
+    Chosen := ShowDbLauncherForm(AppContext);
+    // Лаунчер - модальное окно: на всякий случай сбрасываем отложенный
+    // recycle хуков стиля (no-op, если смены стиля не было)
+    TVCLStyleService.FlushPendingRecycle;
+    if Chosen <> '' then
+        OpenDatabaseFile(Chosen);
+    // Окно «Все базы...» могло менять список недавних
+    UpdateRecentDatabasesMenu;
+end;
+
+procedure TMainForm.actDbLauncherExecute(Sender: TObject);
+begin
+    ShowDbLauncherAndOpen;
+end;
+
+// Стартовый показ плиток: по режиму DbLauncherShowMode и числу известных
+// баз. Вызывается один раз из DoShownOnScreen, после командной строки:
+// параметр /db имеет приоритет над лаунчером
+procedure TMainForm.ShowDbLauncherIfConfigured;
+begin
+    if FLauncherShown then
+        Exit;
+    FLauncherShown := True;
+
+    // База уже открыта командной строкой: плитки не нужны. Раньше гвард
+    // был внутри ShouldShowDbLauncher, теперь он здесь, потому что тот же
+    // метод используется после закрытия базы - там база заведомо не открыта
+    if AppContext.DatabaseManager.IsConnected then
+        Exit;
+
+    if not ShouldShowDbLauncher(AppContext.SettingsManager.Data) then
+        Exit;
+
+    ShowDbLauncherAndOpen;
+end;
+
+// Плитки после закрытия базы: по тому же режиму настроек, но только по
+// явному закрытию (не при выходе из приложения) и не сразу после
+// программного закрытия ради конверсии/переоткрытия той же базы
+procedure TMainForm.ShowDbLauncherAfterClose;
+begin
+    if FShuttingDown then
+        Exit;
+    if not ShouldShowDbLauncher(AppContext.SettingsManager.Data) then
+        Exit;
+    ShowDbLauncherAndOpen;
 end;
 
 function TMainForm.OpenDatabaseFile(const AFileName: string): Boolean;
@@ -1393,6 +1461,10 @@ begin
                 FDenySetsMenu.BuildMenu;
         end;
     finally
+        // Смена темы в модальных настройках откладывала пере-регистрацию
+        // хуков форм (pending-флаг): ModalLevel снова 0 - выполняем её
+        // независимо от того, сохранены настройки или отменены
+        TVCLStyleService.FlushPendingRecycle;
         if Assigned(FHotkeyMgr) then FHotkeyMgr.StartListening;
     end;
 end;
@@ -1498,6 +1570,10 @@ begin
             Exit;
         end;
     end;
+
+    // Выход из приложения: после закрытия базы никаких окон (лаунчер)
+    // показывать нельзя - ставим флаг до CloseDatabase
+    FShuttingDown := True;
 
     CloseDatabase;
     CanClose := True;
@@ -2424,6 +2500,7 @@ begin
     inherited;
 
     ProcessCommandLineParams;
+    ShowDbLauncherIfConfigured;
 end;
 
 procedure TMainForm.ApplyLanguage;
@@ -3892,9 +3969,19 @@ begin
             GetSyncEngine.PerformSync(False);
         end;
 
+        // Асинхронный поиск по закрываемой базе больше не актуален: глушим
+        // отложенный запуск и забываем подставленный запрос умной папки
+        tmrSearchTimer.Enabled := False;
+        ClearInjectedSearchIfAny;
+
         AppContext.DatabaseManager.CloseDatabase;
         TStateMgr.Instance.CloseDatabase;
         UpdateUI(bfsDBDisconnected);
+
+        // Программные закрытия ради конверсии/переоткрытия (шифрование,
+        // импорт ключа) сюда не попадают: там DatabaseManager.CloseDatabase
+        // зовётся напрямую, минуя этот метод
+        ShowDbLauncherAfterClose;
     end;
 end;
 

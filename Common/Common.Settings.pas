@@ -103,6 +103,10 @@ function RemoveMissingDatabasePaths(var Settings: TAppSettings): Integer;
 // не попавшие в недавние; без дублей, в нормализованном виде
 function GetAllDatabasePaths(const Settings: TAppSettings): TArray<string>;
 
+// Показывать ли лаунчер баз при старте: по режиму DbLauncherShowMode
+// и числу известных путей баз; битый режим трактуется как ifMultiple
+function ShouldShowDbLauncher(const Settings: TAppSettings): Boolean;
+
 implementation
 
 uses
@@ -526,6 +530,21 @@ begin
     Result := Paths.Items;
 end;
 
+function ShouldShowDbLauncher(const Settings: TAppSettings): Boolean;
+var
+    KnownPaths: Integer;
+begin
+    if Settings.DbLauncherShowMode = LAUNCHER_SHOW_NEVER then
+        Exit(False);
+    if Settings.DbLauncherShowMode = LAUNCHER_SHOW_ALWAYS then
+        Exit(True);
+
+    // ifMultiple (и любой битый режим): плитки имеют смысл, когда
+    // пользователю есть из чего выбирать
+    KnownPaths := Length(GetAllDatabasePaths(Settings));
+    Result := KnownPaths > 1;
+end;
+
 const
     // Единый источник значений дефолтов настроек. Безусловное заполнение
     // (ApplyDefaults) и восстановление отсутствующего после FromJson
@@ -544,6 +563,7 @@ const
     DEFAULT_BACKUP_KEEP = 3;
     DEFAULT_SCAN_INTERVAL_MINUTES = 30;
     DEFAULT_AUTOEXPORT_INTERVAL_MINUTES = 5;
+    DEFAULT_LAUNCHER_SHOW_MODE = LAUNCHER_SHOW_IF_MULTIPLE;
     DEFAULT_QS_MODIFIERS = MOD_ALT;
     DEFAULT_QS_KEY = Ord('Q');
     DEFAULT_PG_MODIFIERS = MOD_CONTROL or MOD_ALT;
@@ -663,6 +683,10 @@ begin
     FSettings.AutoExportEnabled := True;
     FSettings.AutoExportIntervalMinutes := DEFAULT_AUTOEXPORT_INTERVAL_MINUTES;
     FSettings.AutoExportDefined := True;
+
+    // Лаунчер баз: по умолчанию показывается, когда баз несколько
+    FSettings.DbLauncherShowMode := DEFAULT_LAUNCHER_SHOW_MODE;
+    FSettings.DbLauncherDefined := True;
 
     // Дефолты для глобальных горячих клавиш
     FSettings.Hotkeys.QuickSearch.Modifiers := DEFAULT_QS_MODIFIERS;
@@ -1049,6 +1073,20 @@ begin
             FSettings.AutoExportIntervalMinutes := DEFAULT_AUTOEXPORT_INTERVAL_MINUTES;
             FSettings.AutoExportDefined := True;
         end;
+
+        // Узел лаунчера баз: в старом settings.json его нет — дефолтный
+        // режим (показ при нескольких базах)
+        if not FSettings.DbLauncherDefined then
+        begin
+            FSettings.DbLauncherShowMode := DEFAULT_LAUNCHER_SHOW_MODE;
+            FSettings.DbLauncherDefined := True;
+        end;
+
+        // Битый режим лаунчера не должен ломать старт приложения
+        if not ((FSettings.DbLauncherShowMode = LAUNCHER_SHOW_NEVER) or
+                (FSettings.DbLauncherShowMode = LAUNCHER_SHOW_ALWAYS) or
+                (FSettings.DbLauncherShowMode = LAUNCHER_SHOW_IF_MULTIPLE)) then
+            FSettings.DbLauncherShowMode := DEFAULT_LAUNCHER_SHOW_MODE;
 
         // Узел шифрования БД: в старом settings.json его нет - дефолты
         if not FSettings.Db.DbDefined then

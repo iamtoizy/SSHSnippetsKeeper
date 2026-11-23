@@ -76,6 +76,8 @@ type
         cbSecurityInterval: TComboBox;
         lbVCLStyle: TLabel;
         cbVCLStyle: TComboBox;
+        lbDbLauncherMode: TLabel;
+        cbDbLauncherMode: TComboBox;
         gbSnippetColumns: TGroupBox;
         cbColLanguage: TCheckBox;
         cbColLastRun: TCheckBox;
@@ -146,6 +148,7 @@ type
         procedure bDbImportClick(Sender: TObject);
         procedure cbDbSaveKeySelect(Sender: TObject);
         procedure bDbHelpClick(Sender: TObject);
+        procedure bDbLauncherHelpClick(Sender: TObject);
         procedure chkDbEncryptClick(Sender: TObject);
         procedure cbDbModeSelect(Sender: TObject);
         procedure bDbProfilesClick(Sender: TObject);
@@ -339,6 +342,15 @@ begin
     cbVCLStyle.ItemIndex := cbVCLStyle.Items.IndexOf(Setts.UISettings.VCLStyle);
     if cbVCLStyle.ItemIndex < 0 then
         cbVCLStyle.ItemIndex := 0;
+
+    // --- Лаунчер баз данных ---
+    if Setts.DbLauncherShowMode = LAUNCHER_SHOW_NEVER then
+        cbDbLauncherMode.ItemIndex := 0
+    else if Setts.DbLauncherShowMode = LAUNCHER_SHOW_ALWAYS then
+        cbDbLauncherMode.ItemIndex := 1
+    else
+        cbDbLauncherMode.ItemIndex := 2;
+    // ---------------------------
 
     PopulateApplicationsList;
 
@@ -1014,6 +1026,16 @@ begin
     else
         MessagesHandler.ShowInfo(
             TUIStateLoader.GetMessage('Settings.DbHelp'));
+end;
+
+// Справка по режимам показа плиток баз: объясняем три варианта и момент
+// вызова лаунчера (старт приложения и закрытие базы)
+procedure TSettingsForm.bDbLauncherHelpClick(Sender: TObject);
+var
+    Title, MainText, ExpText: string;
+begin
+    TUIStateLoader.GetHelpTexts('Help.SettingsForm.DbLauncherMode', Title, MainText, ExpText);
+    ShowCustomHelpHtml(Title, MainText);
 end;
 
 procedure TSettingsForm.chkDbEncryptClick(Sender: TObject);
@@ -2046,6 +2068,16 @@ begin
         Setts.UISettings.SnippetListColumns := Setts.UISettings.SnippetListColumns or 4;
     Setts.UISettings.SnippetListColumnsDefined := True;
 
+    // --- Лаунчер баз данных ---
+    case cbDbLauncherMode.ItemIndex of
+        0: Setts.DbLauncherShowMode := LAUNCHER_SHOW_NEVER;
+        1: Setts.DbLauncherShowMode := LAUNCHER_SHOW_ALWAYS;
+    else
+        Setts.DbLauncherShowMode := LAUNCHER_SHOW_IF_MULTIPLE;
+    end;
+    Setts.DbLauncherDefined := True;
+    // ---------------------------
+
     // --- Настройки автобэкапа ---
     Setts.Backup.Enabled := chkBackupEnabled.Checked;
     Setts.Backup.IntervalSeconds := IndexToInterval(cbBackupInterval.ItemIndex);
@@ -2177,6 +2209,7 @@ begin
             .Append(cbColLanguage.Checked).Append('|')
             .Append(cbColLastRun.Checked).Append('|')
             .Append(cbColUpdated.Checked).Append('|')
+            .Append(cbDbLauncherMode.ItemIndex).Append('|')
             .Append(chkBackupEnabled.Checked).Append('|')
             .Append(cbBackupInterval.ItemIndex).Append('|')
             .Append(seBackupKeep.Value).Append('|');

@@ -29,6 +29,7 @@ type
     protected
         procedure CreateParams(var Params: TCreateParams); override;
     public
+        destructor Destroy; override;
         procedure Initialize(const ASnippetTitle: string; AOnStop: TProc; AContext: TMacroContext);
         procedure ShowNoActivate;
         procedure EnsureTopMost;
@@ -39,6 +40,7 @@ implementation
 
 uses
     Common.Localization,
+    Common.VCLStyleService,
     System.Math,
     System.SyncObjs
     ;
@@ -46,6 +48,15 @@ uses
 {$R *.dfm}
 
 { TMacroStopPanel }
+
+destructor TMacroStopPanel.Destroy;
+begin
+    // Вычищаем пару (окно, style-hook) из карты движка до разрушения:
+    // прямой наследник TForm, в TBaseForm.Destroy purge не попадает
+    // (подробности в Common.VCLStyleService)
+    TVCLStyleService.PurgeStyleHooks(Self);
+    inherited Destroy;
+end;
 
 procedure TMacroStopPanel.Initialize(const ASnippetTitle: string; AOnStop: TProc; AContext: TMacroContext);
 var
