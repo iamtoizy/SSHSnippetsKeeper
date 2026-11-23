@@ -263,6 +263,18 @@ begin
         Exit;
     end;
 
+    // Клик по пустому месту: явный сброс выделения без клампа в первую плитку
+    if Index < 0 then
+    begin
+        if FSelected <> -1 then
+        begin
+            Prev := FSelected;
+            FSelected := -1;
+            InvalidateTiles([Prev]);
+        end;
+        Exit;
+    end;
+
     Index := EnsureRange(Index, 0, High(FVisible));
     if Index <> FSelected then
     begin
@@ -345,16 +357,15 @@ begin
                 HasDirty := True;
             end;
         end;
+    // Все индексы невалидны (например, MouseUp над пустым местом):
+    // перекрашивать нечего - полная инвалидация здесь давала моргание
     if not HasDirty then
-        pbTiles.Invalidate
-    else
-    begin
-        // InvalidateRect адресован родителю (PaintBox неоконный), а
-        // TileRect - в координатах pbTiles: при прокрутке контрол сдвинут,
-        // dirty-область переводим в координаты родителя
-        Dirty.Offset(pbTiles.Left, pbTiles.Top);
-        Winapi.Windows.InvalidateRect(pbTiles.Parent.Handle, @Dirty, False);
-    end;
+        Exit;
+    // InvalidateRect адресован родителю (PaintBox неоконный), а
+    // TileRect - в координатах pbTiles: при прокрутке контрол сдвинут,
+    // dirty-область переводим в координаты родителя
+    Dirty.Offset(pbTiles.Left, pbTiles.Top);
+    Winapi.Windows.InvalidateRect(pbTiles.Parent.Handle, @Dirty, False);
 end;
 
 function TDbLauncherForm.HitTest(X, Y: Integer): Integer;

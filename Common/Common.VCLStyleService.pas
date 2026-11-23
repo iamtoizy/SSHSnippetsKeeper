@@ -15,9 +15,12 @@ type
     private
         class var FLoadedStyles: TList<TCustomStyleServices>;
         class var FPendingRecycle: Boolean;
+        class var FRetryDeadline: UInt64;
         class var FInRecycle: Boolean;
         class var FRecycleQueued: Boolean;
+        class function MenuTrackingActive: Boolean;
         class procedure RecycleFormStyleHooks;
+        class procedure RetryPendingRecycle;
         class procedure DoRecycleFormStyleHooks;
         class procedure RefreshFormChrome;
     public
@@ -180,7 +183,31 @@ begin
     end;
 end;
 
+class function TVCLStyleService.MenuTrackingActive: Boolean;
+var
+    Info: TGUIThreadInfo;
+begin
+    // ОКНО НЕОПАСНОСТИ: пока активен трекинг меню (наш ProcessMenuLoop
+    // вокруг TrackPopupMenu, системный menu-mode или capture мыши у хука
+    // главного меню), ре-регистрация TFormStyleHook освобождает хук,
+    // по которому ProcessMenuLoop ещё крутит until not FInMenuLoop -
+    // возврат идёт в освобождённую память (фриз после смены темы).
+    // GUI_INMENUMODE/POPUP/SYSTEMMENUMODE ставятся системой только вокруг
+    // нативного TrackPopupMenu, capture покрывает mouse-capture-фазу хука,
+    // когда mode-флаги ещё не подняты
+    Info.cbSize := SizeOf(Info);
+    if GetGUIThreadInfo(GetCurrentThreadId, Info) then
+        Result := (Info.flags and (GUI_INMENUMODE or GUI_POPUPMENUMODE or
+            GUI_SYSTEMMENUMODE) <> 0) or (Info.hwndCapture <> 0)
+    else
+        // Запрос не удался - считаем опасное состояние активным: отказ в
+        // пользу отложения ре-регистрации
+        Result := True;
+end;
+
 class procedure TVCLStyleService.RecycleFormStyleHooks;
+var
+    I: Integer;
 begin
     // VCL при открытом модальном окне пропускает FreeControlHooks
     // (TStyleEngine.Notification проверяет Application.ModalLevel),
@@ -193,6 +220,25 @@ begin
     if Application.ModalLevel > 0 then
     begin
         FPendingRecycle := True;
+        Exit;
+    end;
+    // Смена стиля из-под активного меню (клик по меню сразу после смены
+    // темы): ре-регистрацию нельзя выполнять, пока жив - ProcessMenuLoop
+    // предыдущего хука. WM_CANCELMODE через SendMessage до TrackPopupMenu
+    // НЕ доходит как сообщение очереди (same-thread = прямой вызов
+    // WndProc, луп его PeekMessage-сканом не видит), поэтому сначала
+    // закрываем меню через PostMessage (очередь лупа его вытащит), затем
+    // ре-регистрация уходит в очередь и с гейтом ждёт, пока трекинг
+    // реально завершится. Пользователь увидит закрытие меню вместо фриза
+    if MenuTrackingActive then
+    begin
+        for I := 0 to Screen.FormCount - 1 do
+            if Screen.Forms[I].HandleAllocated and
+                IsWindowVisible(Screen.Forms[I].Handle) then
+                PostMessage(Screen.Forms[I].Handle, WM_CANCELMODE, 0, 0);
+        FPendingRecycle := True;
+        FRetryDeadline := GetTickCount64 + 2000;
+        TThread.ForceQueue(nil, RetryPendingRecycle);
         Exit;
     end;
     // Выполнение переносим в очередь синхронных вызовов: ре-регистрация
@@ -209,20 +255,48 @@ begin
     TThread.ForceQueue(nil, DoRecycleFormStyleHooks);
 end;
 
-class procedure TVCLStyleService.DoRecycleFormStyleHooks;
+class procedure TVCLStyleService.RetryPendingRecycle;
 var
     I: Integer;
+begin
+    if not FPendingRecycle then
+        Exit;
+    // Трекинг всё ещё активен: WM_CANCELMODE закрывает луп не мгновенно -
+    // ждём следующий оборот очереди. Окно 2 сек по wall-clock: быстрый
+    // PeekMessage-скан лупа прокручивает очередь тысячи раз в секунду и
+    // счётчик попыток сгорел бы мгновенно. По истечении окна выполняем
+    // ре-регистрацию принудительно, иначе recycle потерян навсегда
+    if MenuTrackingActive and (GetTickCount64 < FRetryDeadline) then
+    begin
+        for I := 0 to Screen.FormCount - 1 do
+            if Screen.Forms[I].HandleAllocated and
+                IsWindowVisible(Screen.Forms[I].Handle) then
+                PostMessage(Screen.Forms[I].Handle, WM_CANCELMODE, 0, 0);
+        TThread.ForceQueue(nil, RetryPendingRecycle);
+        Exit;
+    end;
+    FPendingRecycle := False;
+    if FInRecycle or FRecycleQueued then
+        Exit;
+    FRecycleQueued := True;
+    TThread.ForceQueue(nil, DoRecycleFormStyleHooks);
+end;
+
+class procedure TVCLStyleService.DoRecycleFormStyleHooks;
 begin
     FRecycleQueued := False;
     if FInRecycle then
         Exit;
-    // Ещё раз гасим активный трекинг меню: между постом и исполнением
-    // пользователь мог открыть меню, а освобождение хука из-под его
-    // ProcessMenuLoop и даёт фриз
-    for I := 0 to Screen.FormCount - 1 do
-        if Screen.Forms[I].HandleAllocated and
-            IsWindowVisible(Screen.Forms[I].Handle) then
-            SendMessage(Screen.Forms[I].Handle, WM_CANCELMODE, 0, 0);
+    // Double-check при исполнении: между постом и обработкой очереди
+    // пользователь мог снова открыть меню - тогда откладываем ещё раз,
+    // освобождение хука из-под ProcessMenuLoop и даёт фриз
+    if MenuTrackingActive then
+    begin
+        FPendingRecycle := True;
+        FRetryDeadline := GetTickCount64 + 2000;
+        TThread.ForceQueue(nil, RetryPendingRecycle);
+        Exit;
+    end;
     FInRecycle := True;
     try
         try
@@ -273,6 +347,8 @@ end;
 class constructor TVCLStyleService.Create;
 begin
     FLoadedStyles := TList<TCustomStyleServices>.Create;
+    FPendingRecycle := False;
+    FRetryDeadline := 0;
     FInRecycle := False;
     FRecycleQueued := False;
 end;
