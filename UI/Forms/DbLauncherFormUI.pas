@@ -497,14 +497,20 @@ begin
 end;
 
 class function TDbLauncherForm.AccentBlend(Base, Accent: TColor; Alpha: Byte): TColor;
+var
+    BaseRgb, AccentRgb: TColor;
 begin
+    // GetXValue возвращают Byte: при $R+ отрицательная разница каналов и
+    // произведение с Alpha (до 65025) ловят ERangeError - считаем в Integer
+    BaseRgb := ColorToRGB(Base);
+    AccentRgb := ColorToRGB(Accent);
     Result := RGB(
-        GetRValue(ColorToRGB(Base)) +
-        (GetRValue(ColorToRGB(Accent)) - GetRValue(ColorToRGB(Base))) * Alpha div 255,
-        GetGValue(ColorToRGB(Base)) +
-        (GetGValue(ColorToRGB(Accent)) - GetGValue(ColorToRGB(Base))) * Alpha div 255,
-        GetBValue(ColorToRGB(Base)) +
-        (GetBValue(ColorToRGB(Accent)) - GetBValue(ColorToRGB(Base))) * Alpha div 255);
+        Integer(GetRValue(BaseRgb)) +
+        (Integer(GetRValue(AccentRgb)) - Integer(GetRValue(BaseRgb))) * Alpha div 255,
+        Integer(GetGValue(BaseRgb)) +
+        (Integer(GetGValue(AccentRgb)) - Integer(GetGValue(BaseRgb))) * Alpha div 255,
+        Integer(GetBValue(BaseRgb)) +
+        (Integer(GetBValue(AccentRgb)) - Integer(GetBValue(BaseRgb))) * Alpha div 255);
 end;
 
 procedure TDbLauncherForm.DrawTile(Canvas: TCanvas; const R: TRect;

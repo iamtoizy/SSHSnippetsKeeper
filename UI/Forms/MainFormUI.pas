@@ -3257,10 +3257,15 @@ begin
     // тихий первый скан сессии
     if (not Item.Selected) and Assigned(Item.Data) and Assigned(FSecurityScan)
         and FSecurityScan.IsFlagged(TSnippetViewData(Item.Data).ID) then
+        // GetXValue возвращают Byte: при $R+ промежуточные произведения
+        // (до 3825) ловят ERangeError - считаем в Integer
         BgColor := RGB(
-            GetRValue(BgColor) + ((255 - GetRValue(BgColor)) * 15) div 100,
-            GetGValue(BgColor) - (GetGValue(BgColor) * 15) div 100,
-            GetBValue(BgColor) - (GetBValue(BgColor) * 15) div 100);
+            Integer(GetRValue(BgColor)) +
+            ((255 - Integer(GetRValue(BgColor))) * 15) div 100,
+            Integer(GetGValue(BgColor)) -
+            (Integer(GetGValue(BgColor)) * 15) div 100,
+            Integer(GetBValue(BgColor)) -
+            (Integer(GetBValue(BgColor)) * 15) div 100);
 
     Sender.Canvas.Brush.Color := BgColor;
     Sender.Canvas.Brush.Style := bsSolid;
