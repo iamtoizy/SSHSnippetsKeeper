@@ -283,6 +283,8 @@ begin
 end;
 
 class procedure TVCLStyleService.DoRecycleFormStyleHooks;
+var
+    I: Integer;
 begin
     FRecycleQueued := False;
     if FInRecycle then
@@ -299,6 +301,25 @@ begin
     end;
     FInRecycle := True;
     try
+        // Перерегистрация классов ниже не трогает живые пары инстансов в
+        // карте TStyleEngine.FControls, а HandleMessage движка доверяет
+        // TryGetValue и диспетчеризует сообщения в любой объект из карты,
+        // включая освобождённый: AV 0xc0000005 в TMainMenuBarStyleHook.
+        // Invalidate по цепочке WM_NCLBUTTONDOWN мёртвого TFormStyleHook
+        // после смены темы на Windows и возврата кастомной. Вызовом
+        // snControlDestroyed вычищаем пары всех форм (+дети): движковый
+        // DoRemoveControl делает ExtractPair ДО освобождения хука, поэтому
+        // вложенная диспетчеризация из деструкторов получает промах и
+        // создаёт свежий хук - реентерабельно. При переходе на Windows
+        // движок сам чистит карту раньше нас (snReleaseAllStyleHooks
+        // через ForceQueue попадает в очередь первым) - здесь no-op; при
+        // смене из модального окна движок молчит (гейт ModalLevel) и
+        // эта чистка - единственная
+        try
+            for I := 0 to Screen.FormCount - 1 do
+                TStyleManager.Notification(snControlDestroyed, Screen.Forms[I]);
+        except
+        end;
         try
             TStyleManager.Engine.UnRegisterStyleHook(TCustomForm, TFormStyleHook);
             TStyleManager.Engine.UnRegisterStyleHook(TForm, TFormStyleHook);
