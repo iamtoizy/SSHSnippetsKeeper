@@ -68,6 +68,10 @@ type
         procedure Load_MissingAutoExportNode_RestoresDefaults;
         [Test]
         procedure Load_BadAutoExportInterval_FallsBackToDefault;
+        [Test]
+        procedure HistoryPaths_WeightsAndLimitsAreIndependent;
+        [Test]
+        procedure HistoryPaths_LoadLegacyAndRoundtripSources;
     end;
 
     [TestFixture]
@@ -178,6 +182,7 @@ implementation
 
 uses
     Common.DbCrypto,
+    Common.Helpers,
     Data.Database.Security,
     Common.JsonSerializer,
     System.Classes,
@@ -540,6 +545,78 @@ begin
     Assert.AreEqual(5, S.AutoExportIntervalMinutes);
     Assert.AreEqual(True, S.AutoExportDefined);
     M := nil;
+end;
+
+procedure TSettingsManagerTests.HistoryPaths_WeightsAndLimitsAreIndependent;
+var
+    History, ArchivePaths, RsyncPaths: TArray<THistoryItem>;
+    I: Integer;
+begin
+    THistoryHelper.Add(History, '/shared', HISTORY_SOURCE_ARCHIVE);
+    THistoryHelper.Add(History, '/shared', HISTORY_SOURCE_RSYNC);
+    THistoryHelper.Add(History, '/SHARED', HISTORY_SOURCE_ARCHIVE);
+    THistoryHelper.Add(History, '/shared', HISTORY_SOURCE_RSYNC);
+    THistoryHelper.Add(History, '/shared', HISTORY_SOURCE_RSYNC);
+
+    for I := 1 to 16 do
+        THistoryHelper.Add(History, '/archive/' + IntToStr(I), HISTORY_SOURCE_ARCHIVE);
+    RsyncPaths := THistoryHelper.FilterBySource(History, HISTORY_SOURCE_RSYNC);
+    Assert.AreEqual(1, Integer(Length(RsyncPaths)));
+    Assert.AreEqual(3, RsyncPaths[0].UseCount);
+
+    for I := 1 to 16 do
+        THistoryHelper.Add(History, '/rsync/' + IntToStr(I), HISTORY_SOURCE_RSYNC);
+    ArchivePaths := THistoryHelper.FilterBySource(History, HISTORY_SOURCE_ARCHIVE);
+    RsyncPaths := THistoryHelper.FilterBySource(History, HISTORY_SOURCE_RSYNC);
+    Assert.AreEqual(30, Integer(Length(History)));
+    Assert.AreEqual(15, Integer(Length(ArchivePaths)));
+    Assert.AreEqual(15, Integer(Length(RsyncPaths)));
+    Assert.AreEqual('/shared', ArchivePaths[0].Value);
+    Assert.AreEqual(2, ArchivePaths[0].UseCount);
+    Assert.AreEqual('/shared', RsyncPaths[0].Value);
+    Assert.AreEqual(3, RsyncPaths[0].UseCount);
+end;
+
+procedure TSettingsManagerTests.HistoryPaths_LoadLegacyAndRoundtripSources;
+var
+    M: ISettingsManager;
+    S: TAppSettings;
+    Paths: TArray<THistoryItem>;
+begin
+    TFile.WriteAllText(SettingsPath,
+        '{"HistoryArchivePaths":[{"Value":"/old","UseCount":7}],' +
+        '"HistoryArchiveDests":[{"Value":"backup.zip","UseCount":3}]}', TEncoding.UTF8);
+
+    M := TSettingsManager.Create;
+    M.Load;
+    S := M.Data;
+    Paths := THistoryHelper.FilterBySource(S.HistoryArchivePaths, HISTORY_SOURCE_ARCHIVE);
+    Assert.AreEqual(1, Integer(Length(Paths)));
+    Assert.AreEqual('/old', Paths[0].Value);
+    Assert.AreEqual(7, Paths[0].UseCount);
+    Paths := THistoryHelper.FilterBySource(S.HistoryArchivePaths, HISTORY_SOURCE_RSYNC);
+    Assert.AreEqual(0, Integer(Length(Paths)));
+
+    THistoryHelper.Add(S.HistoryArchivePaths, '/old', HISTORY_SOURCE_RSYNC);
+    THistoryHelper.Add(S.HistoryArchiveDests, 'BACKUP.ZIP');
+    M.Data := S;
+    M.Save;
+    M := nil;
+
+    M := TSettingsManager.Create;
+    M.Load;
+    S := M.Data;
+    Paths := THistoryHelper.FilterBySource(S.HistoryArchivePaths, HISTORY_SOURCE_ARCHIVE);
+    Assert.AreEqual(1, Integer(Length(Paths)));
+    Assert.AreEqual('/old', Paths[0].Value);
+    Assert.AreEqual(7, Paths[0].UseCount);
+    Paths := THistoryHelper.FilterBySource(S.HistoryArchivePaths, HISTORY_SOURCE_RSYNC);
+    Assert.AreEqual(1, Integer(Length(Paths)));
+    Assert.AreEqual('/old', Paths[0].Value);
+    Assert.AreEqual(1, Paths[0].UseCount);
+    Assert.AreEqual(1, Integer(Length(S.HistoryArchiveDests)));
+    Assert.AreEqual('backup.zip', S.HistoryArchiveDests[0].Value);
+    Assert.AreEqual(4, S.HistoryArchiveDests[0].UseCount);
 end;
 
 procedure TSettingsManagerTests.Load_InvalidAllowedApplications_DropsInvalidItems;

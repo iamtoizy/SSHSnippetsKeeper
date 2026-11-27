@@ -19,7 +19,12 @@ type
     // Статический класс-помощник для работы с историей ввода (MRU)
     THistoryHelper = class
     public
-        class procedure Add(var History: TArray<THistoryItem>; const NewValue: string; MaxItems: Integer = 15);
+        class procedure Add(var History: TArray<THistoryItem>; const NewValue: string;
+            MaxItems: Integer = 15); overload;
+        class procedure Add(var History: TArray<THistoryItem>; const NewValue, SourceId: string;
+            MaxItems: Integer = 15); overload;
+        class function FilterBySource(const History: TArray<THistoryItem>;
+            const SourceId: string): TArray<THistoryItem>;
     end;
 
 { Показать тост-уведомление }
@@ -363,43 +368,72 @@ end;
 
 { THistoryHelper }
 
-class procedure THistoryHelper.Add(var History: TArray<THistoryItem>; const NewValue: string; MaxItems: Integer);
+class function THistoryHelper.FilterBySource(const History: TArray<THistoryItem>;
+    const SourceId: string): TArray<THistoryItem>;
 var
-    I: Integer;
-    Found: Boolean;
+    Item: THistoryItem;
+    Count: Integer;
 begin
-    if NewValue.Trim = '' then Exit;
-
-    Found := False;
-    // 1. Ищем элемент. Если нашли - увеличиваем вес
-    for I := Low(History) to High(History) do
-    begin
-        if SameText(History[I].Value, NewValue) then
+    SetLength(Result, Length(History));
+    Count := 0;
+    for Item in History do
+        if Item.SourceId = SourceId then
         begin
-            Inc(History[I].UseCount);
-            Found := True;
-            Break;
+            Result[Count] := Item;
+            Inc(Count);
         end;
-    end;
+    SetLength(Result, Count);
+end;
 
-    // 2. Если не нашли — добавляем новый с весом 1
-    if not Found then
+class procedure THistoryHelper.Add(var History: TArray<THistoryItem>;
+    const NewValue: string; MaxItems: Integer);
+begin
+    Add(History, NewValue, '', MaxItems);
+end;
+
+class procedure THistoryHelper.Add(var History: TArray<THistoryItem>;
+    const NewValue, SourceId: string; MaxItems: Integer);
+var
+    I, OtherCount: Integer;
+    SourceHistory, UpdatedHistory: TArray<THistoryItem>;
+    Item: THistoryItem;
+begin
+    if NewValue.Trim = '' then
+        Exit;
+
+    SourceHistory := FilterBySource(History, SourceId);
+    I := 0;
+    while (I < Length(SourceHistory)) and not SameText(SourceHistory[I].Value, NewValue) do
+        Inc(I);
+
+    if I = Length(SourceHistory) then
     begin
-        SetLength(History, Length(History) + 1);
-        History[High(History)].Value := NewValue;
-        History[High(History)].UseCount := 1;
+        SetLength(SourceHistory, I + 1);
+        SourceHistory[I].Value := NewValue;
+        SourceHistory[I].SourceId := SourceId;
     end;
+    Inc(SourceHistory[I].UseCount);
 
-    // 3. Сортируем массив по весу (UseCount) по убыванию (от частых к редким)
-    TArray.Sort<THistoryItem>(History, TComparer<THistoryItem>.Construct(
+    TArray.Sort<THistoryItem>(SourceHistory, TComparer<THistoryItem>.Construct(
         function(const Left, Right: THistoryItem): Integer
         begin
-            Result := Right.UseCount - Left.UseCount; // Сортировка по убыванию
+            Result := Right.UseCount - Left.UseCount;
         end));
+    if Length(SourceHistory) > MaxItems then
+        SetLength(SourceHistory, MaxItems);
 
-    // 4. Ограничиваем размер истории (обрезаем хвост из самых редких)
-    if Length(History) > MaxItems then
-        SetLength(History, MaxItems);
+    SetLength(UpdatedHistory, Length(History));
+    OtherCount := 0;
+    for Item in History do
+        if Item.SourceId <> SourceId then
+        begin
+            UpdatedHistory[OtherCount] := Item;
+            Inc(OtherCount);
+        end;
+    SetLength(UpdatedHistory, OtherCount + Length(SourceHistory));
+    for I := 0 to High(SourceHistory) do
+        UpdatedHistory[OtherCount + I] := SourceHistory[I];
+    History := UpdatedHistory;
 end;
 
 function Win32ModifiersToShiftState(Modifiers: Cardinal): TShiftState;

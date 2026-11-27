@@ -72,9 +72,9 @@ type
         procedure tvDragOver(Sender, Source: TObject; X, Y: Integer; State: TDragState; var Accept: Boolean);
         procedure tvDragDrop(Sender, Source: TObject; X, Y: Integer);
         procedure MarkDirty(Sender: TObject);
+        procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     protected
         procedure DoInitialize; override;
-        procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     private
         FEngine: TCompletionEngine;
         FFilePath: string;

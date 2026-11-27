@@ -187,6 +187,9 @@
     "nChmodCalculator": {
       "Caption": "Chmod Calculator"
     },
+    "nRsyncGenerator": {
+      "Caption": "rsync Builder"
+    },
     "nArchiveBuilder": {
       "Caption": "Archive Commands"
     },
@@ -721,6 +724,9 @@
     "rbDowSpec": {
       "Caption": "Specify exact values:"
     }
+  },
+  "RsyncGenForm": {
+    "Caption": "rsync Command Builder"
   },
   "EpochConverterForm": {
     "Caption": "Epoch Converter",
@@ -1454,6 +1460,23 @@
           "Expanded": "<b>Advanced selection:</b><ul><li><b>Brush (Drag‑to‑Check):</b> Click on a value, hold down the left mouse button and drag the cursor over adjacent items to quickly select (or deselect) an entire group.</li><li><b>Keyboard shortcuts (hold while clicking):</b><ul><li><code>Ctrl + Click</code> — forcibly <b>check</b> items.</li><li><code>Shift + Click</code> — forcibly <b>uncheck</b> items.</li><li><code>Alt + Click</code> — <b>toggle</b> (invert) the current selection state of an item.</li></ul></li></ul>"
         }
       },
+      "RsyncGenForm": {
+        "Command": {
+          "Title": "rsync command",
+          "Main": "The ready command is assembled automatically from the selected flags, paths, and mode (local / push / pull). Click Copy to grab the command and paste it into your terminal.",
+          "Expanded": "The program never runs the command - it only builds and copies it. Verify with a dry run (-n), especially before using --delete."
+        },
+        "Presets": {
+          "Title": "Presets",
+          "Main": "Ready-made scenarios: applying a preset checks the corresponding flags and mode. Paths and SSH fields (user, host, port) are not changed. Built-ins come first, then the divider and your saved presets (icons: save, rename, delete).",
+          "Expanded": "Any manual change clears the preset selection."
+        },
+        "ExtraArgs": {
+          "Title": "Extra arguments",
+          "Main": "Free-form field: its content is appended to the command as-is. Use it for rarely used flags that are not in the lists.",
+          "Expanded": ""
+        }
+      },
       "EpochConverterForm": {
         "mEpoch": {
           "Title": "Log and Text Analyzer",
@@ -1585,6 +1608,7 @@
           "EpochConverter": "Unix Epoch Converter",
           "NetworkCalculator": "IP/CIDR Calculator",
           "ChmodCalculator": "Chmod Calculator",
+          "RsyncGenerator": "rsync Builder",
           "ArchiveBuilder": "Archive Builder (tar/zip)",
           "SecurityReport": "Security Scanner Report"
         },
@@ -2594,6 +2618,41 @@
       "Presets-SshPrivateKey": "Private SSH Key (600)",
       "Presets-SshPublicKey": "Public SSH Key (644)",
       "Presets-Script": "Executable Script (755)"
+    },
+    "RsyncGenForm": {
+      "Warnings": {
+        "MultipleDeleteModes": "Multiple deletion modes (--delete*) are selected. rsync will use only the last one.",
+        "MaxDeleteWithoutDelete": "--max-delete has no effect unless a --delete option is enabled.",
+        "DryRunWithRemoveSourceFiles": "Dry run (-n) with --remove-source-files: running without -n will delete the source files.",
+        "ConflictingAppendModes": "--append and --append-verify are mutually exclusive.",
+        "ConflictingDestModes": "Choose only one of --compare-dest, --link-dest, and --copy-dest.",
+        "MissingSshHost": "Specify a host for SSH mode (push/pull)."
+      },
+      "Builtins": {
+        "Mirror": "Site mirror (pull + --delete + compression)",
+        "Backup": "Server backup (push + --delete-delay + --backup)",
+        "DryRun": "Dry run: show plan (-n -i --delete)",
+        "UpdateOnly": "Updated only (--update)",
+        "MissingOnly": "Missing only (--ignore-existing)",
+        "Incremental": "Incremental backup (--link-dest)",
+        "BwLimit": "Bandwidth limit (--bwlimit + --partial)",
+        "BigFiles": "Large files (--min-size + --progress)",
+        "HardBackup": "Hard-link backup (-H --numeric-ids)",
+        "ExcludeVcs": "Skip VCS dirs (.git/.svn/.hg)",
+        "Logs": "Logs and statistics (--stats + --partial)"
+      },
+      "Messages": {
+        "SavePresetTitle": "Save preset",
+        "SavePresetPrompt": "Preset name:",
+        "PresetSaved": "Preset saved.",
+        "RenamePresetTitle": "Rename preset",
+        "RenamePresetPrompt": "New name:",
+        "PresetRenamed": "Preset renamed.",
+        "DeleteConfirmFormat": "Delete preset <%s>?",
+        "DeleteTitle": "Confirm",
+        "PresetDeleted": "Preset deleted.",
+        "Presets-Divider": "--- custom ---"
+      }
     },
     "ArchiveBuilderForm": {
       "Messages": {

@@ -153,6 +153,7 @@ type
         actEpochConverter: TAction;
         actNetworkCalculator: TAction;
         actChmodCalculator: TAction;
+        actRsyncGenerator: TAction;
         actArchiveBuilder: TAction;
         actTerminalManager: TAction;
         actSecurityReport: TAction;
@@ -210,6 +211,7 @@ type
         procedure actChainEditExecute(Sender: TObject);
         procedure actChainRunExecute(Sender: TObject);
         procedure actChmodCalculatorExecute(Sender: TObject);
+        procedure actRsyncGeneratorExecute(Sender: TObject);
         procedure actClearTagFilterExecute(Sender: TObject);
         procedure actCloseDatabaseExecute(Sender: TObject);
         procedure actCreateDatabaseExecute(Sender: TObject);
@@ -477,6 +479,7 @@ uses
     PasswordGenFormUI,
     ProcessProfile,
     QuickSearchFormUI,
+    RsyncGenFormUI,
     SavedQueryEditorFormUI,
     SequenceOrderDialogUI,
     SettingsFormUI,
@@ -522,6 +525,11 @@ end;
 procedure TMainForm.actChmodCalculatorExecute(Sender: TObject);
 begin
     TChmodForm.ExecuteGlobal(Self, AppContext);
+end;
+
+procedure TMainForm.actRsyncGeneratorExecute(Sender: TObject);
+begin
+    TRsyncGenForm.ExecuteGlobal(Self, AppContext);
 end;
 
 procedure TMainForm.actCloseDatabaseExecute(Sender: TObject);

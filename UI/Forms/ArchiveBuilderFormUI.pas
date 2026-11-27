@@ -365,6 +365,7 @@ end;
 procedure TArchiveBuilderForm.LoadHistoryToUI;
 var
     Setts: TAppSettings;
+    Paths: TArray<THistoryItem>;
     procedure FillCB(CB: TComboBox; const Hist: TArray<THistoryItem>);
     var Item: THistoryItem;
     begin
@@ -378,10 +379,11 @@ var
     end;
 begin
     Setts := AppContext.SettingsManager.Data;
+    Paths := THistoryHelper.FilterBySource(Setts.HistoryArchivePaths, HISTORY_SOURCE_ARCHIVE);
 
     // Вкладка "Создать архив"
     // Что архивируем (путь к директории/файлу) -> берем из истории путей
-    FillCB(cbSourcePath, Setts.HistoryArchivePaths);
+    FillCB(cbSourcePath, Paths);
     // Имя архива (backup.tar.gz) -> берем из истории архивов
     FillCB(cbDestPath, Setts.HistoryArchiveDests);
 
@@ -389,7 +391,7 @@ begin
     // Путь к архиву (backup.tar.gz) -> берем из истории архивов
     FillCB(cbSourceExtract, Setts.HistoryArchiveDests);
     // Куда распаковать (путь к директории) -> берем из истории путей
-    FillCB(cbDestExtract, Setts.HistoryArchivePaths);
+    FillCB(cbDestExtract, Paths);
 end;
 
 procedure TArchiveBuilderForm.LoadPresetsToComboBox;
@@ -744,7 +746,7 @@ begin
 
         if pcMain.ActivePage = tsCreate then
         begin
-            THistoryHelper.Add(Setts.HistoryArchivePaths, cbSourcePath.Text); // Сохраняем путь
+            THistoryHelper.Add(Setts.HistoryArchivePaths, cbSourcePath.Text, HISTORY_SOURCE_ARCHIVE);
             THistoryHelper.Add(Setts.HistoryArchiveDests, cbDestPath.Text);   // Сохраняем имя архива
 
             // Сохраняем состояние галочек
@@ -757,8 +759,7 @@ begin
         else
         begin
             THistoryHelper.Add(Setts.HistoryArchiveDests, cbSourceExtract.Text);   // Сохраняем имя архива
-            if cbDestExtract.Text <> '' then
-                THistoryHelper.Add(Setts.HistoryArchivePaths, cbDestExtract.Text); // Сохраняем путь извлечения
+            THistoryHelper.Add(Setts.HistoryArchivePaths, cbDestExtract.Text, HISTORY_SOURCE_ARCHIVE);
         end;
 
         AppContext.SettingsManager.Data := Setts;

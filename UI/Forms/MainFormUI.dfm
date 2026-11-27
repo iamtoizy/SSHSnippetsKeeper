@@ -459,6 +459,9 @@ object MainForm: TMainForm
       object nChmodCalculator: TMenuItem
         Action = actChmodCalculator
       end
+      object nRsyncGenerator: TMenuItem
+        Action = actRsyncGenerator
+      end
       object nArchiveBuilder: TMenuItem
         Action = actArchiveBuilder
       end
@@ -6230,6 +6233,11 @@ object MainForm: TMainForm
       Category = 'Tools'
       Caption = 'actChmodCalculator'
       OnExecute = actChmodCalculatorExecute
+    end
+    object actRsyncGenerator: TAction
+      Category = 'Tools'
+      Caption = 'actRsyncGenerator'
+      OnExecute = actRsyncGeneratorExecute
     end
     object actChainCreate: TAction
       Category = 'Chains'

@@ -187,6 +187,9 @@
     "nChmodCalculator": {
       "Caption": "Калькулятор chmod"
     },
+    "nRsyncGenerator": {
+      "Caption": "Конструктор rsync"
+    },
     "nArchiveBuilder": {
       "Caption": "Команды архивации"
     },
@@ -721,6 +724,9 @@
     "rbDowSpec": {
       "Caption": "Указать точные значения:"
     }
+  },
+  "RsyncGenForm": {
+    "Caption": "Конструктор команды rsync"
   },
   "EpochConverterForm": {
     "Caption": "Конвертер эпох",
@@ -1454,6 +1460,23 @@
           "Expanded": "<b>Продвинутое выделение:</b><ul><li><b>Кисть (Drag-to-Check):</b> Нажми на значение, не отпускай левую кнопку мыши и проведи курсором по соседним пунктам, чтобы быстро выделить (или снять выделение) с целой группы.</li><li><b>Горячие клавиши (удерживай при клике):</b><ul><li><code>Ctrl + Клик</code> — принудительно <b>ставить</b> галочки.</li><li><code>Shift + Клик</code> — принудительно <b>снимать</b> галочки.</li><li><code>Alt + Клик</code> — <b>инвертировать</b> (поменять на противоположное) текущее выделение пункта.</li></ul></li></ul>"
         }
       },
+      "RsyncGenForm": {
+        "Command": {
+          "Title": "Команда rsync",
+          "Main": "Готовая команда собирается автоматически из отмеченных флагов, путей и режима (локально / push / pull). Нажми «Скопировать», чтобы забрать команду в буфер обмена, и вставь её в терминал.",
+          "Expanded": "Команда не исполняется программой - только собирается и копируется. Проверяй сухим прогоном (-n), особенно перед использованием --delete."
+        },
+        "Presets": {
+          "Title": "Пресеты",
+          "Main": "Готовые сценарии: применение предустановки отметит соответствующие флаги и режим. Пути и SSH-поля (пользователь, хост, порт) не изменяются. Сверху — встроенные, ниже разделитель и ваши сохранённые предустановки (иконки: сохранить, переименовать, удалить).",
+          "Expanded": "Любое ручное изменение снимает выбор пресета."
+        },
+        "ExtraArgs": {
+          "Title": "Дополнительные аргументы",
+          "Main": "Свободное поле: содержимое добавляется в конец команды без изменений. Используй для редко используемых флагов, которых нет в списках.",
+          "Expanded": ""
+        }
+      },
       "EpochConverterForm": {
         "mEpoch": {
           "Title": "Анализатор логов и текста",
@@ -1585,6 +1608,7 @@
           "EpochConverter": "Unix Epoch Конвертер",
           "NetworkCalculator": "IP/CIDR Калькулятор",
           "ChmodCalculator": "Chmod Калькулятор",
+          "RsyncGenerator": "Конструктор rsync",
           "ArchiveBuilder": "Архиватор (tar/zip)",
           "SecurityReport": "Отчёт сканера безопасности"
         },
@@ -1653,7 +1677,7 @@
         "actDeleteWorkspace": "Удалить пространство",
         "actEditWorkspace": "Изменить пространство"
       },
-          "GlobalQuickSearch": "Панель быстрого поиска",
+      "GlobalQuickSearch": "Панель быстрого поиска",
       "GlobalPasswordGen": "Генератор паролей",
       "GlobalRepeatLast": "Повтор последнего сниппета",
       "FavoriteSlot": "Слот избранного"
@@ -2594,6 +2618,41 @@
       "Presets-SshPrivateKey": "Приватный ключ SSH (600)",
       "Presets-SshPublicKey": "Публичный ключ SSH (644)",
       "Presets-Script": "Исполняемый скрипт (755)"
+    },
+    "RsyncGenForm": {
+      "Warnings": {
+        "MultipleDeleteModes": "Выбрано несколько режимов удаления (--delete*): rsync применит только последний.",
+        "MaxDeleteWithoutDelete": "--max-delete без какого-либо --delete не имеет смысла.",
+        "DryRunWithRemoveSourceFiles": "Сухой прогон (-n) с --remove-source-files: при реальном запуске без -n исходники будут удалены.",
+        "ConflictingAppendModes": "--append и --append-verify взаимоисключающие.",
+        "ConflictingDestModes": "Совместимо только одно из: --compare-dest / --link-dest / --copy-dest.",
+        "MissingSshHost": "Укажи хост для SSH-режима (push/pull)."
+      },
+      "Builtins": {
+        "Mirror": "Зеркало сайта (pull + --delete + сжатие)",
+        "Backup": "Бэкап на сервер (push + --delete-delay + --backup)",
+        "DryRun": "Сухой прогон: показать план (-n -i --delete)",
+        "UpdateOnly": "Только обновлённые (--update)",
+        "MissingOnly": "Только недостающее (--ignore-existing)",
+        "Incremental": "Инкрементальный бэкап (--link-dest)",
+        "BwLimit": "Ограничение канала (--bwlimit + --partial)",
+        "BigFiles": "Большие файлы (--min-size + --progress)",
+        "HardBackup": "Бэкап с жёсткими ссылками (-H --numeric-ids)",
+        "ExcludeVcs": "Без служебных папок (.git/.svn/.hg)",
+        "Logs": "Логи и статистика (--stats + --partial)"
+      },
+      "Messages": {
+        "SavePresetTitle": "Сохранение предустановки",
+        "SavePresetPrompt": "Название предустановки:",
+        "PresetSaved": "Предустановка сохранена.",
+        "RenamePresetTitle": "Переименование предустановки",
+        "RenamePresetPrompt": "Новое название:",
+        "PresetRenamed": "Предустановка переименована.",
+        "DeleteConfirmFormat": "Действительно удалить предустановку <%s>?",
+        "DeleteTitle": "Подтверждение",
+        "PresetDeleted": "Предустановка удалена.",
+        "Presets-Divider": "--- пользовательские ---"
+      }
     },
     "ArchiveBuilderForm": {
       "Messages": {

@@ -22,6 +22,9 @@ const
     // Максимальная длина списка недавних баз данных
     RECENT_DATABASES_LIMIT = 10;
 
+    HISTORY_SOURCE_ARCHIVE = 'archive';
+    HISTORY_SOURCE_RSYNC = 'rsync';
+
 type
     // Domain Models настроек
     THelpButton = record
@@ -118,6 +121,18 @@ type
     THistoryItem = record
         Value: string;
         UseCount: Integer;
+        SourceId: string;
+    end;
+
+    // Пользовательская предустановка конструктора rsync
+    TRsyncPreset = record
+        Name: string;
+        Mode: Integer;        // 0=local, 1=push, 2=pull
+        Flags: string;        // Токены через ';'; value-флаги несут значение:
+                              // '--bwlimit=10000;--delete'
+        Exclude: string;      // Содержимое mExclude (строки через CRLF)
+        Include: string;      // Содержимое mInclude (строки через CRLF)
+        Extra: string;        // Дополнительные аргументы
     end;
 
     // Структура предустановок архиватора
@@ -225,6 +240,8 @@ type
 
         // Архивация
         ArchivePresets: TArray<TArchivePreset>;
+        // Конструктор rsync: пользовательские предустановки
+        RsyncPresets: TArray<TRsyncPreset>;
         // История путей архивации
         HistoryArchivePaths: TArray<THistoryItem>; // Для путей (Source)
         HistoryArchiveDests: TArray<THistoryItem>; // Для имен архивов (Dest)

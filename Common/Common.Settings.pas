@@ -812,6 +812,10 @@ begin
     DroppedItems := 0;
     DroppedRules := 0;
 
+    for I := 0 to High(ASettings.HistoryArchivePaths) do
+        if ASettings.HistoryArchivePaths[I].SourceId = '' then
+            ASettings.HistoryArchivePaths[I].SourceId := HISTORY_SOURCE_ARCHIVE;
+
     // AllowedApplications
     Kept := 0;
     for I := 0 to High(ASettings.AllowedApplications.Items) do

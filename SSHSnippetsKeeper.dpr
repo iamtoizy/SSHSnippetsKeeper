@@ -203,7 +203,8 @@ uses
   Common.SnippetLanguages in 'Common\Common.SnippetLanguages.pas',
   Common.SnippetLanguageNB in 'Common\Common.SnippetLanguageNB.pas',
   Common.VCLStyleService in 'Common\Common.VCLStyleService.pas',
-  SynHighlighterFactory in 'UI\Controls\SynHighlighterFactory.pas';
+  SynHighlighterFactory in 'UI\Controls\SynHighlighterFactory.pas',
+  RsyncGenFormUI in 'UI\Forms\RsyncGenFormUI.pas' {RsyncGenForm};
 
 {$R *.res}
 

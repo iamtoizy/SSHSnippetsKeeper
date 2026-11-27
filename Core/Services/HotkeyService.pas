@@ -108,6 +108,7 @@ begin
     RegisterAction('TMainForm.actEpochConverter',    'Actions.MainForm.Tools.EpochConverter',    'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+T');
     RegisterAction('TMainForm.actNetworkCalculator', 'Actions.MainForm.Tools.NetworkCalculator', 'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+I');
     RegisterAction('TMainForm.actChmodCalculator',   'Actions.MainForm.Tools.ChmodCalculator',   'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+M');
+    RegisterAction('TMainForm.actRsyncGenerator',    'Actions.MainForm.Tools.RsyncGenerator',    'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+U');
     RegisterAction('TMainForm.actArchiveBuilder',    'Actions.MainForm.Tools.ArchiveBuilder',    'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+Z');
     RegisterAction('TMainForm.actSecurityReport',    'Actions.MainForm.Tools.SecurityReport',    'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+K');
 
