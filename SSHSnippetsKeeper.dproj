@@ -400,6 +400,11 @@
             <Form>RsyncGenForm</Form>
             <FormType>dfm</FormType>
         </DCCReference>
+        <DCCReference Include="Core\Services\PunycodeService.pas"/>
+        <DCCReference Include="UI\Forms\PunycodeFormUI.pas">
+            <Form>PunycodeForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
         <RcItem Include="Database\Schema\000_schema_init.sql">
             <ContainerId>ResourceItem</ContainerId>
             <ResourceType>RCDATA</ResourceType>

@@ -106,6 +106,7 @@ begin
     RegisterAction('TMainForm.actPasswordGenerator', 'Actions.MainForm.Tools.PasswordGenerator', 'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+G');
     RegisterAction('TMainForm.actCronGenerator',     'Actions.MainForm.Tools.CronGenerator',     'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+C');
     RegisterAction('TMainForm.actEpochConverter',    'Actions.MainForm.Tools.EpochConverter',    'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+T');
+    RegisterAction('TMainForm.actPunycodeConverter', 'Actions.MainForm.Tools.PunycodeConverter', 'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+Y');
     RegisterAction('TMainForm.actNetworkCalculator', 'Actions.MainForm.Tools.NetworkCalculator', 'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+I');
     RegisterAction('TMainForm.actChmodCalculator',   'Actions.MainForm.Tools.ChmodCalculator',   'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+M');
     RegisterAction('TMainForm.actRsyncGenerator',    'Actions.MainForm.Tools.RsyncGenerator',    'Actions.MainForm.Tools.Caption', 'Ctrl+Shift+U');

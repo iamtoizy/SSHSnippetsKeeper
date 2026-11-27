@@ -68,6 +68,8 @@ begin
             Integer(Svc.GetActionShortCut('TMainForm.actDuplicateSnippet')));
         Assert.AreEqual(Integer(TextToShortCut('Ctrl+Shift+K')),
             Integer(Svc.GetActionShortCut('TMainForm.actSecurityReport')));
+        Assert.AreEqual(Integer(TextToShortCut('Ctrl+Shift+Y')),
+            Integer(Svc.GetActionShortCut('TMainForm.actPunycodeConverter')));
     finally
         Svc.Free;
     end;
@@ -167,14 +169,14 @@ var
 begin
     Svc := NewService;
     try
-        OverrideSC.ActionName := 'TMainForm.actAddSnippet';
+        OverrideSC.ActionName := 'TMainForm.actPunycodeConverter';
         OverrideSC.ShortCutValue := TextToShortCut('Ctrl+Alt+X');
         Svc.LoadFromSettings([OverrideSC]);
         Assert.AreEqual(Integer(TextToShortCut('Ctrl+Alt+X')),
-            Integer(Svc.GetActionShortCut('TMainForm.actAddSnippet')));
+            Integer(Svc.GetActionShortCut(OverrideSC.ActionName)));
         Saved := Svc.SaveToSettings;
         Assert.AreEqual(1, Integer(Length(Saved)));
-        Assert.AreEqual('TMainForm.actAddSnippet', Saved[0].ActionName);
+        Assert.AreEqual(OverrideSC.ActionName, Saved[0].ActionName);
     finally
         Svc.Free;
     end;

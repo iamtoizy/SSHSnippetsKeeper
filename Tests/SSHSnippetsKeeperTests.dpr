@@ -7,6 +7,7 @@ uses
     DUnitX.TestFramework,
     DUnitX.Loggers.Console,
     Tests.EpochService in 'Tests.EpochService.pas',
+    Tests.PunycodeService in 'Tests.PunycodeService.pas',
     Tests.CmdLine in 'Tests.CmdLine.pas',
     Tests.PasswordService in 'Tests.PasswordService.pas',
     Tests.MacroEngine in 'Tests.MacroEngine.pas',

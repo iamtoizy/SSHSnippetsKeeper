@@ -181,6 +181,9 @@
     "nEpochConverter": {
       "Caption": "Epoch converter"
     },
+    "nPunycodeConverter": {
+      "Caption": "Punycode Converter"
+    },
     "nNetworkCalculator": {
       "Caption": "IP/CIDR Calculator"
     },
@@ -724,6 +727,14 @@
     "rbDowSpec": {
       "Caption": "Specify exact values:"
     }
+  },
+  "PunycodeForm": {
+    "Caption": "Punycode Converter",
+    "lblMode": {"Caption": "Mode:"},
+    "lblInput": {"Caption": "Input: one domain per line"},
+    "lblResult": {"Caption": "Successful results"},
+    "lblErrors": {"Caption": "Errors by input line"},
+    "bCopy": {"Caption": "Copy results"}
   },
   "RsyncGenForm": {
     "Caption": "rsync Command Builder"
@@ -1606,6 +1617,7 @@
           "PasswordGenerator": "Password Generator",
           "CronGenerator": "Cron Builder",
           "EpochConverter": "Unix Epoch Converter",
+          "PunycodeConverter": "Punycode Converter",
           "NetworkCalculator": "IP/CIDR Calculator",
           "ChmodCalculator": "Chmod Calculator",
           "RsyncGenerator": "rsync Builder",
@@ -2618,6 +2630,12 @@
       "Presets-SshPrivateKey": "Private SSH Key (600)",
       "Presets-SshPublicKey": "Public SSH Key (644)",
       "Presets-Script": "Executable Script (755)"
+    },
+    "PunycodeForm": {
+      "Auto": "Auto-detect per line",
+      "ToAscii": "To Punycode (ASCII)",
+      "ToUnicode": "From Punycode (Unicode)",
+      "InvalidLine": "Line %d: invalid domain name."
     },
     "RsyncGenForm": {
       "Warnings": {

@@ -204,7 +204,9 @@ uses
   Common.SnippetLanguageNB in 'Common\Common.SnippetLanguageNB.pas',
   Common.VCLStyleService in 'Common\Common.VCLStyleService.pas',
   SynHighlighterFactory in 'UI\Controls\SynHighlighterFactory.pas',
-  RsyncGenFormUI in 'UI\Forms\RsyncGenFormUI.pas' {RsyncGenForm};
+  RsyncGenFormUI in 'UI\Forms\RsyncGenFormUI.pas' {RsyncGenForm},
+  PunycodeService in 'Core\Services\PunycodeService.pas',
+  PunycodeFormUI in 'UI\Forms\PunycodeFormUI.pas' {PunycodeForm};
 
 {$R *.res}
 

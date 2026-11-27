@@ -453,6 +453,9 @@ object MainForm: TMainForm
       object nEpochConverter: TMenuItem
         Action = actEpochConverter
       end
+      object nPunycodeConverter: TMenuItem
+        Action = actPunycodeConverter
+      end
       object nNetworkCalculator: TMenuItem
         Action = actNetworkCalculator
       end
@@ -6223,6 +6226,11 @@ object MainForm: TMainForm
       Category = 'Tools'
       Caption = 'actEpochConverter'
       OnExecute = actEpochConverterExecute
+    end
+    object actPunycodeConverter: TAction
+      Category = 'Tools'
+      Caption = 'Punycode Converter'
+      OnExecute = actPunycodeConverterExecute
     end
     object actNetworkCalculator: TAction
       Category = 'Tools'

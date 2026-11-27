@@ -181,6 +181,9 @@
     "nEpochConverter": {
       "Caption": "Конвертер эпох"
     },
+    "nPunycodeConverter": {
+      "Caption": "Конвертер Punycode"
+    },
     "nNetworkCalculator": {
       "Caption": "IP/CIDR Калькулятор"
     },
@@ -724,6 +727,14 @@
     "rbDowSpec": {
       "Caption": "Указать точные значения:"
     }
+  },
+  "PunycodeForm": {
+    "Caption": "Конвертер Punycode",
+    "lblMode": {"Caption": "Режим:"},
+    "lblInput": {"Caption": "Ввод: один домен на строку"},
+    "lblResult": {"Caption": "Успешные результаты"},
+    "lblErrors": {"Caption": "Ошибки по строкам ввода"},
+    "bCopy": {"Caption": "Копировать"}
   },
   "RsyncGenForm": {
     "Caption": "Конструктор команды rsync"
@@ -1478,7 +1489,7 @@
         }
       },
       "EpochConverterForm": {
-        "mEpoch": {
+         "mEpoch": {
           "Title": "Анализатор логов и текста",
           "Main": "Вставьте сюда любой текст, JSON или системный лог. Программа автоматически найдет все временные метки (Unix Epoch) и стандартные даты.",
           "Expanded": "💡 <b>Поддерживается умное распознавание Unix Time (секунды, милли- и микросекунды)</b>, а также дат в форматах ISO 8601, Apache/Nginx, Syslog и локального времени.<br><br>Все найденные совпадения подсвечиваются: светло-голубым маркером — фоновые метки, ярко-желтым — активная метка, выбранная в списке.<br><br><b>Система закладок для навигации:</b><ul><li><code>Ctrl+B</code> (или пункт контекстного меню) — создать или удалить закладку на текущей строке.</li><li><code>CTRL+SHIFT+0..9</code> — горячие клавиши для установки нумерованных закладок.</li><li><code>Alt+0..9</code> — мгновенный переход к соответственной закладке.</li></ul>По правому клику мыши доступно контекстное меню с подменю «Перейти к закладке», где отображается динамический список всех активных закладок с номерами строк и превью текста."
@@ -1606,6 +1617,7 @@
           "PasswordGenerator": "Генератор паролей",
           "CronGenerator": "Cron Конструктор",
           "EpochConverter": "Unix Epoch Конвертер",
+          "PunycodeConverter": "Конвертер Punycode",
           "NetworkCalculator": "IP/CIDR Калькулятор",
           "ChmodCalculator": "Chmod Калькулятор",
           "RsyncGenerator": "Конструктор rsync",
@@ -2618,6 +2630,12 @@
       "Presets-SshPrivateKey": "Приватный ключ SSH (600)",
       "Presets-SshPublicKey": "Публичный ключ SSH (644)",
       "Presets-Script": "Исполняемый скрипт (755)"
+    },
+    "PunycodeForm": {
+      "Auto": "Автоопределение по строкам",
+      "ToAscii": "В Punycode (ASCII)",
+      "ToUnicode": "Из Punycode (Unicode)",
+      "InvalidLine": "Строка %d: недопустимое доменное имя."
     },
     "RsyncGenForm": {
       "Warnings": {

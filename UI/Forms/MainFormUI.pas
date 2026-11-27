@@ -127,6 +127,8 @@ type
         pmTags: TPopupMenu;
         nCronGenerator: TMenuItem;
         nEpochConverter: TMenuItem;
+        nPunycodeConverter: TMenuItem;
+        actPunycodeConverter: TAction;
         nNetworkCalculator: TMenuItem;
         nChmodCalculator: TMenuItem;
         nArchiveBuilder: TMenuItem;
@@ -224,6 +226,7 @@ type
         procedure actEditSnippetExecute(Sender: TObject);
         procedure actEditTagExecute(Sender: TObject);
         procedure actEpochConverterExecute(Sender: TObject);
+        procedure actPunycodeConverterExecute(Sender: TObject);
         procedure actSyncDatabaseExecute(Sender: TObject);
         procedure actNetworkCalculatorExecute(Sender: TObject);
         procedure actOpenDatabaseExecute(Sender: TObject);
@@ -469,6 +472,7 @@ uses
     Data.Database,
     DbConvertProgressUI,
     EpochConverterFormUI,
+    PunycodeFormUI,
     HistoryFormUI,
     HotkeyService,
     InputFormUI,
@@ -624,6 +628,11 @@ end;
 procedure TMainForm.actEpochConverterExecute(Sender: TObject);
 begin
     TEpochConverterForm.ExecuteGlobal(Self, AppContext);
+end;
+
+procedure TMainForm.actPunycodeConverterExecute(Sender: TObject);
+begin
+    TPunycodeForm.ExecuteGlobal(Self, AppContext);
 end;
 
 procedure TMainForm.actSyncDatabaseExecute(Sender: TObject);
