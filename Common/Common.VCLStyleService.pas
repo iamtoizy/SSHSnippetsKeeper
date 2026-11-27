@@ -18,6 +18,7 @@ type
         class var FRetryDeadline: UInt64;
         class var FInRecycle: Boolean;
         class var FRecycleQueued: Boolean;
+        class var FMenuBracketDepth: Integer;
         class function MenuTrackingActive: Boolean;
         class procedure RecycleFormStyleHooks;
         class procedure RetryPendingRecycle;
@@ -39,6 +40,14 @@ type
         // Выполняет отложенную пере-регистрацию хуков форм после закрытия
         // модального окна: при ModalLevel > 0 ApplyStyle только ставит флаг
         class procedure FlushPendingRecycle;
+        // Гейт «стек хука меню жив»: сообщения открытия главного меню
+        // (клик/Alt-акселератор) диспетчеризуются из TBaseForm.WndProc под
+        // этим бракетом. Пока он поднят, освобождение TFormStyleHook
+        // недопустимо: ProcessMenuLoop/TrackMenuFromItem крутит луп и
+        // DispatchCommand на развороте стека, MenuExit идёт в память хука
+        class procedure EnterMenuBracket;
+        class procedure LeaveMenuBracket;
+        class function MenuBracketActive: Boolean; inline;
         class procedure Shutdown;
     end;
 
@@ -209,19 +218,19 @@ class procedure TVCLStyleService.RecycleFormStyleHooks;
 var
     I: Integer;
 begin
-    // VCL при открытом модальном окне пропускает FreeControlHooks
-    // (TStyleEngine.Notification проверяет Application.ModalLevel),
-    // поэтому пере-регистрация сейчас оставила бы смесь старых и новых
-    // хуков. Откладываем: ставим только флаг, реальное выполнение
-    // произойдёт в FlushPendingRecycle после закрытия модального окна.
-    // Раньше здесь был TThread.ForceQueue с само-переподрядчиванием -
-    // очередь перезапускала себя бесконечно, пока ModalLevel > 0,
-    // и главный поток переставал качать сообщения: окно зависало
-    if Application.ModalLevel > 0 then
-    begin
-        FPendingRecycle := True;
-        Exit;
-    end;
+    // Движок при ModalLevel > 0 молча глотает snReleaseAllStyleHooks
+    // (TStyleEngine.Notification, гейт ModalLevel), а WM_DESTROY форм
+    // гейтится sfHandleMessages: после смены стиля из модального окна
+    // пары (форма, hook) старого стиля остаются в TStyleEngine.FControls
+    // на весь срок модальной сессии. При возврате на кастомную тему
+    // диспетчер включается (FFlags := [sfHandleMessages]) и диспатчит
+    // сообщения в эти хуки - AV в TMainMenuBarStyleHook при первом клике
+    // по меню. Поэтому recycle НЕ откладываем до закрытия модалки:
+    // ForceQueue исполняется и модальным лупом (ShowModal качает
+    // CheckSynchronize), стек диспетчера в момент исполнения пуст,
+    // освобождение хуков из-под цепочки сообщений исключено. Раньше
+    // здесь был ранний выход с FPendingRecycle - окно уязвимости
+    // длилось всю модалку
     // Смена стиля из-под активного меню (клик по меню сразу после смены
     // темы): ре-регистрацию нельзя выполнять, пока жив - ProcessMenuLoop
     // предыдущего хука. WM_CANCELMODE через SendMessage до TrackPopupMenu
@@ -230,6 +239,27 @@ begin
     // закрываем меню через PostMessage (очередь лупа его вытащит), затем
     // ре-регистрация уходит в очередь и с гейтом ждёт, пока трекинг
     // реально завершится. Пользователь увидит закрытие меню вместо фриза
+    // СТАДИЯ 2 стека AV 0xc0000005 в GetHandle (диспетч из главного
+    // насоса): выбор пункта меню «Настройки» исполняет ExecuteModal внутри
+    // стека TrackMenuFromItem (DispatchCommand до finally MenuExit,
+    // Vcl.Forms.pas:18553-18562), нативный TrackPopupMenu уже вернулся,
+    // GUI-флаги сняты, capture нет (HookMenus ставит только WH_MSGFILTER) -
+    // MenuTrackingActive слеп к этой фазе. Модальный луп исполняет очередь
+    // ForceQueue, purge освобождает живой хук под его же исполняющимся
+    // стеком, и возврат в MenuExit уходит в отравленную память. Гейт
+    // MenuBracketActive закрывает это окно: пока стек хука меню жив,
+    // recycle уходит в отложенную ветку
+    if MenuBracketActive then
+    begin
+        for I := 0 to Screen.FormCount - 1 do
+            if Screen.Forms[I].HandleAllocated and
+                IsWindowVisible(Screen.Forms[I].Handle) then
+                PostMessage(Screen.Forms[I].Handle, WM_CANCELMODE, 0, 0);
+        FPendingRecycle := True;
+        FRetryDeadline := GetTickCount64 + 2000;
+        TThread.ForceQueue(nil, RetryPendingRecycle);
+        Exit;
+    end;
     if MenuTrackingActive then
     begin
         for I := 0 to Screen.FormCount - 1 do
@@ -261,11 +291,19 @@ var
 begin
     if not FPendingRecycle then
         Exit;
-    // Трекинг всё ещё активен: WM_CANCELMODE закрывает луп не мгновенно -
-    // ждём следующий оборот очереди. Окно 2 сек по wall-clock: быстрый
-    // PeekMessage-скан лупа прокручивает очередь тысячи раз в секунду и
-    // счётчик попыток сгорел бы мгновенно. По истечении окна выполняем
-    // ре-регистрацию принудительно, иначе recycle потерян навсегда
+    // Бракет: ре-регистрацию нельзя исполнять до разворота стека хука
+    // меню, но и крутить очередь недопустимо: самопере-очередь держит
+    // CheckSynchronize бесконечно занятым весь срок модальной сессии
+    // (фриз модалки, в Debug - флуд OutputDebugString). Флаг сохраняем:
+    // flush после разворота выполнит LeaveMenuBracket
+    if MenuBracketActive then
+        Exit;
+    // Трекинг всё ещё активен (нативная фаза TrackPopupMenu): WM_CANCELMODE
+    // закрывает луп не мгновенно - ждём следующий оборот очереди. Окно
+    // 2 сек по wall-clock: быстрый PeekMessage-скан лупа прокручивает
+    // очередь тысячи раз в секунду и счётчик попыток сгорел бы мгновенно.
+    // По истечении окна выполняем ре-регистрацию принудительно, иначе
+    // recycle потерян навсегда
     if MenuTrackingActive and (GetTickCount64 < FRetryDeadline) then
     begin
         for I := 0 to Screen.FormCount - 1 do
@@ -291,8 +329,10 @@ begin
         Exit;
     // Double-check при исполнении: между постом и обработкой очереди
     // пользователь мог снова открыть меню - тогда откладываем ещё раз,
-    // освобождение хука из-под ProcessMenuLoop и даёт фриз
-    if MenuTrackingActive then
+    // освобождение хука из-под ProcessMenuLoop и даёт фриз. Бракет -
+    // та же логика для стека хука меню (модалка, открытая из пункта
+    // меню, исполняет очередь внутри ProcessMenuLoop)
+    if MenuBracketActive or MenuTrackingActive then
     begin
         FPendingRecycle := True;
         FRetryDeadline := GetTickCount64 + 2000;
@@ -304,17 +344,21 @@ begin
         // Перерегистрация классов ниже не трогает живые пары инстансов в
         // карте TStyleEngine.FControls, а HandleMessage движка доверяет
         // TryGetValue и диспетчеризует сообщения в любой объект из карты,
-        // включая освобождённый: AV 0xc0000005 в TMainMenuBarStyleHook.
-        // Invalidate по цепочке WM_NCLBUTTONDOWN мёртвого TFormStyleHook
-        // после смены темы на Windows и возврата кастомной. Вызовом
-        // snControlDestroyed вычищаем пары всех форм (+дети): движковый
-        // DoRemoveControl делает ExtractPair ДО освобождения хука, поэтому
-        // вложенная диспетчеризация из деструкторов получает промах и
-        // создаёт свежий хук - реентерабельно. При переходе на Windows
-        // движок сам чистит карту раньше нас (snReleaseAllStyleHooks
-        // через ForceQueue попадает в очередь первым) - здесь no-op; при
-        // смене из модального окна движок молчит (гейт ModalLevel) и
-        // эта чистка - единственная
+        // включая освобождённый: AV 0xc0000005 в TMainMenuBarStyleHook
+        // после смены темы. Вызовом snControlDestroyed вычищаем пары всех
+        // форм: движковый DoRemoveControl делает ExtractPair ДО освобождения
+        // хука (дети чистятся рекурсивно внутри), поэтому вложенная
+        // диспетчеризация из деструкторов получает промах и создаёт свежий
+        // хук - реентерабельно. Движок при ModalLevel > 0 молча глотает
+        // snReleaseAllStyleHooks, а WM_DESTROY форм гейтится sfHandleMessages:
+        // при смене стиля из модального окна эта чистка - единственная.
+        // ВАЖНО: snReleaseAllStyleHooks отсюда НЕ посылаем - его
+        // FreeControlHooks исполняется из очереди (WM_NULL ->
+        // CheckSynchronize) в том числе внутри насоса TrackPopupMenu
+        // активного меню и освобождает живой хук прямо под
+        // ProcessMenuLoop: MenuExit уходит в освобождённую память
+        // (класс регрессии 757211a). Мёртвые ключи форм, разрушенных
+        // под системным стилем, снимает PurgeStyleHooks в TBaseForm.Destroy
         try
             for I := 0 to Screen.FormCount - 1 do
                 TStyleManager.Notification(snControlDestroyed, Screen.Forms[I]);
@@ -361,8 +405,42 @@ class procedure TVCLStyleService.FlushPendingRecycle;
 begin
     if not FPendingRecycle then
         Exit;
+    // Flush из стека хука меню (MainFormUI: finally после ExecuteModal,
+    // открытого из пункта меню) не исполняет recycle, а лишь сохраняет
+    // флаг: ре-регистрация уйдёт в очередь и исполнится после разворота
+    // стека - гейты RecycleFormStyleHooks/DoRecycleFormStyleHooks её
+    // отложат до выхода из бракета
+    if MenuBracketActive then
+        Exit;
     FPendingRecycle := False;
     RecycleFormStyleHooks;
+end;
+
+class procedure TVCLStyleService.EnterMenuBracket;
+begin
+    Inc(FMenuBracketDepth);
+end;
+
+class procedure TVCLStyleService.LeaveMenuBracket;
+begin
+    if FMenuBracketDepth > 0 then
+        Dec(FMenuBracketDepth);
+    // Стек хука меню развёрнут: отложенная из-под бракета смена стиля
+    // больше не опасна - планируем recycle ровно один раз. Исполнение
+    // уходит в очередь и происходит уже вне цепочки диспетчера меню
+    // (гейты DoRecycleFormStyleHooks остаются double-check на случай
+    // нативного трекинга, открытого в этот же оборот очереди)
+    if (FMenuBracketDepth = 0) and FPendingRecycle and
+        not FInRecycle and not FRecycleQueued then
+    begin
+        FRecycleQueued := True;
+        TThread.ForceQueue(nil, DoRecycleFormStyleHooks);
+    end;
+end;
+
+class function TVCLStyleService.MenuBracketActive: Boolean;
+begin
+    Result := FMenuBracketDepth > 0;
 end;
 
 class constructor TVCLStyleService.Create;
@@ -372,6 +450,7 @@ begin
     FRetryDeadline := 0;
     FInRecycle := False;
     FRecycleQueued := False;
+    FMenuBracketDepth := 0;
 end;
 
 class destructor TVCLStyleService.Destroy;

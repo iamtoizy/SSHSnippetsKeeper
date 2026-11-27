@@ -21,7 +21,10 @@ type
     TForm = class(Vcl.Forms.TForm)
     private
         FStyleRecreateQueued: Boolean;
+        FMenuBracketActive: Boolean;
+        FDeferredStyleChanged: Boolean;
         procedure DeferredStyleRecreated;
+        procedure ReplayDeferredStyleChanged;
     protected
         procedure DoStyleRecreated; virtual;
         procedure DoShownOnScreen; virtual;
@@ -122,13 +125,58 @@ procedure TForm.WndProc(var Message: TMessage);
 var
     StyleChanged: Boolean;
     ShownNow: Boolean;
+    MenuOpener: Boolean;
 begin
     StyleChanged := Message.Msg = CM_CUSTOMSTYLECHANGED;
     ShownNow := (Message.Msg = WM_WINDOWPOSCHANGED) and (PWindowPos(Message.LParam) <> nil)
         and ((PWindowPos(Message.LParam).flags and SWP_SHOWWINDOW) <> 0);
     if StyleChanged then
         ActiveControl := nil;
-    inherited WndProc(Message);
+    // Бракет «стек хука главного меню жив» (см. Common.VCLStyleService):
+    // WM_NCLBUTTONDOWN(HTMENU) -> MouseDown -> MenuEnter -> ProcessMenuLoop,
+    // CM_DIALOGCHAR/SC_KEYMENU -> MenuEnter(False). Внутри лупа крутится
+    // DispatchCommand пункта меню: модалка, открытая из меню, исполняет
+    // очередь ForceQueue под живым стеком хука, и любое освобождение
+    // TFormStyleHook (наш purge или CM_RECREATEWND-ветка CM_CUSTOMSTYLECHANGED)
+    // убивает хук до разворота стека - AV в MenuExit -> GetHandle.
+    // Бракет стоит в TBaseForm.WndProc ДО стайл-гейта TWinControl.WndProc,
+    // поэтому помеченные сообщения диспетчеризуются под ним
+    MenuOpener := (Message.Msg = WM_NCLBUTTONDOWN)
+        and (TWMNCHitMessage(Message).HitTest = HTMENU)
+        and (Menu <> nil) and (Menu.Items.Count > 0);
+    if (not MenuOpener)
+        and ((Message.Msg = CM_DIALOGCHAR)
+            or ((Message.Msg = WM_SYSCOMMAND)
+                and (Message.WParam and $FFF0 = SC_KEYMENU)))
+        and (Menu <> nil) and (Menu.Items.Count > 0) then
+        MenuOpener := True;
+    if MenuOpener then
+    begin
+        FMenuBracketActive := True;
+        TVCLStyleService.EnterMenuBracket;
+    end;
+    try
+        // CM_CUSTOMSTYLECHANGED под живым стеком хука глотаем и реплеим
+        // на развороте: его обработчик в TCustomForm.WndProc делает
+        // CM_RECREATEWND (пересоздание HWND, WM_DESTROY освобождает хук
+        // через snControlDestroyed) прямо под ProcessMenuLoop
+        if StyleChanged and FMenuBracketActive then
+        begin
+            FDeferredStyleChanged := True;
+            Exit;
+        end;
+        inherited WndProc(Message);
+    finally
+        if MenuOpener then
+        begin
+            TVCLStyleService.LeaveMenuBracket;
+            FMenuBracketActive := False;
+            // Стек хука развёрнут: реплей отложенной смены стиля.
+            // Perform синхронный - Message уже не обрабатываем
+            if FDeferredStyleChanged then
+                ReplayDeferredStyleChanged;
+        end;
+    end;
     if StyleChanged then
     begin
         if not FStyleRecreateQueued then
@@ -147,6 +195,19 @@ begin
     if csDestroying in ComponentState then
         Exit;
     DoStyleRecreated;
+end;
+
+procedure TForm.ReplayDeferredStyleChanged;
+begin
+    // Стек хука меню развёрнут (LeaveMenuBracket уже выполнен):
+    // доигрываем отложенную CM_CUSTOMSTYLECHANGED. Синхронный Perform
+    // safe: ProcessMenuLoop больше не жив, freeing хука невозможен
+    if not FDeferredStyleChanged then
+        Exit;
+    FDeferredStyleChanged := False;
+    if csDestroying in ComponentState then
+        Exit;
+    Perform(CM_CUSTOMSTYLECHANGED, 0, 0);
 end;
 
 procedure TForm.DoStyleRecreated;

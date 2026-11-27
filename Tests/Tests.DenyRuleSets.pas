@@ -62,10 +62,20 @@ begin
     Result := TPath.Combine(TPath.GetDirectoryName(ParamStr(0)), 'settings.json');
 end;
 
+// Удаление с учётом TOCTOU: между Exists и Delete файл может исчезнуть
+// (внешний синк/антивирус), и DeleteFile вернёт FILE_NOT_FOUND
 procedure TDenyRuleSetsTests.SafeDeleteIfPresent(const APath: string);
 begin
-    if TFile.Exists(APath) then
+    if not TFile.Exists(APath) then
+        Exit;
+    try
         TFile.Delete(APath);
+    except
+        // Цель очистки достигнута, если файла больше нет; иначе ошибка настоящая
+        on E: EInOutError do
+            if TFile.Exists(APath) then
+                raise;
+    end;
 end;
 
 function TDenyRuleSetsTests.MakeRule(const AName, APattern: string;
